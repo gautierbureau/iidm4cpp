@@ -1,0 +1,3 @@
+add_executable(example_embedded DynawoEmbedded.cpp)
+target_link_libraries(example_embedded PRIVATE iidmbridge)
+target_include_directories(example_embedded PRIVATE ${CMAKE_SOURCE_DIR}/include)
