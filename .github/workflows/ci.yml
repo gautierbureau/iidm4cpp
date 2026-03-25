@@ -1,0 +1,223 @@
+name: CI
+
+on:
+  push:
+    branches: [ master, 'claude/**' ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  java:
+    name: Java (Maven)
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build and test (Maven)
+        working-directory: java
+        run: mvn --batch-mode --no-transfer-progress verify
+
+      - name: Upload JAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iidm-bridge-java
+          path: java/target/iidm-bridge-java-*.jar
+          if-no-files-found: warn
+
+  # ── C++ build & test (JNI only, no GraalVM native image) ────────────────────
+  cpp:
+    name: C++ (CMake / GTest)
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            cmake ninja-build \
+            default-jdk \
+            libgtest-dev \
+            googletest
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DIIDM_BRIDGE_ENABLE_GRAALVM=OFF \
+            -DIIDM_BRIDGE_ENABLE_JNI=ON \
+            -DIIDM_BRIDGE_BUILD_TESTS=ON \
+            -DIIDM_BRIDGE_BUILD_EXAMPLES=ON
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Run unit tests
+        run: ctest --test-dir build --output-on-failure --parallel 4
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cpp-test-results
+          path: build/Testing/
+          if-no-files-found: ignore
+
+  # ── C++ GraalVM backend (compile + tests with real GraalVM headers) ──────────
+  #
+  # Strategy:
+  #   1. Install GraalVM CE 17 + native-image tool.
+  #   2. Compile a minimal stub class with @CEntryPoint via native-image --shared.
+  #      This generates graal_isolate.h (and a tiny .so) in seconds — no need to
+  #      build the full powsybl native image.
+  #   3. Point CMake at the generated header and build the GraalVM backend.
+  #   4. Run the test suite.  Tests exercise the GraalVM code paths:
+  #        - MockBackend tests compile and run normally.
+  #        - TestBackendSelector/GraalVM tests verify that loading a
+  #          non-existent .so raises IidmException (dlopen error path).
+  #        - TestBackendSelector/Stub tests load the generated stub .so and
+  #          verify isolate creation succeeds.
+  graalvm:
+    name: C++ GraalVM backend
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up GraalVM CE 17 with native-image
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '17'
+          distribution: 'graalvm-community'
+          native-image: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install C++ build tools and GTest
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y cmake ninja-build libgtest-dev googletest
+
+      - name: Build Java module (verifies IidmEntryPoints.java compiles)
+        working-directory: java
+        run: mvn --batch-mode --no-transfer-progress package -DskipTests
+
+      - name: Generate GraalVM stub native image (produces graal_isolate.h)
+        run: |
+          mkdir -p graalvm-stub
+          cd graalvm-stub
+
+          # Minimal class with a @CEntryPoint — compiles and links in ~30 s.
+          # Its sole purpose is to trigger native-image --shared so that
+          # graal_isolate.h is emitted alongside the stub .so.
+          cat > IidmStub.java << 'JAVA_EOF'
+          import org.graalvm.nativeimage.IsolateThread;
+          import org.graalvm.nativeimage.c.function.CEntryPoint;
+
+          public final class IidmStub {
+              @CEntryPoint(name = "iidm_stub_ping")
+              public static int ping(IsolateThread thread) { return 42; }
+          }
+          JAVA_EOF
+
+          # GraalVM's javac; org.graalvm.nativeimage is on the module path.
+          javac IidmStub.java
+
+          # Produce libIidmStub.so + graal_isolate.h (no reflection config
+          # needed for such a trivial class).
+          native-image \
+            --shared \
+            --no-fallback \
+            -H:Name=libIidmStub \
+            IidmStub
+
+          echo "--- generated files ---"
+          ls -lh
+          echo "--- graal_isolate.h preview ---"
+          head -30 graal_isolate.h
+
+      - name: Configure CMake (GraalVM backend ON)
+        run: |
+          cmake -S . -B build-graalvm \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DIIDM_BRIDGE_ENABLE_GRAALVM=ON \
+            -DIIDM_BRIDGE_ENABLE_JNI=ON \
+            -DIIDM_BRIDGE_BUILD_TESTS=ON \
+            -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF \
+            -DGRAALVM_INCLUDE_DIRS="$GITHUB_WORKSPACE/graalvm-stub"
+
+      - name: Build
+        run: cmake --build build-graalvm --parallel
+
+      - name: Run unit tests
+        env:
+          # Tells TestBackendSelector where the stub .so lives so it can
+          # exercise the full dlopen → isolate-create → missing-symbol path.
+          IIDM_GRAALVM_STUB_LIB: ${{ github.workspace }}/graalvm-stub/libIidmStub.so
+          LD_LIBRARY_PATH: ${{ github.workspace }}/graalvm-stub
+        run: ctest --test-dir build-graalvm --output-on-failure --parallel 4
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: graalvm-test-results
+          path: build-graalvm/Testing/
+          if-no-files-found: ignore
+
+  # ── Matrix: also test with GraalVM disabled + JNI disabled ──────────────────
+  cpp-matrix:
+    name: C++ (${{ matrix.name }})
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: JNI-only
+            graalvm: OFF
+            jni: ON
+          - name: no-backends
+            graalvm: OFF
+            jni: OFF
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y \
+            cmake ninja-build \
+            default-jdk \
+            libgtest-dev \
+            googletest
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DIIDM_BRIDGE_ENABLE_GRAALVM=${{ matrix.graalvm }} \
+            -DIIDM_BRIDGE_ENABLE_JNI=${{ matrix.jni }} \
+            -DIIDM_BRIDGE_BUILD_TESTS=ON \
+            -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Run unit tests
+        run: ctest --test-dir build --output-on-failure --parallel 4
