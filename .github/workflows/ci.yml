@@ -127,6 +127,7 @@ jobs:
           import org.graalvm.nativeimage.c.function.CEntryPoint;
 
           public final class IidmStub {
+              public static void main(String[] args) {}
               @CEntryPoint(name = "iidm_stub_ping")
               public static int ping(IsolateThread thread) { return 42; }
           }
