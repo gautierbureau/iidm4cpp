@@ -97,10 +97,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up GraalVM CE 17 with native-image
+      - name: Set up GraalVM CE 21 with native-image
         uses: graalvm/setup-graalvm@v1
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'graalvm-community'
           native-image: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
