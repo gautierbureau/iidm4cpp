@@ -31,6 +31,10 @@ public:
     // IidmBridgeRegistry.register(network) before this point.
     static Network wrap(const std::string& networkId,
                         const NetworkLoadOptions& options = {});
+
+    // Advanced / testing: create a Network from a custom BackendProvider.
+    // Useful for injecting mock backends in unit tests.
+    static Network createFromBackend(std::unique_ptr<BackendProvider> backend);
 };
 
 } // namespace iidm

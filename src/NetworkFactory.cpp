@@ -21,4 +21,8 @@ Network NetworkFactory::wrap(const std::string& networkId, const NetworkLoadOpti
     return Network(std::move(backend));
 }
 
+Network NetworkFactory::createFromBackend(std::unique_ptr<BackendProvider> backend) {
+    return Network(std::move(backend));
+}
+
 } // namespace iidm
