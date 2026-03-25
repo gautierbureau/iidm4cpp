@@ -297,7 +297,7 @@ jobs:
         run: |
           mkdir -p build/java-classes
           javac \
-            -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT.jar:$(cat java/cp.txt)" \
+            -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT.jar" \
             examples/embedded/JavaLauncher.java \
             -d build/java-classes
 

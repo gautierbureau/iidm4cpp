@@ -12,7 +12,7 @@ ${JAVA_HOME}/bin/native-image \
     --no-fallback \
     --shared  \
     --gc=serial \
-    -o libiidm_bridge \
+    -o libpowsybl-iidm-native \
     --allow-incomplete-classpath \
     --add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.c=ALL-UNNAMED
 #    -H:CLibraryPath=${PWD}/lib \
