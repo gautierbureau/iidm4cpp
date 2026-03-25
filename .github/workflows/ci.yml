@@ -202,7 +202,7 @@ jobs:
 
       - name: Resolve full classpath
         working-directory: java
-        run: mvn --batch-mode --no-transfer-progress dependency:build-classpath -Dmdep.outputFile=cp.txt
+        run: mvn --batch-mode --no-transfer-progress dependency:build-classpath -Dmdep.outputFile=cp.txt -Dmdep.includeScope=runtime
 
       - name: Build native image (libiidm_bridge.so)
         working-directory: java
@@ -291,7 +291,7 @@ jobs:
 
       - name: Resolve full classpath
         working-directory: java
-        run: mvn --batch-mode --no-transfer-progress dependency:build-classpath -Dmdep.outputFile=cp.txt
+        run: mvn --batch-mode --no-transfer-progress dependency:build-classpath -Dmdep.outputFile=cp.txt -Dmdep.includeScope=runtime
 
       - name: Compile JavaLauncher
         run: |
