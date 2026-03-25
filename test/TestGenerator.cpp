@@ -43,15 +43,15 @@ TEST_F(GeneratorTest, GetTargetP) {
 TEST_F(GeneratorTest, SetTargetP) {
     Generator gen(GEN_HANDLE, &backend);
     gen.setTargetP(200.0);
-    EXPECT_DOUBLE_EQ(backend.doubles[{GEN_HANDLE, prop::GEN_TARGET_P}], 200.0);
+    EXPECT_DOUBLE_EQ((backend.doubles[{GEN_HANDLE, prop::GEN_TARGET_P}]), 200.0);
 }
 
 TEST_F(GeneratorTest, MethodChaining) {
     Generator gen(GEN_HANDLE, &backend);
     gen.setTargetP(200.0).setTargetQ(50.0).setVoltageRegulatorOn(false);
-    EXPECT_DOUBLE_EQ(backend.doubles[{GEN_HANDLE, prop::GEN_TARGET_P}], 200.0);
-    EXPECT_DOUBLE_EQ(backend.doubles[{GEN_HANDLE, prop::GEN_TARGET_Q}], 50.0);
-    EXPECT_FALSE(backend.bools[{GEN_HANDLE, prop::GEN_VOLTAGE_REGULATOR_ON}]);
+    EXPECT_DOUBLE_EQ((backend.doubles[{GEN_HANDLE, prop::GEN_TARGET_P}]), 200.0);
+    EXPECT_DOUBLE_EQ((backend.doubles[{GEN_HANDLE, prop::GEN_TARGET_Q}]), 50.0);
+    EXPECT_FALSE((backend.bools[{GEN_HANDLE, prop::GEN_VOLTAGE_REGULATOR_ON}]));
 }
 
 TEST_F(GeneratorTest, GetMinMaxP) {

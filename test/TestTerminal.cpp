@@ -31,8 +31,8 @@ TEST_F(TerminalTest, GetPQ) {
 TEST_F(TerminalTest, SetPQ) {
     Terminal term(TERM_HANDLE, &backend);
     term.setP(60.0).setQ(12.0);
-    EXPECT_DOUBLE_EQ(backend.doubles[{TERM_HANDLE, prop::TERMINAL_P}], 60.0);
-    EXPECT_DOUBLE_EQ(backend.doubles[{TERM_HANDLE, prop::TERMINAL_Q}], 12.0);
+    EXPECT_DOUBLE_EQ((backend.doubles[{TERM_HANDLE, prop::TERMINAL_P}]), 60.0);
+    EXPECT_DOUBLE_EQ((backend.doubles[{TERM_HANDLE, prop::TERMINAL_Q}]), 12.0);
 }
 
 TEST_F(TerminalTest, IsConnected) {
@@ -43,14 +43,14 @@ TEST_F(TerminalTest, IsConnected) {
 TEST_F(TerminalTest, Disconnect) {
     Terminal term(TERM_HANDLE, &backend);
     term.disconnect();
-    EXPECT_FALSE(backend.bools[{TERM_HANDLE, prop::TERMINAL_CONNECTED}]);
+    EXPECT_FALSE((backend.bools[{TERM_HANDLE, prop::TERMINAL_CONNECTED}]));
 }
 
 TEST_F(TerminalTest, Connect) {
     Terminal term(TERM_HANDLE, &backend);
     term.disconnect();
     term.connect();
-    EXPECT_TRUE(backend.bools[{TERM_HANDLE, prop::TERMINAL_CONNECTED}]);
+    EXPECT_TRUE((backend.bools[{TERM_HANDLE, prop::TERMINAL_CONNECTED}]));
 }
 
 TEST_F(TerminalTest, GetBusView) {

@@ -34,8 +34,8 @@ TEST_F(LoadTest, GetP0Q0) {
 TEST_F(LoadTest, SetP0Q0) {
     Load load(LOAD_HANDLE, &backend);
     load.setP0(120.0).setQ0(25.0);
-    EXPECT_DOUBLE_EQ(backend.doubles[{LOAD_HANDLE, prop::LOAD_P0}], 120.0);
-    EXPECT_DOUBLE_EQ(backend.doubles[{LOAD_HANDLE, prop::LOAD_Q0}], 25.0);
+    EXPECT_DOUBLE_EQ((backend.doubles[{LOAD_HANDLE, prop::LOAD_P0}]), 120.0);
+    EXPECT_DOUBLE_EQ((backend.doubles[{LOAD_HANDLE, prop::LOAD_Q0}]), 25.0);
 }
 
 TEST_F(LoadTest, GetLoadType) {

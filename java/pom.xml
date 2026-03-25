@@ -16,7 +16,8 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <powsybl.core.version>6.4.0</powsybl.core.version>
+        <powsybl.core.version>7.1.0</powsybl.core.version>
+        <graalvm.version>23.1.0</graalvm.version>
     </properties>
 
     <dependencies>
@@ -34,6 +35,12 @@
             <groupId>com.powsybl</groupId>
             <artifactId>powsybl-iidm-serde</artifactId>
             <version>${powsybl.core.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.graalvm.nativeimage</groupId>
+            <artifactId>svm</artifactId>
+            <version>${graalvm.version}</version>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 

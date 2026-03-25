@@ -8,7 +8,7 @@
 using namespace iidm;
 using namespace iidm::test;
 
-// Build a Network wrapping a MockBackend for testing
+// Build a Network wrapping a MockBackend for testing via the public factory method
 static Network makeTestNetwork() {
     auto backend = std::make_unique<MockBackend>();
     // Network handle = 1 (the default in MockBackend)
@@ -32,9 +32,7 @@ static Network makeTestNetwork() {
     backend->byId[{prop::GENERATOR, "GEN2"}] = 11;
     backend->byId[{prop::LOAD,      "LOAD1"}] = 20;
 
-    // Use the private constructor via friend: but NetworkFactory wraps this.
-    // For testing we bypass factory and use direct construction.
-    return Network(std::move(backend));
+    return NetworkFactory::createFromBackend(std::move(backend));
 }
 
 TEST(NetworkTest, GetIdName) {

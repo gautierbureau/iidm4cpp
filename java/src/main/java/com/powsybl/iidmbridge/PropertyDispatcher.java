@@ -163,7 +163,7 @@ public final class PropertyDispatcher {
         Object obj = NetworkRegistry.lookup(handle);
         return switch (property) {
             case ID   -> ((Identifiable<?>) obj).getId();
-            case NAME -> ((Identifiable<?>) obj).getName();
+            case NAME -> ((Identifiable<?>) obj).getNameOrId();
             case TERMINAL_BUS_ID -> {
                 Terminal t = (Terminal) obj;
                 Bus bus = t.getBusView().getConnectableBus();

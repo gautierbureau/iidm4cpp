@@ -33,8 +33,8 @@ TEST_F(BusTest, GetVAngle) {
 TEST_F(BusTest, SetVAngle) {
     Bus bus(BUS_HANDLE, &backend);
     bus.setV(1.05).setAngle(0.0);
-    EXPECT_DOUBLE_EQ(backend.doubles[{BUS_HANDLE, prop::BUS_V}], 1.05);
-    EXPECT_DOUBLE_EQ(backend.doubles[{BUS_HANDLE, prop::BUS_ANGLE}], 0.0);
+    EXPECT_DOUBLE_EQ((backend.doubles[{BUS_HANDLE, prop::BUS_V}]), 1.05);
+    EXPECT_DOUBLE_EQ((backend.doubles[{BUS_HANDLE, prop::BUS_ANGLE}]), 0.0);
 }
 
 TEST_F(BusTest, IsValid) {

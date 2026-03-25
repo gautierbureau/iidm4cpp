@@ -15,7 +15,7 @@ find_package(JNI REQUIRED)
 # ── GraalVM ──────────────────────────────────────────────────────────────────
 if(IIDM_BRIDGE_ENABLE_GRAALVM)
     list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-    find_package(GraalVM QUIET)
+    find_package(GraalVM)
     if(NOT GraalVM_FOUND)
         message(WARNING "GraalVM not found; GraalVM backend will compile without SDK headers. "
                         "Set GRAALVM_HOME to enable full GraalVM support.")
@@ -98,7 +98,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/IidmBridgeConfig.cmake"
 # ── Tests ─────────────────────────────────────────────────────────────────────
 if(IIDM_BRIDGE_BUILD_TESTS)
     enable_testing()
-    find_package(GTest QUIET)
+    find_package(GTest)
     if(GTest_FOUND)
         add_subdirectory(test)
     else()
