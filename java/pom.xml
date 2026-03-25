@@ -17,9 +17,20 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <powsybl.core.version>6.4.0</powsybl.core.version>
+        <graalvm.sdk.version>23.0.2</graalvm.sdk.version>
     </properties>
 
     <dependencies>
+        <!-- GraalVM Native Image API — compile-time only (provided at runtime
+             by the GraalVM native-image tool / SubstrateVM).
+             Required to compile IidmEntryPoints.java (@CEntryPoint, etc.). -->
+        <dependency>
+            <groupId>org.graalvm.sdk</groupId>
+            <artifactId>graal-sdk</artifactId>
+            <version>${graalvm.sdk.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
         <dependency>
             <groupId>com.powsybl</groupId>
             <artifactId>powsybl-iidm-api</artifactId>
