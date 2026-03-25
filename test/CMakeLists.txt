@@ -8,6 +8,7 @@ set(TEST_SOURCES
     TestBus.cpp
     TestLine.cpp
     TestBackendSelector.cpp
+    TestIntegration.cpp
 )
 
 add_executable(iidmbridge_tests ${TEST_SOURCES})

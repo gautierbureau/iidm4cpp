@@ -9,6 +9,7 @@
  * after registering the network.
  */
 #include <iidm/iidm.h>
+#include <jni.h>
 #include <iostream>
 
 extern "C" {
@@ -44,6 +45,18 @@ void runEmbedded(const char* networkId) {
     } catch (const iidm::IidmException& ex) {
         std::cerr << "[C++] Error: " << ex.what() << "\n";
     }
+}
+
+/**
+ * JNI entry point called from JavaLauncher.java via System.loadLibrary.
+ * Bridges the Java String networkId to the C-string runEmbedded() above.
+ */
+JNIEXPORT void JNICALL Java_JavaLauncher_runEmbedded(JNIEnv* env, jclass, jstring jNetworkId) {
+    const char* rawId = env->GetStringUTFChars(jNetworkId, nullptr);
+    if (!rawId) return;
+    std::string id(rawId);
+    env->ReleaseStringUTFChars(jNetworkId, rawId);
+    runEmbedded(id.c_str());
 }
 
 } // extern "C"

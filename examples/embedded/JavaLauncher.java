@@ -19,9 +19,9 @@ import java.nio.file.Path;
 
 public class JavaLauncher {
 
-    // The C++ shared library must expose this symbol
+    // Loads libexample_embedded.so, which links iidmbridge and exports the JNI entry point.
     static {
-        System.loadLibrary("iidmbridge");
+        System.loadLibrary("example_embedded");
     }
 
     // JNI native method declaration — implemented in DynawoEmbedded.cpp
