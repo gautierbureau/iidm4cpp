@@ -179,6 +179,55 @@ jobs:
           path: build-graalvm/Testing/
           if-no-files-found: ignore
 
+  # ── Full native image: libiidm_bridge.so from the real powsybl JAR ──────────
+  graalvm-native:
+    name: GraalVM native image (libiidm_bridge.so)
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up GraalVM CE 21 with native-image
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm-community'
+          native-image: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build JAR
+        working-directory: java
+        run: mvn --batch-mode --no-transfer-progress package -DskipTests
+
+      - name: Resolve full classpath
+        working-directory: java
+        run: mvn --batch-mode --no-transfer-progress dependency:build-classpath -Dmdep.outputFile=cp.txt
+
+      - name: Build native image (libiidm_bridge.so)
+        working-directory: java
+        run: |
+          native-image \
+            --shared \
+            -cp "target/iidm-bridge-java-1.0.0-SNAPSHOT.jar:$(cat cp.txt)" \
+            -H:+ReportExceptionStackTraces \
+            -march=compatibility \
+            --no-fallback \
+            --gc=serial \
+            -o libiidm_bridge \
+            --allow-incomplete-classpath \
+            --add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.c=ALL-UNNAMED
+
+      - name: Upload native image artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: iidm-bridge-native
+          path: |
+            java/libiidm_bridge.so
+            java/graal_isolate.h
+            java/graal_isolate_dynamic.h
+          if-no-files-found: error
+
   # ── Matrix: also test with GraalVM disabled + JNI disabled ──────────────────
   cpp-matrix:
     name: C++ (${{ matrix.name }})
