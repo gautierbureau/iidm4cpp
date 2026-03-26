@@ -280,8 +280,8 @@ jobs:
       # ── Standalone example ──────────────────────────────────────────────────
       - name: Run example_standalone with IEEE14.xiidm
         env:
-          LD_LIBRARY_PATH: ${{ github.workspace }}/native-artifacts/java
-          IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/native-artifacts/java/libpowsybl-iidm-native.so
+          LD_LIBRARY_PATH: ${{ github.workspace }}/native-artifacts
+          IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/native-artifacts/libpowsybl-iidm-native.so
         run: ./build/examples/standalone/example_standalone examples/IEEE14.xiidm
 
       # ── Embedded example ────────────────────────────────────────────────────
@@ -314,8 +314,8 @@ jobs:
       # ── Unit + integration tests ────────────────────────────────────────────
       - name: Run tests (including TestIntegration with real network)
         env:
-          LD_LIBRARY_PATH: ${{ github.workspace }}/native-artifacts/java
-          IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/native-artifacts/java/libpowsybl-iidm-native.so
+          LD_LIBRARY_PATH: ${{ github.workspace }}/native-artifacts
+          IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/native-artifacts/libpowsybl-iidm-native.so
           IIDM_IEEE14_NETWORK_PATH: ${{ github.workspace }}/examples/IEEE14.xiidm
         run: ctest --test-dir build --output-on-failure --parallel 4
 
