@@ -200,16 +200,12 @@ jobs:
         working-directory: java
         run: mvn --batch-mode --no-transfer-progress package -DskipTests
 
-      - name: Resolve full classpath
-        working-directory: java
-        run: mvn --batch-mode --no-transfer-progress dependency:build-classpath -Dmdep.outputFile=cp.txt -Dmdep.includeScope=runtime
-
       - name: Build native image (libpowsybl-iidm-native.so)
         working-directory: java
         run: |
           native-image \
             --shared \
-            -cp "target/iidm-bridge-java-1.0.0-SNAPSHOT.jar" \
+            -cp "target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar" \
             -H:+ReportExceptionStackTraces \
             -march=compatibility \
             --no-fallback \

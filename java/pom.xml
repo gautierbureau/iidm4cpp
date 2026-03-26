@@ -58,7 +58,7 @@
                 <configuration>
                     <archive>
                         <manifestEntries>
-                            <Main-Class>com.powsybl.iidmbridge.Main</Main-Class>
+                            <Main-Class>com.powsybl.iidmbridge.JavaLauncher</Main-Class>
                         </manifestEntries>
                     </archive>
                 </configuration>
