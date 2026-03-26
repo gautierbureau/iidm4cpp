@@ -51,7 +51,7 @@ void runEmbedded(const char* networkId) {
  * JNI entry point called from JavaLauncher.java via System.loadLibrary.
  * Bridges the Java String networkId to the C-string runEmbedded() above.
  */
-JNIEXPORT void JNICALL Java_JavaLauncher_runEmbedded(JNIEnv* env, jclass, jstring jNetworkId) {
+JNIEXPORT void JNICALL Java_com_powsybl_iidmbridge_JavaLauncher_runEmbedded(JNIEnv* env, jclass, jstring jNetworkId) {
     const char* rawId = env->GetStringUTFChars(jNetworkId, nullptr);
     if (!rawId) return;
     std::string id(rawId);

@@ -11,7 +11,7 @@
  *         JavaLauncher case.xiidm
  */
 
-import com.powsybl.iidm.network.Network;
+import com.powsybl.iidm.network.*;
 import com.powsybl.iidmbridge.jni.IidmBridgeRegistry;
 
 import java.nio.file.Path;

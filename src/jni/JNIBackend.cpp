@@ -72,7 +72,7 @@ void JNIBackend::cacheMethodIds() {
 
     // Network
     cache_.network_getId            = env_->GetMethodID(cache_.networkClass, "getId",   "()Ljava/lang/String;");
-    cache_.network_getName          = env_->GetMethodID(cache_.networkClass, "getName", "()Ljava/lang/String;");
+    cache_.network_getName          = env_->GetMethodID(cache_.networkClass, "getNameOrId", "()Ljava/lang/String;");
     cache_.network_getGenerators    = env_->GetMethodID(cache_.networkClass, "getGenerators",    "()Ljava/lang/Iterable;");
     cache_.network_getLoads         = env_->GetMethodID(cache_.networkClass, "getLoads",         "()Ljava/lang/Iterable;");
     cache_.network_getLines         = env_->GetMethodID(cache_.networkClass, "getLines",         "()Ljava/lang/Iterable;");
@@ -88,7 +88,7 @@ void JNIBackend::cacheMethodIds() {
 
     // Generator
     cache_.generator_getId                 = env_->GetMethodID(cache_.generatorClass, "getId",   "()Ljava/lang/String;");
-    cache_.generator_getName               = env_->GetMethodID(cache_.generatorClass, "getName", "()Ljava/lang/String;");
+    cache_.generator_getName               = env_->GetMethodID(cache_.generatorClass, "getNameOrId", "()Ljava/lang/String;");
     cache_.generator_getTargetP            = env_->GetMethodID(cache_.generatorClass, "getTargetP", "()D");
     cache_.generator_setTargetP            = env_->GetMethodID(cache_.generatorClass, "setTargetP", "(D)Lcom/powsybl/iidm/network/Generator;");
     cache_.generator_getTargetQ            = env_->GetMethodID(cache_.generatorClass, "getTargetQ", "()D");
@@ -107,7 +107,7 @@ void JNIBackend::cacheMethodIds() {
 
     // Load
     cache_.load_getId       = env_->GetMethodID(cache_.loadClass, "getId",   "()Ljava/lang/String;");
-    cache_.load_getName     = env_->GetMethodID(cache_.loadClass, "getName", "()Ljava/lang/String;");
+    cache_.load_getName     = env_->GetMethodID(cache_.loadClass, "getNameOrId", "()Ljava/lang/String;");
     cache_.load_getP0       = env_->GetMethodID(cache_.loadClass, "getP0", "()D");
     cache_.load_setP0       = env_->GetMethodID(cache_.loadClass, "setP0", "(D)Lcom/powsybl/iidm/network/Load;");
     cache_.load_getQ0       = env_->GetMethodID(cache_.loadClass, "getQ0", "()D");
@@ -130,7 +130,7 @@ void JNIBackend::cacheMethodIds() {
 
     // Bus
     cache_.bus_getId    = env_->GetMethodID(cache_.busClass, "getId",    "()Ljava/lang/String;");
-    cache_.bus_getName  = env_->GetMethodID(cache_.busClass, "getName",  "()Ljava/lang/String;");
+    cache_.bus_getName  = env_->GetMethodID(cache_.busClass, "getNameOrId",  "()Ljava/lang/String;");
     cache_.bus_getV     = env_->GetMethodID(cache_.busClass, "getV",     "()D");
     cache_.bus_setV     = env_->GetMethodID(cache_.busClass, "setV",     "(D)Lcom/powsybl/iidm/network/Bus;");
     cache_.bus_getAngle = env_->GetMethodID(cache_.busClass, "getAngle", "()D");
@@ -139,7 +139,7 @@ void JNIBackend::cacheMethodIds() {
 
     // Line
     cache_.line_getId        = env_->GetMethodID(cache_.lineClass, "getId",   "()Ljava/lang/String;");
-    cache_.line_getName      = env_->GetMethodID(cache_.lineClass, "getName", "()Ljava/lang/String;");
+    cache_.line_getName      = env_->GetMethodID(cache_.lineClass, "getNameOrId", "()Ljava/lang/String;");
     cache_.line_getR         = env_->GetMethodID(cache_.lineClass, "getR",  "()D");
     cache_.line_getX         = env_->GetMethodID(cache_.lineClass, "getX",  "()D");
     cache_.line_getG1        = env_->GetMethodID(cache_.lineClass, "getG1", "()D");
@@ -154,7 +154,7 @@ void JNIBackend::cacheMethodIds() {
 
     // Substation
     cache_.substation_getId            = env_->GetMethodID(cache_.substationClass, "getId",   "()Ljava/lang/String;");
-    cache_.substation_getName          = env_->GetMethodID(cache_.substationClass, "getName", "()Ljava/lang/String;");
+    cache_.substation_getName          = env_->GetMethodID(cache_.substationClass, "getNameOrId", "()Ljava/lang/String;");
     cache_.substation_getCountry       = env_->GetMethodID(cache_.substationClass, "getCountry",
         "()Ljava/util/Optional;");
     cache_.substation_getVoltageLevels = env_->GetMethodID(cache_.substationClass, "getVoltageLevels",
@@ -163,7 +163,7 @@ void JNIBackend::cacheMethodIds() {
 
     // VoltageLevel
     cache_.vl_getId               = env_->GetMethodID(cache_.voltageLevelClass, "getId",   "()Ljava/lang/String;");
-    cache_.vl_getName             = env_->GetMethodID(cache_.voltageLevelClass, "getName", "()Ljava/lang/String;");
+    cache_.vl_getName             = env_->GetMethodID(cache_.voltageLevelClass, "getNameOrId", "()Ljava/lang/String;");
     cache_.vl_getNominalV         = env_->GetMethodID(cache_.voltageLevelClass, "getNominalV", "()D");
     cache_.vl_getLowVoltageLimit  = env_->GetMethodID(cache_.voltageLevelClass, "getLowVoltageLimit",  "()D");
     cache_.vl_getHighVoltageLimit = env_->GetMethodID(cache_.voltageLevelClass, "getHighVoltageLimit", "()D");
@@ -373,7 +373,7 @@ std::string JNIBackend::getString(ObjectHandle h, int property) const {
         }
         case prop::NAME: {
             jclass identClass = env_->FindClass("com/powsybl/iidm/network/Identifiable");
-            jmethodID mid = env_->GetMethodID(identClass, "getName", "()Ljava/lang/String;");
+            jmethodID mid = env_->GetMethodID(identClass, "getNameOrId", "()Ljava/lang/String;");
             env_->DeleteLocalRef(identClass);
             jstr = static_cast<jstring>(env_->CallObjectMethod(obj, mid));
             break;

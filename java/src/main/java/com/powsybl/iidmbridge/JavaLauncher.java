@@ -1,6 +1,6 @@
 package com.powsybl.iidmbridge;
 
-import com.powsybl.iidm.network.Network;
+import com.powsybl.iidm.network.*;
 import com.powsybl.iidm.serde.NetworkSerDe;
 import com.powsybl.iidmbridge.jni.IidmBridgeRegistry;
 
@@ -23,6 +23,9 @@ public final class JavaLauncher {
         System.loadLibrary("example_embedded");
     }
 
+    // JNI native method declaration — implemented in DynawoEmbedded.cpp
+    private static native void runEmbedded(String networkId);
+
     public static void main(String[] args) {
         if (args.length < 1) {
             System.err.println("Usage: JavaLauncher <network-file> [network-id]");
@@ -44,14 +47,14 @@ public final class JavaLauncher {
         System.out.println("Network registered with id: " + networkId);
         System.out.println("Ready for JNI backend calls.");
 
-//        // Call the C++ simulation entry point
-//        System.out.println("[Java] Handing off to C++ simulation...");
-//        runEmbedded(networkId);
-//        System.out.println("[Java] C++ simulation returned.");
-//
-//        // The network object in this JVM now reflects any changes made by C++
-//        network.getGenerators().forEach(g ->
-//                System.out.printf("[Java] Generator %s targetP=%.1f MW%n",
-//                        g.getId(), g.getTargetP()));
+       // Call the C++ simulation entry point
+       System.out.println("[Java] Handing off to C++ simulation...");
+       runEmbedded(networkId);
+       System.out.println("[Java] C++ simulation returned.");
+
+       // The network object in this JVM now reflects any changes made by C++
+       network.getGenerators().forEach(g ->
+               System.out.printf("[Java] Generator %s targetP=%.1f MW%n",
+                       g.getId(), g.getTargetP()));
     }
 }
