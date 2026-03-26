@@ -1,7 +1,6 @@
 package com.powsybl.iidmbridge.graalvm;
 
 import com.powsybl.iidm.network.Network;
-import com.powsybl.iidm.serde.NetworkSerDe;
 import com.powsybl.iidmbridge.PropertyDispatcher;
 import org.graalvm.nativeimage.IsolateThread;
 import org.graalvm.nativeimage.UnmanagedMemory;
@@ -28,7 +27,7 @@ public final class IidmEntryPoints {
     public static long loadNetwork(IsolateThread thread, CCharPointer filePath) {
         try {
             String path = CTypeConversion.toJavaString(filePath);
-            Network network = NetworkSerDe.read(Path.of(path));
+            Network network = Network.read(Path.of(path));
             return NetworkRegistry.register(network);
         } catch (Exception e) {
             return 0L; // INVALID_HANDLE

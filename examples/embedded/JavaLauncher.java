@@ -12,7 +12,6 @@
  */
 
 import com.powsybl.iidm.network.Network;
-import com.powsybl.iidm.serde.NetworkSerDe;
 import com.powsybl.iidmbridge.jni.IidmBridgeRegistry;
 
 import java.nio.file.Path;
@@ -34,7 +33,7 @@ public class JavaLauncher {
         }
 
         // Load the network on the Java side
-        Network network = NetworkSerDe.read(Path.of(args[0]));
+        Network network = Network.read(Path.of(args[0]));
         System.out.println("[Java] Loaded network: " + network.getId());
 
         // Register it so the C++ JNI backend can find it

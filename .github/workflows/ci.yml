@@ -179,9 +179,9 @@ jobs:
           path: build-graalvm/Testing/
           if-no-files-found: ignore
 
-  # ── Full native image: libiidm_bridge.so from the real powsybl JAR ──────────
+  # ── Full native image: libpowsybl-iidm-native.so from the real powsybl JAR ──────────
   graalvm-native:
-    name: GraalVM native image (libiidm_bridge.so)
+    name: GraalVM native image (libpowsybl-iidm-native.so)
     runs-on: ubuntu-22.04
 
     steps:
@@ -204,7 +204,7 @@ jobs:
         working-directory: java
         run: mvn --batch-mode --no-transfer-progress dependency:build-classpath -Dmdep.outputFile=cp.txt -Dmdep.includeScope=runtime
 
-      - name: Build native image (libiidm_bridge.so)
+      - name: Build native image (libpowsybl-iidm-native.so)
         working-directory: java
         run: |
           native-image \
@@ -223,14 +223,14 @@ jobs:
         with:
           name: iidm-bridge-native
           path: |
-            java/libiidm_bridge.so
+            java/libpowsybl-iidm-native.so
             java/graal_isolate.h
             java/graal_isolate_dynamic.h
           if-no-files-found: error
 
   # ── Integration tests: examples + unit tests against the real IEEE14 network ─
   #
-  # Uses the libiidm_bridge.so produced by graalvm-native to:
+  # Uses the libpowsybl-iidm-native.so produced by graalvm-native to:
   #   1. Run example_standalone (GraalVM backend) on IEEE14.xiidm.
   #   2. Run the embedded example: Java loads the network, hands off to C++
   #      via JNI (libexample_embedded.so → iidmbridge JNI backend).
@@ -281,7 +281,7 @@ jobs:
       - name: Run example_standalone with IEEE14.xiidm
         env:
           LD_LIBRARY_PATH: ${{ github.workspace }}/native-artifacts/java
-          IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/native-artifacts/java/libiidm_bridge.so
+          IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/native-artifacts/java/libpowsybl-iidm-native.so
         run: ./build/examples/standalone/example_standalone examples/IEEE14.xiidm
 
       # ── Embedded example ────────────────────────────────────────────────────
@@ -315,7 +315,7 @@ jobs:
       - name: Run tests (including TestIntegration with real network)
         env:
           LD_LIBRARY_PATH: ${{ github.workspace }}/native-artifacts/java
-          IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/native-artifacts/java/libiidm_bridge.so
+          IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/native-artifacts/java/libpowsybl-iidm-native.so
           IIDM_IEEE14_NETWORK_PATH: ${{ github.workspace }}/examples/IEEE14.xiidm
         run: ctest --test-dir build --output-on-failure --parallel 4
 
