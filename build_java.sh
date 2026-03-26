@@ -2,11 +2,13 @@
 
 export JAVA_HOME=/home/bureaugau/Projects/Library/graalvm-jdk-21.0.8+12.1
 
-#mvn clean package
+cd java
+mvn package -q
+cd ..
 
 ${JAVA_HOME}/bin/native-image \
     --shared \
-    -cp target/iidm-bridge-java-1.0.0-SNAPSHOT.jar \
+    -cp java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar \
     -H:+ReportExceptionStackTraces \
     -march=compatibility \
     --no-fallback \

@@ -173,6 +173,17 @@ public final class PropertyDispatcher {
         };
     }
 
+    // ── String setters ────────────────────────────────────────────────────
+
+    public static void setString(long handle, int property, String value) {
+        Object obj = NetworkRegistry.lookup(handle);
+        switch (property) {
+            case NAME    -> ((Identifiable<?>) obj).setName(value);
+            case COUNTRY -> ((Substation) obj).setCountry(Country.valueOf(value));
+            default -> throw new IllegalArgumentException("Unknown string property for set: " + property);
+        }
+    }
+
     // ── Children (navigation) ─────────────────────────────────────────────
 
     public static long[] getChildren(long parentHandle, int childType) {

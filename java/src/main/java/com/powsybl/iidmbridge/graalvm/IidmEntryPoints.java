@@ -4,6 +4,7 @@ import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.serde.NetworkSerDe;
 import com.powsybl.iidmbridge.PropertyDispatcher;
 import org.graalvm.nativeimage.IsolateThread;
+import org.graalvm.nativeimage.UnmanagedMemory;
 import org.graalvm.nativeimage.c.CContext;
 import org.graalvm.nativeimage.c.function.CEntryPoint;
 import org.graalvm.nativeimage.c.type.CCharPointer;
@@ -11,6 +12,7 @@ import org.graalvm.nativeimage.c.type.CLongPointer;
 import org.graalvm.nativeimage.c.type.CIntPointer;
 import org.graalvm.nativeimage.c.type.CTypeConversion;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
 /**
@@ -66,7 +68,18 @@ public final class IidmEntryPoints {
     @CEntryPoint(name = "iidm_get_string")
     public static CCharPointer getString(IsolateThread thread, long handle, int property) {
         String value = PropertyDispatcher.getString(handle, property);
-        return CTypeConversion.toCString(value).get();
+        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+        CCharPointer ptr = UnmanagedMemory.malloc(bytes.length + 1);
+        for (int i = 0; i < bytes.length; i++) {
+            ptr.write(i, bytes[i]);
+        }
+        ptr.write(bytes.length, (byte) 0);
+        return ptr;
+    }
+
+    @CEntryPoint(name = "iidm_set_string")
+    public static void setString(IsolateThread thread, long handle, int property, CCharPointer value) {
+        PropertyDispatcher.setString(handle, property, CTypeConversion.toJavaString(value));
     }
 
     @CEntryPoint(name = "iidm_free_string")

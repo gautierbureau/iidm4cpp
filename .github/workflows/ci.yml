@@ -209,12 +209,12 @@ jobs:
         run: |
           native-image \
             --shared \
-            -cp "target/iidm-bridge-java-1.0.0-SNAPSHOT.jar:$(cat cp.txt)" \
+            -cp "target/iidm-bridge-java-1.0.0-SNAPSHOT.jar" \
             -H:+ReportExceptionStackTraces \
             -march=compatibility \
             --no-fallback \
             --gc=serial \
-            -o libiidm_bridge \
+            -o libpowsybl-iidm-native \
             --allow-incomplete-classpath \
             --add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.c=ALL-UNNAMED
 
@@ -307,7 +307,7 @@ jobs:
           LD_LIBRARY_PATH: ${{ github.workspace }}/build:${{ github.workspace }}/build/examples/embedded
         run: |
           java \
-            -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT.jar:build/java-classes" \
+            -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT.jar" \
             -Djava.library.path=${{ github.workspace }}/build/examples/embedded \
             JavaLauncher examples/IEEE14.xiidm
 
