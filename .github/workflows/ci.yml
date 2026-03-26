@@ -293,7 +293,7 @@ jobs:
         run: |
           mkdir -p build/java-classes
           javac \
-            -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT.jar" \
+            -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar" \
             examples/embedded/JavaLauncher.java \
             -d build/java-classes
 
@@ -303,7 +303,7 @@ jobs:
           LD_LIBRARY_PATH: ${{ github.workspace }}/build:${{ github.workspace }}/build/examples/embedded
         run: |
           java \
-            -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT.jar" \
+            -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar:build/java-classes" \
             -Djava.library.path=${{ github.workspace }}/build/examples/embedded \
             JavaLauncher examples/IEEE14.xiidm
 
