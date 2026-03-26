@@ -59,6 +59,18 @@ JNIEXPORT void JNICALL Java_com_powsybl_iidmbridge_JavaLauncher_runEmbedded(JNIE
     runEmbedded(id.c_str());
 }
 
+/**
+ * JNI entry point called from JavaLauncher.java via System.loadLibrary.
+ * Bridges the Java String networkId to the C-string runEmbedded() above.
+ */
+JNIEXPORT void JNICALL Java_JavaLauncher_runEmbedded(JNIEnv* env, jclass, jstring jNetworkId) {
+    const char* rawId = env->GetStringUTFChars(jNetworkId, nullptr);
+    if (!rawId) return;
+    std::string id(rawId);
+    env->ReleaseStringUTFChars(jNetworkId, rawId);
+    runEmbedded(id.c_str());
+}
+
 } // extern "C"
 
 // Stand-alone test entry point (not used when called from JNI)
