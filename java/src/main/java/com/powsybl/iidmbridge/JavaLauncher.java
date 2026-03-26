@@ -44,14 +44,14 @@ public final class JavaLauncher {
         System.out.println("Network registered with id: " + networkId);
         System.out.println("Ready for JNI backend calls.");
 
-        // Call the C++ simulation entry point
-        System.out.println("[Java] Handing off to C++ simulation...");
-        runEmbedded(networkId);
-        System.out.println("[Java] C++ simulation returned.");
-
-        // The network object in this JVM now reflects any changes made by C++
-        network.getGenerators().forEach(g ->
-                System.out.printf("[Java] Generator %s targetP=%.1f MW%n",
-                        g.getId(), g.getTargetP()));
+//        // Call the C++ simulation entry point
+//        System.out.println("[Java] Handing off to C++ simulation...");
+//        runEmbedded(networkId);
+//        System.out.println("[Java] C++ simulation returned.");
+//
+//        // The network object in this JVM now reflects any changes made by C++
+//        network.getGenerators().forEach(g ->
+//                System.out.printf("[Java] Generator %s targetP=%.1f MW%n",
+//                        g.getId(), g.getTargetP()));
     }
 }
