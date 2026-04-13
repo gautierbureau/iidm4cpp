@@ -29,6 +29,18 @@ Terminal LccConverterStation::getTerminal() const {
     return Terminal(termHandle, backend_);
 }
 
+void LccConverterStation::connect() {
+    getTerminal().connect();
+}
+
+void LccConverterStation::disconnect() {
+    getTerminal().disconnect();
+}
+
+bool LccConverterStation::isConnected() const {
+    return getTerminal().isConnected();
+}
+
 bool LccConverterStation::operator==(const LccConverterStation& other) const {
     return handle_ == other.handle_;
 }

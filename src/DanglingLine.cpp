@@ -55,6 +55,18 @@ Terminal DanglingLine::getTerminal() const {
     return Terminal(termHandle, backend_);
 }
 
+void DanglingLine::connect() {
+    getTerminal().connect();
+}
+
+void DanglingLine::disconnect() {
+    getTerminal().disconnect();
+}
+
+bool DanglingLine::isConnected() const {
+    return getTerminal().isConnected();
+}
+
 bool DanglingLine::operator==(const DanglingLine& other) const {
     return handle_ == other.handle_;
 }

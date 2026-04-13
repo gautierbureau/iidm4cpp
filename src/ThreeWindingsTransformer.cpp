@@ -32,6 +32,22 @@ Terminal ThreeWindingsTransformer::getTerminal3() const {
     return Terminal(termHandle, backend_);
 }
 
+void ThreeWindingsTransformer::connect() {
+    getTerminal1().connect();
+    getTerminal2().connect();
+    getTerminal3().connect();
+}
+
+void ThreeWindingsTransformer::disconnect() {
+    getTerminal1().disconnect();
+    getTerminal2().disconnect();
+    getTerminal3().disconnect();
+}
+
+bool ThreeWindingsTransformer::isConnected() const {
+    return getTerminal1().isConnected() && getTerminal2().isConnected() && getTerminal3().isConnected();
+}
+
 bool ThreeWindingsTransformer::operator==(const ThreeWindingsTransformer& other) const {
     return handle_ == other.handle_;
 }

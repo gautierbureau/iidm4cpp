@@ -28,6 +28,10 @@ public:
     Terminal getTerminal1() const;
     Terminal getTerminal2() const;
 
+    void connect();
+    void disconnect();
+    bool isConnected() const;
+
     bool isValid() const { return handle_ != INVALID_HANDLE; }
 
     bool operator==(const TwoWindingsTransformer& other) const;
