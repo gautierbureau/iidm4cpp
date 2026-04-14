@@ -1,6 +1,7 @@
 package com.powsybl.iidmbridge;
 
 import com.powsybl.iidm.network.*;
+import com.powsybl.iidm.network.Extension;
 import com.powsybl.iidmbridge.graalvm.NetworkRegistry;
 
 import java.util.stream.Stream;
