@@ -50,6 +50,20 @@ Terminal Line::getTerminal2() const {
     return Terminal(termHandle, backend_);
 }
 
+void Line::connect() {
+    getTerminal1().connect();
+    getTerminal2().connect();
+}
+
+void Line::disconnect() {
+    getTerminal1().disconnect();
+    getTerminal2().disconnect();
+}
+
+bool Line::isConnected() const {
+    return getTerminal1().isConnected() && getTerminal2().isConnected();
+}
+
 bool Line::operator==(const Line& other) const {
     return handle_ == other.handle_;
 }

@@ -69,6 +69,18 @@ Terminal Generator::getTerminal() const {
     return Terminal(termHandle, backend_);
 }
 
+void Generator::connect() {
+    getTerminal().connect();
+}
+
+void Generator::disconnect() {
+    getTerminal().disconnect();
+}
+
+bool Generator::isConnected() const {
+    return getTerminal().isConnected();
+}
+
 bool Generator::operator==(const Generator& other) const {
     return handle_ == other.handle_;
 }

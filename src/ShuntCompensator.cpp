@@ -42,6 +42,18 @@ Terminal ShuntCompensator::getTerminal() const {
     return Terminal(termHandle, backend_);
 }
 
+void ShuntCompensator::connect() {
+    getTerminal().connect();
+}
+
+void ShuntCompensator::disconnect() {
+    getTerminal().disconnect();
+}
+
+bool ShuntCompensator::isConnected() const {
+    return getTerminal().isConnected();
+}
+
 bool ShuntCompensator::operator==(const ShuntCompensator& other) const {
     return handle_ == other.handle_;
 }

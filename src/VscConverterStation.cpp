@@ -52,6 +52,18 @@ Terminal VscConverterStation::getTerminal() const {
     return Terminal(termHandle, backend_);
 }
 
+void VscConverterStation::connect() {
+    getTerminal().connect();
+}
+
+void VscConverterStation::disconnect() {
+    getTerminal().disconnect();
+}
+
+bool VscConverterStation::isConnected() const {
+    return getTerminal().isConnected();
+}
+
 bool VscConverterStation::operator==(const VscConverterStation& other) const {
     return handle_ == other.handle_;
 }

@@ -54,6 +54,20 @@ Terminal TwoWindingsTransformer::getTerminal2() const {
     return Terminal(termHandle, backend_);
 }
 
+void TwoWindingsTransformer::connect() {
+    getTerminal1().connect();
+    getTerminal2().connect();
+}
+
+void TwoWindingsTransformer::disconnect() {
+    getTerminal1().disconnect();
+    getTerminal2().disconnect();
+}
+
+bool TwoWindingsTransformer::isConnected() const {
+    return getTerminal1().isConnected() && getTerminal2().isConnected();
+}
+
 bool TwoWindingsTransformer::operator==(const TwoWindingsTransformer& other) const {
     return handle_ == other.handle_;
 }

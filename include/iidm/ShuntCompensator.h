@@ -26,6 +26,10 @@ public:
 
     Terminal getTerminal() const;
 
+    void connect();
+    void disconnect();
+    bool isConnected() const;
+
     bool isValid() const { return handle_ != INVALID_HANDLE; }
 
     bool operator==(const ShuntCompensator& other) const;

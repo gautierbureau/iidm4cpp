@@ -57,6 +57,18 @@ Terminal StaticVarCompensator::getTerminal() const {
     return Terminal(termHandle, backend_);
 }
 
+void StaticVarCompensator::connect() {
+    getTerminal().connect();
+}
+
+void StaticVarCompensator::disconnect() {
+    getTerminal().disconnect();
+}
+
+bool StaticVarCompensator::isConnected() const {
+    return getTerminal().isConnected();
+}
+
 bool StaticVarCompensator::operator==(const StaticVarCompensator& other) const {
     return handle_ == other.handle_;
 }

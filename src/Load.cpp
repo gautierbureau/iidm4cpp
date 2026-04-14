@@ -43,6 +43,18 @@ Terminal Load::getTerminal() const {
     return Terminal(termHandle, backend_);
 }
 
+void Load::connect() {
+    getTerminal().connect();
+}
+
+void Load::disconnect() {
+    getTerminal().disconnect();
+}
+
+bool Load::isConnected() const {
+    return getTerminal().isConnected();
+}
+
 bool Load::operator==(const Load& other) const {
     return handle_ == other.handle_;
 }
