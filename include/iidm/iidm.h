@@ -11,6 +11,7 @@
 #include <iidm/Terminal.h>
 #include <iidm/Substation.h>
 #include <iidm/VoltageLevel.h>
+#include <iidm/ActivePowerControl.h>
 #include <iidm/Generator.h>
 #include <iidm/Load.h>
 #include <iidm/Line.h>

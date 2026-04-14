@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iidm/ObjectHandle.h>
+#include <iidm/ActivePowerControl.h>
 #include <iidm/Enums.h>
 #include <iidm/Terminal.h>
 #include <string>
@@ -35,6 +36,9 @@ public:
     EnergySource getEnergySource() const;
 
     Terminal getTerminal() const;
+
+    bool hasActivePowerControl() const;
+    ActivePowerControl getActivePowerControl() const;
 
     void connect();
     void disconnect();

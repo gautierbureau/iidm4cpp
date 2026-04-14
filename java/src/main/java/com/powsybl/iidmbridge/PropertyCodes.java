@@ -116,6 +116,11 @@ public final class PropertyCodes {
     public static final int LCC_LOSS_FACTOR  = 1400;
     public static final int LCC_POWER_FACTOR = 1401;
 
+    // ── Extension: ActivePowerControl ────────────────────────────────────
+    public static final int EXT_APC_EXISTS      = 3000;
+    public static final int EXT_APC_DROOP       = 3001;
+    public static final int EXT_APC_PARTICIPATE = 3002;
+
     // ── Relations ────────────────────────────────────────────────────────
     public static final int REL_TERMINAL1    = 2000;
     public static final int REL_TERMINAL2    = 2001;

@@ -1,6 +1,7 @@
 package com.powsybl.iidmbridge;
 
 import com.powsybl.iidm.network.*;
+import com.powsybl.iidm.network.extensions.ActivePowerControl;
 import com.powsybl.iidmbridge.graalvm.NetworkRegistry;
 
 import java.util.stream.Stream;
@@ -67,6 +68,7 @@ public final class PropertyDispatcher {
             case SVC_REACTIVE_POWER_SETPOINT -> ((StaticVarCompensator) obj).getReactivePowerSetpoint();
             case VSC_VOLTAGE_SETPOINT        -> ((VscConverterStation) obj).getVoltageSetpoint();
             case VSC_REACTIVE_POWER_SETPOINT -> ((VscConverterStation) obj).getReactivePowerSetpoint();
+            case EXT_APC_DROOP -> ((Generator) obj).getExtension(ActivePowerControl.class).getDroop();
             default -> throw new IllegalArgumentException("Unknown double property: " + property);
         };
     }
@@ -92,6 +94,7 @@ public final class PropertyDispatcher {
             case SVC_REACTIVE_POWER_SETPOINT -> ((StaticVarCompensator) obj).setReactivePowerSetpoint(value);
             case VSC_VOLTAGE_SETPOINT        -> ((VscConverterStation) obj).setVoltageSetpoint(value);
             case VSC_REACTIVE_POWER_SETPOINT -> ((VscConverterStation) obj).setReactivePowerSetpoint(value);
+            case EXT_APC_DROOP -> ((Generator) obj).getExtension(ActivePowerControl.class).setDroop(value);
             default -> throw new IllegalArgumentException("Unknown double property for set: " + property);
         }
     }
@@ -136,6 +139,8 @@ public final class PropertyDispatcher {
             case GEN_VOLTAGE_REGULATOR_ON -> ((Generator) obj).isVoltageRegulatorOn();
             case TERMINAL_CONNECTED       -> ((Terminal) obj).isConnected();
             case VSC_VOLTAGE_REGULATOR_ON -> ((VscConverterStation) obj).isVoltageRegulatorOn();
+            case EXT_APC_EXISTS      -> ((Generator) obj).getExtension(ActivePowerControl.class) != null;
+            case EXT_APC_PARTICIPATE -> ((Generator) obj).getExtension(ActivePowerControl.class).isParticipate();
             default -> throw new IllegalArgumentException("Unknown bool property: " + property);
         };
         return val ? 1 : 0;
@@ -153,6 +158,7 @@ public final class PropertyDispatcher {
                 else      ((Terminal) obj).disconnect();
             }
             case VSC_VOLTAGE_REGULATOR_ON -> ((VscConverterStation) obj).setVoltageRegulatorOn(bval);
+            case EXT_APC_PARTICIPATE -> ((Generator) obj).getExtension(ActivePowerControl.class).setParticipate(bval);
             default -> throw new IllegalArgumentException("Unknown bool property for set: " + property);
         }
     }

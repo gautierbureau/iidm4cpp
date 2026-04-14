@@ -109,6 +109,11 @@ constexpr int VSC_REACTIVE_POWER_SETPOINT = 1303;
 constexpr int LCC_LOSS_FACTOR             = 1400;
 constexpr int LCC_POWER_FACTOR            = 1401;
 
+// ── Extension: ActivePowerControl ────────────────────────────────────────────
+constexpr int EXT_APC_EXISTS              = 3000;
+constexpr int EXT_APC_DROOP              = 3001;
+constexpr int EXT_APC_PARTICIPATE        = 3002;
+
 // ── Relations (used in getRelated) ──────────────────────────────────────────
 constexpr int REL_TERMINAL1               = 2000;
 constexpr int REL_TERMINAL2               = 2001;

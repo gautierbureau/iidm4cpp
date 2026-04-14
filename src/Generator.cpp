@@ -1,4 +1,5 @@
 #include <iidm/Generator.h>
+#include <iidm/ActivePowerControl.h>
 #include <iidm/BackendProvider.h>
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
@@ -67,6 +68,14 @@ EnergySource Generator::getEnergySource() const {
 Terminal Generator::getTerminal() const {
     ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_TERMINAL);
     return Terminal(termHandle, backend_);
+}
+
+bool Generator::hasActivePowerControl() const {
+    return backend_->getBool(handle_, prop::EXT_APC_EXISTS);
+}
+
+ActivePowerControl Generator::getActivePowerControl() const {
+    return ActivePowerControl(handle_, backend_);
 }
 
 void Generator::connect() {

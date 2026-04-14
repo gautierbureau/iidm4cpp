@@ -27,6 +27,7 @@ set(IIDM_BRIDGE_SOURCES
     src/Network.cpp
     src/NetworkFactory.cpp
     src/BackendSelector.cpp
+    src/ActivePowerControl.cpp
     src/Generator.cpp
     src/Load.cpp
     src/Terminal.cpp

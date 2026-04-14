@@ -3,6 +3,7 @@ find_package(GTest REQUIRED)
 set(TEST_SOURCES
     TestNetwork.cpp
     TestGenerator.cpp
+    TestActivePowerControl.cpp
     TestLoad.cpp
     TestTerminal.cpp
     TestBus.cpp
