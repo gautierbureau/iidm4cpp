@@ -34,6 +34,10 @@ public:
     ObjectHandle findById(int objectType, const std::string& id) const override;
     ObjectHandle getNetworkHandle() const override;
 
+    ObjectHandle              getExtensionHandle(ObjectHandle h, const std::string& name) const override;
+    std::vector<std::string>  getExtensionNames(ObjectHandle h) const override;
+    std::string               getExtensionAttribute(ObjectHandle extensionHandle, const std::string& key) const override;
+
     void loadNetwork(const std::string& filePath) override;
     void close() override;
 

@@ -119,6 +119,12 @@ struct JNIMethodCache {
     jmethodID registry_get     = nullptr;
     jmethodID registry_listIds = nullptr;
 
+    // ── PropertyDispatcher ───────────────────────────────────────────────
+    jclass propertyDispatcherClass = nullptr;
+    jmethodID dispatcher_getExtensionHandle = nullptr;
+    jmethodID dispatcher_getExtensionNamesJoined = nullptr;
+    jmethodID dispatcher_getExtensionAttribute = nullptr;
+
     // ── List ─────────────────────────────────────────────────────────────
     jmethodID list_size       = nullptr;
     jmethodID list_get        = nullptr;

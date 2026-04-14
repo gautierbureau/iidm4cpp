@@ -64,6 +64,11 @@ public:
     std::optional<VscConverterStation>    getVscConverterStation(const std::string& id) const;
     std::optional<LccConverterStation>    getLccConverterStation(const std::string& id) const;
 
+    // ── Extensions ───────────────────────────────────────────────────────
+    bool hasExtension(const std::string& name) const;
+    Extension getExtension(const std::string& name) const;
+    std::vector<Extension> getExtensions() const;
+
     // Backend accessor (advanced usage only)
     BackendProvider& getBackend();
 

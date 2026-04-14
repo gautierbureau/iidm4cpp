@@ -54,6 +54,7 @@ void JNIBackend::cacheMethodIds() {
     cacheClass(cache_.substationClass,   "com/powsybl/iidm/network/Substation");
     cacheClass(cache_.voltageLevelClass, "com/powsybl/iidm/network/VoltageLevel");
     cacheClass(cache_.iidmRegistryClass, "com/powsybl/iidmbridge/jni/IidmBridgeRegistry");
+    cacheClass(cache_.propertyDispatcherClass, "com/powsybl/iidmbridge/PropertyDispatcher");
     cacheClass(cache_.listClass,         "java/util/List");
     cacheClass(cache_.energySourceClass, "com/powsybl/iidm/network/EnergySource");
     cacheClass(cache_.loadTypeClass,     "com/powsybl/iidm/network/LoadType");
@@ -68,6 +69,15 @@ void JNIBackend::cacheMethodIds() {
     // IidmBridgeRegistry
     cache_.registry_get = env_->GetStaticMethodID(cache_.iidmRegistryClass,
         "get", "(Ljava/lang/String;)Lcom/powsybl/iidm/network/Network;");
+    checkJNIException(env_);
+
+    // PropertyDispatcher
+    cache_.dispatcher_getExtensionHandle = env_->GetStaticMethodID(cache_.propertyDispatcherClass,
+        "getExtensionHandle", "(Ljava/lang/String;)J");
+    cache_.dispatcher_getExtensionNamesJoined = env_->GetStaticMethodID(cache_.propertyDispatcherClass,
+        "getExtensionNamesJoined", "(J)Ljava/lang/String;");
+    cache_.dispatcher_getExtensionAttribute = env_->GetStaticMethodID(cache_.propertyDispatcherClass,
+        "getExtensionAttribute", "(JLjava/lang/String;)Ljava/lang/String;");
     checkJNIException(env_);
 
     // Network
@@ -504,6 +514,63 @@ ObjectHandle JNIBackend::findById(int objectType, const std::string& id) const {
     ObjectHandle handle = makeHandle(result);
     if (result) env_->DeleteLocalRef(result);
     return handle;
+}
+
+ObjectHandle JNIBackend::getExtensionHandle(ObjectHandle h, const std::string& name) const {
+    jstring jName = env_->NewStringUTF(name.c_str());
+    jlong extHandle = env_->CallStaticLongMethod(cache_.propertyDispatcherClass,
+                                                 cache_.dispatcher_getExtensionHandle, h, jName);
+    env_->DeleteLocalRef(jName);
+    checkJNIException(env_);
+    return static_cast<ObjectHandle>(extHandle);
+}
+
+std::vector<std::string> JNIBackend::getExtensionNames(ObjectHandle h) const {
+    jstring jNames = static_cast<jstring>(env_->CallStaticObjectMethod(cache_.propertyDispatcherClass,
+                                                                        cache_.dispatcher_getExtensionNamesJoined, h));
+    checkJNIException(env_);
+
+    std::vector<std::string> result;
+    if (!jNames) return result;
+
+    const char* chars = env_->GetStringUTFChars(jNames, nullptr);
+    if (chars && chars[0] != '\0') {
+        std::string names(chars);
+        size_t start = 0;
+        size_t pos = names.find(';');
+        while (pos != std::string::npos) {
+            result.push_back(names.substr(start, pos - start));
+            start = pos + 1;
+            pos = names.find(';', start);
+        }
+        // Add the last segment (or only segment if no semicolon)
+        if (start < names.length()) {
+            result.push_back(names.substr(start));
+        }
+    }
+    env_->ReleaseStringUTFChars(jNames, chars);
+    env_->DeleteLocalRef(jNames);
+    return result;
+}
+
+std::string JNIBackend::getExtensionAttribute(ObjectHandle extensionHandle, const std::string& key) const {
+    jstring jKey = env_->NewStringUTF(key.c_str());
+    jstring jValue = static_cast<jstring>(env_->CallStaticObjectMethod(cache_.propertyDispatcherClass,
+                                                                        cache_.dispatcher_getExtensionAttribute,
+                                                                        extensionHandle, jKey));
+    env_->DeleteLocalRef(jKey);
+    checkJNIException(env_);
+
+    std::string result;
+    if (jValue) {
+        const char* chars = env_->GetStringUTFChars(jValue, nullptr);
+        if (chars) {
+            result = chars;
+            env_->ReleaseStringUTFChars(jValue, chars);
+        }
+        env_->DeleteLocalRef(jValue);
+    }
+    return result;
 }
 
 } // namespace iidm

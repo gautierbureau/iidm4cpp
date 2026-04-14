@@ -86,4 +86,28 @@ public final class IidmBridgeRegistry {
     public static void clear() {
         networks.clear();
     }
+
+    /**
+     * Helper for JNI: get an extension attribute using reflection.
+     * Called from JNI backend to retrieve typed attributes from extension objects.
+     *
+     * @param extension the extension object
+     * @param key       attribute key (e.g., "droop", "participate")
+     * @return attribute value as string, or empty if not found
+     */
+    public static String getExtensionAttribute(Object extension, String key) {
+        String capKey = Character.toUpperCase(key.charAt(0)) + key.substring(1);
+        for (String prefix : new String[]{"get", "is"}) {
+            try {
+                java.lang.reflect.Method m = extension.getClass().getMethod(prefix + capKey);
+                Object result = m.invoke(extension);
+                return result != null ? result.toString() : "";
+            } catch (NoSuchMethodException ignored) {
+                // try next prefix
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+        throw new IllegalArgumentException("Unknown attribute '" + key + "' for extension: " + extension.getClass().getName());
+    }
 }

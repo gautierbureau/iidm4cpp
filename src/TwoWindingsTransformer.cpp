@@ -68,6 +68,23 @@ bool TwoWindingsTransformer::isConnected() const {
     return getTerminal1().isConnected() && getTerminal2().isConnected();
 }
 
+bool TwoWindingsTransformer::hasExtension(const std::string& name) const {
+    return backend_->getExtensionHandle(handle_, name) != INVALID_HANDLE;
+}
+
+Extension TwoWindingsTransformer::getExtension(const std::string& name) const {
+    return Extension(name, backend_->getExtensionHandle(handle_, name), backend_);
+}
+
+std::vector<Extension> TwoWindingsTransformer::getExtensions() const {
+    std::vector<std::string> names = backend_->getExtensionNames(handle_);
+    std::vector<Extension> result;
+    result.reserve(names.size());
+    for (const auto& n : names)
+        result.emplace_back(n, backend_->getExtensionHandle(handle_, n), backend_);
+    return result;
+}
+
 bool TwoWindingsTransformer::operator==(const TwoWindingsTransformer& other) const {
     return handle_ == other.handle_;
 }

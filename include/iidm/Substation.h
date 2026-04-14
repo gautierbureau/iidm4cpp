@@ -2,6 +2,7 @@
 
 #include <iidm/ObjectHandle.h>
 #include <iidm/Enums.h>
+#include <iidm/Extension.h>
 #include <iidm/VoltageLevel.h>
 #include <optional>
 #include <string>
@@ -22,6 +23,10 @@ public:
     std::optional<Country> getCountry() const;
 
     std::vector<VoltageLevel> getVoltageLevels() const;
+
+    bool hasExtension(const std::string& name) const;
+    Extension getExtension(const std::string& name) const;
+    std::vector<Extension> getExtensions() const;
 
     bool isValid() const { return handle_ != INVALID_HANDLE; }
 

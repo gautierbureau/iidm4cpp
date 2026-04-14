@@ -25,6 +25,25 @@ std::string Network::getName() const {
     return backend_->getString(backend_->getNetworkHandle(), prop::NAME);
 }
 
+bool Network::hasExtension(const std::string& name) const {
+    return backend_->getExtensionHandle(backend_->getNetworkHandle(), name) != INVALID_HANDLE;
+}
+
+Extension Network::getExtension(const std::string& name) const {
+    ObjectHandle nh = backend_->getNetworkHandle();
+    return Extension(name, backend_->getExtensionHandle(nh, name), backend_.get());
+}
+
+std::vector<Extension> Network::getExtensions() const {
+    ObjectHandle nh = backend_->getNetworkHandle();
+    std::vector<std::string> names = backend_->getExtensionNames(nh);
+    std::vector<Extension> result;
+    result.reserve(names.size());
+    for (const auto& n : names)
+        result.emplace_back(n, backend_->getExtensionHandle(nh, n), backend_.get());
+    return result;
+}
+
 BackendProvider& Network::getBackend() {
     return *backend_;
 }

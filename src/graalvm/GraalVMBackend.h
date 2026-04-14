@@ -38,6 +38,10 @@ public:
     ObjectHandle findById(int objectType, const std::string& id) const override;
     ObjectHandle getNetworkHandle() const override;
 
+    ObjectHandle              getExtensionHandle(ObjectHandle h, const std::string& name) const override;
+    std::vector<std::string>  getExtensionNames(ObjectHandle h) const override;
+    std::string               getExtensionAttribute(ObjectHandle extensionHandle, const std::string& key) const override;
+
     void loadNetwork(const std::string& filePath) override;
     void close() override;
 
@@ -67,8 +71,11 @@ private:
     using FnFreeString      = void(*)(graal_isolatethread_t*, const char*);
     using FnGetChildren     = void(*)(graal_isolatethread_t*, ObjectHandle, int,
                                       ObjectHandle*, int*);
-    using FnGetRelated      = ObjectHandle(*)(graal_isolatethread_t*, ObjectHandle, int);
-    using FnFindById        = ObjectHandle(*)(graal_isolatethread_t*, int, const char*);
+    using FnGetRelated         = ObjectHandle(*)(graal_isolatethread_t*, ObjectHandle, int);
+    using FnFindById           = ObjectHandle(*)(graal_isolatethread_t*, int, const char*);
+    using FnGetExtension       = ObjectHandle(*)(graal_isolatethread_t*, ObjectHandle, const char*);
+    using FnGetExtensionNames  = const char*(*)(graal_isolatethread_t*, ObjectHandle);
+    using FnGetExtensionAttr   = const char*(*)(graal_isolatethread_t*, ObjectHandle, const char*);
 
     FnCreateIsolate   fnCreateIsolate_   = nullptr;
     FnTearDownIsolate fnTearDownIsolate_ = nullptr;
@@ -85,6 +92,9 @@ private:
     FnGetChildren     fnGetChildren_     = nullptr;
     FnGetRelated      fnGetRelated_      = nullptr;
     FnFindById        fnFindById_        = nullptr;
+    FnGetExtension    fnGetExtension_    = nullptr;
+    FnGetExtensionNames fnGetExtensionNames_ = nullptr;
+    FnGetExtensionAttr  fnGetExtensionAttr_  = nullptr;
 };
 
 } // namespace iidm

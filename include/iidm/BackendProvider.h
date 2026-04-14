@@ -36,6 +36,16 @@ public:
     // ── Lookup by ID ─────────────────────────────────────────────────────
     virtual ObjectHandle findById(int objectType, const std::string& id) const = 0;
 
+    // ── Extensions ───────────────────────────────────────────────────────
+    // Returns a handle to the named extension on the identifiable object,
+    // or INVALID_HANDLE when the extension is absent.
+    virtual ObjectHandle getExtensionHandle(ObjectHandle h, const std::string& name) const = 0;
+    // Returns the names of all extensions attached to the identifiable object.
+    virtual std::vector<std::string> getExtensionNames(ObjectHandle h) const = 0;
+    // Returns the named attribute of an extension object as a string.
+    // Tries getKey() first, then isKey() on the underlying Java object.
+    virtual std::string getExtensionAttribute(ObjectHandle extensionHandle, const std::string& key) const = 0;
+
     // ── Network root ─────────────────────────────────────────────────────
     virtual ObjectHandle getNetworkHandle() const = 0;
 

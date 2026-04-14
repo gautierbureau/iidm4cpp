@@ -64,6 +64,23 @@ bool Line::isConnected() const {
     return getTerminal1().isConnected() && getTerminal2().isConnected();
 }
 
+bool Line::hasExtension(const std::string& name) const {
+    return backend_->getExtensionHandle(handle_, name) != INVALID_HANDLE;
+}
+
+Extension Line::getExtension(const std::string& name) const {
+    return Extension(name, backend_->getExtensionHandle(handle_, name), backend_);
+}
+
+std::vector<Extension> Line::getExtensions() const {
+    std::vector<std::string> names = backend_->getExtensionNames(handle_);
+    std::vector<Extension> result;
+    result.reserve(names.size());
+    for (const auto& n : names)
+        result.emplace_back(n, backend_->getExtensionHandle(handle_, n), backend_);
+    return result;
+}
+
 bool Line::operator==(const Line& other) const {
     return handle_ == other.handle_;
 }

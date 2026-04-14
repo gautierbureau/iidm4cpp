@@ -32,6 +32,23 @@ TopologyKind VoltageLevel::getTopologyKind() const {
     return static_cast<TopologyKind>(backend_->getInt(handle_, prop::VL_TOPOLOGY_KIND));
 }
 
+bool VoltageLevel::hasExtension(const std::string& name) const {
+    return backend_->getExtensionHandle(handle_, name) != INVALID_HANDLE;
+}
+
+Extension VoltageLevel::getExtension(const std::string& name) const {
+    return Extension(name, backend_->getExtensionHandle(handle_, name), backend_);
+}
+
+std::vector<Extension> VoltageLevel::getExtensions() const {
+    std::vector<std::string> names = backend_->getExtensionNames(handle_);
+    std::vector<Extension> result;
+    result.reserve(names.size());
+    for (const auto& n : names)
+        result.emplace_back(n, backend_->getExtensionHandle(handle_, n), backend_);
+    return result;
+}
+
 bool VoltageLevel::operator==(const VoltageLevel& other) const {
     return handle_ == other.handle_;
 }

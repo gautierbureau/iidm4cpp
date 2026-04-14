@@ -117,4 +117,35 @@ public final class IidmEntryPoints {
     public static void releaseHandle(IsolateThread thread, long handle) {
         NetworkRegistry.release(handle);
     }
+
+    @CEntryPoint(name = "iidm_get_extension")
+    public static long getExtension(IsolateThread thread, long handle, CCharPointer name) {
+        String jname = CTypeConversion.toJavaString(name);
+        return PropertyDispatcher.getExtensionHandle(handle, jname);
+    }
+
+    @CEntryPoint(name = "iidm_get_extension_names")
+    public static CCharPointer getExtensionNames(IsolateThread thread, long handle) {
+        String value = PropertyDispatcher.getExtensionNamesJoined(handle);
+        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+        CCharPointer ptr = UnmanagedMemory.malloc(bytes.length + 1);
+        for (int i = 0; i < bytes.length; i++) {
+            ptr.write(i, bytes[i]);
+        }
+        ptr.write(bytes.length, (byte) 0);
+        return ptr;
+    }
+
+    @CEntryPoint(name = "iidm_get_extension_attribute")
+    public static CCharPointer getExtensionAttribute(IsolateThread thread, long extensionHandle, CCharPointer key) {
+        String jkey = CTypeConversion.toJavaString(key);
+        String value = PropertyDispatcher.getExtensionAttribute(extensionHandle, jkey);
+        byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+        CCharPointer ptr = UnmanagedMemory.malloc(bytes.length + 1);
+        for (int i = 0; i < bytes.length; i++) {
+            ptr.write(i, bytes[i]);
+        }
+        ptr.write(bytes.length, (byte) 0);
+        return ptr;
+    }
 }

@@ -69,6 +69,9 @@ void GraalVMBackend::resolveSymbols() {
     fnGetChildren_     = resolveSymbol<FnGetChildren>    (libHandle_, "iidm_get_children");
     fnGetRelated_      = resolveSymbol<FnGetRelated>     (libHandle_, "iidm_get_related");
     fnFindById_        = resolveSymbol<FnFindById>       (libHandle_, "iidm_find_by_id");
+    fnGetExtension_    = resolveSymbol<FnGetExtension>   (libHandle_, "iidm_get_extension");
+    fnGetExtensionNames_ = resolveSymbol<FnGetExtensionNames>(libHandle_, "iidm_get_extension_names");
+    fnGetExtensionAttr_  = resolveSymbol<FnGetExtensionAttr> (libHandle_, "iidm_get_extension_attribute");
 }
 
 void GraalVMBackend::loadNetwork(const std::string& filePath) {
@@ -155,6 +158,45 @@ ObjectHandle GraalVMBackend::getRelated(ObjectHandle h, int relation) const {
 
 ObjectHandle GraalVMBackend::findById(int objectType, const std::string& id) const {
     return fnFindById_(thread_, objectType, id.c_str());
+}
+
+ObjectHandle GraalVMBackend::getExtensionHandle(ObjectHandle h, const std::string& name) const {
+    return fnGetExtension_(thread_, h, name.c_str());
+}
+
+std::vector<std::string> GraalVMBackend::getExtensionNames(ObjectHandle h) const {
+    const char* raw = fnGetExtensionNames_(thread_, h);
+    std::vector<std::string> result;
+    if (!raw || raw[0] == '\0') {
+        if (raw) fnFreeString_(thread_, raw);
+        return result;
+    }
+
+    // Parse semicolon-separated names
+    std::string names(raw);
+    fnFreeString_(thread_, raw);
+
+    size_t start = 0;
+    size_t pos = names.find(';');
+    while (pos != std::string::npos) {
+        result.push_back(names.substr(start, pos - start));
+        start = pos + 1;
+        pos = names.find(';', start);
+    }
+    // Add the last segment (or only segment if no semicolon)
+    if (start < names.length()) {
+        result.push_back(names.substr(start));
+    }
+    return result;
+}
+
+std::string GraalVMBackend::getExtensionAttribute(ObjectHandle extensionHandle, const std::string& key) const {
+    const char* raw = fnGetExtensionAttr_(thread_, extensionHandle, key.c_str());
+    std::string result(raw ? raw : "");
+    if (raw) {
+        fnFreeString_(thread_, raw);
+    }
+    return result;
 }
 
 } // namespace iidm

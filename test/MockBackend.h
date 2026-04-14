@@ -22,6 +22,10 @@ public:
     std::map<std::pair<ObjectHandle,int>, std::vector<ObjectHandle>> children;
     std::map<std::pair<ObjectHandle,int>, ObjectHandle>              related;
     std::map<std::pair<int,std::string>, ObjectHandle>               byId;
+    // Extension maps: {componentHandle, name} → extensionHandle
+    std::map<std::pair<ObjectHandle,std::string>, ObjectHandle> extensions;
+    // {extensionHandle, attributeKey} → string value
+    std::map<std::pair<ObjectHandle,std::string>, std::string>  extensionAttrs;
     ObjectHandle networkHandle = 1;
     bool closed = false;
 
@@ -77,6 +81,24 @@ public:
         auto it = byId.find({type, id});
         if (it == byId.end()) return INVALID_HANDLE;
         return it->second;
+    }
+
+    ObjectHandle getExtensionHandle(ObjectHandle h, const std::string& name) const override {
+        auto it = extensions.find({h, name});
+        return it != extensions.end() ? it->second : INVALID_HANDLE;
+    }
+
+    std::vector<std::string> getExtensionNames(ObjectHandle h) const override {
+        std::vector<std::string> result;
+        for (const auto& [key, handle] : extensions) {
+            if (key.first == h) result.push_back(key.second);
+        }
+        return result;
+    }
+
+    std::string getExtensionAttribute(ObjectHandle extHandle, const std::string& key) const override {
+        auto it = extensionAttrs.find({extHandle, key});
+        return it != extensionAttrs.end() ? it->second : "";
     }
 
     ObjectHandle getNetworkHandle() const override { return networkHandle; }

@@ -1,9 +1,11 @@
 #pragma once
 
 #include <iidm/ObjectHandle.h>
+#include <iidm/Extension.h>
 #include <iidm/Terminal.h>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace iidm {
 
@@ -24,6 +26,10 @@ public:
     void connect();
     void disconnect();
     bool isConnected() const;
+
+    bool hasExtension(const std::string& name) const;
+    Extension getExtension(const std::string& name) const;
+    std::vector<Extension> getExtensions() const;
 
     bool isValid() const { return handle_ != INVALID_HANDLE; }
 

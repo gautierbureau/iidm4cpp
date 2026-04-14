@@ -3,6 +3,7 @@
 // Convenience all-in-one header for iidm-bridge-cpp
 
 #include <iidm/ObjectHandle.h>
+#include <iidm/Extension.h>
 #include <iidm/IidmException.h>
 #include <iidm/Enums.h>
 #include <iidm/PropertyCodes.h>

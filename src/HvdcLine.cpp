@@ -46,6 +46,23 @@ HvdcLine& HvdcLine::setConvertersMode(HvdcConverterStationMode mode) {
     return *this;
 }
 
+bool HvdcLine::hasExtension(const std::string& name) const {
+    return backend_->getExtensionHandle(handle_, name) != INVALID_HANDLE;
+}
+
+Extension HvdcLine::getExtension(const std::string& name) const {
+    return Extension(name, backend_->getExtensionHandle(handle_, name), backend_);
+}
+
+std::vector<Extension> HvdcLine::getExtensions() const {
+    std::vector<std::string> names = backend_->getExtensionNames(handle_);
+    std::vector<Extension> result;
+    result.reserve(names.size());
+    for (const auto& n : names)
+        result.emplace_back(n, backend_->getExtensionHandle(handle_, n), backend_);
+    return result;
+}
+
 bool HvdcLine::operator==(const HvdcLine& other) const {
     return handle_ == other.handle_;
 }

@@ -257,4 +257,37 @@ public final class PropertyDispatcher {
         if (found == null) return 0L; // INVALID_HANDLE
         return NetworkRegistry.register(found);
     }
+
+    // ── Extensions ────────────────────────────────────────────────────────
+
+    public static long getExtensionHandle(long handle, String name) {
+        Identifiable<?> obj = (Identifiable<?>) NetworkRegistry.lookup(handle);
+        Extension<?> ext = obj.getExtensionByName(name);
+        if (ext == null) return 0L;
+        return NetworkRegistry.register(ext);
+    }
+
+    public static String getExtensionNamesJoined(long handle) {
+        Identifiable<?> obj = (Identifiable<?>) NetworkRegistry.lookup(handle);
+        return obj.getExtensions().stream()
+            .map(Extension::getName)
+            .collect(java.util.stream.Collectors.joining(";"));
+    }
+
+    public static String getExtensionAttribute(long extensionHandle, String key) {
+        Object ext = NetworkRegistry.lookup(extensionHandle);
+        String capKey = Character.toUpperCase(key.charAt(0)) + key.substring(1);
+        for (String prefix : new String[]{"get", "is"}) {
+            try {
+                java.lang.reflect.Method m = ext.getClass().getMethod(prefix + capKey);
+                Object result = m.invoke(ext);
+                return result != null ? result.toString() : "";
+            } catch (NoSuchMethodException ignored) {
+                // try next prefix
+            } catch (Exception e) {
+                throw new RuntimeException("Error invoking " + prefix + capKey + ": " + e.getMessage(), e);
+            }
+        }
+        throw new IllegalArgumentException("Unknown attribute '" + key + "' for extension: " + ext.getClass().getName());
+    }
 }
