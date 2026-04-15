@@ -200,6 +200,8 @@ if(IIDM_BRIDGE_BUILD_JAVA OR IIDM_BRIDGE_BUILD_NATIVE)
         VERBATIM
     )
     add_custom_target(iidmbridge_jar DEPENDS "${_FAT_JAR}")
+
+    add_dependencies(iidmbridge iidmbridge_jar)
 endif()
 
 if(IIDM_BRIDGE_BUILD_NATIVE)

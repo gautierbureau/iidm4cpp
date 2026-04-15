@@ -233,7 +233,7 @@ jobs:
             -DIIDM_BRIDGE_BUILD_TESTS=ON \
             -DIIDM_BRIDGE_BUILD_EXAMPLES=ON \
             -DIIDM_BRIDGE_BUILD_JAVA=ON \
-            -DIIDM_BRIDGE_BUILD_NATIVE=ON \
+            -DIIDM_BRIDGE_BUILD_NATIVE=OFF \
             -DGRAALVM_INCLUDE_DIRS="${{ github.workspace }}/native-artifacts"
 
       - name: Build
