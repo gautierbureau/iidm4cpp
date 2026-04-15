@@ -55,6 +55,10 @@ if(IIDM_BRIDGE_ENABLE_JNI)
         src/jni/JNIBackend.cpp)
 endif()
 
+# On Windows/MSVC, export all non-inline symbols so that the linker generates
+# iidmbridge.lib (the import library).  On Linux/macOS this is a no-op.
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
 add_library(iidmbridge SHARED ${IIDM_BRIDGE_SOURCES})
 
 target_include_directories(iidmbridge
