@@ -237,7 +237,7 @@ jobs:
             -DGRAALVM_INCLUDE_DIRS="${{ github.workspace }}/native-artifacts"
 
       - name: Build
-        run: cmake --build build --parallel
+        run: cmake --build build --parallel --target all
 
       - name: Run example_standalone with IEEE14.xiidm
         env:

@@ -178,6 +178,7 @@ endif()
 #   cmake --build build --parallel
 #
 if(IIDM_BRIDGE_BUILD_JAVA OR IIDM_BRIDGE_BUILD_NATIVE)
+    messagge("We will build fat jar.")
     find_program(MAVEN_EXECUTABLE mvn)
     if(NOT MAVEN_EXECUTABLE)
         message(FATAL_ERROR
