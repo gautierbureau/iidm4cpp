@@ -27,6 +27,16 @@ target_link_libraries(iidmbridge_tests
         GTest::Main
 )
 
+# On Windows there is no rpath: copy iidmbridge.dll next to the test
+# executable so it is found automatically (Windows searches the exe dir first).
+if(WIN32)
+    add_custom_command(TARGET iidmbridge_tests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:iidmbridge>
+            $<TARGET_FILE_DIR:iidmbridge_tests>
+    )
+endif()
+
 include(GoogleTest)
 # PRE_TEST defers test discovery to ctest time instead of running the
 # executable immediately after the build.  On Windows this is required
