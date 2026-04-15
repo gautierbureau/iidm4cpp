@@ -233,11 +233,13 @@ jobs:
             -DIIDM_BRIDGE_BUILD_TESTS=ON \
             -DIIDM_BRIDGE_BUILD_EXAMPLES=ON \
             -DIIDM_BRIDGE_BUILD_JAVA=ON \
-            -DIIDM_BRIDGE_BUILD_NATIVE=OFF \
+            -DIIDM_BRIDGE_BUILD_NATIVE=ON \
             -DGRAALVM_INCLUDE_DIRS="${{ github.workspace }}/native-artifacts"
 
       - name: Build
-        run: cmake --build build --parallel --target all
+        run: |
+          cmake --build build --parallel --target all
+          cmake --build build --parallel --target iidmbridge_jar
 
       - name: Run example_standalone with IEEE14.xiidm
         env:
@@ -248,6 +250,7 @@ jobs:
       - name: Compile JavaLauncher
         run: |
           mkdir -p build/java-classes
+          ls java/target/
           javac \
             -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar" \
             examples/embedded/JavaLauncher.java \
