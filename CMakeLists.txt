@@ -80,9 +80,13 @@ target_compile_definitions(iidmbridge PRIVATE
 
 # ── Installation & CMake config ───────────────────────────────────────────────
 include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+
 install(TARGETS iidmbridge EXPORT IidmBridgeTargets
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 install(EXPORT IidmBridgeTargets
@@ -90,9 +94,24 @@ install(EXPORT IidmBridgeTargets
     NAMESPACE IidmBridge::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/IidmBridge
 )
-configure_file(cmake/IidmBridgeConfig.cmake.in
-    "${CMAKE_CURRENT_BINARY_DIR}/IidmBridgeConfig.cmake" @ONLY)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/IidmBridgeConfig.cmake"
+
+# Config file (handles relocatable paths via @PACKAGE_INIT@)
+configure_package_config_file(
+    cmake/IidmBridgeConfig.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/IidmBridgeConfig.cmake"
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/IidmBridge
+)
+
+# Version file (enables find_package(IidmBridge 1.0))
+write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/IidmBridgeConfigVersion.cmake"
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion
+)
+
+install(FILES
+    "${CMAKE_CURRENT_BINARY_DIR}/IidmBridgeConfig.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/IidmBridgeConfigVersion.cmake"
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/IidmBridge
 )
 
