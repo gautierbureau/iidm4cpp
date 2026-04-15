@@ -2,9 +2,40 @@
 #include <iidm/IidmException.h>
 #include <cstdlib>
 #include <cstring>
-#include <dlfcn.h>
 #include <stdexcept>
 #include <string>
+
+// ── Platform-specific dynamic library loading ──────────────────────────────
+#ifdef _WIN32
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
+   static std::string platformDlError() {
+       DWORD err = GetLastError();
+       char buf[256] = {};
+       FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                      nullptr, err, 0, buf, static_cast<DWORD>(sizeof(buf)), nullptr);
+       return buf;
+   }
+#  define IIDM_DLOPEN(path)      static_cast<void*>(LoadLibraryA(path))
+#  define IIDM_DLSYM(lib, name)  static_cast<void*>(GetProcAddress(static_cast<HMODULE>(lib), (name)))
+#  define IIDM_DLCLOSE(lib)      FreeLibrary(static_cast<HMODULE>(lib))
+#  define IIDM_DLERROR()         platformDlError()
+#else
+#  include <dlfcn.h>
+#  define IIDM_DLOPEN(path)      dlopen((path), RTLD_LAZY | RTLD_LOCAL)
+#  define IIDM_DLSYM(lib, name)  dlsym((lib), (name))
+#  define IIDM_DLCLOSE(lib)      dlclose(lib)
+#  define IIDM_DLERROR()         std::string(dlerror())
+#endif
+
+// ── Platform default shared-library name ──────────────────────────────────
+#if defined(_WIN32)
+constexpr const char* DEFAULT_LIB_NAME = "powsybl-iidm-native.dll";
+#elif defined(__APPLE__)
+constexpr const char* DEFAULT_LIB_NAME = "libpowsybl-iidm-native.dylib";
+#else
+constexpr const char* DEFAULT_LIB_NAME = "libpowsybl-iidm-native.so";
+#endif
 
 namespace iidm {
 
@@ -13,16 +44,13 @@ namespace {
 // Resolve a symbol from the shared library; throws if not found.
 template<typename FnPtr>
 FnPtr resolveSymbol(void* lib, const char* name) {
-    void* sym = dlsym(lib, name);
+    void* sym = IIDM_DLSYM(lib, name);
     if (!sym) {
         throw IidmException(std::string("Failed to resolve symbol '") + name +
-                            "': " + dlerror());
+                            "': " + IIDM_DLERROR());
     }
     return reinterpret_cast<FnPtr>(sym);
 }
-
-// Default library name searched on LD_LIBRARY_PATH.
-constexpr const char* DEFAULT_LIB_NAME = "libpowsybl-iidm-native.so";
 
 } // anonymous namespace
 
@@ -40,10 +68,10 @@ GraalVMBackend::~GraalVMBackend() {
 }
 
 void GraalVMBackend::init(const std::string& libPath) {
-    libHandle_ = dlopen(libPath.c_str(), RTLD_LAZY | RTLD_LOCAL);
+    libHandle_ = IIDM_DLOPEN(libPath.c_str());
     if (!libHandle_) {
         throw BackendNotAvailableException(
-            "Cannot load GraalVM native library '" + libPath + "': " + dlerror());
+            "Cannot load GraalVM native library '" + libPath + "': " + IIDM_DLERROR());
     }
 
     resolveSymbols();
@@ -85,7 +113,7 @@ void GraalVMBackend::close() {
         isolate_ = nullptr;
     }
     if (libHandle_) {
-        dlclose(libHandle_);
+        IIDM_DLCLOSE(libHandle_);
         libHandle_ = nullptr;
     }
 }

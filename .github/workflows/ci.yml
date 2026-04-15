@@ -33,25 +33,48 @@ jobs:
           path: java/target/iidm-bridge-java-*.jar
           if-no-files-found: warn
 
-  # ── C++ build & test (JNI only, no GraalVM native image) ────────────────────
+  # ── C++ unit tests: Ubuntu, macOS, Windows ──────────────────────────────────
+  #
+  # GTest is fetched automatically via FetchContent when not found locally,
+  # so no separate GTest installation step is required on any platform.
   cpp:
-    name: C++ (CMake / GTest)
-    runs-on: ubuntu-22.04
+    name: C++ unit tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-latest, windows-latest]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      # Linux: install CMake and Ninja (not bundled on the runner image)
+      - name: Install CMake and Ninja (Linux)
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y \
-            cmake ninja-build \
-            default-jdk \
-            libgtest-dev \
-            googletest
+          sudo apt-get install -y cmake ninja-build
+
+      # macOS: install CMake and Ninja via Homebrew
+      - name: Install CMake and Ninja (macOS)
+        if: runner.os == 'macOS'
+        run: brew install cmake ninja
+
+      # Windows: activate the MSVC developer environment so that cl.exe and
+      # link.exe are on PATH when CMake/Ninja run.
+      - name: Set up MSVC environment (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
 
       - name: Configure CMake
+        shell: bash
         run: |
           cmake -S . -B build \
             -G Ninja \
@@ -59,7 +82,7 @@ jobs:
             -DIIDM_BRIDGE_ENABLE_GRAALVM=OFF \
             -DIIDM_BRIDGE_ENABLE_JNI=ON \
             -DIIDM_BRIDGE_BUILD_TESTS=ON \
-            -DIIDM_BRIDGE_BUILD_EXAMPLES=ON
+            -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF
 
       - name: Build
         run: cmake --build build --parallel
@@ -71,27 +94,36 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cpp-test-results
+          name: cpp-test-results-${{ matrix.os }}
           path: build/Testing/
           if-no-files-found: ignore
 
-  # ── C++ GraalVM backend (compile + tests with real GraalVM headers) ──────────
+  # ── C++ GraalVM backend: Ubuntu and macOS ────────────────────────────────────
   #
   # Strategy:
-  #   1. Install GraalVM CE 17 + native-image tool.
+  #   1. Install GraalVM CE 21 + native-image.
   #   2. Compile a minimal stub class with @CEntryPoint via native-image --shared.
-  #      This generates graal_isolate.h (and a tiny .so) in seconds — no need to
+  #      This generates graal_isolate.h (and a tiny shared lib) — no need to
   #      build the full powsybl native image.
   #   3. Point CMake at the generated header and build the GraalVM backend.
-  #   4. Run the test suite.  Tests exercise the GraalVM code paths:
-  #        - MockBackend tests compile and run normally.
-  #        - TestBackendSelector/GraalVM tests verify that loading a
-  #          non-existent .so raises IidmException (dlopen error path).
-  #        - TestBackendSelector/Stub tests load the generated stub .so and
-  #          verify isolate creation succeeds.
+  #   4. Run the test suite (GraalVM code paths: dlopen error path + stub path).
+  #
+  # Windows is excluded: GraalVM --shared on Windows requires a Visual Studio
+  # toolchain that conflicts with the stub-only workflow; full native images on
+  # Windows are deferred to a dedicated job when needed.
   graalvm:
-    name: C++ GraalVM backend
-    runs-on: ubuntu-22.04
+    name: C++ GraalVM backend (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            stub_lib: libIidmStub.so
+            lib_path_env: LD_LIBRARY_PATH
+          - os: macos-latest
+            stub_lib: libIidmStub.dylib
+            lib_path_env: DYLD_LIBRARY_PATH
 
     steps:
       - name: Checkout
@@ -105,23 +137,26 @@ jobs:
           native-image: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install C++ build tools and GTest
+      - name: Install C++ build tools (Linux)
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y cmake ninja-build libgtest-dev googletest
+          sudo apt-get install -y cmake ninja-build
+
+      - name: Install C++ build tools (macOS)
+        if: runner.os == 'macOS'
+        run: brew install cmake ninja
 
       - name: Build Java module (verifies IidmEntryPoints.java compiles)
         working-directory: java
         run: mvn --batch-mode --no-transfer-progress package -DskipTests
 
       - name: Generate GraalVM stub native image (produces graal_isolate.h)
+        shell: bash
         run: |
           mkdir -p graalvm-stub
           cd graalvm-stub
 
-          # Minimal class with a @CEntryPoint — compiles and links in ~30 s.
-          # Its sole purpose is to trigger native-image --shared so that
-          # graal_isolate.h is emitted alongside the stub .so.
           cat > IidmStub.java << 'JAVA_EOF'
           import org.graalvm.nativeimage.IsolateThread;
           import org.graalvm.nativeimage.c.function.CEntryPoint;
@@ -133,11 +168,8 @@ jobs:
           }
           JAVA_EOF
 
-          # GraalVM's javac; org.graalvm.nativeimage is on the module path.
           javac IidmStub.java
 
-          # Produce libIidmStub.so + graal_isolate.h (no reflection config
-          # needed for such a trivial class).
           native-image \
             --shared \
             --no-fallback \
@@ -146,10 +178,9 @@ jobs:
 
           echo "--- generated files ---"
           ls -lh
-          echo "--- graal_isolate.h preview ---"
-          head -30 graal_isolate.h
 
       - name: Configure CMake (GraalVM backend ON)
+        shell: bash
         run: |
           cmake -S . -B build-graalvm \
             -G Ninja \
@@ -165,21 +196,21 @@ jobs:
 
       - name: Run unit tests
         env:
-          # Tells TestBackendSelector where the stub .so lives so it can
-          # exercise the full dlopen → isolate-create → missing-symbol path.
-          IIDM_GRAALVM_STUB_LIB: ${{ github.workspace }}/graalvm-stub/libIidmStub.so
-          LD_LIBRARY_PATH: ${{ github.workspace }}/graalvm-stub
-        run: ctest --test-dir build-graalvm --output-on-failure --parallel 4
+          IIDM_GRAALVM_STUB_LIB: ${{ github.workspace }}/graalvm-stub/${{ matrix.stub_lib }}
+        shell: bash
+        run: |
+          export ${{ matrix.lib_path_env }}="${{ github.workspace }}/graalvm-stub"
+          ctest --test-dir build-graalvm --output-on-failure --parallel 4
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: graalvm-test-results
+          name: graalvm-test-results-${{ matrix.os }}
           path: build-graalvm/Testing/
           if-no-files-found: ignore
 
-  # ── Full native image: libpowsybl-iidm-native.so from the real powsybl JAR ──────────
+  # ── Full native image: libpowsybl-iidm-native.so from the real powsybl JAR ──
   graalvm-native:
     name: GraalVM native image (libpowsybl-iidm-native.so)
     runs-on: ubuntu-22.04
@@ -224,14 +255,7 @@ jobs:
             java/graal_isolate_dynamic.h
           if-no-files-found: error
 
-  # ── Integration tests: examples + unit tests against the real IEEE14 network ─
-  #
-  # Uses the libpowsybl-iidm-native.so produced by graalvm-native to:
-  #   1. Run example_standalone (GraalVM backend) on IEEE14.xiidm.
-  #   2. Run the embedded example: Java loads the network, hands off to C++
-  #      via JNI (libexample_embedded.so → iidmbridge JNI backend).
-  #   3. Run the full test suite; TestIntegration tests use the real network
-  #      and are skipped if the env vars are absent.
+  # ── Integration tests against the real IEEE14 network ────────────────────────
   integration:
     name: Integration tests (examples + real IEEE14 network)
     runs-on: ubuntu-22.04
@@ -248,10 +272,10 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Install C++ build tools and GTest
+      - name: Install C++ build tools
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y cmake ninja-build libgtest-dev googletest
+          sudo apt-get install -y cmake ninja-build
 
       - name: Download native image artifacts
         uses: actions/download-artifact@v4
@@ -273,14 +297,12 @@ jobs:
       - name: Build
         run: cmake --build build --parallel
 
-      # ── Standalone example ──────────────────────────────────────────────────
       - name: Run example_standalone with IEEE14.xiidm
         env:
           LD_LIBRARY_PATH: ${{ github.workspace }}/native-artifacts
           IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/native-artifacts/libpowsybl-iidm-native.so
         run: ./build/examples/standalone/example_standalone examples/IEEE14.xiidm
 
-      # ── Embedded example ────────────────────────────────────────────────────
       - name: Build Java module
         working-directory: java
         run: mvn --batch-mode --no-transfer-progress package -DskipTests
@@ -299,7 +321,6 @@ jobs:
 
       - name: Run embedded example with IEEE14.xiidm
         env:
-          # libiidmbridge.so (transitive dep of libexample_embedded.so) lives in build/
           LD_LIBRARY_PATH: ${{ github.workspace }}/build:${{ github.workspace }}/build/examples/embedded
         run: |
           java \
@@ -307,7 +328,6 @@ jobs:
             -Djava.library.path=${{ github.workspace }}/build/examples/embedded \
             JavaLauncher examples/IEEE14.xiidm
 
-      # ── Unit + integration tests ────────────────────────────────────────────
       - name: Run tests (including TestIntegration with real network)
         env:
           LD_LIBRARY_PATH: ${{ github.workspace }}/native-artifacts
@@ -323,7 +343,7 @@ jobs:
           path: build/Testing/
           if-no-files-found: ignore
 
-  # ── Matrix: also test with GraalVM disabled + JNI disabled ──────────────────
+  # ── Matrix: additional CMake flag combinations (Linux only) ──────────────────
   cpp-matrix:
     name: C++ (${{ matrix.name }})
     runs-on: ubuntu-22.04
@@ -342,14 +362,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Install CMake and Ninja
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y \
-            cmake ninja-build \
-            default-jdk \
-            libgtest-dev \
-            googletest
+          sudo apt-get install -y cmake ninja-build
 
       - name: Configure CMake
         run: |

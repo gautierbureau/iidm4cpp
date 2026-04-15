@@ -1,4 +1,4 @@
-find_package(GTest REQUIRED)
+# GTest is found or fetched by the parent CMakeLists.txt.
 
 set(TEST_SOURCES
     TestNetwork.cpp

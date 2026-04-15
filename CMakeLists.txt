@@ -118,12 +118,26 @@ install(FILES
 # ── Tests ─────────────────────────────────────────────────────────────────────
 if(IIDM_BRIDGE_BUILD_TESTS)
     enable_testing()
-    find_package(GTest)
-    if(GTest_FOUND)
-        add_subdirectory(test)
-    else()
-        message(WARNING "GTest not found; tests will not be built.")
+    find_package(GTest QUIET)
+    if(NOT GTest_FOUND)
+        message(STATUS "GTest not found locally; fetching from GitHub...")
+        include(FetchContent)
+        FetchContent_Declare(
+            googletest
+            GIT_REPOSITORY https://github.com/google/googletest.git
+            GIT_TAG        v1.14.0
+            GIT_SHALLOW    TRUE
+        )
+        # Keep gtest from overriding the CRT on Windows (important for MSVC)
+        set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+        set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
+        set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+        FetchContent_MakeAvailable(googletest)
+        # Alias to the target names that find_package(GTest) normally produces
+        add_library(GTest::GTest ALIAS gtest)
+        add_library(GTest::Main  ALIAS gtest_main)
     endif()
+    add_subdirectory(test)
 endif()
 
 # ── Examples ──────────────────────────────────────────────────────────────────
