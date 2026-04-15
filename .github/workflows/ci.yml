@@ -67,6 +67,14 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install cmake ninja
 
+      # Windows: jvm.dll lives in JAVA_HOME/bin/server which actions/setup-java
+      # does not add to PATH.  iidmbridge.dll (built with JNI=ON) lists jvm.dll
+      # as a dependency, so it must be findable when the test exe runs.
+      - name: Add JVM server dir to PATH (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: echo "$JAVA_HOME/bin/server" >> $GITHUB_PATH
+
       # Windows: activate the MSVC developer environment so that cl.exe and
       # link.exe are on PATH when CMake/Ninja run.
       - name: Set up MSVC environment (Windows)

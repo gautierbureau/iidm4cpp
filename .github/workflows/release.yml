@@ -6,7 +6,7 @@ on:
 
 jobs:
   # ── Java fat-JAR ──────────────────────────────────────────────────────────
-  # Runs first so release-cpp can download the JAR to build the native image.
+  # Runs first so release-cpp can download the JAR to build native images.
   release-java:
     name: Release Java JAR
     runs-on: ubuntu-22.04
@@ -40,17 +40,15 @@ jobs:
           path: java/target/iidm-bridge-java-*-fat.jar
           retention-days: 1
 
-  # ── C++ packages for Linux, macOS, Windows ───────────────────────────────
+  # ── C++ packages ─────────────────────────────────────────────────────────
   #
-  # Linux and macOS:
-  #   - Built with IIDM_BRIDGE_ENABLE_GRAALVM=ON (stub graal_isolate.h at
-  #     compile time, same pattern as the graalvm CI job).
-  #   - The real libpowsybl-iidm-native.{so,dylib} is built from the fat-JAR
-  #     and copied into install/lib/ so the package is self-contained.
+  # Three variants per platform:
+  #   graalvm  – GraalVM backend only; libpowsybl-iidm-native bundled in lib/;
+  #              no JVM dependency for consumers.
+  #   jni      – JNI backend only; consumers need a JVM on their link path.
+  #   full     – both backends compiled in; libpowsybl-iidm-native bundled.
   #
-  # Windows:
-  #   - Built with IIDM_BRIDGE_ENABLE_GRAALVM=OFF (GraalVM --shared conflicts
-  #     with the MSVC toolchain).
+  # Windows ships jni-only: GraalVM --shared is not supported with MSVC.
   release-cpp:
     name: Release C++ package (${{ matrix.name }})
     needs: release-java
@@ -61,24 +59,52 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # ── Linux ──────────────────────────────────────────────────────
           - os: ubuntu-22.04
-            name: linux-x86_64
+            name: linux-x86_64-graalvm
             graalvm: ON
-            native_lib: libpowsybl-iidm-native.so
-          - os: macos-latest
-            name: macos
-            graalvm: ON
-            native_lib: libpowsybl-iidm-native.dylib
-          - os: windows-latest
-            name: windows-x86_64
+            jni: OFF
+            native_image: true
+          - os: ubuntu-22.04
+            name: linux-x86_64-jni
             graalvm: OFF
+            jni: ON
+            native_image: false
+          - os: ubuntu-22.04
+            name: linux-x86_64-full
+            graalvm: ON
+            jni: ON
+            native_image: true
+          # ── macOS ──────────────────────────────────────────────────────
+          - os: macos-latest
+            name: macos-graalvm
+            graalvm: ON
+            jni: OFF
+            native_image: true
+          - os: macos-latest
+            name: macos-jni
+            graalvm: OFF
+            jni: ON
+            native_image: false
+          - os: macos-latest
+            name: macos-full
+            graalvm: ON
+            jni: ON
+            native_image: true
+          # ── Windows (JNI only) ─────────────────────────────────────────
+          - os: windows-latest
+            name: windows-x86_64-jni
+            graalvm: OFF
+            jni: ON
+            native_image: false
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # GraalVM CE provides both JDK and native-image on Linux/macOS.
-      - name: Set up GraalVM CE 21 with native-image (Linux / macOS)
+      # GraalVM CE provides JDK + native-image when the GraalVM backend is
+      # compiled in or when a native image must be built.
+      - name: Set up GraalVM CE 21 with native-image
         if: matrix.graalvm == 'ON'
         uses: graalvm/setup-graalvm@v1
         with:
@@ -87,7 +113,7 @@ jobs:
           native-image: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up JDK 21 (Windows)
+      - name: Set up JDK 21 (JNI-only builds)
         if: matrix.graalvm == 'OFF'
         uses: actions/setup-java@v4
         with:
@@ -108,9 +134,9 @@ jobs:
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
 
-      # Produce graal_isolate.h from a minimal stub so the GraalVM backend
-      # can be compiled without the full native image being available yet.
-      - name: Generate GraalVM stub (Linux / macOS)
+      # Produce graal_isolate.h via a minimal stub so the GraalVM backend
+      # compiles without the full native image being present yet.
+      - name: Generate GraalVM stub header
         if: matrix.graalvm == 'ON'
         shell: bash
         run: |
@@ -141,7 +167,7 @@ jobs:
             -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DIIDM_BRIDGE_ENABLE_GRAALVM=${{ matrix.graalvm }} \
-            -DIIDM_BRIDGE_ENABLE_JNI=ON \
+            -DIIDM_BRIDGE_ENABLE_JNI=${{ matrix.jni }} \
             -DIIDM_BRIDGE_BUILD_TESTS=OFF \
             -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" \
@@ -153,17 +179,36 @@ jobs:
       - name: Install
         run: cmake --install build
 
-      - name: Download fat-JAR (Linux / macOS)
-        if: matrix.graalvm == 'ON'
+      # Bundle libjvm so consumers can run the JNI backend without a
+      # separate JDK installation.  The JVM library is discovered from
+      # JAVA_HOME to handle different JDK layouts across platforms.
+      - name: Bundle JVM library (Linux / macOS JNI variants)
+        if: matrix.jni == 'ON' && runner.os != 'Windows'
+        shell: bash
+        run: |
+          JVM_LIB=$(find "$JAVA_HOME" -name "libjvm.*" | head -1)
+          echo "Bundling $JVM_LIB"
+          cp "$JVM_LIB" "${{ github.workspace }}/install/lib/"
+
+      - name: Bundle JVM library (Windows JNI variant)
+        if: matrix.jni == 'ON' && runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $jvmDll = Get-ChildItem -Path "$env:JAVA_HOME" -Filter "jvm.dll" -Recurse | Select-Object -First 1
+          Write-Host "Bundling $($jvmDll.FullName)"
+          Copy-Item $jvmDll.FullName "${{ github.workspace }}\install\lib\"
+
+      - name: Download fat-JAR (GraalVM variants)
+        if: matrix.native_image == true
         uses: actions/download-artifact@v4
         with:
           name: release-jar
           path: jar
 
-      # Build the real powsybl native image from the fat-JAR and place it
-      # directly into install/lib/ so the package is self-contained.
-      - name: Build native image (Linux / macOS)
-        if: matrix.graalvm == 'ON'
+      # Build the real powsybl native image and place it directly in
+      # install/lib/ so the package is self-contained.
+      - name: Build native image
+        if: matrix.native_image == true
         shell: bash
         run: |
           JAR=$(ls jar/*.jar | head -1)
@@ -199,31 +244,25 @@ jobs:
         with:
           files: ${{ env.PKG_FILE }}
 
-      # Short-lived workflow artifact for the smoke-test job.
+      # Short-lived artifact for the smoke-test job (GraalVM variants only).
       - name: Upload workflow artifact (for smoke test)
-        if: matrix.graalvm == 'ON'
+        if: matrix.name == 'linux-x86_64-graalvm'
         uses: actions/upload-artifact@v4
         with:
-          name: release-pkg-${{ matrix.name }}
+          name: release-pkg-smoke
           path: ${{ env.PKG_FILE }}
           retention-days: 1
 
   # ── Smoke test: find_package + GraalVM backend end-to-end ────────────────
   #
-  # Downloads the self-contained Linux package and verifies that a consumer
-  # CMake project can find_package(IidmBridge), link, and load IEEE14.xiidm
-  # through the bundled GraalVM native image.
+  # Uses the self-contained linux-x86_64-graalvm package to verify that a
+  # consumer CMake project can find_package(IidmBridge), link, load
+  # IEEE14.xiidm through the bundled GraalVM native image, and read the
+  # targetP of generator _GEN____3_SM.
   smoke-test:
-    name: Smoke test (${{ matrix.name }})
+    name: Smoke test (linux-x86_64-graalvm)
     needs: release-cpp
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-22.04
-            name: linux-x86_64
-            lib_path_env: LD_LIBRARY_PATH
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout (for IEEE14.xiidm)
@@ -243,7 +282,7 @@ jobs:
       - name: Download release package
         uses: actions/download-artifact@v4
         with:
-          name: release-pkg-${{ matrix.name }}
+          name: release-pkg-smoke
           path: pkg
 
       - name: Extract release package

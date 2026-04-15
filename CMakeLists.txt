@@ -9,8 +9,10 @@ option(IIDM_BRIDGE_ENABLE_JNI     "Build the JNI backend" ON)
 option(IIDM_BRIDGE_BUILD_TESTS    "Build unit tests" ON)
 option(IIDM_BRIDGE_BUILD_EXAMPLES "Build examples" ON)
 
-# ── JNI (always needed for AUTO mode probe) ──────────────────────────────────
-find_package(JNI REQUIRED)
+# ── JNI ──────────────────────────────────────────────────────────────────────
+if(IIDM_BRIDGE_ENABLE_JNI)
+    find_package(JNI REQUIRED)
+endif()
 
 # ── GraalVM ──────────────────────────────────────────────────────────────────
 if(IIDM_BRIDGE_ENABLE_GRAALVM)
@@ -66,14 +68,14 @@ target_include_directories(iidmbridge
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
     PRIVATE
-        ${JNI_INCLUDE_DIRS}
+        $<$<BOOL:${IIDM_BRIDGE_ENABLE_JNI}>:${JNI_INCLUDE_DIRS}>
         ${CMAKE_SOURCE_DIR}/src
         $<$<BOOL:${IIDM_BRIDGE_ENABLE_GRAALVM}>:${GRAALVM_INCLUDE_DIRS}>
 )
 
 target_link_libraries(iidmbridge
     PRIVATE
-        ${JNI_LIBRARIES}
+        $<$<BOOL:${IIDM_BRIDGE_ENABLE_JNI}>:${JNI_LIBRARIES}>
         ${CMAKE_DL_LIBS}
 )
 
