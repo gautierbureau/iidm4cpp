@@ -90,7 +90,9 @@ jobs:
             -DIIDM_BRIDGE_ENABLE_GRAALVM=OFF \
             -DIIDM_BRIDGE_ENABLE_JNI=ON \
             -DIIDM_BRIDGE_BUILD_TESTS=ON \
-            -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF
+            -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF \
+            -DIIDM_BRIDGE_BUILD_JAVA=OFF \
+            -DIIDM_BRIDGE_BUILD_NATIVE=OFF
 
       - name: Build
         run: cmake --build build --parallel
@@ -108,17 +110,13 @@ jobs:
 
   # ── C++ GraalVM backend: Ubuntu and macOS ────────────────────────────────────
   #
-  # Strategy:
-  #   1. Install GraalVM CE 21 + native-image.
-  #   2. Compile a minimal stub class with @CEntryPoint via native-image --shared.
-  #      This generates graal_isolate.h (and a tiny shared lib) — no need to
-  #      build the full powsybl native image.
-  #   3. Point CMake at the generated header and build the GraalVM backend.
-  #   4. Run the test suite (GraalVM code paths: dlopen error path + stub path).
+  # Builds the Java fat-JAR and the GraalVM native image via cmake
+  # (IIDM_BRIDGE_BUILD_JAVA=ON / IIDM_BRIDGE_BUILD_NATIVE=ON), so a single
+  # cmake configure + build call produces everything including graal_isolate.h.
+  # The Linux leg also uploads the native artifacts for the integration job.
   #
   # Windows is excluded: GraalVM --shared on Windows requires a Visual Studio
-  # toolchain that conflicts with the stub-only workflow; full native images on
-  # Windows are deferred to a dedicated job when needed.
+  # toolchain that is not supported here.
   graalvm:
     name: C++ GraalVM backend (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -127,10 +125,10 @@ jobs:
       matrix:
         include:
           - os: ubuntu-22.04
-            stub_lib: libIidmStub.so
+            native_lib: libpowsybl-iidm-native.so
             lib_path_env: LD_LIBRARY_PATH
           - os: macos-latest
-            stub_lib: libIidmStub.dylib
+            native_lib: libpowsybl-iidm-native.dylib
             lib_path_env: DYLD_LIBRARY_PATH
 
     steps:
@@ -155,39 +153,7 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install cmake ninja
 
-      - name: Build Java module (verifies IidmEntryPoints.java compiles)
-        working-directory: java
-        run: mvn --batch-mode --no-transfer-progress package -DskipTests
-
-      - name: Generate GraalVM stub native image (produces graal_isolate.h)
-        shell: bash
-        run: |
-          mkdir -p graalvm-stub
-          cd graalvm-stub
-
-          cat > IidmStub.java << 'JAVA_EOF'
-          import org.graalvm.nativeimage.IsolateThread;
-          import org.graalvm.nativeimage.c.function.CEntryPoint;
-
-          public final class IidmStub {
-              public static void main(String[] args) {}
-              @CEntryPoint(name = "iidm_stub_ping")
-              public static int ping(IsolateThread thread) { return 42; }
-          }
-          JAVA_EOF
-
-          javac IidmStub.java
-
-          native-image \
-            --shared \
-            --no-fallback \
-            -H:Name=libIidmStub \
-            IidmStub
-
-          echo "--- generated files ---"
-          ls -lh
-
-      - name: Configure CMake (GraalVM backend ON)
+      - name: Configure CMake (GraalVM backend ON, build JAR + native image)
         shell: bash
         run: |
           cmake -S . -B build-graalvm \
@@ -197,18 +163,29 @@ jobs:
             -DIIDM_BRIDGE_ENABLE_JNI=ON \
             -DIIDM_BRIDGE_BUILD_TESTS=ON \
             -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF \
-            -DGRAALVM_INCLUDE_DIRS="$GITHUB_WORKSPACE/graalvm-stub"
+            -DIIDM_BRIDGE_BUILD_JAVA=ON \
+            -DIIDM_BRIDGE_BUILD_NATIVE=ON
 
       - name: Build
         run: cmake --build build-graalvm --parallel
 
       - name: Run unit tests
-        env:
-          IIDM_GRAALVM_STUB_LIB: ${{ github.workspace }}/graalvm-stub/${{ matrix.stub_lib }}
         shell: bash
         run: |
-          export ${{ matrix.lib_path_env }}="${{ github.workspace }}/graalvm-stub"
+          export ${{ matrix.lib_path_env }}="${{ github.workspace }}/build-graalvm/graalvm-native"
+          IIDM_BRIDGE_GRAALVM_LIB="${{ github.workspace }}/build-graalvm/graalvm-native/${{ matrix.native_lib }}" \
           ctest --test-dir build-graalvm --output-on-failure --parallel 4
+
+      - name: Upload native image artifacts (Linux only, for integration job)
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: iidm-bridge-native
+          path: |
+            build-graalvm/graalvm-native/libpowsybl-iidm-native.so
+            build-graalvm/graalvm-native/graal_isolate.h
+            build-graalvm/graalvm-native/graal_isolate_dynamic.h
+          if-no-files-found: error
 
       - name: Upload test results
         if: always()
@@ -218,10 +195,11 @@ jobs:
           path: build-graalvm/Testing/
           if-no-files-found: ignore
 
-  # ── Full native image: libpowsybl-iidm-native.so from the real powsybl JAR ──
-  graalvm-native:
-    name: GraalVM native image (libpowsybl-iidm-native.so)
+  # ── Integration tests against the real IEEE14 network ────────────────────────
+  integration:
+    name: Integration tests (examples + real IEEE14 network)
     runs-on: ubuntu-22.04
+    needs: graalvm
 
     steps:
       - name: Checkout
@@ -234,51 +212,6 @@ jobs:
           distribution: 'graalvm-community'
           native-image: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build JAR
-        working-directory: java
-        run: mvn --batch-mode --no-transfer-progress package -DskipTests
-
-      - name: Build native image (libpowsybl-iidm-native.so)
-        working-directory: java
-        run: |
-          native-image \
-            --shared \
-            -cp "target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar" \
-            -H:+ReportExceptionStackTraces \
-            -march=compatibility \
-            --no-fallback \
-            --gc=serial \
-            -o libpowsybl-iidm-native \
-            --allow-incomplete-classpath \
-            --add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.c=ALL-UNNAMED
-
-      - name: Upload native image artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: iidm-bridge-native
-          path: |
-            java/libpowsybl-iidm-native.so
-            java/graal_isolate.h
-            java/graal_isolate_dynamic.h
-          if-no-files-found: error
-
-  # ── Integration tests against the real IEEE14 network ────────────────────────
-  integration:
-    name: Integration tests (examples + real IEEE14 network)
-    runs-on: ubuntu-22.04
-    needs: graalvm-native
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: maven
 
       - name: Install C++ build tools
         run: |
@@ -300,7 +233,9 @@ jobs:
             -DIIDM_BRIDGE_ENABLE_JNI=ON \
             -DIIDM_BRIDGE_BUILD_TESTS=ON \
             -DIIDM_BRIDGE_BUILD_EXAMPLES=ON \
-            -DGRAALVM_INCLUDE_DIRS="$GITHUB_WORKSPACE/native-artifacts/java"
+            -DIIDM_BRIDGE_BUILD_JAVA=ON \
+            -DIIDM_BRIDGE_BUILD_NATIVE=OFF \
+            -DGRAALVM_INCLUDE_DIRS="${{ github.workspace }}/native-artifacts"
 
       - name: Build
         run: cmake --build build --parallel
@@ -310,14 +245,6 @@ jobs:
           LD_LIBRARY_PATH: ${{ github.workspace }}/native-artifacts
           IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/native-artifacts/libpowsybl-iidm-native.so
         run: ./build/examples/standalone/example_standalone examples/IEEE14.xiidm
-
-      - name: Build Java module
-        working-directory: java
-        run: mvn --batch-mode --no-transfer-progress package -DskipTests
-
-      - name: Resolve full classpath
-        working-directory: java
-        run: mvn --batch-mode --no-transfer-progress dependency:build-classpath -Dmdep.outputFile=cp.txt -Dmdep.includeScope=runtime
 
       - name: Compile JavaLauncher
         run: |
@@ -389,7 +316,9 @@ jobs:
             -DIIDM_BRIDGE_ENABLE_GRAALVM=${{ matrix.graalvm }} \
             -DIIDM_BRIDGE_ENABLE_JNI=${{ matrix.jni }} \
             -DIIDM_BRIDGE_BUILD_TESTS=ON \
-            -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF
+            -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF \
+            -DIIDM_BRIDGE_BUILD_JAVA=OFF \
+            -DIIDM_BRIDGE_BUILD_NATIVE=OFF
 
       - name: Build
         run: cmake --build build --parallel

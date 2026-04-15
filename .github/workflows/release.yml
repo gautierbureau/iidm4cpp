@@ -6,7 +6,7 @@ on:
 
 jobs:
   # ── Java fat-JAR ──────────────────────────────────────────────────────────
-  # Runs first so release-cpp can download the JAR to build native images.
+  # Uploads the fat-JAR to the GitHub release for users who want it directly.
   release-java:
     name: Release Java JAR
     runs-on: ubuntu-22.04
@@ -33,13 +33,6 @@ jobs:
         with:
           files: java/target/iidm-bridge-java-*-fat.jar
 
-      - name: Upload workflow artifact (for release-cpp)
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-jar
-          path: java/target/iidm-bridge-java-*-fat.jar
-          retention-days: 1
-
   # ── C++ packages ─────────────────────────────────────────────────────────
   #
   # Three variants per platform:
@@ -49,9 +42,11 @@ jobs:
   #   full     – both backends compiled in; libpowsybl-iidm-native bundled.
   #
   # Windows ships jni-only: GraalVM --shared is not supported with MSVC.
+  #
+  # GraalVM/full variants use IIDM_BRIDGE_BUILD_JAVA=ON + BUILD_NATIVE=ON so
+  # cmake drives Maven and native-image directly — no separate steps needed.
   release-cpp:
     name: Release C++ package (${{ matrix.name }})
-    needs: release-java
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
@@ -64,39 +59,46 @@ jobs:
             name: linux-x86_64-graalvm
             graalvm: ON
             jni: OFF
-            native_image: true
+            build_java: ON
+            build_native: ON
           - os: ubuntu-22.04
             name: linux-x86_64-jni
             graalvm: OFF
             jni: ON
-            native_image: false
+            build_java: OFF
+            build_native: OFF
           - os: ubuntu-22.04
             name: linux-x86_64-full
             graalvm: ON
             jni: ON
-            native_image: true
+            build_java: ON
+            build_native: ON
           # ── macOS ──────────────────────────────────────────────────────
           - os: macos-latest
             name: macos-graalvm
             graalvm: ON
             jni: OFF
-            native_image: true
+            build_java: ON
+            build_native: ON
           - os: macos-latest
             name: macos-jni
             graalvm: OFF
             jni: ON
-            native_image: false
+            build_java: OFF
+            build_native: OFF
           - os: macos-latest
             name: macos-full
             graalvm: ON
             jni: ON
-            native_image: true
+            build_java: ON
+            build_native: ON
           # ── Windows (JNI only) ─────────────────────────────────────────
           - os: windows-latest
             name: windows-x86_64-jni
             graalvm: OFF
             jni: ON
-            native_image: false
+            build_java: OFF
+            build_native: OFF
 
     steps:
       - name: Checkout
@@ -134,35 +136,9 @@ jobs:
         if: runner.os == 'Windows'
         uses: ilammy/msvc-dev-cmd@v1
 
-      # Produce graal_isolate.h via a minimal stub so the GraalVM backend
-      # compiles without the full native image being present yet.
-      - name: Generate GraalVM stub header
-        if: matrix.graalvm == 'ON'
-        shell: bash
-        run: |
-          mkdir -p graalvm-stub
-          cd graalvm-stub
-
-          cat > IidmStub.java << 'JAVA_EOF'
-          import org.graalvm.nativeimage.IsolateThread;
-          import org.graalvm.nativeimage.c.function.CEntryPoint;
-          public final class IidmStub {
-              public static void main(String[] args) {}
-              @CEntryPoint(name = "iidm_stub_ping")
-              public static int ping(IsolateThread thread) { return 42; }
-          }
-          JAVA_EOF
-
-          javac IidmStub.java
-          native-image --shared --no-fallback -H:Name=libIidmStub IidmStub
-
       - name: Configure CMake
         shell: bash
         run: |
-          EXTRA=""
-          if [ "${{ matrix.graalvm }}" = "ON" ]; then
-            EXTRA="-DGRAALVM_INCLUDE_DIRS=${{ github.workspace }}/graalvm-stub"
-          fi
           cmake -S . -B build \
             -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
@@ -170,8 +146,9 @@ jobs:
             -DIIDM_BRIDGE_ENABLE_JNI=${{ matrix.jni }} \
             -DIIDM_BRIDGE_BUILD_TESTS=OFF \
             -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF \
-            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" \
-            $EXTRA
+            -DIIDM_BRIDGE_BUILD_JAVA=${{ matrix.build_java }} \
+            -DIIDM_BRIDGE_BUILD_NATIVE=${{ matrix.build_native }} \
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install"
 
       - name: Build
         run: cmake --build build --parallel
@@ -212,31 +189,6 @@ jobs:
           $jvmDll = Get-ChildItem -Path "$env:JAVA_HOME" -Filter "jvm.dll" -Recurse | Select-Object -First 1
           Write-Host "Bundling $($jvmDll.FullName)"
           Copy-Item $jvmDll.FullName "${{ github.workspace }}\install\lib\"
-
-      - name: Download fat-JAR (GraalVM variants)
-        if: matrix.native_image == true
-        uses: actions/download-artifact@v4
-        with:
-          name: release-jar
-          path: jar
-
-      # Build the real powsybl native image and place it directly in
-      # install/lib/ so the package is self-contained.
-      - name: Build native image
-        if: matrix.native_image == true
-        shell: bash
-        run: |
-          JAR=$(ls jar/*.jar | head -1)
-          native-image \
-            --shared \
-            -cp "$JAR" \
-            -H:+ReportExceptionStackTraces \
-            -march=compatibility \
-            --no-fallback \
-            --gc=serial \
-            -o "${{ github.workspace }}/install/lib/libpowsybl-iidm-native" \
-            --allow-incomplete-classpath \
-            --add-exports=org.graalvm.nativeimage.builder/com.oracle.svm.core.c=ALL-UNNAMED
 
       - name: Package (Linux / macOS)
         if: runner.os != 'Windows'

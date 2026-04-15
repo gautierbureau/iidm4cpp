@@ -23,12 +23,13 @@ if(IIDM_BRIDGE_ENABLE_GRAALVM)
         # point GRAALVM_INCLUDE_DIRS at the output directory now so the
         # compile command is correct once the build runs.
         set(GRAALVM_INCLUDE_DIRS "${CMAKE_BINARY_DIR}/graalvm-native")
-    else()
+    elseif(NOT GRAALVM_INCLUDE_DIRS)
+        # No pre-set path: search via FindGraalVM.cmake or GRAALVM_HOME.
         list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
         find_package(GraalVM)
         if(NOT GraalVM_FOUND)
             message(WARNING "GraalVM not found; GraalVM backend will compile without SDK headers. "
-                            "Set GRAALVM_HOME to enable full GraalVM support.")
+                            "Set GRAALVM_HOME or -DGRAALVM_INCLUDE_DIRS to enable full GraalVM support.")
         endif()
     endif()
 endif()
@@ -240,6 +241,9 @@ if(IIDM_BRIDGE_BUILD_NATIVE)
         VERBATIM
     )
     add_custom_target(iidmbridge_native DEPENDS "${_NATIVE_LIB}" "${_NATIVE_H}")
+
+    # Install the native shared library so cmake --install bundles it.
+    install(FILES "${_NATIVE_LIB}" DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
     # iidmbridge must not be compiled before graal_isolate.h is available.
     if(IIDM_BRIDGE_ENABLE_GRAALVM)
