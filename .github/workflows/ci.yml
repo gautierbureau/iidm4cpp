@@ -238,8 +238,8 @@ jobs:
 
       - name: Build
         run: |
-          cmake --build build --parallel --target all
-          cmake --build build --parallel --target iidmbridge_jar
+          cmake --build build --parallel
+#          cmake --build build --parallel --target iidmbridge_jar
 
       - name: Run example_standalone with IEEE14.xiidm
         env:
@@ -250,7 +250,6 @@ jobs:
       - name: Compile JavaLauncher
         run: |
           mkdir -p build/java-classes
-          ls java/target/
           javac \
             -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar" \
             examples/embedded/JavaLauncher.java \
