@@ -1,0 +1,116 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  # ── C++ packages for Linux, macOS, Windows ───────────────────────────────
+  #
+  # Builds the shared library with cmake --install, archives the install
+  # tree, and uploads it to the GitHub release that triggered this workflow.
+  release-cpp:
+    name: Release C++ package (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            name: linux-x86_64
+          - os: macos-latest
+            name: macos
+          - os: windows-latest
+            name: windows-x86_64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Install C++ build tools (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y cmake ninja-build
+
+      - name: Install C++ build tools (macOS)
+        if: runner.os == 'macOS'
+        run: brew install cmake ninja
+
+      - name: Set up MSVC environment (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure CMake
+        shell: bash
+        run: |
+          cmake -S . -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DIIDM_BRIDGE_ENABLE_GRAALVM=OFF \
+            -DIIDM_BRIDGE_ENABLE_JNI=ON \
+            -DIIDM_BRIDGE_BUILD_TESTS=OFF \
+            -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF \
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install"
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Install
+        run: cmake --install build
+
+      - name: Package (Linux / macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          PKG="iidm-bridge-${{ github.ref_name }}-${{ matrix.name }}.tar.gz"
+          tar -czf "$PKG" -C "${{ github.workspace }}/install" .
+          echo "PKG_FILE=$PKG" >> "$GITHUB_ENV"
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $pkg = "iidm-bridge-${{ github.ref_name }}-${{ matrix.name }}.zip"
+          Compress-Archive -Path "${{ github.workspace }}\install\*" -DestinationPath $pkg
+          "PKG_FILE=$pkg" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Upload to GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.PKG_FILE }}
+
+  # ── Java fat-JAR ──────────────────────────────────────────────────────────
+  release-java:
+    name: Release Java JAR
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build fat-JAR
+        working-directory: java
+        run: mvn --batch-mode --no-transfer-progress package -DskipTests
+
+      - name: Upload to GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: java/target/iidm-bridge-java-*-fat.jar
