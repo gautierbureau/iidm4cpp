@@ -40,6 +40,16 @@ void runEmbedded(const char* networkId) {
             gen.setTargetP(targetP * 0.95);
         }
 
+        if (network.getGenerator("_GEN____3_SM").has_value()) {
+            std::cout << "[C++] Generator _GEN____3_SM is get\n";
+            if (network.getGenerator("_GEN____3_SM")->hasActivePowerControl()) {
+                std::cout << "[C++] Generator _GEN____3_SM has active power control\n";
+                double droop = network.getGenerator("_GEN____3_SM")->getActivePowerControl().getDroop();
+                std::cout << "[C++]  droop=" << droop << "\n";
+                network.getGenerator("_GEN____3_SM")->getActivePowerControl().setDroop(2);
+            }
+        }
+
         std::cout << "[C++] Simulation complete.\n";
 
     } catch (const iidm::IidmException& ex) {

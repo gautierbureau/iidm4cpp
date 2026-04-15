@@ -13,6 +13,7 @@
 
 import com.powsybl.iidm.network.*;
 import com.powsybl.iidmbridge.jni.IidmBridgeRegistry;
+import com.powsybl.iidm.network.extensions.ActivePowerControl;
 
 import java.nio.file.Path;
 
@@ -49,5 +50,9 @@ public class JavaLauncher {
         network.getGenerators().forEach(g ->
             System.out.printf("[Java] Generator %s targetP=%.1f MW%n",
                               g.getId(), g.getTargetP()));
+
+        System.out.println("[Java] Generator droop");
+        double droop = network.getGenerator("_GEN____3_SM").getExtension(ActivePowerControl.class).getDroop();
+        System.out.println("[Java] droop=" + droop);
     }
 }
