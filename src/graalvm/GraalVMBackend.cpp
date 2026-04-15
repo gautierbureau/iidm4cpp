@@ -154,7 +154,7 @@ ObjectHandle GraalVMBackend::getRelated(ObjectHandle h, int relation) const {
 }
 
 ObjectHandle GraalVMBackend::findById(int objectType, const std::string& id) const {
-    return fnFindById_(thread_, objectType, id.c_str());
+    return fnFindById_(thread_, networkHandle_, objectType, id.c_str());
 }
 
 } // namespace iidm

@@ -68,7 +68,7 @@ private:
     using FnGetChildren     = void(*)(graal_isolatethread_t*, ObjectHandle, int,
                                       ObjectHandle*, int*);
     using FnGetRelated      = ObjectHandle(*)(graal_isolatethread_t*, ObjectHandle, int);
-    using FnFindById        = ObjectHandle(*)(graal_isolatethread_t*, int, const char*);
+    using FnFindById        = ObjectHandle(*)(graal_isolatethread_t*, long, int, const char*);
 
     FnCreateIsolate   fnCreateIsolate_   = nullptr;
     FnTearDownIsolate fnTearDownIsolate_ = nullptr;

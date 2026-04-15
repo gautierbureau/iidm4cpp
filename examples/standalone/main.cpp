@@ -39,6 +39,19 @@ int main(int argc, char* argv[]) {
                       << "  maxP=" << gen.getMaxP() << " MW"
                       << "  voltageRegulator=" << (gen.isVoltageRegulatorOn() ? "ON" : "OFF")
                       << "\n";
+            if (gen.hasActivePowerControl()) {
+                double droop = gen.getActivePowerControl().getDroop();
+                std::cout << "  droop=" << droop << "\n";
+            }
+        }
+
+        if (network.getGenerator("_GEN____3_SM").has_value()) {
+            std::cout << "Generator _GEN____3_SM is get\n";
+            if (network.getGenerator("_GEN____3_SM")->hasActivePowerControl()) {
+                std::cout << "Generator _GEN____3_SM has active power control\n";
+                double droop = network.getGenerator("_GEN____3_SM")->getActivePowerControl().getDroop();
+                std::cout << "  droop=" << droop << "\n";
+            }
         }
 
         auto loads = network.getLoads();
