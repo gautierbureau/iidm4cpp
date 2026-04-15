@@ -28,6 +28,10 @@ target_link_libraries(iidmbridge_tests
 )
 
 include(GoogleTest)
+# PRE_TEST defers test discovery to ctest time instead of running the
+# executable immediately after the build.  On Windows this is required
+# because iidmbridge.dll must be on PATH, which is only set when ctest runs.
 gtest_discover_tests(iidmbridge_tests
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    DISCOVERY_MODE PRE_TEST
 )
