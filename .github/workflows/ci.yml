@@ -88,7 +88,11 @@ jobs:
         run: cmake --build build --parallel
 
       - name: Run unit tests
-        run: ctest --test-dir build --output-on-failure --parallel 4
+        shell: bash
+        run: |
+          # iidmbridge.dll must be on PATH on Windows (no rpath equivalent)
+          export PATH="$(pwd)/build:$PATH"
+          ctest --test-dir build --output-on-failure --parallel 4
 
       - name: Upload test results
         if: always()
