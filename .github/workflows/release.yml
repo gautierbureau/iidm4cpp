@@ -180,13 +180,28 @@ jobs:
         run: cmake --install build
 
       # Bundle libjvm so consumers can run the JNI backend without a
-      # separate JDK installation.  The JVM library is discovered from
-      # JAVA_HOME to handle different JDK layouts across platforms.
-      - name: Bundle JVM library (Linux / macOS JNI variants)
-        if: matrix.jni == 'ON' && runner.os != 'Windows'
+      # separate JDK installation.
+      - name: Bundle JVM library (Linux JNI variants)
+        if: matrix.jni == 'ON' && runner.os == 'Linux'
         shell: bash
         run: |
-          JVM_LIB=$(find "$JAVA_HOME" -name "libjvm.*" | head -1)
+          # Standard Temurin / GraalVM CE layout on Linux
+          JVM_LIB="$JAVA_HOME/lib/server/libjvm.so"
+          if [ ! -f "$JVM_LIB" ]; then
+            JVM_LIB=$(find "$JAVA_HOME" -name "libjvm.so" -type f | head -1)
+          fi
+          echo "Bundling $JVM_LIB"
+          cp "$JVM_LIB" "${{ github.workspace }}/install/lib/"
+
+      - name: Bundle JVM library (macOS JNI variants)
+        if: matrix.jni == 'ON' && runner.os == 'macOS'
+        shell: bash
+        run: |
+          # Standard Temurin / GraalVM CE layout on macOS
+          JVM_LIB="$JAVA_HOME/lib/server/libjvm.dylib"
+          if [ ! -f "$JVM_LIB" ]; then
+            JVM_LIB=$(find "$JAVA_HOME" -name "libjvm.dylib" -type f | head -1)
+          fi
           echo "Bundling $JVM_LIB"
           cp "$JVM_LIB" "${{ github.workspace }}/install/lib/"
 
