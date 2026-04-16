@@ -10,10 +10,10 @@
 -->
 <iidm:network
     xmlns:iidm="http://www.itesla_project.eu/schema/iidm/1_0"
-    xmlns:hadapc="http://www.powsybl.org/schema/iidm/ext/hvdc_angle_droop_active_power_control/1_0"
-    xmlns:hoar="http://www.powsybl.org/schema/iidm/ext/hvdc_operator_active_power_range/1_0"
+    xmlns:hadapc="http://www.itesla_project.eu/schema/iidm/ext/hvdc_angle_droop_active_power_control/1_0"
+    xmlns:hoar="http://www.itesla_project.eu/schema/iidm/ext/hvdc_operator_active_power_range/1_0"
     xmlns:vprc="http://www.powsybl.org/schema/iidm/ext/voltage_per_reactive_power_control/1_0"
-    xmlns:st="http://www.powsybl.org/schema/iidm/ext/slack_terminal/1_0"
+    xmlns:st="http://www.powsybl.org/schema/iidm/ext/slack_terminal/1_3"
     id="extensions_test"
     caseDate="2024-01-01T00:00:00.000+00:00"
     forecastDistance="0"
@@ -62,7 +62,7 @@
     <!-- HvdcAngleDroopActivePowerControl + HvdcOperatorActivePowerRange on HVDC1 -->
     <iidm:extension id="HVDC1">
         <hadapc:hvdcAngleDroopActivePowerControl droop="0.33" p0="200.0" enabled="true"/>
-        <hoar:hvdcOperatorActivePowerRange oprFromCS1toCS2="400.0" oprFromCS2toCS1="350.0"/>
+        <hoar:hvdcOperatorActivePowerRange fromCS1toCS2="400.0" fromCS2toCS1="350.0"/>
     </iidm:extension>
 
     <!-- VoltagePerReactivePowerControl on SVC1 -->
@@ -70,9 +70,9 @@
         <vprc:voltagePerReactivePowerControl slope="0.5"/>
     </iidm:extension>
 
-    <!-- SlackTerminal on VL1 (references BUS1) -->
+    <!-- SlackTerminal on VL1 — id references the connectable whose terminal is slack -->
     <iidm:extension id="VL1">
-        <st:slackTerminal busId="BUS1"/>
+        <st:slackTerminal id="VSC1"/>
     </iidm:extension>
 
 </iidm:network>
