@@ -2,6 +2,7 @@
 
 #include <iidm/ObjectHandle.h>
 #include <iidm/ActivePowerControl.h>
+#include <iidm/CoordinatedReactiveControl.h>
 #include <iidm/Enums.h>
 #include <iidm/Terminal.h>
 #include <string>
@@ -39,6 +40,9 @@ public:
 
     bool hasActivePowerControl() const;
     ActivePowerControl getActivePowerControl() const;
+
+    bool hasCoordinatedReactiveControl() const;
+    CoordinatedReactiveControl getCoordinatedReactiveControl() const;
 
     void connect();
     void disconnect();

@@ -114,6 +114,28 @@ constexpr int EXT_APC_EXISTS              = 3000;
 constexpr int EXT_APC_DROOP              = 3001;
 constexpr int EXT_APC_PARTICIPATE        = 3002;
 
+// ── Extension: CoordinatedReactiveControl ─────────────────────────────────────
+constexpr int EXT_CRC_EXISTS    = 3100;
+constexpr int EXT_CRC_Q_PERCENT = 3101;
+
+// ── Extension: HvdcAngleDroopActivePowerControl ───────────────────────────────
+constexpr int EXT_HADAPC_EXISTS   = 3200;
+constexpr int EXT_HADAPC_DROOP    = 3201;
+constexpr int EXT_HADAPC_P0       = 3202;
+constexpr int EXT_HADAPC_ENABLED  = 3203;
+
+// ── Extension: HvdcOperatorActivePowerRange ───────────────────────────────────
+constexpr int EXT_HOAR_EXISTS          = 3300;
+constexpr int EXT_HOAR_OPR_CS1_TO_CS2 = 3301;
+constexpr int EXT_HOAR_OPR_CS2_TO_CS1 = 3302;
+
+// ── Extension: VoltagePerReactivePowerControl ─────────────────────────────────
+constexpr int EXT_VPRC_EXISTS = 3400;
+constexpr int EXT_VPRC_SLOPE  = 3401;
+
+// ── Extension: SlackTerminal ──────────────────────────────────────────────────
+constexpr int EXT_ST_EXISTS = 3500;
+
 // ── Relations (used in getRelated) ──────────────────────────────────────────
 constexpr int REL_TERMINAL1               = 2000;
 constexpr int REL_TERMINAL2               = 2001;
@@ -121,5 +143,6 @@ constexpr int REL_TERMINAL                = 2002;
 constexpr int REL_BUS                     = 2003;
 constexpr int REL_VOLTAGE_LEVEL           = 2004;
 constexpr int REL_SUBSTATION              = 2005;
+constexpr int REL_SLACK_TERMINAL          = 2006;
 
 } // namespace iidm::prop

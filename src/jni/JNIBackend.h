@@ -50,6 +50,13 @@ private:
     std::vector<ObjectHandle> collectionToHandles(jobject collection) const;
     // Return a local ref to the ActivePowerControl extension of a generator (may be null)
     jobject fetchApcExtension(jobject gen) const;
+    // Generic helper: fetch a named extension from any Extendable object (may be null)
+    jobject fetchExtension(jobject obj, const char* extensionName) const;
+    jobject fetchCrcExtension(jobject gen) const;
+    jobject fetchHadapcExtension(jobject hvdc) const;
+    jobject fetchHoarExtension(jobject hvdc) const;
+    jobject fetchVprcExtension(jobject svc) const;
+    jobject fetchStExtension(jobject vl) const;
 
     std::string  networkId_;
     JavaVM*      jvm_  = nullptr;

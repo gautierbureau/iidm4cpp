@@ -1,4 +1,5 @@
 #include <iidm/VoltageLevel.h>
+#include <iidm/SlackTerminal.h>
 #include <iidm/BackendProvider.h>
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
@@ -30,6 +31,14 @@ std::optional<double> VoltageLevel::getHighVoltageLimit() const {
 
 TopologyKind VoltageLevel::getTopologyKind() const {
     return static_cast<TopologyKind>(backend_->getInt(handle_, prop::VL_TOPOLOGY_KIND));
+}
+
+bool VoltageLevel::hasSlackTerminal() const {
+    return backend_->getBool(handle_, prop::EXT_ST_EXISTS);
+}
+
+SlackTerminal VoltageLevel::getSlackTerminal() const {
+    return SlackTerminal(handle_, backend_);
 }
 
 bool VoltageLevel::operator==(const VoltageLevel& other) const {

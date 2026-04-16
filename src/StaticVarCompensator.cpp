@@ -1,4 +1,5 @@
 #include <iidm/StaticVarCompensator.h>
+#include <iidm/VoltagePerReactivePowerControl.h>
 #include <iidm/BackendProvider.h>
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
@@ -55,6 +56,14 @@ StaticVarCompensator& StaticVarCompensator::setRegulationMode(StaticVarCompensat
 Terminal StaticVarCompensator::getTerminal() const {
     ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_TERMINAL);
     return Terminal(termHandle, backend_);
+}
+
+bool StaticVarCompensator::hasVoltagePerReactivePowerControl() const {
+    return backend_->getBool(handle_, prop::EXT_VPRC_EXISTS);
+}
+
+VoltagePerReactivePowerControl StaticVarCompensator::getVoltagePerReactivePowerControl() const {
+    return VoltagePerReactivePowerControl(handle_, backend_);
 }
 
 void StaticVarCompensator::connect() {

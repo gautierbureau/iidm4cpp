@@ -40,6 +40,11 @@ set(IIDM_BRIDGE_SOURCES
     src/NetworkFactory.cpp
     src/BackendSelector.cpp
     src/ActivePowerControl.cpp
+    src/CoordinatedReactiveControl.cpp
+    src/HvdcAngleDroopActivePowerControl.cpp
+    src/HvdcOperatorActivePowerRange.cpp
+    src/VoltagePerReactivePowerControl.cpp
+    src/SlackTerminal.cpp
     src/Generator.cpp
     src/Load.cpp
     src/Terminal.cpp

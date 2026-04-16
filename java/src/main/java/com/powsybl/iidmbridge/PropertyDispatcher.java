@@ -2,6 +2,11 @@ package com.powsybl.iidmbridge;
 
 import com.powsybl.iidm.network.*;
 import com.powsybl.iidm.network.extensions.ActivePowerControl;
+import com.powsybl.iidm.network.extensions.CoordinatedReactiveControl;
+import com.powsybl.iidm.network.extensions.HvdcAngleDroopActivePowerControl;
+import com.powsybl.iidm.network.extensions.HvdcOperatorActivePowerRange;
+import com.powsybl.iidm.network.extensions.VoltagePerReactivePowerControl;
+import com.powsybl.iidm.network.extensions.SlackTerminal;
 import com.powsybl.iidmbridge.graalvm.NetworkRegistry;
 
 import java.util.stream.Stream;
@@ -69,6 +74,12 @@ public final class PropertyDispatcher {
             case VSC_VOLTAGE_SETPOINT        -> ((VscConverterStation) obj).getVoltageSetpoint();
             case VSC_REACTIVE_POWER_SETPOINT -> ((VscConverterStation) obj).getReactivePowerSetpoint();
             case EXT_APC_DROOP -> ((Generator) obj).getExtension(ActivePowerControl.class).getDroop();
+            case EXT_CRC_Q_PERCENT -> ((Generator) obj).getExtension(CoordinatedReactiveControl.class).getQPercent();
+            case EXT_HADAPC_DROOP -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).getDroop();
+            case EXT_HADAPC_P0 -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).getP0();
+            case EXT_HOAR_OPR_CS1_TO_CS2 -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class).getOprFromCS1toCS2();
+            case EXT_HOAR_OPR_CS2_TO_CS1 -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class).getOprFromCS2toCS1();
+            case EXT_VPRC_SLOPE -> ((StaticVarCompensator) obj).getExtension(VoltagePerReactivePowerControl.class).getSlope();
             default -> throw new IllegalArgumentException("Unknown double property: " + property);
         };
     }
@@ -95,6 +106,12 @@ public final class PropertyDispatcher {
             case VSC_VOLTAGE_SETPOINT        -> ((VscConverterStation) obj).setVoltageSetpoint(value);
             case VSC_REACTIVE_POWER_SETPOINT -> ((VscConverterStation) obj).setReactivePowerSetpoint(value);
             case EXT_APC_DROOP -> ((Generator) obj).getExtension(ActivePowerControl.class).setDroop(value);
+            case EXT_CRC_Q_PERCENT -> ((Generator) obj).getExtension(CoordinatedReactiveControl.class).setQPercent(value);
+            case EXT_HADAPC_DROOP -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).setDroop((float) value);
+            case EXT_HADAPC_P0 -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).setP0((float) value);
+            case EXT_HOAR_OPR_CS1_TO_CS2 -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class).setOprFromCS1toCS2((float) value);
+            case EXT_HOAR_OPR_CS2_TO_CS1 -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class).setOprFromCS2toCS1((float) value);
+            case EXT_VPRC_SLOPE -> ((StaticVarCompensator) obj).getExtension(VoltagePerReactivePowerControl.class).setSlope(value);
             default -> throw new IllegalArgumentException("Unknown double property for set: " + property);
         }
     }
@@ -141,6 +158,12 @@ public final class PropertyDispatcher {
             case VSC_VOLTAGE_REGULATOR_ON -> ((VscConverterStation) obj).isVoltageRegulatorOn();
             case EXT_APC_EXISTS      -> ((Generator) obj).getExtension(ActivePowerControl.class) != null;
             case EXT_APC_PARTICIPATE -> ((Generator) obj).getExtension(ActivePowerControl.class).isParticipate();
+            case EXT_CRC_EXISTS      -> ((Generator) obj).getExtension(CoordinatedReactiveControl.class) != null;
+            case EXT_HADAPC_EXISTS   -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class) != null;
+            case EXT_HADAPC_ENABLED  -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).isEnabled();
+            case EXT_HOAR_EXISTS     -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class) != null;
+            case EXT_VPRC_EXISTS     -> ((StaticVarCompensator) obj).getExtension(VoltagePerReactivePowerControl.class) != null;
+            case EXT_ST_EXISTS       -> ((VoltageLevel) obj).getExtension(SlackTerminal.class) != null;
             default -> throw new IllegalArgumentException("Unknown bool property: " + property);
         };
         return val ? 1 : 0;
@@ -159,6 +182,7 @@ public final class PropertyDispatcher {
             }
             case VSC_VOLTAGE_REGULATOR_ON -> ((VscConverterStation) obj).setVoltageRegulatorOn(bval);
             case EXT_APC_PARTICIPATE -> ((Generator) obj).getExtension(ActivePowerControl.class).setParticipate(bval);
+            case EXT_HADAPC_ENABLED  -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).setEnabled(bval);
             default -> throw new IllegalArgumentException("Unknown bool property for set: " + property);
         }
     }
@@ -235,6 +259,12 @@ public final class PropertyDispatcher {
                 yield t.getBusView().getConnectableBus();
             }
             case REL_VOLTAGE_LEVEL -> ((Terminal) obj).getVoltageLevel();
+            case REL_SLACK_TERMINAL -> {
+                VoltageLevel vl = (VoltageLevel) obj;
+                SlackTerminal st = vl.getExtension(SlackTerminal.class);
+                if (st == null) throw new IllegalStateException("SlackTerminal extension not present");
+                yield st.getTerminal();
+            }
             default -> throw new IllegalArgumentException("Unknown relation: " + relation);
         };
         if (related == null) return 0L; // INVALID_HANDLE

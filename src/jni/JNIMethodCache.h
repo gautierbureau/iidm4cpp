@@ -140,6 +140,39 @@ struct JNIMethodCache {
     jmethodID apc_setDroop                 = nullptr;
     jmethodID apc_isParticipate            = nullptr;
     jmethodID apc_setParticipate           = nullptr;
+
+    // ── Shared Extendable.getExtensionByName (used for new extensions) ────────
+    jmethodID extendable_getExtensionByName = nullptr;
+
+    // ── CoordinatedReactiveControl extension (on Generator) ───────────────────
+    jclass    coordinatedReactiveControlClass = nullptr;
+    jmethodID crc_getQPercent                 = nullptr;
+    jmethodID crc_setQPercent                 = nullptr;
+
+    // ── HvdcAngleDroopActivePowerControl extension (on HvdcLine) ─────────────
+    jclass    hvdcAngleDroopActivePowerControlClass = nullptr;
+    jmethodID hadapc_getDroop                       = nullptr;
+    jmethodID hadapc_setDroop                       = nullptr;
+    jmethodID hadapc_getP0                          = nullptr;
+    jmethodID hadapc_setP0                          = nullptr;
+    jmethodID hadapc_isEnabled                      = nullptr;
+    jmethodID hadapc_setEnabled                     = nullptr;
+
+    // ── HvdcOperatorActivePowerRange extension (on HvdcLine) ─────────────────
+    jclass    hvdcOperatorActivePowerRangeClass = nullptr;
+    jmethodID hoar_getOprFromCS1toCS2           = nullptr;
+    jmethodID hoar_setOprFromCS1toCS2           = nullptr;
+    jmethodID hoar_getOprFromCS2toCS1           = nullptr;
+    jmethodID hoar_setOprFromCS2toCS1           = nullptr;
+
+    // ── VoltagePerReactivePowerControl extension (on StaticVarCompensator) ────
+    jclass    voltagePerReactivePowerControlClass = nullptr;
+    jmethodID vprc_getSlope                       = nullptr;
+    jmethodID vprc_setSlope                       = nullptr;
+
+    // ── SlackTerminal extension (on VoltageLevel) ─────────────────────────────
+    jclass    slackTerminalClass   = nullptr;
+    jmethodID st_getTerminal       = nullptr;
 };
 
 } // namespace iidm
