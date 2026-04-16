@@ -121,11 +121,34 @@ public final class PropertyCodes {
     public static final int EXT_APC_DROOP       = 3001;
     public static final int EXT_APC_PARTICIPATE = 3002;
 
+    // ── Extension: CoordinatedReactiveControl ─────────────────────────────
+    public static final int EXT_CRC_EXISTS    = 3100;
+    public static final int EXT_CRC_Q_PERCENT = 3101;
+
+    // ── Extension: HvdcAngleDroopActivePowerControl ───────────────────────
+    public static final int EXT_HADAPC_EXISTS  = 3200;
+    public static final int EXT_HADAPC_DROOP   = 3201;
+    public static final int EXT_HADAPC_P0      = 3202;
+    public static final int EXT_HADAPC_ENABLED = 3203;
+
+    // ── Extension: HvdcOperatorActivePowerRange ───────────────────────────
+    public static final int EXT_HOAR_EXISTS          = 3300;
+    public static final int EXT_HOAR_OPR_CS1_TO_CS2 = 3301;
+    public static final int EXT_HOAR_OPR_CS2_TO_CS1 = 3302;
+
+    // ── Extension: VoltagePerReactivePowerControl ─────────────────────────
+    public static final int EXT_VPRC_EXISTS = 3400;
+    public static final int EXT_VPRC_SLOPE  = 3401;
+
+    // ── Extension: SlackTerminal ──────────────────────────────────────────
+    public static final int EXT_ST_EXISTS = 3500;
+
     // ── Relations ────────────────────────────────────────────────────────
-    public static final int REL_TERMINAL1    = 2000;
-    public static final int REL_TERMINAL2    = 2001;
-    public static final int REL_TERMINAL     = 2002;
-    public static final int REL_BUS          = 2003;
-    public static final int REL_VOLTAGE_LEVEL = 2004;
-    public static final int REL_SUBSTATION   = 2005;
+    public static final int REL_TERMINAL1      = 2000;
+    public static final int REL_TERMINAL2      = 2001;
+    public static final int REL_TERMINAL       = 2002;
+    public static final int REL_BUS            = 2003;
+    public static final int REL_VOLTAGE_LEVEL  = 2004;
+    public static final int REL_SUBSTATION     = 2005;
+    public static final int REL_SLACK_TERMINAL = 2006;
 }

@@ -2,6 +2,7 @@
 
 #include <iidm/ObjectHandle.h>
 #include <iidm/Enums.h>
+#include <iidm/SlackTerminal.h>
 #include <optional>
 #include <string>
 
@@ -22,6 +23,9 @@ public:
     std::optional<double> getHighVoltageLimit() const;
 
     TopologyKind getTopologyKind() const;
+
+    bool hasSlackTerminal() const;
+    SlackTerminal getSlackTerminal() const;
 
     bool isValid() const { return handle_ != INVALID_HANDLE; }
 

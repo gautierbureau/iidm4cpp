@@ -4,6 +4,11 @@ set(TEST_SOURCES
     TestNetwork.cpp
     TestGenerator.cpp
     TestActivePowerControl.cpp
+    TestCoordinatedReactiveControl.cpp
+    TestHvdcAngleDroopActivePowerControl.cpp
+    TestHvdcOperatorActivePowerRange.cpp
+    TestVoltagePerReactivePowerControl.cpp
+    TestSlackTerminal.cpp
     TestLoad.cpp
     TestTerminal.cpp
     TestBus.cpp

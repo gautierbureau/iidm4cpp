@@ -3,6 +3,7 @@
 #include <iidm/ObjectHandle.h>
 #include <iidm/Enums.h>
 #include <iidm/Terminal.h>
+#include <iidm/VoltagePerReactivePowerControl.h>
 #include <string>
 
 namespace iidm {
@@ -30,6 +31,9 @@ public:
     StaticVarCompensator& setRegulationMode(StaticVarCompensatorRegulationMode mode);
 
     Terminal getTerminal() const;
+
+    bool hasVoltagePerReactivePowerControl() const;
+    VoltagePerReactivePowerControl getVoltagePerReactivePowerControl() const;
 
     void connect();
     void disconnect();

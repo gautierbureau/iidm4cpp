@@ -12,6 +12,11 @@
 #include <iidm/Substation.h>
 #include <iidm/VoltageLevel.h>
 #include <iidm/ActivePowerControl.h>
+#include <iidm/CoordinatedReactiveControl.h>
+#include <iidm/HvdcAngleDroopActivePowerControl.h>
+#include <iidm/HvdcOperatorActivePowerRange.h>
+#include <iidm/VoltagePerReactivePowerControl.h>
+#include <iidm/SlackTerminal.h>
 #include <iidm/Generator.h>
 #include <iidm/Load.h>
 #include <iidm/Line.h>

@@ -182,6 +182,56 @@ void JNIBackend::cacheMethodIds() {
     cache_.apc_setParticipate= env_->GetMethodID(cache_.activePowerControlClass, "setParticipate","(Z)V");
     checkJNIException(env_);
 
+    // Shared getExtensionByName from the Extendable interface
+    {
+        jclass extendableClass = env_->FindClass("com/powsybl/commons/extensions/Extendable");
+        cache_.extendable_getExtensionByName = env_->GetMethodID(extendableClass,
+            "getExtensionByName", "(Ljava/lang/String;)Lcom/powsybl/commons/extensions/Extension;");
+        env_->DeleteLocalRef(extendableClass);
+    }
+    checkJNIException(env_);
+
+    // CoordinatedReactiveControl extension
+    cacheClass(cache_.coordinatedReactiveControlClass,
+        "com/powsybl/iidm/network/extensions/CoordinatedReactiveControl");
+    cache_.crc_getQPercent = env_->GetMethodID(cache_.coordinatedReactiveControlClass, "getQPercent", "()D");
+    cache_.crc_setQPercent = env_->GetMethodID(cache_.coordinatedReactiveControlClass, "setQPercent", "(D)Lcom/powsybl/iidm/network/extensions/CoordinatedReactiveControl;");
+    checkJNIException(env_);
+
+    // HvdcAngleDroopActivePowerControl extension
+    cacheClass(cache_.hvdcAngleDroopActivePowerControlClass,
+        "com/powsybl/iidm/network/extensions/HvdcAngleDroopActivePowerControl");
+    cache_.hadapc_getDroop   = env_->GetMethodID(cache_.hvdcAngleDroopActivePowerControlClass, "getDroop",   "()F");
+    cache_.hadapc_setDroop   = env_->GetMethodID(cache_.hvdcAngleDroopActivePowerControlClass, "setDroop",   "(F)Lcom/powsybl/iidm/network/extensions/HvdcAngleDroopActivePowerControl;");
+    cache_.hadapc_getP0      = env_->GetMethodID(cache_.hvdcAngleDroopActivePowerControlClass, "getP0",      "()F");
+    cache_.hadapc_setP0      = env_->GetMethodID(cache_.hvdcAngleDroopActivePowerControlClass, "setP0",      "(F)Lcom/powsybl/iidm/network/extensions/HvdcAngleDroopActivePowerControl;");
+    cache_.hadapc_isEnabled  = env_->GetMethodID(cache_.hvdcAngleDroopActivePowerControlClass, "isEnabled",  "()Z");
+    cache_.hadapc_setEnabled = env_->GetMethodID(cache_.hvdcAngleDroopActivePowerControlClass, "setEnabled", "(Z)Lcom/powsybl/iidm/network/extensions/HvdcAngleDroopActivePowerControl;");
+    checkJNIException(env_);
+
+    // HvdcOperatorActivePowerRange extension
+    cacheClass(cache_.hvdcOperatorActivePowerRangeClass,
+        "com/powsybl/iidm/network/extensions/HvdcOperatorActivePowerRange");
+    cache_.hoar_getOprFromCS1toCS2 = env_->GetMethodID(cache_.hvdcOperatorActivePowerRangeClass, "getOprFromCS1toCS2", "()F");
+    cache_.hoar_setOprFromCS1toCS2 = env_->GetMethodID(cache_.hvdcOperatorActivePowerRangeClass, "setOprFromCS1toCS2", "(F)Lcom/powsybl/iidm/network/extensions/HvdcOperatorActivePowerRange;");
+    cache_.hoar_getOprFromCS2toCS1 = env_->GetMethodID(cache_.hvdcOperatorActivePowerRangeClass, "getOprFromCS2toCS1", "()F");
+    cache_.hoar_setOprFromCS2toCS1 = env_->GetMethodID(cache_.hvdcOperatorActivePowerRangeClass, "setOprFromCS2toCS1", "(F)Lcom/powsybl/iidm/network/extensions/HvdcOperatorActivePowerRange;");
+    checkJNIException(env_);
+
+    // VoltagePerReactivePowerControl extension
+    cacheClass(cache_.voltagePerReactivePowerControlClass,
+        "com/powsybl/iidm/network/extensions/VoltagePerReactivePowerControl");
+    cache_.vprc_getSlope = env_->GetMethodID(cache_.voltagePerReactivePowerControlClass, "getSlope", "()D");
+    cache_.vprc_setSlope = env_->GetMethodID(cache_.voltagePerReactivePowerControlClass, "setSlope", "(D)Lcom/powsybl/iidm/network/extensions/VoltagePerReactivePowerControl;");
+    checkJNIException(env_);
+
+    // SlackTerminal extension
+    cacheClass(cache_.slackTerminalClass,
+        "com/powsybl/iidm/network/extensions/SlackTerminal");
+    cache_.st_getTerminal = env_->GetMethodID(cache_.slackTerminalClass, "getTerminal",
+        "()Lcom/powsybl/iidm/network/Terminal;");
+    checkJNIException(env_);
+
     // Retrieve the network object via IidmBridgeRegistry
     jstring jId = env_->NewStringUTF(networkId_.c_str());
     jobject netObj = env_->CallStaticObjectMethod(cache_.iidmRegistryClass, cache_.registry_get, jId);
@@ -255,6 +305,34 @@ jobject JNIBackend::fetchApcExtension(jobject gen) const {
     return ext; // local ref; caller must DeleteLocalRef if non-null
 }
 
+jobject JNIBackend::fetchExtension(jobject obj, const char* extensionName) const {
+    jstring name = env_->NewStringUTF(extensionName);
+    jobject ext  = env_->CallObjectMethod(obj, cache_.extendable_getExtensionByName, name);
+    env_->DeleteLocalRef(name);
+    checkJNIException(env_);
+    return ext; // local ref; caller must DeleteLocalRef if non-null
+}
+
+jobject JNIBackend::fetchCrcExtension(jobject gen) const {
+    return fetchExtension(gen, "coordinatedReactiveControl");
+}
+
+jobject JNIBackend::fetchHadapcExtension(jobject hvdc) const {
+    return fetchExtension(hvdc, "hvdcAngleDroopActivePowerControl");
+}
+
+jobject JNIBackend::fetchHoarExtension(jobject hvdc) const {
+    return fetchExtension(hvdc, "hvdcOperatorActivePowerRange");
+}
+
+jobject JNIBackend::fetchVprcExtension(jobject svc) const {
+    return fetchExtension(svc, "voltagePerReactivePowerControl");
+}
+
+jobject JNIBackend::fetchStExtension(jobject vl) const {
+    return fetchExtension(vl, "slackTerminal");
+}
+
 // ── BackendProvider implementation ───────────────────────────────────────────
 
 ObjectHandle JNIBackend::getNetworkHandle() const {
@@ -292,6 +370,48 @@ double JNIBackend::getDouble(ObjectHandle h, int property) const {
             env_->DeleteLocalRef(apc);
             break;
         }
+        case prop::EXT_CRC_Q_PERCENT: {
+            jobject crc = fetchCrcExtension(obj);
+            if (!crc) throw PropertyNotFoundException("CoordinatedReactiveControl extension not present");
+            result = env_->CallDoubleMethod(crc, cache_.crc_getQPercent);
+            env_->DeleteLocalRef(crc);
+            break;
+        }
+        case prop::EXT_HADAPC_DROOP: {
+            jobject ext = fetchHadapcExtension(obj);
+            if (!ext) throw PropertyNotFoundException("HvdcAngleDroopActivePowerControl extension not present");
+            result = static_cast<double>(env_->CallFloatMethod(ext, cache_.hadapc_getDroop));
+            env_->DeleteLocalRef(ext);
+            break;
+        }
+        case prop::EXT_HADAPC_P0: {
+            jobject ext = fetchHadapcExtension(obj);
+            if (!ext) throw PropertyNotFoundException("HvdcAngleDroopActivePowerControl extension not present");
+            result = static_cast<double>(env_->CallFloatMethod(ext, cache_.hadapc_getP0));
+            env_->DeleteLocalRef(ext);
+            break;
+        }
+        case prop::EXT_HOAR_OPR_CS1_TO_CS2: {
+            jobject ext = fetchHoarExtension(obj);
+            if (!ext) throw PropertyNotFoundException("HvdcOperatorActivePowerRange extension not present");
+            result = static_cast<double>(env_->CallFloatMethod(ext, cache_.hoar_getOprFromCS1toCS2));
+            env_->DeleteLocalRef(ext);
+            break;
+        }
+        case prop::EXT_HOAR_OPR_CS2_TO_CS1: {
+            jobject ext = fetchHoarExtension(obj);
+            if (!ext) throw PropertyNotFoundException("HvdcOperatorActivePowerRange extension not present");
+            result = static_cast<double>(env_->CallFloatMethod(ext, cache_.hoar_getOprFromCS2toCS1));
+            env_->DeleteLocalRef(ext);
+            break;
+        }
+        case prop::EXT_VPRC_SLOPE: {
+            jobject ext = fetchVprcExtension(obj);
+            if (!ext) throw PropertyNotFoundException("VoltagePerReactivePowerControl extension not present");
+            result = env_->CallDoubleMethod(ext, cache_.vprc_getSlope);
+            env_->DeleteLocalRef(ext);
+            break;
+        }
         default:
             throw PropertyNotFoundException("Unknown double property: " + std::to_string(property));
     }
@@ -316,6 +436,48 @@ void JNIBackend::setDouble(ObjectHandle h, int property, double value) {
             if (!apc) throw PropertyNotFoundException("ActivePowerControl extension not present");
             env_->CallVoidMethod(apc, cache_.apc_setDroop, value);
             env_->DeleteLocalRef(apc);
+            break;
+        }
+        case prop::EXT_CRC_Q_PERCENT: {
+            jobject crc = fetchCrcExtension(obj);
+            if (!crc) throw PropertyNotFoundException("CoordinatedReactiveControl extension not present");
+            env_->CallObjectMethod(crc, cache_.crc_setQPercent, value);
+            env_->DeleteLocalRef(crc);
+            break;
+        }
+        case prop::EXT_HADAPC_DROOP: {
+            jobject ext = fetchHadapcExtension(obj);
+            if (!ext) throw PropertyNotFoundException("HvdcAngleDroopActivePowerControl extension not present");
+            env_->CallObjectMethod(ext, cache_.hadapc_setDroop, static_cast<jfloat>(value));
+            env_->DeleteLocalRef(ext);
+            break;
+        }
+        case prop::EXT_HADAPC_P0: {
+            jobject ext = fetchHadapcExtension(obj);
+            if (!ext) throw PropertyNotFoundException("HvdcAngleDroopActivePowerControl extension not present");
+            env_->CallObjectMethod(ext, cache_.hadapc_setP0, static_cast<jfloat>(value));
+            env_->DeleteLocalRef(ext);
+            break;
+        }
+        case prop::EXT_HOAR_OPR_CS1_TO_CS2: {
+            jobject ext = fetchHoarExtension(obj);
+            if (!ext) throw PropertyNotFoundException("HvdcOperatorActivePowerRange extension not present");
+            env_->CallObjectMethod(ext, cache_.hoar_setOprFromCS1toCS2, static_cast<jfloat>(value));
+            env_->DeleteLocalRef(ext);
+            break;
+        }
+        case prop::EXT_HOAR_OPR_CS2_TO_CS1: {
+            jobject ext = fetchHoarExtension(obj);
+            if (!ext) throw PropertyNotFoundException("HvdcOperatorActivePowerRange extension not present");
+            env_->CallObjectMethod(ext, cache_.hoar_setOprFromCS2toCS1, static_cast<jfloat>(value));
+            env_->DeleteLocalRef(ext);
+            break;
+        }
+        case prop::EXT_VPRC_SLOPE: {
+            jobject ext = fetchVprcExtension(obj);
+            if (!ext) throw PropertyNotFoundException("VoltagePerReactivePowerControl extension not present");
+            env_->CallObjectMethod(ext, cache_.vprc_setSlope, value);
+            env_->DeleteLocalRef(ext);
             break;
         }
         default:
@@ -381,6 +543,43 @@ bool JNIBackend::getBool(ObjectHandle h, int property) const {
             env_->DeleteLocalRef(apc);
             break;
         }
+        case prop::EXT_CRC_EXISTS: {
+            jobject crc = fetchCrcExtension(obj);
+            result = (crc != nullptr) ? JNI_TRUE : JNI_FALSE;
+            if (crc) env_->DeleteLocalRef(crc);
+            break;
+        }
+        case prop::EXT_HADAPC_EXISTS: {
+            jobject ext = fetchHadapcExtension(obj);
+            result = (ext != nullptr) ? JNI_TRUE : JNI_FALSE;
+            if (ext) env_->DeleteLocalRef(ext);
+            break;
+        }
+        case prop::EXT_HADAPC_ENABLED: {
+            jobject ext = fetchHadapcExtension(obj);
+            if (!ext) throw PropertyNotFoundException("HvdcAngleDroopActivePowerControl extension not present");
+            result = env_->CallBooleanMethod(ext, cache_.hadapc_isEnabled);
+            env_->DeleteLocalRef(ext);
+            break;
+        }
+        case prop::EXT_HOAR_EXISTS: {
+            jobject ext = fetchHoarExtension(obj);
+            result = (ext != nullptr) ? JNI_TRUE : JNI_FALSE;
+            if (ext) env_->DeleteLocalRef(ext);
+            break;
+        }
+        case prop::EXT_VPRC_EXISTS: {
+            jobject ext = fetchVprcExtension(obj);
+            result = (ext != nullptr) ? JNI_TRUE : JNI_FALSE;
+            if (ext) env_->DeleteLocalRef(ext);
+            break;
+        }
+        case prop::EXT_ST_EXISTS: {
+            jobject ext = fetchStExtension(obj);
+            result = (ext != nullptr) ? JNI_TRUE : JNI_FALSE;
+            if (ext) env_->DeleteLocalRef(ext);
+            break;
+        }
         default:
             throw PropertyNotFoundException("Unknown bool property: " + std::to_string(property));
     }
@@ -404,6 +603,13 @@ void JNIBackend::setBool(ObjectHandle h, int property, bool value) {
             if (!apc) throw PropertyNotFoundException("ActivePowerControl extension not present");
             env_->CallVoidMethod(apc, cache_.apc_setParticipate, static_cast<jboolean>(value));
             env_->DeleteLocalRef(apc);
+            break;
+        }
+        case prop::EXT_HADAPC_ENABLED: {
+            jobject ext = fetchHadapcExtension(obj);
+            if (!ext) throw PropertyNotFoundException("HvdcAngleDroopActivePowerControl extension not present");
+            env_->CallObjectMethod(ext, cache_.hadapc_setEnabled, static_cast<jboolean>(value));
+            env_->DeleteLocalRef(ext);
             break;
         }
         default:
@@ -522,6 +728,13 @@ ObjectHandle JNIBackend::getRelated(ObjectHandle h, int relation) const {
                 env_->DeleteLocalRef(busView);
             }
             env_->DeleteLocalRef(busViewClass);
+            break;
+        }
+        case prop::REL_SLACK_TERMINAL: {
+            jobject st = fetchStExtension(obj);
+            if (!st) throw PropertyNotFoundException("SlackTerminal extension not present");
+            related = env_->CallObjectMethod(st, cache_.st_getTerminal);
+            env_->DeleteLocalRef(st);
             break;
         }
         default:

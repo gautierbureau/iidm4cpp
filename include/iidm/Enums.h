@@ -21,6 +21,6 @@ enum class Country {
 enum class HvdcConverterStationMode { RECTIFIER, INVERTER };
 enum class StaticVarCompensatorRegulationMode { VOLTAGE, REACTIVE_POWER, OFF };
 enum class SwitchKind { BREAKER, DISCONNECTOR, LOAD_BREAK_SWITCH };
-enum class HvdcOperatorActivePowerRange { SIDE1, SIDE2 };
+enum class HvdcOperatorActivePowerRangeSide { SIDE1, SIDE2 };
 
 } // namespace iidm

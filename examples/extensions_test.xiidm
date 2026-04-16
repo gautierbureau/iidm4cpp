@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Minimal test network that exercises the extensions not present in IEEE14.xiidm:
+      - HvdcAngleDroopActivePowerControl  (on HVDC1)
+      - HvdcOperatorActivePowerRange       (on HVDC1)
+      - VoltagePerReactivePowerControl     (on SVC1)
+      - SlackTerminal                      (on VL1)
+
+    IEEE14.xiidm covers: ActivePowerControl, CoordinatedReactiveControl (on _GEN____3_SM).
+
+    Generated with PowSyBl 7.1.0 NetworkSerDe.write() and adjusted for readability.
+-->
+<iidm:network
+    xmlns:iidm="http://www.powsybl.org/schema/iidm/1_15"
+    xmlns:hapc="http://www.itesla_project.eu/schema/iidm/ext/hvdc_angle_droop_active_power_control/1_0"
+    xmlns:hopr="http://www.itesla_project.eu/schema/iidm/ext/hvdc_operator_active_power_range/1_0"
+    xmlns:vprpc="http://www.powsybl.org/schema/iidm/ext/voltage_per_reactive_power_control/1_0"
+    xmlns:slt="http://www.powsybl.org/schema/iidm/ext/slack_terminal/1_5"
+    id="extensions_test"
+    caseDate="2024-01-01T00:00:00.000+00:00"
+    forecastDistance="0"
+    sourceFormat="manual"
+    minimumValidationLevel="STEADY_STATE_HYPOTHESIS">
+
+    <!-- ── Substation 1: VSC converter station + static var compensator ──────── -->
+    <iidm:substation id="S1" country="FR">
+        <iidm:voltageLevel id="VL1" nominalV="400.0" topologyKind="BUS_BREAKER">
+            <iidm:busBreakerTopology>
+                <iidm:bus id="BUS1"/>
+            </iidm:busBreakerTopology>
+            <iidm:staticVarCompensator id="SVC1"
+                bMin="-0.008" bMax="0.008"
+                voltageSetpoint="400.0" reactivePowerSetpoint="0.0"
+                regulationMode="VOLTAGE" regulating="true"
+                bus="BUS1" connectableBus="BUS1" p="0.0" q="0.0"/>
+            <iidm:vscConverterStation id="VSC1" name="VSC Station 1"
+                voltageRegulatorOn="true" lossFactor="1.1"
+                voltageSetpoint="400.0" reactivePowerSetpoint="0.0"
+                bus="BUS1" connectableBus="BUS1" p="-300.0" q="0.0">
+                <iidm:minMaxReactiveLimits minQ="-9999.0" maxQ="9999.0"/>
+            </iidm:vscConverterStation>
+        </iidm:voltageLevel>
+    </iidm:substation>
+
+    <!-- ── Substation 2: VSC converter station ───────────────────────────────── -->
+    <iidm:substation id="S2" country="DE">
+        <iidm:voltageLevel id="VL2" nominalV="400.0" topologyKind="BUS_BREAKER">
+            <iidm:busBreakerTopology>
+                <iidm:bus id="BUS2"/>
+            </iidm:busBreakerTopology>
+            <iidm:vscConverterStation id="VSC2" name="VSC Station 2"
+                voltageRegulatorOn="false" lossFactor="1.1"
+                voltageSetpoint="0.0" reactivePowerSetpoint="0.0"
+                bus="BUS2" connectableBus="BUS2" p="295.0" q="0.0">
+                <iidm:minMaxReactiveLimits minQ="-9999.0" maxQ="9999.0"/>
+            </iidm:vscConverterStation>
+        </iidm:voltageLevel>
+    </iidm:substation>
+
+    <!-- ── HVDC line ─────────────────────────────────────────────────────────── -->
+    <iidm:hvdcLine id="HVDC1" name="HVDC Line 1"
+        r="1.0" nominalV="400.0"
+        convertersMode="SIDE_1_RECTIFIER_SIDE_2_INVERTER"
+        activePowerSetpoint="300.0" maxP="500.0"
+        converterStation1="VSC1" converterStation2="VSC2"/>
+
+    <!-- ── Extensions ────────────────────────────────────────────────────────── -->
+
+    <!-- VoltagePerReactivePowerControl on SVC1 -->
+    <iidm:extension id="SVC1">
+        <vprpc:voltagePerReactivePowerControl slope="0.5"/>
+    </iidm:extension>
+
+    <!-- SlackTerminal on VL1 — id is the connectable whose terminal is slack -->
+    <iidm:extension id="VL1">
+        <slt:slackTerminal id="VSC1"/>
+    </iidm:extension>
+
+    <!-- HvdcAngleDroopActivePowerControl + HvdcOperatorActivePowerRange on HVDC1 -->
+    <iidm:extension id="HVDC1">
+        <hopr:hvdcOperatorActivePowerRange fromCS1toCS2="400.0" fromCS2toCS1="350.0"/>
+        <hapc:hvdcAngleDroopActivePowerControl p0="200.0" droop="0.33" enabled="true"/>
+    </iidm:extension>
+
+</iidm:network>

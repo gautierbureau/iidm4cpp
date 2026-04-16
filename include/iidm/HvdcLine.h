@@ -2,6 +2,8 @@
 
 #include <iidm/ObjectHandle.h>
 #include <iidm/Enums.h>
+#include <iidm/HvdcAngleDroopActivePowerControl.h>
+#include <iidm/HvdcOperatorActivePowerRange.h>
 #include <string>
 
 namespace iidm {
@@ -24,6 +26,12 @@ public:
 
     HvdcConverterStationMode getConvertersMode() const;
     HvdcLine& setConvertersMode(HvdcConverterStationMode mode);
+
+    bool hasHvdcAngleDroopActivePowerControl() const;
+    HvdcAngleDroopActivePowerControl getHvdcAngleDroopActivePowerControl() const;
+
+    bool hasHvdcOperatorActivePowerRange() const;
+    HvdcOperatorActivePowerRange getHvdcOperatorActivePowerRange() const;
 
     bool isValid() const { return handle_ != INVALID_HANDLE; }
 

@@ -247,6 +247,12 @@ jobs:
           IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/native-artifacts/libpowsybl-iidm-native.so
         run: ./build/examples/standalone/example_standalone examples/IEEE14.xiidm
 
+      - name: Run example_standalone with extensions_test.xiidm
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/native-artifacts
+          IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/native-artifacts/libpowsybl-iidm-native.so
+        run: ./build/examples/standalone/example_standalone examples/extensions_test.xiidm
+
       - name: Compile JavaLauncher
         run: |
           mkdir -p build/java-classes
@@ -263,6 +269,15 @@ jobs:
             -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar:build/java-classes" \
             -Djava.library.path=${{ github.workspace }}/build/examples/embedded \
             JavaLauncher examples/IEEE14.xiidm
+
+      - name: Run embedded example with extensions_test.xiidm
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/build:${{ github.workspace }}/build/examples/embedded
+        run: |
+          java \
+            -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar:build/java-classes" \
+            -Djava.library.path=${{ github.workspace }}/build/examples/embedded \
+            JavaLauncher examples/extensions_test.xiidm
 
       - name: Run tests (including TestIntegration with real network)
         env:

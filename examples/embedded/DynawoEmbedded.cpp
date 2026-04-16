@@ -5,8 +5,10 @@
  * registered it via IidmBridgeRegistry.  This C++ entry point attaches to
  * the running JVM and reads the network directly from JVM memory.
  *
- * The Java side (JavaLauncher.java) typically calls this function via JNI
- * after registering the network.
+ * Loops generators (APC + CRC), HVDC lines (HADAPC + HOAR), static var
+ * compensators (VPRC), and voltage levels (SlackTerminal) — all guarded with
+ * has* checks so the same code runs cleanly on IEEE14 (no HVDC/SVC) and on
+ * extensions_test.xiidm (no generators).
  */
 #include <iidm/iidm.h>
 #include <jni.h>
@@ -14,40 +16,65 @@
 
 extern "C" {
 
-/**
- * C entry point called from the Java orchestrator via JNI.
- *
- * @param networkId  the ID under which the network was registered in
- *                   IidmBridgeRegistry (e.g. "case1").
- */
 void runEmbedded(const char* networkId) {
     try {
         iidm::NetworkLoadOptions opts;
-        opts.mode        = iidm::BackendMode::JNI;
+        opts.mode         = iidm::BackendMode::JNI;
         opts.jniNetworkId = networkId ? networkId : "default";
 
         iidm::Network network = iidm::NetworkFactory::wrap(opts.jniNetworkId, opts);
-
         std::cout << "[C++] Network: " << network.getId() << "\n";
 
-        // Example: read and update generators
+        // Generators: scale targetP and report extensions
         for (auto& gen : network.getGenerators()) {
             double targetP = gen.getTargetP();
             std::cout << "[C++] Generator " << gen.getId()
                       << " targetP=" << targetP << " MW\n";
-
-            // Example simulation update: scale active power by 0.95
             gen.setTargetP(targetP * 0.95);
+            if (gen.hasActivePowerControl()) {
+                double droop = gen.getActivePowerControl().getDroop();
+                std::cout << "[C++]   activePowerControl.droop=" << droop << "\n";
+                gen.getActivePowerControl().setDroop(2);
+            }
+            if (gen.hasCoordinatedReactiveControl()) {
+                double qPct = gen.getCoordinatedReactiveControl().getQPercent();
+                std::cout << "[C++]   coordinatedReactiveControl.qPercent=" << qPct << "\n";
+                gen.getCoordinatedReactiveControl().setQPercent(qPct * 1.1);
+            }
         }
 
-        if (network.getGenerator("_GEN____3_SM").has_value()) {
-            std::cout << "[C++] Generator _GEN____3_SM is get\n";
-            if (network.getGenerator("_GEN____3_SM")->hasActivePowerControl()) {
-                std::cout << "[C++] Generator _GEN____3_SM has active power control\n";
-                double droop = network.getGenerator("_GEN____3_SM")->getActivePowerControl().getDroop();
-                std::cout << "[C++]  droop=" << droop << "\n";
-                network.getGenerator("_GEN____3_SM")->getActivePowerControl().setDroop(2);
+        // HVDC lines: report extensions
+        for (const auto& hvdc : network.getHvdcLines()) {
+            std::cout << "[C++] HvdcLine " << hvdc.getId()
+                      << " activePowerSetpoint=" << hvdc.getActivePowerSetpoint() << " MW\n";
+            if (hvdc.hasHvdcAngleDroopActivePowerControl()) {
+                auto ext = hvdc.getHvdcAngleDroopActivePowerControl();
+                std::cout << "[C++]   hvdcAngleDroopActivePowerControl: droop=" << ext.getDroop()
+                          << "  p0=" << ext.getP0()
+                          << "  enabled=" << (ext.isEnabled() ? "true" : "false") << "\n";
             }
+            if (hvdc.hasHvdcOperatorActivePowerRange()) {
+                auto ext = hvdc.getHvdcOperatorActivePowerRange();
+                std::cout << "[C++]   hvdcOperatorActivePowerRange: oprFromCS1toCS2="
+                          << ext.getOprFromCS1toCS2()
+                          << "  oprFromCS2toCS1=" << ext.getOprFromCS2toCS1() << "\n";
+            }
+        }
+
+        // Static var compensators: report extensions
+        for (const auto& svc : network.getStaticVarCompensators()) {
+            std::cout << "[C++] StaticVarCompensator " << svc.getId() << "\n";
+            if (svc.hasVoltagePerReactivePowerControl())
+                std::cout << "[C++]   voltagePerReactivePowerControl.slope="
+                          << svc.getVoltagePerReactivePowerControl().getSlope() << "\n";
+        }
+
+        // Voltage levels: report SlackTerminal
+        for (const auto& vl : network.getVoltageLevels()) {
+            if (vl.hasSlackTerminal())
+                std::cout << "[C++] VoltageLevel " << vl.getId()
+                          << " slackTerminal.busId="
+                          << vl.getSlackTerminal().getTerminal().getBusId() << "\n";
         }
 
         std::cout << "[C++] Simulation complete.\n";
@@ -57,10 +84,6 @@ void runEmbedded(const char* networkId) {
     }
 }
 
-/**
- * JNI entry point called from JavaLauncher.java via System.loadLibrary.
- * Bridges the Java String networkId to the C-string runEmbedded() above.
- */
 JNIEXPORT void JNICALL Java_com_powsybl_iidmbridge_JavaLauncher_runEmbedded(JNIEnv* env, jclass, jstring jNetworkId) {
     const char* rawId = env->GetStringUTFChars(jNetworkId, nullptr);
     if (!rawId) return;
@@ -69,10 +92,6 @@ JNIEXPORT void JNICALL Java_com_powsybl_iidmbridge_JavaLauncher_runEmbedded(JNIE
     runEmbedded(id.c_str());
 }
 
-/**
- * JNI entry point called from JavaLauncher.java via System.loadLibrary.
- * Bridges the Java String networkId to the C-string runEmbedded() above.
- */
 JNIEXPORT void JNICALL Java_JavaLauncher_runEmbedded(JNIEnv* env, jclass, jstring jNetworkId) {
     const char* rawId = env->GetStringUTFChars(jNetworkId, nullptr);
     if (!rawId) return;
@@ -83,7 +102,6 @@ JNIEXPORT void JNICALL Java_JavaLauncher_runEmbedded(JNIEnv* env, jclass, jstrin
 
 } // extern "C"
 
-// Stand-alone test entry point (not used when called from JNI)
 int main() {
     std::cout << "This binary is intended to be called from Java via JNI.\n";
     std::cout << "To test standalone, use example_standalone instead.\n";

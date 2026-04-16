@@ -1,5 +1,5 @@
 .idea
 *.iml
-build/
+build*/
 java/target/
 java/dependency-reduced-pom.xml
