@@ -241,11 +241,11 @@ jobs:
           cmake --build build --parallel
 #          cmake --build build --parallel --target iidmbridge_jar
 
-      - name: Run example_standalone with IEEE14.xiidm
+      - name: Run example_standalone with IEEE14 and extensions_test networks
         env:
           LD_LIBRARY_PATH: ${{ github.workspace }}/native-artifacts
           IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/native-artifacts/libpowsybl-iidm-native.so
-        run: ./build/examples/standalone/example_standalone examples/IEEE14.xiidm
+        run: ./build/examples/standalone/example_standalone examples/IEEE14.xiidm examples/extensions_test.xiidm
 
       - name: Compile JavaLauncher
         run: |
@@ -255,14 +255,14 @@ jobs:
             examples/embedded/JavaLauncher.java \
             -d build/java-classes
 
-      - name: Run embedded example with IEEE14.xiidm
+      - name: Run embedded example with IEEE14 and extensions_test networks
         env:
           LD_LIBRARY_PATH: ${{ github.workspace }}/build:${{ github.workspace }}/build/examples/embedded
         run: |
           java \
             -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar:build/java-classes" \
             -Djava.library.path=${{ github.workspace }}/build/examples/embedded \
-            JavaLauncher examples/IEEE14.xiidm
+            JavaLauncher examples/IEEE14.xiidm examples/extensions_test.xiidm
 
       - name: Run tests (including TestIntegration with real network)
         env:
