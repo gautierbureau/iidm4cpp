@@ -22,7 +22,8 @@
    - 5.1 [BackendProvider Interface](#51-backendprovider-interface)
    - 5.2 [GraalVM Native Image Backend](#52-graalvm-native-image-backend)
    - 5.3 [JNI Embedded Backend](#53-jni-embedded-backend)
-   - 5.4 [Backend Selection Strategy](#54-backend-selection-strategy)
+   - 5.4 [Extensions](#54-extensions)
+   - 5.5 [Backend Selection Strategy](#55-backend-selection-strategy)
 6. [Java-Side Design](#6-java-side-design)
    - 6.1 [GraalVM Entry Points](#61-graalvm-entry-points)
    - 6.2 [JNI Registry for Embedded Mode](#62-jni-registry-for-embedded-mode)
@@ -746,7 +747,140 @@ JNI does not propagate Java exceptions automatically. After every JNI call
 the backend checks `ExceptionOccurred()` and, if set, clears it and throws
 a C++ `IidmException` containing the Java exception's message.
 
-### 5.4 Backend Selection Strategy
+### 5.4 Extensions
+
+IIDM extensions are optional property bags that can be attached to network
+components (e.g. `ActivePowerControl` on `Generator`). The bridge exposes
+them through the same `BackendProvider` property-code mechanism as core
+properties, but the two backends handle the dispatch differently.
+
+#### C++ surface
+
+An extension is a thin wrapper class that holds the same `ObjectHandle` as
+its host component and routes calls through `EXT_*` property codes:
+
+```cpp
+// include/iidm/ActivePowerControl.h
+class ActivePowerControl {
+public:
+    explicit ActivePowerControl(ObjectHandle handle, BackendProvider* backend);
+
+    bool   isParticipate() const;                     // EXT_APC_PARTICIPATE
+    ActivePowerControl& setParticipate(bool v);
+    double getDroop() const;                          // EXT_APC_DROOP
+    ActivePowerControl& setDroop(double v);
+
+    bool isValid() const { return handle_ != INVALID_HANDLE; }
+private:
+    ObjectHandle   handle_;
+    BackendProvider* backend_;
+};
+
+// include/iidm/Generator.h (additions)
+bool             hasActivePowerControl() const;  // EXT_APC_EXISTS
+ActivePowerControl getActivePowerControl() const;
+```
+
+Property codes for extensions occupy a dedicated range in `PropertyCodes.h`
+(and the mirrored `PropertyCodes.java`):
+
+```cpp
+constexpr int EXT_APC_EXISTS      = 3000;  // bool: is extension present?
+constexpr int EXT_APC_DROOP       = 3001;  // double getter/setter
+constexpr int EXT_APC_PARTICIPATE = 3002;  // bool getter/setter
+```
+
+#### GraalVM backend — automatic
+
+The GraalVM entry points (`iidm_get_double`, `iidm_get_bool`, …) forward
+**every** property code to `PropertyDispatcher.java` without a hard-coded
+switch. Adding an extension only requires new cases in `PropertyDispatcher`:
+
+```java
+// PropertyDispatcher.java
+case EXT_APC_DROOP    -> ((Generator) obj).getExtension(ActivePowerControl.class).getDroop();
+case EXT_APC_EXISTS   -> ((Generator) obj).getExtension(ActivePowerControl.class) != null;
+case EXT_APC_PARTICIPATE -> ((Generator) obj).getExtension(ActivePowerControl.class).isParticipate();
+```
+
+No C++ changes are needed in the GraalVM backend.
+
+#### JNI backend — explicit wiring
+
+The JNI backend calls Java methods directly and must explicitly handle every
+property code. Each extension requires work in two files:
+
+**`src/jni/JNIMethodCache.h`** — cache the extension interface class and its
+method IDs:
+
+```cpp
+jclass    activePowerControlClass      = nullptr;
+jmethodID generator_getExtensionByName = nullptr;
+jmethodID apc_getDroop                 = nullptr;
+jmethodID apc_setDroop                 = nullptr;
+jmethodID apc_isParticipate            = nullptr;
+jmethodID apc_setParticipate           = nullptr;
+```
+
+**`src/jni/JNIBackend.cpp`** — initialise the cache, add a helper, and add
+switch cases:
+
+```cpp
+// In cacheMethodIds():
+cacheClass(cache_.activePowerControlClass,
+    "com/powsybl/iidm/network/extensions/ActivePowerControl");
+cache_.generator_getExtensionByName = env_->GetMethodID(cache_.generatorClass,
+    "getExtensionByName",
+    "(Ljava/lang/String;)Lcom/powsybl/commons/extensions/Extension;");
+cache_.apc_getDroop      = env_->GetMethodID(cache_.activePowerControlClass, "getDroop",      "()D");
+cache_.apc_setDroop      = env_->GetMethodID(cache_.activePowerControlClass, "setDroop",      "(D)V");
+cache_.apc_isParticipate = env_->GetMethodID(cache_.activePowerControlClass, "isParticipate", "()Z");
+cache_.apc_setParticipate= env_->GetMethodID(cache_.activePowerControlClass, "setParticipate","(Z)V");
+
+// Private helper (returns a local JNI ref; caller must DeleteLocalRef):
+jobject JNIBackend::fetchApcExtension(jobject gen) const {
+    jstring name = env_->NewStringUTF("activePowerControl");
+    jobject ext  = env_->CallObjectMethod(gen, cache_.generator_getExtensionByName, name);
+    env_->DeleteLocalRef(name);
+    checkJNIException(env_);
+    return ext;
+}
+
+// In getBool():
+case prop::EXT_APC_EXISTS: {
+    jobject apc = fetchApcExtension(obj);
+    result = (apc != nullptr) ? JNI_TRUE : JNI_FALSE;
+    if (apc) env_->DeleteLocalRef(apc);
+    break;
+}
+case prop::EXT_APC_PARTICIPATE: {
+    jobject apc = fetchApcExtension(obj);
+    if (!apc) throw PropertyNotFoundException("ActivePowerControl extension not present");
+    result = env_->CallBooleanMethod(apc, cache_.apc_isParticipate);
+    env_->DeleteLocalRef(apc);
+    break;
+}
+```
+
+> **Key asymmetry**: because the GraalVM backend routes all codes through
+> `PropertyDispatcher`, a new extension only needs Java-side changes for that
+> path. The JNI backend must also receive explicit JNI method lookups and
+> switch cases — omitting this causes `PropertyNotFoundException` at runtime
+> with the JNI backend while the GraalVM backend continues to work.
+
+#### Checklist for adding a new extension
+
+| Step | File(s) | GraalVM | JNI |
+|---|---|---|---|
+| `EXT_*` property constants | `PropertyCodes.h` + `PropertyCodes.java` | required | required |
+| C++ extension wrapper | `include/iidm/MyExt.h` + `src/MyExt.cpp` | required | required |
+| Host component accessors | e.g. `Generator.h` / `Generator.cpp` | required | required |
+| `PropertyDispatcher` cases | `PropertyDispatcher.java` | required | not needed |
+| Method-ID cache fields | `JNIMethodCache.h` | — | required |
+| Cache init + switch cases | `JNIBackend.cpp` | — | required |
+| Unit tests | `test/TestMyExt.cpp` | required | required |
+
+### 5.5 Backend Selection Strategy
 
 ```cpp
 // src/BackendSelector.cpp

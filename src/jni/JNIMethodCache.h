@@ -132,6 +132,14 @@ struct JNIMethodCache {
     jclass convertersModeClass = nullptr;
     jclass regulationModeClass = nullptr;
     jclass countryClass        = nullptr;
+
+    // ── ActivePowerControl extension ─────────────────────────────────────────
+    jclass    activePowerControlClass      = nullptr;
+    jmethodID generator_getExtensionByName = nullptr;
+    jmethodID apc_getDroop                 = nullptr;
+    jmethodID apc_setDroop                 = nullptr;
+    jmethodID apc_isParticipate            = nullptr;
+    jmethodID apc_setParticipate           = nullptr;
 };
 
 } // namespace iidm

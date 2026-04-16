@@ -171,6 +171,17 @@ void JNIBackend::cacheMethodIds() {
         "()Lcom/powsybl/iidm/network/TopologyKind;");
     checkJNIException(env_);
 
+    // ActivePowerControl extension
+    cacheClass(cache_.activePowerControlClass,
+        "com/powsybl/iidm/network/extensions/ActivePowerControl");
+    cache_.generator_getExtensionByName = env_->GetMethodID(cache_.generatorClass,
+        "getExtensionByName", "(Ljava/lang/String;)Lcom/powsybl/commons/extensions/Extension;");
+    cache_.apc_getDroop      = env_->GetMethodID(cache_.activePowerControlClass, "getDroop",      "()D");
+    cache_.apc_setDroop      = env_->GetMethodID(cache_.activePowerControlClass, "setDroop",      "(D)V");
+    cache_.apc_isParticipate = env_->GetMethodID(cache_.activePowerControlClass, "isParticipate", "()Z");
+    cache_.apc_setParticipate= env_->GetMethodID(cache_.activePowerControlClass, "setParticipate","(Z)V");
+    checkJNIException(env_);
+
     // Retrieve the network object via IidmBridgeRegistry
     jstring jId = env_->NewStringUTF(networkId_.c_str());
     jobject netObj = env_->CallStaticObjectMethod(cache_.iidmRegistryClass, cache_.registry_get, jId);
@@ -236,6 +247,14 @@ std::vector<ObjectHandle> JNIBackend::collectionToHandles(jobject collection) co
     return result;
 }
 
+jobject JNIBackend::fetchApcExtension(jobject gen) const {
+    jstring name = env_->NewStringUTF("activePowerControl");
+    jobject ext  = env_->CallObjectMethod(gen, cache_.generator_getExtensionByName, name);
+    env_->DeleteLocalRef(name);
+    checkJNIException(env_);
+    return ext; // local ref; caller must DeleteLocalRef if non-null
+}
+
 // ── BackendProvider implementation ───────────────────────────────────────────
 
 ObjectHandle JNIBackend::getNetworkHandle() const {
@@ -266,6 +285,13 @@ double JNIBackend::getDouble(ObjectHandle h, int property) const {
         case prop::LINE_B1: result = env_->CallDoubleMethod(obj, cache_.line_getB1); break;
         case prop::LINE_G2: result = env_->CallDoubleMethod(obj, cache_.line_getG2); break;
         case prop::LINE_B2: result = env_->CallDoubleMethod(obj, cache_.line_getB2); break;
+        case prop::EXT_APC_DROOP: {
+            jobject apc = fetchApcExtension(obj);
+            if (!apc) throw PropertyNotFoundException("ActivePowerControl extension not present");
+            result = env_->CallDoubleMethod(apc, cache_.apc_getDroop);
+            env_->DeleteLocalRef(apc);
+            break;
+        }
         default:
             throw PropertyNotFoundException("Unknown double property: " + std::to_string(property));
     }
@@ -285,6 +311,13 @@ void JNIBackend::setDouble(ObjectHandle h, int property, double value) {
         case prop::TERMINAL_Q:   env_->CallObjectMethod(obj, cache_.terminal_setQ, value); break;
         case prop::BUS_V:        env_->CallObjectMethod(obj, cache_.bus_setV,     value); break;
         case prop::BUS_ANGLE:    env_->CallObjectMethod(obj, cache_.bus_setAngle, value); break;
+        case prop::EXT_APC_DROOP: {
+            jobject apc = fetchApcExtension(obj);
+            if (!apc) throw PropertyNotFoundException("ActivePowerControl extension not present");
+            env_->CallVoidMethod(apc, cache_.apc_setDroop, value);
+            env_->DeleteLocalRef(apc);
+            break;
+        }
         default:
             throw PropertyNotFoundException("Unknown double property for set: " + std::to_string(property));
     }
@@ -335,6 +368,19 @@ bool JNIBackend::getBool(ObjectHandle h, int property) const {
         case prop::TERMINAL_CONNECTED:
             result = env_->CallBooleanMethod(obj, cache_.terminal_isConnected);
             break;
+        case prop::EXT_APC_EXISTS: {
+            jobject apc = fetchApcExtension(obj);
+            result = (apc != nullptr) ? JNI_TRUE : JNI_FALSE;
+            if (apc) env_->DeleteLocalRef(apc);
+            break;
+        }
+        case prop::EXT_APC_PARTICIPATE: {
+            jobject apc = fetchApcExtension(obj);
+            if (!apc) throw PropertyNotFoundException("ActivePowerControl extension not present");
+            result = env_->CallBooleanMethod(apc, cache_.apc_isParticipate);
+            env_->DeleteLocalRef(apc);
+            break;
+        }
         default:
             throw PropertyNotFoundException("Unknown bool property: " + std::to_string(property));
     }
@@ -353,6 +399,13 @@ void JNIBackend::setBool(ObjectHandle h, int property, bool value) {
             if (value) env_->CallBooleanMethod(obj, cache_.terminal_connect);
             else       env_->CallBooleanMethod(obj, cache_.terminal_disconnect);
             break;
+        case prop::EXT_APC_PARTICIPATE: {
+            jobject apc = fetchApcExtension(obj);
+            if (!apc) throw PropertyNotFoundException("ActivePowerControl extension not present");
+            env_->CallVoidMethod(apc, cache_.apc_setParticipate, static_cast<jboolean>(value));
+            env_->DeleteLocalRef(apc);
+            break;
+        }
         default:
             throw PropertyNotFoundException("Unknown bool property for set: " + std::to_string(property));
     }
