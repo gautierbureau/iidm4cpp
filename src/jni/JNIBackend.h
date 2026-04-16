@@ -48,6 +48,8 @@ private:
     jobject toObject(ObjectHandle h) const;
     // Wrap a Java Iterable/List into a vector of handles
     std::vector<ObjectHandle> collectionToHandles(jobject collection) const;
+    // Return a local ref to the ActivePowerControl extension of a generator (may be null)
+    jobject fetchApcExtension(jobject gen) const;
 
     std::string  networkId_;
     JavaVM*      jvm_  = nullptr;
