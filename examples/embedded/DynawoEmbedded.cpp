@@ -41,12 +41,16 @@ void runEmbedded(const char* networkId) {
         }
 
         if (network.getGenerator("_GEN____3_SM").has_value()) {
-            std::cout << "[C++] Generator _GEN____3_SM is get\n";
-            if (network.getGenerator("_GEN____3_SM")->hasActivePowerControl()) {
-                std::cout << "[C++] Generator _GEN____3_SM has active power control\n";
-                double droop = network.getGenerator("_GEN____3_SM")->getActivePowerControl().getDroop();
-                std::cout << "[C++]  droop=" << droop << "\n";
-                network.getGenerator("_GEN____3_SM")->getActivePowerControl().setDroop(2);
+            auto gen3 = network.getGenerator("_GEN____3_SM").value();
+            if (gen3.hasActivePowerControl()) {
+                double droop = gen3.getActivePowerControl().getDroop();
+                std::cout << "[C++] _GEN____3_SM activePowerControl.droop=" << droop << "\n";
+                gen3.getActivePowerControl().setDroop(2);
+            }
+            if (gen3.hasCoordinatedReactiveControl()) {
+                double qPct = gen3.getCoordinatedReactiveControl().getQPercent();
+                std::cout << "[C++] _GEN____3_SM coordinatedReactiveControl.qPercent=" << qPct << "\n";
+                gen3.getCoordinatedReactiveControl().setQPercent(qPct * 1.1);
             }
         }
 

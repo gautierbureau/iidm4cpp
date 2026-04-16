@@ -41,16 +41,23 @@ int main(int argc, char* argv[]) {
                       << "\n";
             if (gen.hasActivePowerControl()) {
                 double droop = gen.getActivePowerControl().getDroop();
-                std::cout << "  droop=" << droop << "\n";
+                std::cout << "    activePowerControl.droop=" << droop << "\n";
+            }
+            if (gen.hasCoordinatedReactiveControl()) {
+                double qPct = gen.getCoordinatedReactiveControl().getQPercent();
+                std::cout << "    coordinatedReactiveControl.qPercent=" << qPct << "\n";
             }
         }
 
         if (network.getGenerator("_GEN____3_SM").has_value()) {
-            std::cout << "Generator _GEN____3_SM is get\n";
-            if (network.getGenerator("_GEN____3_SM")->hasActivePowerControl()) {
-                std::cout << "Generator _GEN____3_SM has active power control\n";
-                double droop = network.getGenerator("_GEN____3_SM")->getActivePowerControl().getDroop();
-                std::cout << "  droop=" << droop << "\n";
+            auto gen3 = network.getGenerator("_GEN____3_SM").value();
+            if (gen3.hasActivePowerControl()) {
+                double droop = gen3.getActivePowerControl().getDroop();
+                std::cout << "Generator _GEN____3_SM activePowerControl.droop=" << droop << "\n";
+            }
+            if (gen3.hasCoordinatedReactiveControl()) {
+                double qPct = gen3.getCoordinatedReactiveControl().getQPercent();
+                std::cout << "Generator _GEN____3_SM coordinatedReactiveControl.qPercent=" << qPct << "\n";
             }
         }
 
