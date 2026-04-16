@@ -1,17 +1,16 @@
 /**
  * Embedded mode example — Java orchestrator side.
  *
- * Accepts one or more XIIDM files as arguments. For each file it loads the
- * network, programmatically adds CoordinatedReactiveControl to _GEN____3_SM
- * if the generator exists but the extension is absent, registers the network
- * with IidmBridgeRegistry, calls the C++ simulation via JNI, then reads back
- * updated values before unregistering.
+ * Accepts a single XIIDM file as argument. Loads the network, programmatically
+ * adds CoordinatedReactiveControl to _GEN____3_SM if the generator exists but
+ * the extension is absent, registers the network with IidmBridgeRegistry, calls
+ * the C++ simulation via JNI, then reads back updated values before unregistering.
  *
  * Compile and run:
  *   javac -cp powsybl-core.jar:iidm-bridge-java.jar JavaLauncher.java
  *   java  -cp powsybl-core.jar:iidm-bridge-java.jar \
  *         -Djava.library.path=/path/to/libexample_embedded.so \
- *         JavaLauncher examples/IEEE14.xiidm examples/extensions_test.xiidm
+ *         JavaLauncher examples/IEEE14.xiidm
  */
 
 import com.powsybl.iidm.network.*;
@@ -37,15 +36,12 @@ public class JavaLauncher {
     private static native void runEmbedded(String networkId);
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 1) {
-            System.err.println("Usage: JavaLauncher <path-to-network.xiidm> [<path> ...]");
+        if (args.length != 1) {
+            System.err.println("Usage: JavaLauncher <path-to-network.xiidm>");
             System.exit(1);
         }
 
-        for (String filePath : args) {
-            System.out.println("\n[Java] ===== " + filePath + " =====");
-            processNetwork(filePath);
-        }
+        processNetwork(args[0]);
     }
 
     private static void processNetwork(String filePath) throws Exception {

@@ -1,8 +1,8 @@
 /**
  * Standalone mode example.
  *
- * Loads one or more XIIDM network files using the GraalVM native image backend
- * and prints generators, HVDC lines, static var compensators, and voltage levels,
+ * Loads an XIIDM network file using the GraalVM native image backend and
+ * prints generators, HVDC lines, static var compensators, and voltage levels,
  * exercising all supported extensions via has* guards.
  *
  * Prerequisite:
@@ -10,7 +10,7 @@
  *   - IIDM_BRIDGE_GRAALVM_LIB set to its full path.
  *
  * Usage:
- *   ./example_standalone path/to/network.xiidm [path/to/other.xiidm ...]
+ *   ./example_standalone path/to/network.xiidm
  */
 #include <iidm/iidm.h>
 #include <iostream>
@@ -95,9 +95,8 @@ static void printNetwork(iidm::Network& network) {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        std::cerr << "Usage: " << argv[0]
-                  << " <path-to-network.xiidm> [<path-to-network.xiidm> ...]\n";
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " <path-to-network.xiidm>\n";
         return 1;
     }
 
@@ -105,11 +104,8 @@ int main(int argc, char* argv[]) {
         iidm::NetworkLoadOptions opts;
         opts.mode = iidm::BackendMode::GRAALVM;
 
-        for (int i = 1; i < argc; ++i) {
-            if (i > 1) std::cout << "\n" << std::string(60, '-') << "\n\n";
-            iidm::Network network = iidm::NetworkFactory::load(argv[i], opts);
-            printNetwork(network);
-        }
+        iidm::Network network = iidm::NetworkFactory::load(argv[1], opts);
+        printNetwork(network);
 
     } catch (const iidm::IidmException& ex) {
         std::cerr << "Error: " << ex.what() << "\n";
