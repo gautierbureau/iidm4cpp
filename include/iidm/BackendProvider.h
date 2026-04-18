@@ -41,6 +41,7 @@ public:
 
     // ── Lifecycle ────────────────────────────────────────────────────────
     virtual void loadNetwork(const std::string& filePath) = 0;
+    virtual void saveNetwork(const std::string& filePath) = 0;
     virtual void close() = 0;
 };
 

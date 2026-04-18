@@ -118,6 +118,7 @@ struct JNIMethodCache {
 
     // ── IidmBridgeRegistry ───────────────────────────────────────────────
     jmethodID registry_get     = nullptr;
+    jmethodID registry_save    = nullptr;
     jmethodID registry_listIds = nullptr;
 
     // ── List ─────────────────────────────────────────────────────────────

@@ -39,6 +39,9 @@ public:
     std::string getId() const;
     std::string getName() const;
 
+    // Save the network to an XIIDM file.
+    void save(const std::string& filePath) const;
+
     // ── Iteration helpers ────────────────────────────────────────────────
     std::vector<Substation>              getSubstations() const;
     std::vector<VoltageLevel>            getVoltageLevels() const;

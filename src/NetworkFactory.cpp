@@ -25,4 +25,8 @@ Network NetworkFactory::createFromBackend(std::unique_ptr<BackendProvider> backe
     return Network(std::move(backend));
 }
 
+void NetworkFactory::save(const Network& network, const std::string& filePath) {
+    network.backend_->saveNetwork(filePath);
+}
+
 } // namespace iidm
