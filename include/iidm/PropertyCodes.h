@@ -194,8 +194,6 @@ constexpr int BAT_TARGET_P                = 1700;
 constexpr int BAT_TARGET_Q                = 1701;
 constexpr int BAT_MIN_P                   = 1702;
 constexpr int BAT_MAX_P                   = 1703;
-constexpr int BAT_P0                      = 1704;
-constexpr int BAT_Q0                      = 1705;
 
 // ── ReactiveCapabilityCurve point properties ──────────────────────────────────
 constexpr int POINT_P                     = 1800;

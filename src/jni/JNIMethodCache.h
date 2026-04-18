@@ -246,8 +246,6 @@ struct JNIMethodCache {
     jmethodID battery_setTargetQ    = nullptr;
     jmethodID battery_getMinP       = nullptr;
     jmethodID battery_getMaxP       = nullptr;
-    jmethodID battery_getP0         = nullptr;
-    jmethodID battery_getQ0         = nullptr;
     jmethodID network_getBatteries  = nullptr;
     jmethodID network_getBattery    = nullptr;
 

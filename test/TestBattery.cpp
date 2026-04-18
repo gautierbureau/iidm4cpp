@@ -19,8 +19,6 @@ protected:
         backend.doubles[{BAT_HANDLE, prop::BAT_TARGET_Q}] = 10.0;
         backend.doubles[{BAT_HANDLE, prop::BAT_MIN_P}]    = -100.0;
         backend.doubles[{BAT_HANDLE, prop::BAT_MAX_P}]    = 100.0;
-        backend.doubles[{BAT_HANDLE, prop::BAT_P0}]       = 20.0;
-        backend.doubles[{BAT_HANDLE, prop::BAT_Q0}]       = 5.0;
         backend.related[{BAT_HANDLE, prop::REL_TERMINAL}] = TERM_HANDLE;
         backend.bools  [{TERM_HANDLE, prop::TERMINAL_CONNECTED}] = true;
     }
@@ -56,17 +54,6 @@ TEST_F(BatteryTest, MinMaxP) {
     Battery bat(BAT_HANDLE, &backend);
     EXPECT_DOUBLE_EQ(bat.getMinP(), -100.0);
     EXPECT_DOUBLE_EQ(bat.getMaxP(),  100.0);
-}
-
-TEST_F(BatteryTest, P0Q0GetSet) {
-    Battery bat(BAT_HANDLE, &backend);
-    EXPECT_DOUBLE_EQ(bat.getP0(), 20.0);
-    EXPECT_DOUBLE_EQ(bat.getQ0(),  5.0);
-    bat.setP0(25.0).setQ0(8.0);
-    double p0 = backend.doubles[{BAT_HANDLE, prop::BAT_P0}];
-    double q0 = backend.doubles[{BAT_HANDLE, prop::BAT_Q0}];
-    EXPECT_DOUBLE_EQ(p0, 25.0);
-    EXPECT_DOUBLE_EQ(q0,  8.0);
 }
 
 TEST_F(BatteryTest, IsConnected) {

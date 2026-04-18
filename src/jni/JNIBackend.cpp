@@ -347,8 +347,6 @@ void JNIBackend::cacheMethodIds() {
     cache_.battery_setTargetQ = env_->GetMethodID(cache_.batteryClass, "setTargetQ", "(D)Lcom/powsybl/iidm/network/Battery;");
     cache_.battery_getMinP    = env_->GetMethodID(cache_.batteryClass, "getMinP", "()D");
     cache_.battery_getMaxP    = env_->GetMethodID(cache_.batteryClass, "getMaxP", "()D");
-    cache_.battery_getP0      = env_->GetMethodID(cache_.batteryClass, "getP0",   "()D");
-    cache_.battery_getQ0      = env_->GetMethodID(cache_.batteryClass, "getQ0",   "()D");
     cache_.network_getBatteries = env_->GetMethodID(cache_.networkClass, "getBatteries", "()Ljava/lang/Iterable;");
     cache_.network_getBattery   = env_->GetMethodID(cache_.networkClass, "getBattery",
         "(Ljava/lang/String;)Lcom/powsybl/iidm/network/Battery;");
@@ -671,8 +669,6 @@ double JNIBackend::getDouble(ObjectHandle h, int property) const {
         case prop::BAT_TARGET_Q: result = env_->CallDoubleMethod(obj, cache_.battery_getTargetQ); break;
         case prop::BAT_MIN_P:    result = env_->CallDoubleMethod(obj, cache_.battery_getMinP);    break;
         case prop::BAT_MAX_P:    result = env_->CallDoubleMethod(obj, cache_.battery_getMaxP);    break;
-        case prop::BAT_P0:       result = env_->CallDoubleMethod(obj, cache_.battery_getP0);      break;
-        case prop::BAT_Q0:       result = env_->CallDoubleMethod(obj, cache_.battery_getQ0);      break;
         case prop::GEN_MIN_Q: {
             jobject rl = env_->CallObjectMethod(obj, cache_.gen_getReactiveLimits);
             result = env_->CallDoubleMethod(rl, cache_.minMaxRL_getMinQ);

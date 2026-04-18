@@ -25,12 +25,6 @@ public:
     double getMinP() const;
     double getMaxP() const;
 
-    double getP0() const;
-    Battery& setP0(double p0);
-
-    double getQ0() const;
-    Battery& setQ0(double q0);
-
     Terminal getTerminal() const;
 
     void connect();

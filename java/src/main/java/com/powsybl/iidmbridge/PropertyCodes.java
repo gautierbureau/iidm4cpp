@@ -239,8 +239,6 @@ public final class PropertyCodes {
     public static final int BAT_TARGET_Q = 1701;
     public static final int BAT_MIN_P    = 1702;
     public static final int BAT_MAX_P    = 1703;
-    public static final int BAT_P0       = 1704;
-    public static final int BAT_Q0       = 1705;
 
     // ── ReactiveCapabilityCurve point properties ──────────────────────────────
     public static final int POINT_P     = 1800;

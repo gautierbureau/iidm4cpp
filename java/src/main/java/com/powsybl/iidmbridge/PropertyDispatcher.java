@@ -1,6 +1,7 @@
 package com.powsybl.iidmbridge;
 
 import com.powsybl.iidm.network.*;
+import com.powsybl.iidm.network.ShuntCompensatorNonLinearModel;
 import com.powsybl.iidm.network.extensions.ActivePowerControl;
 import com.powsybl.iidm.network.extensions.CoordinatedReactiveControl;
 import com.powsybl.iidm.network.extensions.HvdcAngleDroopActivePowerControl;
@@ -91,8 +92,6 @@ public final class PropertyDispatcher {
             case BAT_TARGET_Q -> ((Battery) obj).getTargetQ();
             case BAT_MIN_P    -> ((Battery) obj).getMinP();
             case BAT_MAX_P    -> ((Battery) obj).getMaxP();
-            case BAT_P0       -> ((Battery) obj).getP0();
-            case BAT_Q0       -> ((Battery) obj).getQ0();
             // Generator reactive limits (min-max kind)
             case GEN_MIN_Q -> ((Generator) obj).getReactiveLimits(MinMaxReactiveLimits.class).getMinQ();
             case GEN_MAX_Q -> ((Generator) obj).getReactiveLimits(MinMaxReactiveLimits.class).getMaxQ();
@@ -116,9 +115,9 @@ public final class PropertyDispatcher {
             case PTC_STEP_X     -> ((PhaseTapChangerStep) obj).getX();
             case PTC_STEP_G     -> ((PhaseTapChangerStep) obj).getG();
             case PTC_STEP_B     -> ((PhaseTapChangerStep) obj).getB();
-            // ShuntCompensator.Section (non-linear model)
-            case SHUNT_SECTION_B -> ((ShuntCompensator.Section) obj).getB();
-            case SHUNT_SECTION_G -> ((ShuntCompensator.Section) obj).getG();
+            // ShuntCompensatorNonLinearModel.Section (non-linear model)
+            case SHUNT_SECTION_B -> ((ShuntCompensatorNonLinearModel.Section) obj).getB();
+            case SHUNT_SECTION_G -> ((ShuntCompensatorNonLinearModel.Section) obj).getG();
             // ThreeWindingsTransformer leg doubles
             case THREE_WT_LEG1_R       -> ((ThreeWindingsTransformer) obj).getLeg1().getR();
             case THREE_WT_LEG1_X       -> ((ThreeWindingsTransformer) obj).getLeg1().getX();
@@ -466,7 +465,7 @@ public final class PropertyDispatcher {
             }
             case SHUNT_SECTION -> {
                 ShuntCompensator sc = (ShuntCompensator) obj;
-                yield sc.getNonLinearModel().getAllSections().stream();
+                yield sc.getModel(ShuntCompensatorNonLinearModel.class).getAllSections().stream();
             }
             default -> throw new IllegalArgumentException("Unknown child type: " + childType);
         };

@@ -41,24 +41,6 @@ double Battery::getMaxP() const {
     return backend_->getDouble(handle_, prop::BAT_MAX_P);
 }
 
-double Battery::getP0() const {
-    return backend_->getDouble(handle_, prop::BAT_P0);
-}
-
-Battery& Battery::setP0(double p0) {
-    backend_->setDouble(handle_, prop::BAT_P0, p0);
-    return *this;
-}
-
-double Battery::getQ0() const {
-    return backend_->getDouble(handle_, prop::BAT_Q0);
-}
-
-Battery& Battery::setQ0(double q0) {
-    backend_->setDouble(handle_, prop::BAT_Q0, q0);
-    return *this;
-}
-
 Terminal Battery::getTerminal() const {
     ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_TERMINAL);
     return Terminal(termHandle, backend_);
