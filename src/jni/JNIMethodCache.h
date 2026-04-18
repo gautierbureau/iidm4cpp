@@ -237,6 +237,86 @@ struct JNIMethodCache {
     // ── SlackTerminal extension (on VoltageLevel) ─────────────────────────────
     jclass    slackTerminalClass   = nullptr;
     jmethodID st_getTerminal       = nullptr;
+
+    // ── Battery ────────────────────────────────────────────────────────────────
+    jclass    batteryClass          = nullptr;
+    jmethodID battery_getTargetP    = nullptr;
+    jmethodID battery_setTargetP    = nullptr;
+    jmethodID battery_getTargetQ    = nullptr;
+    jmethodID battery_setTargetQ    = nullptr;
+    jmethodID battery_getMinP       = nullptr;
+    jmethodID battery_getMaxP       = nullptr;
+    jmethodID battery_getP0         = nullptr;
+    jmethodID battery_getQ0         = nullptr;
+    jmethodID network_getBatteries  = nullptr;
+    jmethodID network_getBattery    = nullptr;
+
+    // ── Reactive limits ────────────────────────────────────────────────────────
+    jclass    reactiveLimitsClass   = nullptr;
+    jclass    minMaxRLClass         = nullptr;
+    jclass    rcCurveClass          = nullptr;
+    jclass    rcPointClass          = nullptr;
+    jmethodID gen_getReactiveLimits = nullptr;
+    jmethodID vsc_getReactiveLimits = nullptr;
+    jmethodID minMaxRL_getMinQ      = nullptr;
+    jmethodID minMaxRL_getMaxQ      = nullptr;
+    jmethodID rcCurve_getPoints     = nullptr;
+    jmethodID rcPoint_getP          = nullptr;
+    jmethodID rcPoint_getMinQ       = nullptr;
+    jmethodID rcPoint_getMaxQ       = nullptr;
+
+    // ── TapChangerStep ────────────────────────────────────────────────────────
+    jclass    rtcStepClass          = nullptr;
+    jclass    ptcStepClass          = nullptr;
+    jmethodID tc_getAllSteps         = nullptr;
+    jmethodID rtcStep_getRho        = nullptr;
+    jmethodID rtcStep_getR          = nullptr;
+    jmethodID rtcStep_getX          = nullptr;
+    jmethodID rtcStep_getG          = nullptr;
+    jmethodID rtcStep_getB          = nullptr;
+    jmethodID ptcStep_getAlpha      = nullptr;
+    jmethodID ptcStep_getRho        = nullptr;
+    jmethodID ptcStep_getR          = nullptr;
+    jmethodID ptcStep_getX          = nullptr;
+    jmethodID ptcStep_getG          = nullptr;
+    jmethodID ptcStep_getB          = nullptr;
+
+    // ── ThreeWindingsTransformer Leg ──────────────────────────────────────────
+    jclass    threeWTLegClass           = nullptr;
+    jmethodID threeWT_getLeg1           = nullptr;
+    jmethodID threeWT_getLeg2           = nullptr;
+    jmethodID threeWT_getLeg3           = nullptr;
+    jmethodID leg_getR                  = nullptr;
+    jmethodID leg_getX                  = nullptr;
+    jmethodID leg_getG                  = nullptr;
+    jmethodID leg_getB                  = nullptr;
+    jmethodID leg_getRatedU             = nullptr;
+    jmethodID leg_getRatedS             = nullptr;
+    jmethodID leg_getRatioTapChanger    = nullptr;
+    jmethodID leg_getPhaseTapChanger    = nullptr;
+    // ── ShuntCompensator non-linear model ─────────────────────────────────────
+    jclass    shuntNLModelClass          = nullptr;
+    jclass    shuntSectionClass          = nullptr;
+    jmethodID shunt_getModelType         = nullptr;
+    jmethodID shunt_getNonLinearModel    = nullptr;
+    jmethodID shuntNLModel_getAllSections = nullptr;
+    jmethodID shuntSection_getB          = nullptr;
+    jmethodID shuntSection_getG          = nullptr;
+
+    // ── VoltageLevel BusBreakerView.getBuses() ────────────────────────────────
+    jmethodID bbView_getBuses            = nullptr;
+
+    // ── Terminal BusBreakerView / NodeBreakerView ─────────────────────────────
+    jclass    termBBViewClass                = nullptr;
+    jclass    termNBViewClass                = nullptr;
+    jmethodID terminal_getBusBreakerView     = nullptr;
+    jmethodID terminal_getNodeBreakerView    = nullptr;
+    jmethodID termBBView_getConnectableBus   = nullptr;
+    jmethodID termNBView_getNode             = nullptr;
+
+    // ── ThreeWT/TwoWT findById ────────────────────────────────────────────────
+    jmethodID network_getThreeWTById    = nullptr;
+    jmethodID network_getTwoWTById      = nullptr;
 };
 
 } // namespace iidm

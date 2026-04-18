@@ -339,6 +339,127 @@ void JNIBackend::cacheMethodIds() {
         "()Lcom/powsybl/iidm/network/Terminal;");
     checkJNIException(env_);
 
+    // Battery
+    cacheClass(cache_.batteryClass, "com/powsybl/iidm/network/Battery");
+    cache_.battery_getTargetP = env_->GetMethodID(cache_.batteryClass, "getTargetP", "()D");
+    cache_.battery_setTargetP = env_->GetMethodID(cache_.batteryClass, "setTargetP", "(D)Lcom/powsybl/iidm/network/Battery;");
+    cache_.battery_getTargetQ = env_->GetMethodID(cache_.batteryClass, "getTargetQ", "()D");
+    cache_.battery_setTargetQ = env_->GetMethodID(cache_.batteryClass, "setTargetQ", "(D)Lcom/powsybl/iidm/network/Battery;");
+    cache_.battery_getMinP    = env_->GetMethodID(cache_.batteryClass, "getMinP", "()D");
+    cache_.battery_getMaxP    = env_->GetMethodID(cache_.batteryClass, "getMaxP", "()D");
+    cache_.battery_getP0      = env_->GetMethodID(cache_.batteryClass, "getP0",   "()D");
+    cache_.battery_getQ0      = env_->GetMethodID(cache_.batteryClass, "getQ0",   "()D");
+    cache_.network_getBatteries = env_->GetMethodID(cache_.networkClass, "getBatteries", "()Ljava/lang/Iterable;");
+    cache_.network_getBattery   = env_->GetMethodID(cache_.networkClass, "getBattery",
+        "(Ljava/lang/String;)Lcom/powsybl/iidm/network/Battery;");
+    checkJNIException(env_);
+
+    // Reactive limits
+    cacheClass(cache_.minMaxRLClass, "com/powsybl/iidm/network/MinMaxReactiveLimits");
+    cacheClass(cache_.rcCurveClass,  "com/powsybl/iidm/network/ReactiveCapabilityCurve");
+    cacheClass(cache_.rcPointClass,  "com/powsybl/iidm/network/ReactiveCapabilityCurve$Point");
+    cache_.gen_getReactiveLimits = env_->GetMethodID(cache_.generatorClass,
+        "getReactiveLimits", "()Lcom/powsybl/iidm/network/ReactiveLimits;");
+    cache_.minMaxRL_getMinQ = env_->GetMethodID(cache_.minMaxRLClass, "getMinQ", "()D");
+    cache_.minMaxRL_getMaxQ = env_->GetMethodID(cache_.minMaxRLClass, "getMaxQ", "()D");
+    cache_.rcCurve_getPoints = env_->GetMethodID(cache_.rcCurveClass, "getPoints", "()Ljava/util/Collection;");
+    cache_.rcPoint_getP    = env_->GetMethodID(cache_.rcPointClass, "getP",    "()D");
+    cache_.rcPoint_getMinQ = env_->GetMethodID(cache_.rcPointClass, "getMinQ", "()D");
+    cache_.rcPoint_getMaxQ = env_->GetMethodID(cache_.rcPointClass, "getMaxQ", "()D");
+    checkJNIException(env_);
+
+    // TapChanger steps
+    cacheClass(cache_.rtcStepClass, "com/powsybl/iidm/network/RatioTapChangerStep");
+    cacheClass(cache_.ptcStepClass, "com/powsybl/iidm/network/PhaseTapChangerStep");
+    cache_.tc_getAllSteps  = env_->GetMethodID(cache_.tapChangerClass, "getAllSteps", "()Ljava/util/SortedMap;");
+    cache_.rtcStep_getRho = env_->GetMethodID(cache_.rtcStepClass, "getRho", "()D");
+    cache_.rtcStep_getR   = env_->GetMethodID(cache_.rtcStepClass, "getR",   "()D");
+    cache_.rtcStep_getX   = env_->GetMethodID(cache_.rtcStepClass, "getX",   "()D");
+    cache_.rtcStep_getG   = env_->GetMethodID(cache_.rtcStepClass, "getG",   "()D");
+    cache_.rtcStep_getB   = env_->GetMethodID(cache_.rtcStepClass, "getB",   "()D");
+    cache_.ptcStep_getAlpha = env_->GetMethodID(cache_.ptcStepClass, "getAlpha", "()D");
+    cache_.ptcStep_getRho   = env_->GetMethodID(cache_.ptcStepClass, "getRho",   "()D");
+    cache_.ptcStep_getR     = env_->GetMethodID(cache_.ptcStepClass, "getR",     "()D");
+    cache_.ptcStep_getX     = env_->GetMethodID(cache_.ptcStepClass, "getX",     "()D");
+    cache_.ptcStep_getG     = env_->GetMethodID(cache_.ptcStepClass, "getG",     "()D");
+    cache_.ptcStep_getB     = env_->GetMethodID(cache_.ptcStepClass, "getB",     "()D");
+    checkJNIException(env_);
+
+    // ThreeWindingsTransformer Leg
+    cacheClass(cache_.threeWTLegClass, "com/powsybl/iidm/network/ThreeWindingsTransformer$Leg");
+    {
+        jclass twtClass = env_->FindClass("com/powsybl/iidm/network/ThreeWindingsTransformer");
+        cache_.threeWT_getLeg1 = env_->GetMethodID(twtClass, "getLeg1",
+            "()Lcom/powsybl/iidm/network/ThreeWindingsTransformer$Leg;");
+        cache_.threeWT_getLeg2 = env_->GetMethodID(twtClass, "getLeg2",
+            "()Lcom/powsybl/iidm/network/ThreeWindingsTransformer$Leg;");
+        cache_.threeWT_getLeg3 = env_->GetMethodID(twtClass, "getLeg3",
+            "()Lcom/powsybl/iidm/network/ThreeWindingsTransformer$Leg;");
+        cache_.network_getThreeWTById = env_->GetMethodID(cache_.networkClass,
+            "getThreeWindingsTransformer",
+            "(Ljava/lang/String;)Lcom/powsybl/iidm/network/ThreeWindingsTransformer;");
+        cache_.network_getTwoWTById = env_->GetMethodID(cache_.networkClass,
+            "getTwoWindingsTransformer",
+            "(Ljava/lang/String;)Lcom/powsybl/iidm/network/TwoWindingsTransformer;");
+        env_->DeleteLocalRef(twtClass);
+    }
+    cache_.leg_getR    = env_->GetMethodID(cache_.threeWTLegClass, "getR",    "()D");
+    cache_.leg_getX    = env_->GetMethodID(cache_.threeWTLegClass, "getX",    "()D");
+    cache_.leg_getG    = env_->GetMethodID(cache_.threeWTLegClass, "getG",    "()D");
+    cache_.leg_getB    = env_->GetMethodID(cache_.threeWTLegClass, "getB",    "()D");
+    cache_.leg_getRatedU = env_->GetMethodID(cache_.threeWTLegClass, "getRatedU", "()D");
+    cache_.leg_getRatedS = env_->GetMethodID(cache_.threeWTLegClass, "getRatedS", "()D");
+    cache_.leg_getRatioTapChanger = env_->GetMethodID(cache_.threeWTLegClass,
+        "getRatioTapChanger", "()Lcom/powsybl/iidm/network/RatioTapChanger;");
+    cache_.leg_getPhaseTapChanger = env_->GetMethodID(cache_.threeWTLegClass,
+        "getPhaseTapChanger", "()Lcom/powsybl/iidm/network/PhaseTapChanger;");
+    checkJNIException(env_);
+
+    // ShuntCompensator non-linear model
+    cacheClass(cache_.shuntNLModelClass,
+        "com/powsybl/iidm/network/ShuntCompensator$NonLinearModel");
+    cacheClass(cache_.shuntSectionClass,
+        "com/powsybl/iidm/network/ShuntCompensator$Section");
+    {
+        jclass shuntClass = env_->FindClass("com/powsybl/iidm/network/ShuntCompensator");
+        cache_.shunt_getModelType = env_->GetMethodID(shuntClass, "getModelType",
+            "()Lcom/powsybl/iidm/network/ShuntCompensatorModelType;");
+        cache_.shunt_getNonLinearModel = env_->GetMethodID(shuntClass, "getNonLinearModel",
+            "()Lcom/powsybl/iidm/network/ShuntCompensator$NonLinearModel;");
+        env_->DeleteLocalRef(shuntClass);
+    }
+    cache_.shuntNLModel_getAllSections = env_->GetMethodID(cache_.shuntNLModelClass,
+        "getAllSections", "()Ljava/util/List;");
+    cache_.shuntSection_getB = env_->GetMethodID(cache_.shuntSectionClass, "getB", "()D");
+    cache_.shuntSection_getG = env_->GetMethodID(cache_.shuntSectionClass, "getG", "()D");
+    checkJNIException(env_);
+
+    // VoltageLevel BusBreakerView.getBuses()
+    cache_.bbView_getBuses = env_->GetMethodID(cache_.vlBusBreakerViewClass,
+        "getBuses", "()Ljava/lang/Iterable;");
+    checkJNIException(env_);
+
+    // Terminal BusBreakerView / NodeBreakerView
+    cacheClass(cache_.termBBViewClass, "com/powsybl/iidm/network/Terminal$BusBreakerView");
+    cacheClass(cache_.termNBViewClass, "com/powsybl/iidm/network/Terminal$NodeBreakerView");
+    cache_.terminal_getBusBreakerView  = env_->GetMethodID(cache_.terminalClass,
+        "getBusBreakerView",  "()Lcom/powsybl/iidm/network/Terminal$BusBreakerView;");
+    cache_.terminal_getNodeBreakerView = env_->GetMethodID(cache_.terminalClass,
+        "getNodeBreakerView", "()Lcom/powsybl/iidm/network/Terminal$NodeBreakerView;");
+    cache_.termBBView_getConnectableBus = env_->GetMethodID(cache_.termBBViewClass,
+        "getConnectableBus", "()Lcom/powsybl/iidm/network/Bus;");
+    cache_.termNBView_getNode = env_->GetMethodID(cache_.termNBViewClass, "getNode", "()I");
+    checkJNIException(env_);
+
+    // VSC reactive limits (vscClass is already in the cache struct at slot vscClass)
+    {
+        jclass vscCls = env_->FindClass("com/powsybl/iidm/network/VscConverterStation");
+        cache_.vsc_getReactiveLimits = env_->GetMethodID(vscCls,
+            "getReactiveLimits", "()Lcom/powsybl/iidm/network/ReactiveLimits;");
+        env_->DeleteLocalRef(vscCls);
+    }
+    checkJNIException(env_);
+
     // Retrieve the network object via IidmBridgeRegistry
     jstring jId = env_->NewStringUTF(networkId_.c_str());
     jobject netObj = env_->CallStaticObjectMethod(cache_.iidmRegistryClass, cache_.registry_get, jId);
@@ -401,6 +522,17 @@ std::vector<ObjectHandle> JNIBackend::collectionToHandles(jobject collection) co
     }
     env_->DeleteLocalRef(iterator);
     env_->DeleteLocalRef(iteratorClass);
+    return result;
+}
+
+std::vector<ObjectHandle> JNIBackend::sortedMapValuesToHandles(jobject sortedMap) const {
+    if (!sortedMap) return {};
+    jclass mapClass = env_->FindClass("java/util/Map");
+    jmethodID values = env_->GetMethodID(mapClass, "values", "()Ljava/util/Collection;");
+    env_->DeleteLocalRef(mapClass);
+    jobject col = env_->CallObjectMethod(sortedMap, values);
+    auto result = collectionToHandles(col);
+    if (col) env_->DeleteLocalRef(col);
     return result;
 }
 
@@ -535,8 +667,89 @@ double JNIBackend::getDouble(ObjectHandle h, int property) const {
             env_->DeleteLocalRef(ext);
             break;
         }
-        default:
-            throw PropertyNotFoundException("Unknown double property: " + std::to_string(property));
+        case prop::BAT_TARGET_P: result = env_->CallDoubleMethod(obj, cache_.battery_getTargetP); break;
+        case prop::BAT_TARGET_Q: result = env_->CallDoubleMethod(obj, cache_.battery_getTargetQ); break;
+        case prop::BAT_MIN_P:    result = env_->CallDoubleMethod(obj, cache_.battery_getMinP);    break;
+        case prop::BAT_MAX_P:    result = env_->CallDoubleMethod(obj, cache_.battery_getMaxP);    break;
+        case prop::BAT_P0:       result = env_->CallDoubleMethod(obj, cache_.battery_getP0);      break;
+        case prop::BAT_Q0:       result = env_->CallDoubleMethod(obj, cache_.battery_getQ0);      break;
+        case prop::GEN_MIN_Q: {
+            jobject rl = env_->CallObjectMethod(obj, cache_.gen_getReactiveLimits);
+            result = env_->CallDoubleMethod(rl, cache_.minMaxRL_getMinQ);
+            env_->DeleteLocalRef(rl); break;
+        }
+        case prop::GEN_MAX_Q: {
+            jobject rl = env_->CallObjectMethod(obj, cache_.gen_getReactiveLimits);
+            result = env_->CallDoubleMethod(rl, cache_.minMaxRL_getMaxQ);
+            env_->DeleteLocalRef(rl); break;
+        }
+        case prop::VSC_MIN_Q: {
+            jobject rl = env_->CallObjectMethod(obj, cache_.vsc_getReactiveLimits);
+            result = env_->CallDoubleMethod(rl, cache_.minMaxRL_getMinQ);
+            env_->DeleteLocalRef(rl); break;
+        }
+        case prop::VSC_MAX_Q: {
+            jobject rl = env_->CallObjectMethod(obj, cache_.vsc_getReactiveLimits);
+            result = env_->CallDoubleMethod(rl, cache_.minMaxRL_getMaxQ);
+            env_->DeleteLocalRef(rl); break;
+        }
+        case prop::POINT_P:     result = env_->CallDoubleMethod(obj, cache_.rcPoint_getP);    break;
+        case prop::POINT_MIN_Q: result = env_->CallDoubleMethod(obj, cache_.rcPoint_getMinQ); break;
+        case prop::POINT_MAX_Q: result = env_->CallDoubleMethod(obj, cache_.rcPoint_getMaxQ); break;
+        case prop::RTC_STEP_RHO: result = env_->CallDoubleMethod(obj, cache_.rtcStep_getRho); break;
+        case prop::RTC_STEP_R:   result = env_->CallDoubleMethod(obj, cache_.rtcStep_getR);   break;
+        case prop::RTC_STEP_X:   result = env_->CallDoubleMethod(obj, cache_.rtcStep_getX);   break;
+        case prop::RTC_STEP_G:   result = env_->CallDoubleMethod(obj, cache_.rtcStep_getG);   break;
+        case prop::RTC_STEP_B:   result = env_->CallDoubleMethod(obj, cache_.rtcStep_getB);   break;
+        case prop::PTC_STEP_ALPHA: result = env_->CallDoubleMethod(obj, cache_.ptcStep_getAlpha); break;
+        case prop::PTC_STEP_RHO:   result = env_->CallDoubleMethod(obj, cache_.ptcStep_getRho);   break;
+        case prop::PTC_STEP_R:     result = env_->CallDoubleMethod(obj, cache_.ptcStep_getR);     break;
+        case prop::PTC_STEP_X:     result = env_->CallDoubleMethod(obj, cache_.ptcStep_getX);     break;
+        case prop::PTC_STEP_G:     result = env_->CallDoubleMethod(obj, cache_.ptcStep_getG);     break;
+        case prop::PTC_STEP_B:     result = env_->CallDoubleMethod(obj, cache_.ptcStep_getB);     break;
+        case prop::SHUNT_SECTION_B: result = env_->CallDoubleMethod(obj, cache_.shuntSection_getB); break;
+        case prop::SHUNT_SECTION_G: result = env_->CallDoubleMethod(obj, cache_.shuntSection_getG); break;
+        // ThreeWT leg doubles — helper lambda to avoid code duplication
+        default: {
+            // Handle ThreeWT leg property codes (820-878)
+            auto twtLegDouble = [&](int legBase) -> double {
+                int off = property - legBase;
+                jmethodID getLeg = (legBase == prop::THREE_WT_LEG1_BASE) ? cache_.threeWT_getLeg1
+                                 : (legBase == prop::THREE_WT_LEG2_BASE) ? cache_.threeWT_getLeg2
+                                 : cache_.threeWT_getLeg3;
+                jobject leg = env_->CallObjectMethod(obj, getLeg);
+                double val = std::numeric_limits<double>::quiet_NaN();
+                switch (off) {
+                    case prop::THREE_WT_LEG_R_OFF:      val = env_->CallDoubleMethod(leg, cache_.leg_getR);      break;
+                    case prop::THREE_WT_LEG_X_OFF:      val = env_->CallDoubleMethod(leg, cache_.leg_getX);      break;
+                    case prop::THREE_WT_LEG_G_OFF:      val = env_->CallDoubleMethod(leg, cache_.leg_getG);      break;
+                    case prop::THREE_WT_LEG_B_OFF:      val = env_->CallDoubleMethod(leg, cache_.leg_getB);      break;
+                    case prop::THREE_WT_LEG_RATED_U_OFF: val = env_->CallDoubleMethod(leg, cache_.leg_getRatedU); break;
+                    case prop::THREE_WT_LEG_RATED_S_OFF: val = env_->CallDoubleMethod(leg, cache_.leg_getRatedS); break;
+                    case prop::THREE_WT_LEG_RTC_TARGET_V_OFF: {
+                        jobject rtc = env_->CallObjectMethod(leg, cache_.leg_getRatioTapChanger);
+                        val = env_->CallDoubleMethod(rtc, cache_.rtc_getTargetV);
+                        env_->DeleteLocalRef(rtc); break;
+                    }
+                    case prop::THREE_WT_LEG_PTC_REG_VALUE_OFF: {
+                        jobject ptc = env_->CallObjectMethod(leg, cache_.leg_getPhaseTapChanger);
+                        val = env_->CallDoubleMethod(ptc, cache_.ptc_getRegulationValue);
+                        env_->DeleteLocalRef(ptc); break;
+                    }
+                    default: break;
+                }
+                env_->DeleteLocalRef(leg);
+                return val;
+            };
+            if (property >= prop::THREE_WT_LEG1_BASE && property < prop::THREE_WT_LEG1_BASE + 20)
+                result = twtLegDouble(prop::THREE_WT_LEG1_BASE);
+            else if (property >= prop::THREE_WT_LEG2_BASE && property < prop::THREE_WT_LEG2_BASE + 20)
+                result = twtLegDouble(prop::THREE_WT_LEG2_BASE);
+            else if (property >= prop::THREE_WT_LEG3_BASE && property < prop::THREE_WT_LEG3_BASE + 20)
+                result = twtLegDouble(prop::THREE_WT_LEG3_BASE);
+            else
+                throw PropertyNotFoundException("Unknown double property: " + std::to_string(property));
+        }
     }
     checkJNIException(env_);
     return result;
@@ -617,6 +830,8 @@ void JNIBackend::setDouble(ObjectHandle h, int property, double value) {
             env_->DeleteLocalRef(ext);
             break;
         }
+        case prop::BAT_TARGET_P: env_->CallObjectMethod(obj, cache_.battery_setTargetP, value); break;
+        case prop::BAT_TARGET_Q: env_->CallObjectMethod(obj, cache_.battery_setTargetQ, value); break;
         default:
             throw PropertyNotFoundException("Unknown double property for set: " + std::to_string(property));
     }
@@ -712,8 +927,104 @@ int JNIBackend::getInt(ObjectHandle h, int property) const {
             checkJNIException(env_);
             return ord;
         }
-        default:
+        case prop::GEN_REACTIVE_LIMITS_KIND: {
+            jobject rl = env_->CallObjectMethod(obj, cache_.gen_getReactiveLimits);
+            int kind = 0;
+            if (rl) {
+                if (env_->IsInstanceOf(rl, cache_.minMaxRLClass))  kind = 1;
+                else if (env_->IsInstanceOf(rl, cache_.rcCurveClass)) kind = 2;
+                env_->DeleteLocalRef(rl);
+            }
+            checkJNIException(env_);
+            return kind;
+        }
+        case prop::VSC_REACTIVE_LIMITS_KIND: {
+            jobject rl = env_->CallObjectMethod(obj, cache_.vsc_getReactiveLimits);
+            int kind = 0;
+            if (rl) {
+                if (env_->IsInstanceOf(rl, cache_.minMaxRLClass))  kind = 1;
+                else if (env_->IsInstanceOf(rl, cache_.rcCurveClass)) kind = 2;
+                env_->DeleteLocalRef(rl);
+            }
+            checkJNIException(env_);
+            return kind;
+        }
+        case prop::SHUNT_MODEL_KIND: {
+            jclass shuntModelTypeClass = env_->FindClass("com/powsybl/iidm/network/ShuntCompensatorModelType");
+            jobject modelType = env_->CallObjectMethod(obj, cache_.shunt_getModelType);
+            int ord = env_->CallIntMethod(modelType, cache_.enum_ordinal);
+            env_->DeleteLocalRef(modelType);
+            env_->DeleteLocalRef(shuntModelTypeClass);
+            checkJNIException(env_);
+            return ord;
+        }
+        case prop::TERMINAL_NODE: {
+            jobject nbv = env_->CallObjectMethod(obj, cache_.terminal_getNodeBreakerView);
+            int node = env_->CallIntMethod(nbv, cache_.termNBView_getNode);
+            env_->DeleteLocalRef(nbv);
+            checkJNIException(env_);
+            return node;
+        }
+        default: {
+            // ThreeWT leg int properties (820-878)
+            auto twtLegInt = [&](int legBase) -> int {
+                int off = property - legBase;
+                jmethodID getLeg = (legBase == prop::THREE_WT_LEG1_BASE) ? cache_.threeWT_getLeg1
+                                 : (legBase == prop::THREE_WT_LEG2_BASE) ? cache_.threeWT_getLeg2
+                                 : cache_.threeWT_getLeg3;
+                jobject leg = env_->CallObjectMethod(obj, getLeg);
+                int val = 0;
+                switch (off) {
+                    case prop::THREE_WT_LEG_RTC_TAP_POS_OFF: {
+                        jobject rtc = env_->CallObjectMethod(leg, cache_.leg_getRatioTapChanger);
+                        val = env_->CallIntMethod(rtc, cache_.tc_getTapPosition);
+                        env_->DeleteLocalRef(rtc); break;
+                    }
+                    case prop::THREE_WT_LEG_RTC_LOW_TAP_OFF: {
+                        jobject rtc = env_->CallObjectMethod(leg, cache_.leg_getRatioTapChanger);
+                        val = env_->CallIntMethod(rtc, cache_.tc_getLowTapPosition);
+                        env_->DeleteLocalRef(rtc); break;
+                    }
+                    case prop::THREE_WT_LEG_RTC_HIGH_TAP_OFF: {
+                        jobject rtc = env_->CallObjectMethod(leg, cache_.leg_getRatioTapChanger);
+                        val = env_->CallIntMethod(rtc, cache_.tc_getHighTapPosition);
+                        env_->DeleteLocalRef(rtc); break;
+                    }
+                    case prop::THREE_WT_LEG_PTC_TAP_POS_OFF: {
+                        jobject ptc = env_->CallObjectMethod(leg, cache_.leg_getPhaseTapChanger);
+                        val = env_->CallIntMethod(ptc, cache_.tc_getTapPosition);
+                        env_->DeleteLocalRef(ptc); break;
+                    }
+                    case prop::THREE_WT_LEG_PTC_LOW_TAP_OFF: {
+                        jobject ptc = env_->CallObjectMethod(leg, cache_.leg_getPhaseTapChanger);
+                        val = env_->CallIntMethod(ptc, cache_.tc_getLowTapPosition);
+                        env_->DeleteLocalRef(ptc); break;
+                    }
+                    case prop::THREE_WT_LEG_PTC_HIGH_TAP_OFF: {
+                        jobject ptc = env_->CallObjectMethod(leg, cache_.leg_getPhaseTapChanger);
+                        val = env_->CallIntMethod(ptc, cache_.tc_getHighTapPosition);
+                        env_->DeleteLocalRef(ptc); break;
+                    }
+                    case prop::THREE_WT_LEG_PTC_REG_MODE_OFF: {
+                        jobject ptc = env_->CallObjectMethod(leg, cache_.leg_getPhaseTapChanger);
+                        jobject mode = env_->CallObjectMethod(ptc, cache_.ptc_getRegulationMode);
+                        val = env_->CallIntMethod(mode, cache_.enum_ordinal);
+                        env_->DeleteLocalRef(mode);
+                        env_->DeleteLocalRef(ptc); break;
+                    }
+                    default: break;
+                }
+                env_->DeleteLocalRef(leg);
+                return val;
+            };
+            if (property >= prop::THREE_WT_LEG1_BASE && property < prop::THREE_WT_LEG1_BASE + 20)
+                return twtLegInt(prop::THREE_WT_LEG1_BASE);
+            if (property >= prop::THREE_WT_LEG2_BASE && property < prop::THREE_WT_LEG2_BASE + 20)
+                return twtLegInt(prop::THREE_WT_LEG2_BASE);
+            if (property >= prop::THREE_WT_LEG3_BASE && property < prop::THREE_WT_LEG3_BASE + 20)
+                return twtLegInt(prop::THREE_WT_LEG3_BASE);
             throw PropertyNotFoundException("Unknown int property: " + std::to_string(property));
+        }
     }
 }
 
@@ -846,8 +1157,50 @@ bool JNIBackend::getBool(ObjectHandle h, int property) const {
             if (ext) env_->DeleteLocalRef(ext);
             break;
         }
-        default:
-            throw PropertyNotFoundException("Unknown bool property: " + std::to_string(property));
+        default: {
+            // ThreeWT leg bool properties
+            auto twtLegBool = [&](int legBase) -> jboolean {
+                int off = property - legBase;
+                jmethodID getLeg = (legBase == prop::THREE_WT_LEG1_BASE) ? cache_.threeWT_getLeg1
+                                 : (legBase == prop::THREE_WT_LEG2_BASE) ? cache_.threeWT_getLeg2
+                                 : cache_.threeWT_getLeg3;
+                jobject leg = env_->CallObjectMethod(obj, getLeg);
+                jboolean val = JNI_FALSE;
+                switch (off) {
+                    case prop::THREE_WT_LEG_RTC_EXISTS_OFF: {
+                        jobject rtc = env_->CallObjectMethod(leg, cache_.leg_getRatioTapChanger);
+                        val = (rtc != nullptr) ? JNI_TRUE : JNI_FALSE;
+                        if (rtc) env_->DeleteLocalRef(rtc); break;
+                    }
+                    case prop::THREE_WT_LEG_RTC_REGULATING_OFF: {
+                        jobject rtc = env_->CallObjectMethod(leg, cache_.leg_getRatioTapChanger);
+                        if (rtc) { val = env_->CallBooleanMethod(rtc, cache_.tc_isRegulating); env_->DeleteLocalRef(rtc); }
+                        break;
+                    }
+                    case prop::THREE_WT_LEG_PTC_EXISTS_OFF: {
+                        jobject ptc = env_->CallObjectMethod(leg, cache_.leg_getPhaseTapChanger);
+                        val = (ptc != nullptr) ? JNI_TRUE : JNI_FALSE;
+                        if (ptc) env_->DeleteLocalRef(ptc); break;
+                    }
+                    case prop::THREE_WT_LEG_PTC_REGULATING_OFF: {
+                        jobject ptc = env_->CallObjectMethod(leg, cache_.leg_getPhaseTapChanger);
+                        if (ptc) { val = env_->CallBooleanMethod(ptc, cache_.tc_isRegulating); env_->DeleteLocalRef(ptc); }
+                        break;
+                    }
+                    default: break;
+                }
+                env_->DeleteLocalRef(leg);
+                return val;
+            };
+            if (property >= prop::THREE_WT_LEG1_BASE && property < prop::THREE_WT_LEG1_BASE + 20)
+                result = twtLegBool(prop::THREE_WT_LEG1_BASE);
+            else if (property >= prop::THREE_WT_LEG2_BASE && property < prop::THREE_WT_LEG2_BASE + 20)
+                result = twtLegBool(prop::THREE_WT_LEG2_BASE);
+            else if (property >= prop::THREE_WT_LEG3_BASE && property < prop::THREE_WT_LEG3_BASE + 20)
+                result = twtLegBool(prop::THREE_WT_LEG3_BASE);
+            else
+                throw PropertyNotFoundException("Unknown bool property: " + std::to_string(property));
+        }
     }
     checkJNIException(env_);
     return result == JNI_TRUE;
@@ -1016,6 +1369,85 @@ std::vector<ObjectHandle> JNIBackend::getChildren(ObjectHandle h, int childType)
             }
             break;
         }
+        case prop::BUS: {
+            // obj is a VoltageLevel; get bus-breaker view buses
+            jobject view = env_->CallObjectMethod(obj, cache_.vl_getBusBreakerView);
+            collection   = env_->CallObjectMethod(view, cache_.bbView_getBuses);
+            env_->DeleteLocalRef(view);
+            break;
+        }
+        case prop::BATTERY:
+            collection = env_->CallObjectMethod(obj, cache_.network_getBatteries);
+            break;
+        case prop::REACTIVE_CURVE_POINT: {
+            // obj is a Generator; get its reactive capability curve points
+            jobject rl = env_->CallObjectMethod(obj, cache_.gen_getReactiveLimits);
+            if (!rl) throw PropertyNotFoundException("No reactive limits on generator");
+            collection = env_->CallObjectMethod(rl, cache_.rcCurve_getPoints);
+            env_->DeleteLocalRef(rl);
+            break;
+        }
+        case prop::TWO_WT_RTC_STEP: {
+            jobject rtc = env_->CallObjectMethod(obj, cache_.twt_getRatioTapChanger);
+            if (!rtc) throw PropertyNotFoundException("RatioTapChanger not present");
+            jobject map = env_->CallObjectMethod(rtc, cache_.tc_getAllSteps);
+            env_->DeleteLocalRef(rtc);
+            checkJNIException(env_);
+            auto result = sortedMapValuesToHandles(map);
+            if (map) env_->DeleteLocalRef(map);
+            return result;
+        }
+        case prop::TWO_WT_PTC_STEP: {
+            jobject ptc = env_->CallObjectMethod(obj, cache_.twt_getPhaseTapChanger);
+            if (!ptc) throw PropertyNotFoundException("PhaseTapChanger not present");
+            jobject map = env_->CallObjectMethod(ptc, cache_.tc_getAllSteps);
+            env_->DeleteLocalRef(ptc);
+            checkJNIException(env_);
+            auto result = sortedMapValuesToHandles(map);
+            if (map) env_->DeleteLocalRef(map);
+            return result;
+        }
+        case prop::THREE_WT_LEG1_RTC_STEP:
+        case prop::THREE_WT_LEG2_RTC_STEP:
+        case prop::THREE_WT_LEG3_RTC_STEP: {
+            jmethodID getLeg = (childType == prop::THREE_WT_LEG1_RTC_STEP) ? cache_.threeWT_getLeg1
+                             : (childType == prop::THREE_WT_LEG2_RTC_STEP) ? cache_.threeWT_getLeg2
+                             : cache_.threeWT_getLeg3;
+            jobject leg = env_->CallObjectMethod(obj, getLeg);
+            jobject rtc = env_->CallObjectMethod(leg, cache_.leg_getRatioTapChanger);
+            env_->DeleteLocalRef(leg);
+            if (!rtc) throw PropertyNotFoundException("RatioTapChanger not present on leg");
+            jobject map = env_->CallObjectMethod(rtc, cache_.tc_getAllSteps);
+            env_->DeleteLocalRef(rtc);
+            checkJNIException(env_);
+            auto result = sortedMapValuesToHandles(map);
+            if (map) env_->DeleteLocalRef(map);
+            return result;
+        }
+        case prop::THREE_WT_LEG1_PTC_STEP:
+        case prop::THREE_WT_LEG2_PTC_STEP:
+        case prop::THREE_WT_LEG3_PTC_STEP: {
+            jmethodID getLeg = (childType == prop::THREE_WT_LEG1_PTC_STEP) ? cache_.threeWT_getLeg1
+                             : (childType == prop::THREE_WT_LEG2_PTC_STEP) ? cache_.threeWT_getLeg2
+                             : cache_.threeWT_getLeg3;
+            jobject leg = env_->CallObjectMethod(obj, getLeg);
+            jobject ptc = env_->CallObjectMethod(leg, cache_.leg_getPhaseTapChanger);
+            env_->DeleteLocalRef(leg);
+            if (!ptc) throw PropertyNotFoundException("PhaseTapChanger not present on leg");
+            jobject map = env_->CallObjectMethod(ptc, cache_.tc_getAllSteps);
+            env_->DeleteLocalRef(ptc);
+            checkJNIException(env_);
+            auto result = sortedMapValuesToHandles(map);
+            if (map) env_->DeleteLocalRef(map);
+            return result;
+        }
+        case prop::SHUNT_SECTION: {
+            jobject nlm = env_->CallObjectMethod(obj, cache_.shunt_getNonLinearModel);
+            if (!nlm) throw PropertyNotFoundException("ShuntCompensator has no non-linear model");
+            collection = env_->CallObjectMethod(nlm, cache_.shuntNLModel_getAllSections);
+            env_->DeleteLocalRef(nlm);
+            break;
+        }
         default:
             throw PropertyNotFoundException("Unknown child type: " + std::to_string(childType));
     }
@@ -1070,6 +1502,14 @@ ObjectHandle JNIBackend::getRelated(ObjectHandle h, int relation) const {
             if (opt) env_->DeleteLocalRef(opt);
             break;
         }
+        case prop::REL_CONNECTABLE_BUS: {
+            jobject bbv = env_->CallObjectMethod(obj, cache_.terminal_getBusBreakerView);
+            if (bbv) {
+                related = env_->CallObjectMethod(bbv, cache_.termBBView_getConnectableBus);
+                env_->DeleteLocalRef(bbv);
+            }
+            break;
+        }
         default:
             throw PropertyNotFoundException("Unknown relation: " + std::to_string(relation));
     }
@@ -1098,6 +1538,15 @@ ObjectHandle JNIBackend::findById(int objectType, const std::string& id) const {
             break;
         case prop::BUSBAR_SECTION:
             result = env_->CallObjectMethod(networkRef_, cache_.network_getBusbarSection, jId);
+            break;
+        case prop::BATTERY:
+            result = env_->CallObjectMethod(networkRef_, cache_.network_getBattery, jId);
+            break;
+        case prop::TWO_WINDINGS_TRANSFORMER:
+            result = env_->CallObjectMethod(networkRef_, cache_.network_getTwoWTById, jId);
+            break;
+        case prop::THREE_WINDINGS_TRANSFORMER:
+            result = env_->CallObjectMethod(networkRef_, cache_.network_getThreeWTById, jId);
             break;
         default:
             env_->DeleteLocalRef(jId);
