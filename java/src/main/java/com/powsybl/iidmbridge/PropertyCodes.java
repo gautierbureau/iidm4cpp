@@ -25,6 +25,7 @@ public final class PropertyCodes {
     public static final int LCC_CONVERTER_STATION      = 13;
     public static final int TERMINAL                   = 14;
     public static final int BUS                        = 15;
+    public static final int SWITCH                     = 16;
 
     // ── Shared properties ─────────────────────────────────────────────────
     public static final int ID      = 100;
@@ -115,6 +116,11 @@ public final class PropertyCodes {
     // ── LccConverterStation ──────────────────────────────────────────────
     public static final int LCC_LOSS_FACTOR  = 1400;
     public static final int LCC_POWER_FACTOR = 1401;
+
+    // ── Switch ───────────────────────────────────────────────────────────────
+    public static final int SW_OPEN     = 1500;
+    public static final int SW_RETAINED = 1501;
+    public static final int SW_KIND     = 1502;
 
     // ── Extension: ActivePowerControl ────────────────────────────────────
     public static final int EXT_APC_EXISTS      = 3000;

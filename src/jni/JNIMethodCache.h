@@ -22,6 +22,7 @@ struct JNIMethodCache {
     jclass busClass             = nullptr;
     jclass substationClass      = nullptr;
     jclass voltageLevelClass    = nullptr;
+    jclass switchClass          = nullptr;
     jclass iidmRegistryClass    = nullptr;
     jclass listClass            = nullptr;
 
@@ -124,11 +125,30 @@ struct JNIMethodCache {
     jmethodID list_get        = nullptr;
     jmethodID list_iterator   = nullptr;
 
+    // ── Switch methods ───────────────────────────────────────────────────────
+    jmethodID switch_isOpen      = nullptr;
+    jmethodID switch_setOpen     = nullptr;
+    jmethodID switch_isRetained  = nullptr;
+    jmethodID switch_setRetained = nullptr;
+    jmethodID switch_getKind     = nullptr;
+
+    // ── VoltageLevel topology views (for Switch navigation) ──────────────────
+    jclass    vlBusBreakerViewClass  = nullptr;
+    jclass    vlNodeBreakerViewClass = nullptr;
+    jmethodID vl_getBusBreakerView   = nullptr;
+    jmethodID vl_getNodeBreakerView  = nullptr;
+    jmethodID bbView_getSwitches     = nullptr;
+    jmethodID nbView_getSwitches     = nullptr;
+
+    // ── Network getSwitch by ID ───────────────────────────────────────────────
+    jmethodID network_getSwitch = nullptr;
+
     // ── EnergySource / enum ordinal ──────────────────────────────────────
     jmethodID enum_ordinal = nullptr;
     jclass energySourceClass  = nullptr;
     jclass loadTypeClass      = nullptr;
     jclass topologyKindClass  = nullptr;
+    jclass switchKindClass    = nullptr;
     jclass convertersModeClass = nullptr;
     jclass regulationModeClass = nullptr;
     jclass countryClass        = nullptr;

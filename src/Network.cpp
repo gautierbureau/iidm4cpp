@@ -149,4 +149,8 @@ std::optional<LccConverterStation> Network::getLccConverterStation(const std::st
     return findById<LccConverterStation>(backend_.get(), prop::LCC_CONVERTER_STATION, id);
 }
 
+std::optional<Switch> Network::getSwitch(const std::string& id) const {
+    return findById<Switch>(backend_.get(), prop::SWITCH, id);
+}
+
 } // namespace iidm

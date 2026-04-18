@@ -3,8 +3,10 @@
 #include <iidm/ObjectHandle.h>
 #include <iidm/Enums.h>
 #include <iidm/SlackTerminal.h>
+#include <iidm/Switch.h>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace iidm {
 
@@ -26,6 +28,8 @@ public:
 
     bool hasSlackTerminal() const;
     SlackTerminal getSlackTerminal() const;
+
+    std::vector<Switch> getSwitches() const;
 
     bool isValid() const { return handle_ != INVALID_HANDLE; }
 

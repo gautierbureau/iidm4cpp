@@ -18,6 +18,7 @@ constexpr int VSC_CONVERTER_STATION       = 12;
 constexpr int LCC_CONVERTER_STATION       = 13;
 constexpr int TERMINAL                    = 14;
 constexpr int BUS                         = 15;
+constexpr int SWITCH                      = 16;
 
 // ── Shared properties (applicable to many types) ────────────────────────────
 constexpr int ID                          = 100;
@@ -108,6 +109,11 @@ constexpr int VSC_REACTIVE_POWER_SETPOINT = 1303;
 // ── LccConverterStation ──────────────────────────────────────────────────────
 constexpr int LCC_LOSS_FACTOR             = 1400;
 constexpr int LCC_POWER_FACTOR            = 1401;
+
+// ── Switch ───────────────────────────────────────────────────────────────────
+constexpr int SW_OPEN                     = 1500;
+constexpr int SW_RETAINED                 = 1501;
+constexpr int SW_KIND                     = 1502;
 
 // ── Extension: ActivePowerControl ────────────────────────────────────────────
 constexpr int EXT_APC_EXISTS              = 3000;

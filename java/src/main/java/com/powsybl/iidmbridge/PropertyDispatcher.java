@@ -128,6 +128,7 @@ public final class PropertyDispatcher {
             case SVC_REGULATION_MODE  -> ((StaticVarCompensator) obj).getRegulationMode().ordinal();
             case SHUNT_SECTION_COUNT     -> ((ShuntCompensator) obj).getSectionCount();
             case SHUNT_MAX_SECTION_COUNT -> ((ShuntCompensator) obj).getMaximumSectionCount();
+            case SW_KIND -> ((Switch) obj).getKind().ordinal();
             default -> throw new IllegalArgumentException("Unknown int property: " + property);
         };
     }
@@ -156,6 +157,8 @@ public final class PropertyDispatcher {
             case GEN_VOLTAGE_REGULATOR_ON -> ((Generator) obj).isVoltageRegulatorOn();
             case TERMINAL_CONNECTED       -> ((Terminal) obj).isConnected();
             case VSC_VOLTAGE_REGULATOR_ON -> ((VscConverterStation) obj).isVoltageRegulatorOn();
+            case SW_OPEN     -> ((Switch) obj).isOpen();
+            case SW_RETAINED -> ((Switch) obj).isRetained();
             case EXT_APC_EXISTS      -> ((Generator) obj).getExtension(ActivePowerControl.class) != null;
             case EXT_APC_PARTICIPATE -> ((Generator) obj).getExtension(ActivePowerControl.class).isParticipate();
             case EXT_CRC_EXISTS      -> ((Generator) obj).getExtension(CoordinatedReactiveControl.class) != null;
@@ -181,6 +184,8 @@ public final class PropertyDispatcher {
                 else      ((Terminal) obj).disconnect();
             }
             case VSC_VOLTAGE_REGULATOR_ON -> ((VscConverterStation) obj).setVoltageRegulatorOn(bval);
+            case SW_OPEN     -> ((Switch) obj).setOpen(bval);
+            case SW_RETAINED -> ((Switch) obj).setRetained(bval);
             case EXT_APC_PARTICIPATE -> ((Generator) obj).getExtension(ActivePowerControl.class).setParticipate(bval);
             case EXT_HADAPC_ENABLED  -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).setEnabled(bval);
             default -> throw new IllegalArgumentException("Unknown bool property for set: " + property);
@@ -232,6 +237,16 @@ public final class PropertyDispatcher {
             case STATIC_VAR_COMPENSATOR -> ((Network) obj).getStaticVarCompensatorStream();
             case VSC_CONVERTER_STATION  -> ((Network) obj).getVscConverterStationStream();
             case LCC_CONVERTER_STATION  -> ((Network) obj).getLccConverterStationStream();
+            case SWITCH -> {
+                VoltageLevel vl = (VoltageLevel) obj;
+                if (vl.getTopologyKind() == TopologyKind.NODE_BREAKER) {
+                    yield StreamSupport.stream(
+                        vl.getNodeBreakerView().getSwitches().spliterator(), false);
+                } else {
+                    yield StreamSupport.stream(
+                        vl.getBusBreakerView().getSwitches().spliterator(), false);
+                }
+            }
             default -> throw new IllegalArgumentException("Unknown child type: " + childType);
         };
         return children.mapToLong(NetworkRegistry::register).toArray();
@@ -288,6 +303,7 @@ public final class PropertyDispatcher {
             case STATIC_VAR_COMPENSATOR     -> network.getStaticVarCompensator(id);
             case VSC_CONVERTER_STATION      -> network.getVscConverterStation(id);
             case LCC_CONVERTER_STATION      -> network.getLccConverterStation(id);
+            case SWITCH                     -> network.getSwitch(id);
             default -> throw new IllegalArgumentException("Unknown object type: " + objectType);
         };
         if (found == null) return 0L; // INVALID_HANDLE

@@ -53,11 +53,13 @@ void JNIBackend::cacheMethodIds() {
     cacheClass(cache_.busClass,          "com/powsybl/iidm/network/Bus");
     cacheClass(cache_.substationClass,   "com/powsybl/iidm/network/Substation");
     cacheClass(cache_.voltageLevelClass, "com/powsybl/iidm/network/VoltageLevel");
+    cacheClass(cache_.switchClass,       "com/powsybl/iidm/network/Switch");
     cacheClass(cache_.iidmRegistryClass, "com/powsybl/iidmbridge/jni/IidmBridgeRegistry");
     cacheClass(cache_.listClass,         "java/util/List");
     cacheClass(cache_.energySourceClass, "com/powsybl/iidm/network/EnergySource");
     cacheClass(cache_.loadTypeClass,     "com/powsybl/iidm/network/LoadType");
     cacheClass(cache_.topologyKindClass, "com/powsybl/iidm/network/TopologyKind");
+    cacheClass(cache_.switchKindClass,   "com/powsybl/iidm/network/SwitchKind");
     cacheClass(cache_.countryClass,      "com/powsybl/iidm/network/Country");
 
     // Enum ordinal (shared across all enums)
@@ -169,6 +171,35 @@ void JNIBackend::cacheMethodIds() {
     cache_.vl_getHighVoltageLimit = env_->GetMethodID(cache_.voltageLevelClass, "getHighVoltageLimit", "()D");
     cache_.vl_getTopologyKind     = env_->GetMethodID(cache_.voltageLevelClass, "getTopologyKind",
         "()Lcom/powsybl/iidm/network/TopologyKind;");
+    checkJNIException(env_);
+
+    // Switch
+    cache_.switch_isOpen      = env_->GetMethodID(cache_.switchClass, "isOpen",      "()Z");
+    cache_.switch_setOpen     = env_->GetMethodID(cache_.switchClass, "setOpen",     "(Z)V");
+    cache_.switch_isRetained  = env_->GetMethodID(cache_.switchClass, "isRetained",  "()Z");
+    cache_.switch_setRetained = env_->GetMethodID(cache_.switchClass, "setRetained", "(Z)V");
+    cache_.switch_getKind     = env_->GetMethodID(cache_.switchClass, "getKind",
+        "()Lcom/powsybl/iidm/network/SwitchKind;");
+    checkJNIException(env_);
+
+    // VoltageLevel topology views (for Switch child navigation)
+    cacheClass(cache_.vlBusBreakerViewClass,
+        "com/powsybl/iidm/network/VoltageLevel$BusBreakerView");
+    cacheClass(cache_.vlNodeBreakerViewClass,
+        "com/powsybl/iidm/network/VoltageLevel$NodeBreakerView");
+    cache_.vl_getBusBreakerView  = env_->GetMethodID(cache_.voltageLevelClass,
+        "getBusBreakerView",  "()Lcom/powsybl/iidm/network/VoltageLevel$BusBreakerView;");
+    cache_.vl_getNodeBreakerView = env_->GetMethodID(cache_.voltageLevelClass,
+        "getNodeBreakerView", "()Lcom/powsybl/iidm/network/VoltageLevel$NodeBreakerView;");
+    cache_.bbView_getSwitches = env_->GetMethodID(cache_.vlBusBreakerViewClass,
+        "getSwitches", "()Ljava/lang/Iterable;");
+    cache_.nbView_getSwitches = env_->GetMethodID(cache_.vlNodeBreakerViewClass,
+        "getSwitches", "()Ljava/lang/Iterable;");
+    checkJNIException(env_);
+
+    // Network.getSwitch(String id)
+    cache_.network_getSwitch = env_->GetMethodID(cache_.networkClass, "getSwitch",
+        "(Ljava/lang/String;)Lcom/powsybl/iidm/network/Switch;");
     checkJNIException(env_);
 
     // ActivePowerControl extension
@@ -510,6 +541,13 @@ int JNIBackend::getInt(ObjectHandle h, int property) const {
             checkJNIException(env_);
             return ord;
         }
+        case prop::SW_KIND: {
+            jobject kind = env_->CallObjectMethod(obj, cache_.switch_getKind);
+            int ord = env_->CallIntMethod(kind, cache_.enum_ordinal);
+            env_->DeleteLocalRef(kind);
+            checkJNIException(env_);
+            return ord;
+        }
         default:
             throw PropertyNotFoundException("Unknown int property: " + std::to_string(property));
     }
@@ -529,6 +567,12 @@ bool JNIBackend::getBool(ObjectHandle h, int property) const {
             break;
         case prop::TERMINAL_CONNECTED:
             result = env_->CallBooleanMethod(obj, cache_.terminal_isConnected);
+            break;
+        case prop::SW_OPEN:
+            result = env_->CallBooleanMethod(obj, cache_.switch_isOpen);
+            break;
+        case prop::SW_RETAINED:
+            result = env_->CallBooleanMethod(obj, cache_.switch_isRetained);
             break;
         case prop::EXT_APC_EXISTS: {
             jobject apc = fetchApcExtension(obj);
@@ -597,6 +641,12 @@ void JNIBackend::setBool(ObjectHandle h, int property, bool value) {
         case prop::TERMINAL_CONNECTED:
             if (value) env_->CallBooleanMethod(obj, cache_.terminal_connect);
             else       env_->CallBooleanMethod(obj, cache_.terminal_disconnect);
+            break;
+        case prop::SW_OPEN:
+            env_->CallVoidMethod(obj, cache_.switch_setOpen, static_cast<jboolean>(value));
+            break;
+        case prop::SW_RETAINED:
+            env_->CallVoidMethod(obj, cache_.switch_setRetained, static_cast<jboolean>(value));
             break;
         case prop::EXT_APC_PARTICIPATE: {
             jobject apc = fetchApcExtension(obj);
@@ -692,6 +742,22 @@ std::vector<ObjectHandle> JNIBackend::getChildren(ObjectHandle h, int childType)
         case prop::LINE:         collection = env_->CallObjectMethod(obj, cache_.network_getLines);         break;
         case prop::SUBSTATION:   collection = env_->CallObjectMethod(obj, cache_.network_getSubstations);   break;
         case prop::VOLTAGE_LEVEL: collection = env_->CallObjectMethod(obj, cache_.network_getVoltageLevels); break;
+        case prop::SWITCH: {
+            // obj is a VoltageLevel; choose view based on topology kind
+            jobject tkObj = env_->CallObjectMethod(obj, cache_.vl_getTopologyKind);
+            int tk = env_->CallIntMethod(tkObj, cache_.enum_ordinal);
+            env_->DeleteLocalRef(tkObj);
+            if (tk == 0) { // NODE_BREAKER
+                jobject view = env_->CallObjectMethod(obj, cache_.vl_getNodeBreakerView);
+                collection   = env_->CallObjectMethod(view, cache_.nbView_getSwitches);
+                env_->DeleteLocalRef(view);
+            } else { // BUS_BREAKER
+                jobject view = env_->CallObjectMethod(obj, cache_.vl_getBusBreakerView);
+                collection   = env_->CallObjectMethod(view, cache_.bbView_getSwitches);
+                env_->DeleteLocalRef(view);
+            }
+            break;
+        }
         default:
             throw PropertyNotFoundException("Unknown child type: " + std::to_string(childType));
     }
@@ -759,6 +825,9 @@ ObjectHandle JNIBackend::findById(int objectType, const std::string& id) const {
             break;
         case prop::LINE:
             result = env_->CallObjectMethod(networkRef_, cache_.network_getLine, jId);
+            break;
+        case prop::SWITCH:
+            result = env_->CallObjectMethod(networkRef_, cache_.network_getSwitch, jId);
             break;
         default:
             env_->DeleteLocalRef(jId);

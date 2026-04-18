@@ -13,6 +13,7 @@ set(TEST_SOURCES
     TestTerminal.cpp
     TestBus.cpp
     TestLine.cpp
+    TestSwitch.cpp
     TestConnect.cpp
     TestBackendSelector.cpp
     TestIntegration.cpp

@@ -3,6 +3,7 @@
 #include <iidm/BackendProvider.h>
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
+#include <iidm/Switch.h>
 
 namespace iidm {
 
@@ -39,6 +40,16 @@ bool VoltageLevel::hasSlackTerminal() const {
 
 SlackTerminal VoltageLevel::getSlackTerminal() const {
     return SlackTerminal(handle_, backend_);
+}
+
+std::vector<Switch> VoltageLevel::getSwitches() const {
+    auto handles = backend_->getChildren(handle_, prop::SWITCH);
+    std::vector<Switch> result;
+    result.reserve(handles.size());
+    for (auto h : handles) {
+        result.emplace_back(h, backend_);
+    }
+    return result;
 }
 
 bool VoltageLevel::operator==(const VoltageLevel& other) const {

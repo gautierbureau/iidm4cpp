@@ -60,6 +60,7 @@ set(IIDM_BRIDGE_SOURCES
     src/StaticVarCompensator.cpp
     src/VscConverterStation.cpp
     src/LccConverterStation.cpp
+    src/Switch.cpp
 )
 
 if(IIDM_BRIDGE_ENABLE_GRAALVM)
