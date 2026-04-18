@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iidm/ObjectHandle.h>
+#include <iidm/Enums.h>
 #include <iidm/Terminal.h>
 #include <optional>
 #include <string>
@@ -27,6 +28,30 @@ public:
 
     Terminal getTerminal1() const;
     Terminal getTerminal2() const;
+
+    // ── RatioTapChanger ──────────────────────────────────────────────────────
+    bool hasRatioTapChanger() const;
+    int  getRatioTapPosition() const;
+    TwoWindingsTransformer& setRatioTapPosition(int pos);
+    int  getRatioTapLow() const;
+    int  getRatioTapHigh() const;
+    bool isRatioTapRegulating() const;
+    TwoWindingsTransformer& setRatioTapRegulating(bool regulating);
+    double getRatioTapTargetV() const;
+    TwoWindingsTransformer& setRatioTapTargetV(double v);
+
+    // ── PhaseTapChanger ──────────────────────────────────────────────────────
+    bool hasPhaseTapChanger() const;
+    int  getPhaseTapPosition() const;
+    TwoWindingsTransformer& setPhaseTapPosition(int pos);
+    int  getPhaseTapLow() const;
+    int  getPhaseTapHigh() const;
+    bool isPhaseTapRegulating() const;
+    TwoWindingsTransformer& setPhaseTapRegulating(bool regulating);
+    PhaseTapChangerRegulationMode getPhaseTapRegulationMode() const;
+    TwoWindingsTransformer& setPhaseTapRegulationMode(PhaseTapChangerRegulationMode mode);
+    double getPhaseTapRegulationValue() const;
+    TwoWindingsTransformer& setPhaseTapRegulationValue(double val);
 
     void connect();
     void disconnect();

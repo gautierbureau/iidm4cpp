@@ -125,6 +125,50 @@ struct JNIMethodCache {
     jmethodID list_get        = nullptr;
     jmethodID list_iterator   = nullptr;
 
+    // ── Optional (used for getSubstation) ────────────────────────────────────
+    jclass    optionalClass       = nullptr;
+    jmethodID optional_isPresent  = nullptr;
+    jmethodID optional_get        = nullptr;
+
+    // ── VoltageLevel → Substation navigation ─────────────────────────────────
+    jmethodID vl_getSubstation    = nullptr;
+
+    // ── Substation country setter ─────────────────────────────────────────────
+    jmethodID substation_setCountry = nullptr;
+    jmethodID country_valueOf       = nullptr;
+
+    // ── TwoWindingsTransformer tap changers ──────────────────────────────────
+    jclass    tapChangerClass              = nullptr;
+    jclass    ratioTapChangerClass         = nullptr;
+    jclass    phaseTapChangerClass         = nullptr;
+    jclass    ptcRegulationModeClass       = nullptr;
+    jmethodID twt_getRatioTapChanger       = nullptr;
+    jmethodID twt_getPhaseTapChanger       = nullptr;
+    jmethodID tc_getTapPosition            = nullptr;
+    jmethodID tc_setTapPosition            = nullptr;
+    jmethodID tc_getLowTapPosition         = nullptr;
+    jmethodID tc_getHighTapPosition        = nullptr;
+    jmethodID tc_isRegulating              = nullptr;
+    jmethodID tc_setRegulating             = nullptr;
+    jmethodID rtc_getTargetV               = nullptr;
+    jmethodID rtc_setTargetV               = nullptr;
+    jmethodID ptc_getRegulationMode        = nullptr;
+    jmethodID ptc_setRegulationMode        = nullptr;
+    jmethodID ptc_getRegulationValue       = nullptr;
+    jmethodID ptc_setRegulationValue       = nullptr;
+
+    // ── Injection (shared getTerminal for all single-terminal components) ────
+    jclass    injectionClass       = nullptr;
+    jmethodID injection_getTerminal = nullptr;
+
+    // ── BusbarSection ────────────────────────────────────────────────────────
+    jclass    busbarSectionClass          = nullptr;
+    jmethodID bbs_getV                    = nullptr;
+    jmethodID bbs_getAngle                = nullptr;
+    jmethodID bbs_getTerminal             = nullptr;
+    jmethodID nbView_getBusbarSections    = nullptr;
+    jmethodID network_getBusbarSection    = nullptr;
+
     // ── Switch methods ───────────────────────────────────────────────────────
     jmethodID switch_isOpen      = nullptr;
     jmethodID switch_setOpen     = nullptr;

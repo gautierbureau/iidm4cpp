@@ -3,6 +3,7 @@
 #include <iidm/ObjectHandle.h>
 #include <iidm/Enums.h>
 #include <iidm/SlackTerminal.h>
+#include <iidm/BusbarSection.h>
 #include <iidm/Switch.h>
 #include <optional>
 #include <string>
@@ -30,6 +31,7 @@ public:
     SlackTerminal getSlackTerminal() const;
 
     std::vector<Switch> getSwitches() const;
+    std::vector<BusbarSection> getBusbarSections() const;
 
     bool isValid() const { return handle_ != INVALID_HANDLE; }
 

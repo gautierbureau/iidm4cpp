@@ -26,6 +26,7 @@ public final class PropertyCodes {
     public static final int TERMINAL                   = 14;
     public static final int BUS                        = 15;
     public static final int SWITCH                     = 16;
+    public static final int BUSBAR_SECTION             = 17;
 
     // ── Shared properties ─────────────────────────────────────────────────
     public static final int ID      = 100;
@@ -77,7 +78,20 @@ public final class PropertyCodes {
     public static final int TWO_WT_B        = 803;
     public static final int TWO_WT_RATED_U1 = 804;
     public static final int TWO_WT_RATED_U2 = 805;
-    public static final int TWO_WT_RATED_S  = 806;
+    public static final int TWO_WT_RATED_S         = 806;
+    public static final int TWO_WT_RTC_EXISTS      = 807;
+    public static final int TWO_WT_RTC_TAP_POSITION = 808;
+    public static final int TWO_WT_RTC_LOW_TAP     = 809;
+    public static final int TWO_WT_RTC_HIGH_TAP    = 810;
+    public static final int TWO_WT_RTC_REGULATING  = 811;
+    public static final int TWO_WT_RTC_TARGET_V    = 812;
+    public static final int TWO_WT_PTC_EXISTS      = 813;
+    public static final int TWO_WT_PTC_TAP_POSITION = 814;
+    public static final int TWO_WT_PTC_LOW_TAP     = 815;
+    public static final int TWO_WT_PTC_HIGH_TAP    = 816;
+    public static final int TWO_WT_PTC_REGULATING  = 817;
+    public static final int TWO_WT_PTC_REG_MODE    = 818;
+    public static final int TWO_WT_PTC_REG_VALUE   = 819;
 
     // ── HvdcLine ─────────────────────────────────────────────────────────
     public static final int HVDC_R                   = 900;
@@ -116,6 +130,10 @@ public final class PropertyCodes {
     // ── LccConverterStation ──────────────────────────────────────────────
     public static final int LCC_LOSS_FACTOR  = 1400;
     public static final int LCC_POWER_FACTOR = 1401;
+
+    // ── BusbarSection ────────────────────────────────────────────────────────
+    public static final int BBS_V     = 1600;
+    public static final int BBS_ANGLE = 1601;
 
     // ── Switch ───────────────────────────────────────────────────────────────
     public static final int SW_OPEN     = 1500;

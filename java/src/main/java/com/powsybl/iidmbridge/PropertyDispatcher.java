@@ -67,6 +67,7 @@ public final class PropertyDispatcher {
             case DL_G  -> ((DanglingLine) obj).getG();
             case DL_B  -> ((DanglingLine) obj).getB();
             case SHUNT_B_PER_SECTION -> ((ShuntCompensator) obj).getB();
+            case SHUNT_G_PER_SECTION -> ((ShuntCompensator) obj).getG();
             case SVC_B_MIN                   -> ((StaticVarCompensator) obj).getBmin();
             case SVC_B_MAX                   -> ((StaticVarCompensator) obj).getBmax();
             case SVC_VOLTAGE_SETPOINT        -> ((StaticVarCompensator) obj).getVoltageSetpoint();
@@ -80,6 +81,10 @@ public final class PropertyDispatcher {
             case EXT_HOAR_OPR_CS1_TO_CS2 -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class).getOprFromCS1toCS2();
             case EXT_HOAR_OPR_CS2_TO_CS1 -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class).getOprFromCS2toCS1();
             case EXT_VPRC_SLOPE -> ((StaticVarCompensator) obj).getExtension(VoltagePerReactivePowerControl.class).getSlope();
+            case TWO_WT_RTC_TARGET_V  -> ((TwoWindingsTransformer) obj).getRatioTapChanger().getTargetV();
+            case TWO_WT_PTC_REG_VALUE -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().getRegulationValue();
+            case BBS_V     -> ((BusbarSection) obj).getV();
+            case BBS_ANGLE -> ((BusbarSection) obj).getAngle();
             default -> throw new IllegalArgumentException("Unknown double property: " + property);
         };
     }
@@ -112,6 +117,8 @@ public final class PropertyDispatcher {
             case EXT_HOAR_OPR_CS1_TO_CS2 -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class).setOprFromCS1toCS2((float) value);
             case EXT_HOAR_OPR_CS2_TO_CS1 -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class).setOprFromCS2toCS1((float) value);
             case EXT_VPRC_SLOPE -> ((StaticVarCompensator) obj).getExtension(VoltagePerReactivePowerControl.class).setSlope(value);
+            case TWO_WT_RTC_TARGET_V  -> ((TwoWindingsTransformer) obj).getRatioTapChanger().setTargetV(value);
+            case TWO_WT_PTC_REG_VALUE -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().setRegulationValue(value);
             default -> throw new IllegalArgumentException("Unknown double property for set: " + property);
         }
     }
@@ -129,6 +136,13 @@ public final class PropertyDispatcher {
             case SHUNT_SECTION_COUNT     -> ((ShuntCompensator) obj).getSectionCount();
             case SHUNT_MAX_SECTION_COUNT -> ((ShuntCompensator) obj).getMaximumSectionCount();
             case SW_KIND -> ((Switch) obj).getKind().ordinal();
+            case TWO_WT_RTC_TAP_POSITION -> ((TwoWindingsTransformer) obj).getRatioTapChanger().getTapPosition();
+            case TWO_WT_RTC_LOW_TAP      -> ((TwoWindingsTransformer) obj).getRatioTapChanger().getLowTapPosition();
+            case TWO_WT_RTC_HIGH_TAP     -> ((TwoWindingsTransformer) obj).getRatioTapChanger().getHighTapPosition();
+            case TWO_WT_PTC_TAP_POSITION -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().getTapPosition();
+            case TWO_WT_PTC_LOW_TAP      -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().getLowTapPosition();
+            case TWO_WT_PTC_HIGH_TAP     -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().getHighTapPosition();
+            case TWO_WT_PTC_REG_MODE     -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().getRegulationMode().ordinal();
             default -> throw new IllegalArgumentException("Unknown int property: " + property);
         };
     }
@@ -145,6 +159,13 @@ public final class PropertyDispatcher {
                     StaticVarCompensator.RegulationMode.values()[value]);
             case SHUNT_SECTION_COUNT ->
                 ((ShuntCompensator) obj).setSectionCount(value);
+            case TWO_WT_RTC_TAP_POSITION ->
+                ((TwoWindingsTransformer) obj).getRatioTapChanger().setTapPosition(value);
+            case TWO_WT_PTC_TAP_POSITION ->
+                ((TwoWindingsTransformer) obj).getPhaseTapChanger().setTapPosition(value);
+            case TWO_WT_PTC_REG_MODE ->
+                ((TwoWindingsTransformer) obj).getPhaseTapChanger().setRegulationMode(
+                    PhaseTapChanger.RegulationMode.values()[value]);
             default -> throw new IllegalArgumentException("Unknown int property for set: " + property);
         }
     }
@@ -159,6 +180,10 @@ public final class PropertyDispatcher {
             case VSC_VOLTAGE_REGULATOR_ON -> ((VscConverterStation) obj).isVoltageRegulatorOn();
             case SW_OPEN     -> ((Switch) obj).isOpen();
             case SW_RETAINED -> ((Switch) obj).isRetained();
+            case TWO_WT_RTC_EXISTS     -> ((TwoWindingsTransformer) obj).getRatioTapChanger() != null;
+            case TWO_WT_RTC_REGULATING -> ((TwoWindingsTransformer) obj).getRatioTapChanger().isRegulating();
+            case TWO_WT_PTC_EXISTS     -> ((TwoWindingsTransformer) obj).getPhaseTapChanger() != null;
+            case TWO_WT_PTC_REGULATING -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().isRegulating();
             case EXT_APC_EXISTS      -> ((Generator) obj).getExtension(ActivePowerControl.class) != null;
             case EXT_APC_PARTICIPATE -> ((Generator) obj).getExtension(ActivePowerControl.class).isParticipate();
             case EXT_CRC_EXISTS      -> ((Generator) obj).getExtension(CoordinatedReactiveControl.class) != null;
@@ -186,6 +211,8 @@ public final class PropertyDispatcher {
             case VSC_VOLTAGE_REGULATOR_ON -> ((VscConverterStation) obj).setVoltageRegulatorOn(bval);
             case SW_OPEN     -> ((Switch) obj).setOpen(bval);
             case SW_RETAINED -> ((Switch) obj).setRetained(bval);
+            case TWO_WT_RTC_REGULATING -> ((TwoWindingsTransformer) obj).getRatioTapChanger().setRegulating(bval);
+            case TWO_WT_PTC_REGULATING -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().setRegulating(bval);
             case EXT_APC_PARTICIPATE -> ((Generator) obj).getExtension(ActivePowerControl.class).setParticipate(bval);
             case EXT_HADAPC_ENABLED  -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).setEnabled(bval);
             default -> throw new IllegalArgumentException("Unknown bool property for set: " + property);
@@ -247,6 +274,8 @@ public final class PropertyDispatcher {
                         vl.getBusBreakerView().getSwitches().spliterator(), false);
                 }
             }
+            case BUSBAR_SECTION -> StreamSupport.stream(
+                ((VoltageLevel) obj).getNodeBreakerView().getBusbarSections().spliterator(), false);
             default -> throw new IllegalArgumentException("Unknown child type: " + childType);
         };
         return children.mapToLong(NetworkRegistry::register).toArray();
@@ -274,6 +303,7 @@ public final class PropertyDispatcher {
                 yield t.getBusView().getConnectableBus();
             }
             case REL_VOLTAGE_LEVEL -> ((Terminal) obj).getVoltageLevel();
+            case REL_SUBSTATION    -> ((VoltageLevel) obj).getSubstation().orElse(null);
             case REL_SLACK_TERMINAL -> {
                 VoltageLevel vl = (VoltageLevel) obj;
                 SlackTerminal st = vl.getExtension(SlackTerminal.class);
@@ -304,6 +334,7 @@ public final class PropertyDispatcher {
             case VSC_CONVERTER_STATION      -> network.getVscConverterStation(id);
             case LCC_CONVERTER_STATION      -> network.getLccConverterStation(id);
             case SWITCH                     -> network.getSwitch(id);
+            case BUSBAR_SECTION             -> network.getBusbarSection(id);
             default -> throw new IllegalArgumentException("Unknown object type: " + objectType);
         };
         if (found == null) return 0L; // INVALID_HANDLE

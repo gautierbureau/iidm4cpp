@@ -19,6 +19,7 @@ constexpr int LCC_CONVERTER_STATION       = 13;
 constexpr int TERMINAL                    = 14;
 constexpr int BUS                         = 15;
 constexpr int SWITCH                      = 16;
+constexpr int BUSBAR_SECTION              = 17;
 
 // ── Shared properties (applicable to many types) ────────────────────────────
 constexpr int ID                          = 100;
@@ -71,6 +72,19 @@ constexpr int TWO_WT_B                    = 803;
 constexpr int TWO_WT_RATED_U1             = 804;
 constexpr int TWO_WT_RATED_U2             = 805;
 constexpr int TWO_WT_RATED_S              = 806;
+constexpr int TWO_WT_RTC_EXISTS           = 807;
+constexpr int TWO_WT_RTC_TAP_POSITION     = 808;
+constexpr int TWO_WT_RTC_LOW_TAP          = 809;
+constexpr int TWO_WT_RTC_HIGH_TAP         = 810;
+constexpr int TWO_WT_RTC_REGULATING       = 811;
+constexpr int TWO_WT_RTC_TARGET_V         = 812;
+constexpr int TWO_WT_PTC_EXISTS           = 813;
+constexpr int TWO_WT_PTC_TAP_POSITION     = 814;
+constexpr int TWO_WT_PTC_LOW_TAP          = 815;
+constexpr int TWO_WT_PTC_HIGH_TAP         = 816;
+constexpr int TWO_WT_PTC_REGULATING       = 817;
+constexpr int TWO_WT_PTC_REG_MODE         = 818;
+constexpr int TWO_WT_PTC_REG_VALUE        = 819;
 
 // ── HvdcLine ─────────────────────────────────────────────────────────────────
 constexpr int HVDC_R                      = 900;
@@ -109,6 +123,10 @@ constexpr int VSC_REACTIVE_POWER_SETPOINT = 1303;
 // ── LccConverterStation ──────────────────────────────────────────────────────
 constexpr int LCC_LOSS_FACTOR             = 1400;
 constexpr int LCC_POWER_FACTOR            = 1401;
+
+// ── BusbarSection ────────────────────────────────────────────────────────────
+constexpr int BBS_V                       = 1600;
+constexpr int BBS_ANGLE                   = 1601;
 
 // ── Switch ───────────────────────────────────────────────────────────────────
 constexpr int SW_OPEN                     = 1500;

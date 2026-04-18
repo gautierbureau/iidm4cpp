@@ -153,4 +153,8 @@ std::optional<Switch> Network::getSwitch(const std::string& id) const {
     return findById<Switch>(backend_.get(), prop::SWITCH, id);
 }
 
+std::optional<BusbarSection> Network::getBusbarSection(const std::string& id) const {
+    return findById<BusbarSection>(backend_.get(), prop::BUSBAR_SECTION, id);
+}
+
 } // namespace iidm

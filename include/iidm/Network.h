@@ -14,6 +14,7 @@
 #include <iidm/StaticVarCompensator.h>
 #include <iidm/VscConverterStation.h>
 #include <iidm/LccConverterStation.h>
+#include <iidm/BusbarSection.h>
 #include <iidm/Switch.h>
 #include <memory>
 #include <optional>
@@ -65,6 +66,7 @@ public:
     std::optional<VscConverterStation>    getVscConverterStation(const std::string& id) const;
     std::optional<LccConverterStation>    getLccConverterStation(const std::string& id) const;
     std::optional<Switch>                  getSwitch(const std::string& id) const;
+    std::optional<BusbarSection>           getBusbarSection(const std::string& id) const;
 
     // Backend accessor (advanced usage only)
     BackendProvider& getBackend();

@@ -14,6 +14,8 @@ set(TEST_SOURCES
     TestBus.cpp
     TestLine.cpp
     TestSwitch.cpp
+    TestTwoWindingsTransformerTapChanger.cpp
+    TestBusbarSection.cpp
     TestConnect.cpp
     TestBackendSelector.cpp
     TestIntegration.cpp

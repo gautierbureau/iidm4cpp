@@ -4,6 +4,7 @@
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
 #include <iidm/Switch.h>
+#include <iidm/BusbarSection.h>
 
 namespace iidm {
 
@@ -45,6 +46,16 @@ SlackTerminal VoltageLevel::getSlackTerminal() const {
 std::vector<Switch> VoltageLevel::getSwitches() const {
     auto handles = backend_->getChildren(handle_, prop::SWITCH);
     std::vector<Switch> result;
+    result.reserve(handles.size());
+    for (auto h : handles) {
+        result.emplace_back(h, backend_);
+    }
+    return result;
+}
+
+std::vector<BusbarSection> VoltageLevel::getBusbarSections() const {
+    auto handles = backend_->getChildren(handle_, prop::BUSBAR_SECTION);
+    std::vector<BusbarSection> result;
     result.reserve(handles.size());
     for (auto h : handles) {
         result.emplace_back(h, backend_);

@@ -173,6 +173,24 @@ void JNIBackend::cacheMethodIds() {
         "()Lcom/powsybl/iidm/network/TopologyKind;");
     checkJNIException(env_);
 
+    // Optional (for getSubstation)
+    cacheClass(cache_.optionalClass, "java/util/Optional");
+    cache_.optional_isPresent = env_->GetMethodID(cache_.optionalClass, "isPresent", "()Z");
+    cache_.optional_get       = env_->GetMethodID(cache_.optionalClass, "get",       "()Ljava/lang/Object;");
+    checkJNIException(env_);
+
+    // VoltageLevel → Substation
+    cache_.vl_getSubstation = env_->GetMethodID(cache_.voltageLevelClass, "getSubstation",
+        "()Ljava/util/Optional;");
+    checkJNIException(env_);
+
+    // Substation country setter
+    cache_.substation_setCountry = env_->GetMethodID(cache_.substationClass, "setCountry",
+        "(Lcom/powsybl/iidm/network/Country;)Lcom/powsybl/iidm/network/Substation;");
+    cache_.country_valueOf = env_->GetStaticMethodID(cache_.countryClass, "valueOf",
+        "(Ljava/lang/String;)Lcom/powsybl/iidm/network/Country;");
+    checkJNIException(env_);
+
     // Switch
     cache_.switch_isOpen      = env_->GetMethodID(cache_.switchClass, "isOpen",      "()Z");
     cache_.switch_setOpen     = env_->GetMethodID(cache_.switchClass, "setOpen",     "(Z)V");
@@ -200,6 +218,64 @@ void JNIBackend::cacheMethodIds() {
     // Network.getSwitch(String id)
     cache_.network_getSwitch = env_->GetMethodID(cache_.networkClass, "getSwitch",
         "(Ljava/lang/String;)Lcom/powsybl/iidm/network/Switch;");
+    checkJNIException(env_);
+
+    // TwoWindingsTransformer tap changers
+    {
+        jclass twoWTClass = env_->FindClass("com/powsybl/iidm/network/TwoWindingsTransformer");
+        cache_.twt_getRatioTapChanger = env_->GetMethodID(twoWTClass, "getRatioTapChanger",
+            "()Lcom/powsybl/iidm/network/RatioTapChanger;");
+        cache_.twt_getPhaseTapChanger = env_->GetMethodID(twoWTClass, "getPhaseTapChanger",
+            "()Lcom/powsybl/iidm/network/PhaseTapChanger;");
+        env_->DeleteLocalRef(twoWTClass);
+    }
+    cacheClass(cache_.tapChangerClass,       "com/powsybl/iidm/network/TapChanger");
+    cacheClass(cache_.ratioTapChangerClass,  "com/powsybl/iidm/network/RatioTapChanger");
+    cacheClass(cache_.phaseTapChangerClass,  "com/powsybl/iidm/network/PhaseTapChanger");
+    cacheClass(cache_.ptcRegulationModeClass,
+        "com/powsybl/iidm/network/PhaseTapChanger$RegulationMode");
+    // Common TapChanger methods (looked up on the interface; erased return type is TapChanger)
+    cache_.tc_getTapPosition   = env_->GetMethodID(cache_.tapChangerClass, "getTapPosition",   "()I");
+    cache_.tc_setTapPosition   = env_->GetMethodID(cache_.tapChangerClass, "setTapPosition",
+        "(I)Lcom/powsybl/iidm/network/TapChanger;");
+    cache_.tc_getLowTapPosition  = env_->GetMethodID(cache_.tapChangerClass, "getLowTapPosition",  "()I");
+    cache_.tc_getHighTapPosition = env_->GetMethodID(cache_.tapChangerClass, "getHighTapPosition", "()I");
+    cache_.tc_isRegulating     = env_->GetMethodID(cache_.tapChangerClass, "isRegulating",    "()Z");
+    cache_.tc_setRegulating    = env_->GetMethodID(cache_.tapChangerClass, "setRegulating",
+        "(Z)Lcom/powsybl/iidm/network/TapChanger;");
+    // RatioTapChanger-specific
+    cache_.rtc_getTargetV = env_->GetMethodID(cache_.ratioTapChangerClass, "getTargetV", "()D");
+    cache_.rtc_setTargetV = env_->GetMethodID(cache_.ratioTapChangerClass, "setTargetV",
+        "(D)Lcom/powsybl/iidm/network/RatioTapChanger;");
+    // PhaseTapChanger-specific
+    cache_.ptc_getRegulationMode = env_->GetMethodID(cache_.phaseTapChangerClass,
+        "getRegulationMode",
+        "()Lcom/powsybl/iidm/network/PhaseTapChanger$RegulationMode;");
+    cache_.ptc_setRegulationMode = env_->GetMethodID(cache_.phaseTapChangerClass,
+        "setRegulationMode",
+        "(Lcom/powsybl/iidm/network/PhaseTapChanger$RegulationMode;)Lcom/powsybl/iidm/network/PhaseTapChanger;");
+    cache_.ptc_getRegulationValue = env_->GetMethodID(cache_.phaseTapChangerClass,
+        "getRegulationValue", "()D");
+    cache_.ptc_setRegulationValue = env_->GetMethodID(cache_.phaseTapChangerClass,
+        "setRegulationValue", "(D)Lcom/powsybl/iidm/network/PhaseTapChanger;");
+    checkJNIException(env_);
+
+    // Injection interface (shared getTerminal)
+    cacheClass(cache_.injectionClass, "com/powsybl/iidm/network/Injection");
+    cache_.injection_getTerminal = env_->GetMethodID(cache_.injectionClass, "getTerminal",
+        "()Lcom/powsybl/iidm/network/Terminal;");
+    checkJNIException(env_);
+
+    // BusbarSection
+    cacheClass(cache_.busbarSectionClass, "com/powsybl/iidm/network/BusbarSection");
+    cache_.bbs_getV       = env_->GetMethodID(cache_.busbarSectionClass, "getV",       "()D");
+    cache_.bbs_getAngle   = env_->GetMethodID(cache_.busbarSectionClass, "getAngle",   "()D");
+    cache_.bbs_getTerminal = env_->GetMethodID(cache_.busbarSectionClass, "getTerminal",
+        "()Lcom/powsybl/iidm/network/Terminal;");
+    cache_.nbView_getBusbarSections = env_->GetMethodID(cache_.vlNodeBreakerViewClass,
+        "getBusbarSections", "()Ljava/lang/Iterable;");
+    cache_.network_getBusbarSection = env_->GetMethodID(cache_.networkClass,
+        "getBusbarSection", "(Ljava/lang/String;)Lcom/powsybl/iidm/network/BusbarSection;");
     checkJNIException(env_);
 
     // ActivePowerControl extension
@@ -394,6 +470,22 @@ double JNIBackend::getDouble(ObjectHandle h, int property) const {
         case prop::LINE_B1: result = env_->CallDoubleMethod(obj, cache_.line_getB1); break;
         case prop::LINE_G2: result = env_->CallDoubleMethod(obj, cache_.line_getG2); break;
         case prop::LINE_B2: result = env_->CallDoubleMethod(obj, cache_.line_getB2); break;
+        case prop::TWO_WT_RTC_TARGET_V: {
+            jobject rtc = env_->CallObjectMethod(obj, cache_.twt_getRatioTapChanger);
+            if (!rtc) throw PropertyNotFoundException("RatioTapChanger not present");
+            result = env_->CallDoubleMethod(rtc, cache_.rtc_getTargetV);
+            env_->DeleteLocalRef(rtc);
+            break;
+        }
+        case prop::TWO_WT_PTC_REG_VALUE: {
+            jobject ptc = env_->CallObjectMethod(obj, cache_.twt_getPhaseTapChanger);
+            if (!ptc) throw PropertyNotFoundException("PhaseTapChanger not present");
+            result = env_->CallDoubleMethod(ptc, cache_.ptc_getRegulationValue);
+            env_->DeleteLocalRef(ptc);
+            break;
+        }
+        case prop::BBS_V:     result = env_->CallDoubleMethod(obj, cache_.bbs_getV);     break;
+        case prop::BBS_ANGLE: result = env_->CallDoubleMethod(obj, cache_.bbs_getAngle); break;
         case prop::EXT_APC_DROOP: {
             jobject apc = fetchApcExtension(obj);
             if (!apc) throw PropertyNotFoundException("ActivePowerControl extension not present");
@@ -462,6 +554,20 @@ void JNIBackend::setDouble(ObjectHandle h, int property, double value) {
         case prop::TERMINAL_Q:   env_->CallObjectMethod(obj, cache_.terminal_setQ, value); break;
         case prop::BUS_V:        env_->CallObjectMethod(obj, cache_.bus_setV,     value); break;
         case prop::BUS_ANGLE:    env_->CallObjectMethod(obj, cache_.bus_setAngle, value); break;
+        case prop::TWO_WT_RTC_TARGET_V: {
+            jobject rtc = env_->CallObjectMethod(obj, cache_.twt_getRatioTapChanger);
+            if (!rtc) throw PropertyNotFoundException("RatioTapChanger not present");
+            env_->CallObjectMethod(rtc, cache_.rtc_setTargetV, value);
+            env_->DeleteLocalRef(rtc);
+            break;
+        }
+        case prop::TWO_WT_PTC_REG_VALUE: {
+            jobject ptc = env_->CallObjectMethod(obj, cache_.twt_getPhaseTapChanger);
+            if (!ptc) throw PropertyNotFoundException("PhaseTapChanger not present");
+            env_->CallObjectMethod(ptc, cache_.ptc_setRegulationValue, value);
+            env_->DeleteLocalRef(ptc);
+            break;
+        }
         case prop::EXT_APC_DROOP: {
             jobject apc = fetchApcExtension(obj);
             if (!apc) throw PropertyNotFoundException("ActivePowerControl extension not present");
@@ -548,14 +654,104 @@ int JNIBackend::getInt(ObjectHandle h, int property) const {
             checkJNIException(env_);
             return ord;
         }
+        case prop::TWO_WT_RTC_TAP_POSITION: {
+            jobject rtc = env_->CallObjectMethod(obj, cache_.twt_getRatioTapChanger);
+            if (!rtc) throw PropertyNotFoundException("RatioTapChanger not present");
+            int v = env_->CallIntMethod(rtc, cache_.tc_getTapPosition);
+            env_->DeleteLocalRef(rtc);
+            checkJNIException(env_);
+            return v;
+        }
+        case prop::TWO_WT_RTC_LOW_TAP: {
+            jobject rtc = env_->CallObjectMethod(obj, cache_.twt_getRatioTapChanger);
+            if (!rtc) throw PropertyNotFoundException("RatioTapChanger not present");
+            int v = env_->CallIntMethod(rtc, cache_.tc_getLowTapPosition);
+            env_->DeleteLocalRef(rtc);
+            checkJNIException(env_);
+            return v;
+        }
+        case prop::TWO_WT_RTC_HIGH_TAP: {
+            jobject rtc = env_->CallObjectMethod(obj, cache_.twt_getRatioTapChanger);
+            if (!rtc) throw PropertyNotFoundException("RatioTapChanger not present");
+            int v = env_->CallIntMethod(rtc, cache_.tc_getHighTapPosition);
+            env_->DeleteLocalRef(rtc);
+            checkJNIException(env_);
+            return v;
+        }
+        case prop::TWO_WT_PTC_TAP_POSITION: {
+            jobject ptc = env_->CallObjectMethod(obj, cache_.twt_getPhaseTapChanger);
+            if (!ptc) throw PropertyNotFoundException("PhaseTapChanger not present");
+            int v = env_->CallIntMethod(ptc, cache_.tc_getTapPosition);
+            env_->DeleteLocalRef(ptc);
+            checkJNIException(env_);
+            return v;
+        }
+        case prop::TWO_WT_PTC_LOW_TAP: {
+            jobject ptc = env_->CallObjectMethod(obj, cache_.twt_getPhaseTapChanger);
+            if (!ptc) throw PropertyNotFoundException("PhaseTapChanger not present");
+            int v = env_->CallIntMethod(ptc, cache_.tc_getLowTapPosition);
+            env_->DeleteLocalRef(ptc);
+            checkJNIException(env_);
+            return v;
+        }
+        case prop::TWO_WT_PTC_HIGH_TAP: {
+            jobject ptc = env_->CallObjectMethod(obj, cache_.twt_getPhaseTapChanger);
+            if (!ptc) throw PropertyNotFoundException("PhaseTapChanger not present");
+            int v = env_->CallIntMethod(ptc, cache_.tc_getHighTapPosition);
+            env_->DeleteLocalRef(ptc);
+            checkJNIException(env_);
+            return v;
+        }
+        case prop::TWO_WT_PTC_REG_MODE: {
+            jobject ptc = env_->CallObjectMethod(obj, cache_.twt_getPhaseTapChanger);
+            if (!ptc) throw PropertyNotFoundException("PhaseTapChanger not present");
+            jobject mode = env_->CallObjectMethod(ptc, cache_.ptc_getRegulationMode);
+            int ord = env_->CallIntMethod(mode, cache_.enum_ordinal);
+            env_->DeleteLocalRef(mode);
+            env_->DeleteLocalRef(ptc);
+            checkJNIException(env_);
+            return ord;
+        }
         default:
             throw PropertyNotFoundException("Unknown int property: " + std::to_string(property));
     }
 }
 
-void JNIBackend::setInt(ObjectHandle h, int property, int /*value*/) {
-    (void)h;
-    throw PropertyNotFoundException("setInt not supported for property: " + std::to_string(property));
+void JNIBackend::setInt(ObjectHandle h, int property, int value) {
+    jobject obj = toObject(h);
+    switch (property) {
+        case prop::TWO_WT_RTC_TAP_POSITION: {
+            jobject rtc = env_->CallObjectMethod(obj, cache_.twt_getRatioTapChanger);
+            if (!rtc) throw PropertyNotFoundException("RatioTapChanger not present");
+            env_->CallObjectMethod(rtc, cache_.tc_setTapPosition, static_cast<jint>(value));
+            env_->DeleteLocalRef(rtc);
+            break;
+        }
+        case prop::TWO_WT_PTC_TAP_POSITION: {
+            jobject ptc = env_->CallObjectMethod(obj, cache_.twt_getPhaseTapChanger);
+            if (!ptc) throw PropertyNotFoundException("PhaseTapChanger not present");
+            env_->CallObjectMethod(ptc, cache_.tc_setTapPosition, static_cast<jint>(value));
+            env_->DeleteLocalRef(ptc);
+            break;
+        }
+        case prop::TWO_WT_PTC_REG_MODE: {
+            jobject ptc = env_->CallObjectMethod(obj, cache_.twt_getPhaseTapChanger);
+            if (!ptc) throw PropertyNotFoundException("PhaseTapChanger not present");
+            jobject modeArr = env_->CallStaticObjectMethod(cache_.ptcRegulationModeClass,
+                env_->GetStaticMethodID(cache_.ptcRegulationModeClass, "values",
+                    "()[Lcom/powsybl/iidm/network/PhaseTapChanger$RegulationMode;"));
+            jobject mode = env_->GetObjectArrayElement(
+                static_cast<jobjectArray>(modeArr), value);
+            env_->CallObjectMethod(ptc, cache_.ptc_setRegulationMode, mode);
+            env_->DeleteLocalRef(mode);
+            env_->DeleteLocalRef(modeArr);
+            env_->DeleteLocalRef(ptc);
+            break;
+        }
+        default:
+            throw PropertyNotFoundException("setInt not supported for property: " + std::to_string(property));
+    }
+    checkJNIException(env_);
 }
 
 bool JNIBackend::getBool(ObjectHandle h, int property) const {
@@ -574,6 +770,32 @@ bool JNIBackend::getBool(ObjectHandle h, int property) const {
         case prop::SW_RETAINED:
             result = env_->CallBooleanMethod(obj, cache_.switch_isRetained);
             break;
+        case prop::TWO_WT_RTC_EXISTS: {
+            jobject rtc = env_->CallObjectMethod(obj, cache_.twt_getRatioTapChanger);
+            result = (rtc != nullptr) ? JNI_TRUE : JNI_FALSE;
+            if (rtc) env_->DeleteLocalRef(rtc);
+            break;
+        }
+        case prop::TWO_WT_RTC_REGULATING: {
+            jobject rtc = env_->CallObjectMethod(obj, cache_.twt_getRatioTapChanger);
+            if (!rtc) throw PropertyNotFoundException("RatioTapChanger not present");
+            result = env_->CallBooleanMethod(rtc, cache_.tc_isRegulating);
+            env_->DeleteLocalRef(rtc);
+            break;
+        }
+        case prop::TWO_WT_PTC_EXISTS: {
+            jobject ptc = env_->CallObjectMethod(obj, cache_.twt_getPhaseTapChanger);
+            result = (ptc != nullptr) ? JNI_TRUE : JNI_FALSE;
+            if (ptc) env_->DeleteLocalRef(ptc);
+            break;
+        }
+        case prop::TWO_WT_PTC_REGULATING: {
+            jobject ptc = env_->CallObjectMethod(obj, cache_.twt_getPhaseTapChanger);
+            if (!ptc) throw PropertyNotFoundException("PhaseTapChanger not present");
+            result = env_->CallBooleanMethod(ptc, cache_.tc_isRegulating);
+            env_->DeleteLocalRef(ptc);
+            break;
+        }
         case prop::EXT_APC_EXISTS: {
             jobject apc = fetchApcExtension(obj);
             result = (apc != nullptr) ? JNI_TRUE : JNI_FALSE;
@@ -648,6 +870,20 @@ void JNIBackend::setBool(ObjectHandle h, int property, bool value) {
         case prop::SW_RETAINED:
             env_->CallVoidMethod(obj, cache_.switch_setRetained, static_cast<jboolean>(value));
             break;
+        case prop::TWO_WT_RTC_REGULATING: {
+            jobject rtc = env_->CallObjectMethod(obj, cache_.twt_getRatioTapChanger);
+            if (!rtc) throw PropertyNotFoundException("RatioTapChanger not present");
+            env_->CallObjectMethod(rtc, cache_.tc_setRegulating, static_cast<jboolean>(value));
+            env_->DeleteLocalRef(rtc);
+            break;
+        }
+        case prop::TWO_WT_PTC_REGULATING: {
+            jobject ptc = env_->CallObjectMethod(obj, cache_.twt_getPhaseTapChanger);
+            if (!ptc) throw PropertyNotFoundException("PhaseTapChanger not present");
+            env_->CallObjectMethod(ptc, cache_.tc_setRegulating, static_cast<jboolean>(value));
+            env_->DeleteLocalRef(ptc);
+            break;
+        }
         case prop::EXT_APC_PARTICIPATE: {
             jobject apc = fetchApcExtension(obj);
             if (!apc) throw PropertyNotFoundException("ActivePowerControl extension not present");
@@ -722,8 +958,23 @@ std::string JNIBackend::getString(ObjectHandle h, int property) const {
     return result;
 }
 
-void JNIBackend::setString(ObjectHandle /*h*/, int property, const std::string& /*value*/) {
-    throw PropertyNotFoundException("setString not supported for property: " + std::to_string(property));
+void JNIBackend::setString(ObjectHandle h, int property, const std::string& value) {
+    jobject obj = toObject(h);
+    switch (property) {
+        case prop::COUNTRY: {
+            jstring jval   = env_->NewStringUTF(value.c_str());
+            jobject country = env_->CallStaticObjectMethod(
+                cache_.countryClass, cache_.country_valueOf, jval);
+            env_->DeleteLocalRef(jval);
+            checkJNIException(env_);
+            env_->CallObjectMethod(obj, cache_.substation_setCountry, country);
+            env_->DeleteLocalRef(country);
+            break;
+        }
+        default:
+            throw PropertyNotFoundException("setString not supported for property: " + std::to_string(property));
+    }
+    checkJNIException(env_);
 }
 
 std::optional<double> JNIBackend::getOptDouble(ObjectHandle h, int property) const {
@@ -742,6 +993,13 @@ std::vector<ObjectHandle> JNIBackend::getChildren(ObjectHandle h, int childType)
         case prop::LINE:         collection = env_->CallObjectMethod(obj, cache_.network_getLines);         break;
         case prop::SUBSTATION:   collection = env_->CallObjectMethod(obj, cache_.network_getSubstations);   break;
         case prop::VOLTAGE_LEVEL: collection = env_->CallObjectMethod(obj, cache_.network_getVoltageLevels); break;
+        case prop::BUSBAR_SECTION: {
+            // obj is a VoltageLevel in node-breaker topology
+            jobject view = env_->CallObjectMethod(obj, cache_.vl_getNodeBreakerView);
+            collection   = env_->CallObjectMethod(view, cache_.nbView_getBusbarSections);
+            env_->DeleteLocalRef(view);
+            break;
+        }
         case prop::SWITCH: {
             // obj is a VoltageLevel; choose view based on topology kind
             jobject tkObj = env_->CallObjectMethod(obj, cache_.vl_getTopologyKind);
@@ -773,7 +1031,7 @@ ObjectHandle JNIBackend::getRelated(ObjectHandle h, int relation) const {
 
     switch (relation) {
         case prop::REL_TERMINAL:
-            related = env_->CallObjectMethod(obj, cache_.generator_getTerminal);
+            related = env_->CallObjectMethod(obj, cache_.injection_getTerminal);
             break;
         case prop::REL_TERMINAL1:
             related = env_->CallObjectMethod(obj, cache_.line_getTerminal1);
@@ -803,6 +1061,15 @@ ObjectHandle JNIBackend::getRelated(ObjectHandle h, int relation) const {
             env_->DeleteLocalRef(st);
             break;
         }
+        case prop::REL_SUBSTATION: {
+            jobject opt = env_->CallObjectMethod(obj, cache_.vl_getSubstation);
+            checkJNIException(env_);
+            if (opt && env_->CallBooleanMethod(opt, cache_.optional_isPresent)) {
+                related = env_->CallObjectMethod(opt, cache_.optional_get);
+            }
+            if (opt) env_->DeleteLocalRef(opt);
+            break;
+        }
         default:
             throw PropertyNotFoundException("Unknown relation: " + std::to_string(relation));
     }
@@ -828,6 +1095,9 @@ ObjectHandle JNIBackend::findById(int objectType, const std::string& id) const {
             break;
         case prop::SWITCH:
             result = env_->CallObjectMethod(networkRef_, cache_.network_getSwitch, jId);
+            break;
+        case prop::BUSBAR_SECTION:
+            result = env_->CallObjectMethod(networkRef_, cache_.network_getBusbarSection, jId);
             break;
         default:
             env_->DeleteLocalRef(jId);
