@@ -2,6 +2,11 @@
 
 set(TEST_SOURCES
     TestNetwork.cpp
+    TestBattery.cpp
+    TestReactiveLimits.cpp
+    TestTapChangerObjects.cpp
+    TestThreeWindingsTransformerLeg.cpp
+    TestTopologyViews.cpp
     TestGenerator.cpp
     TestActivePowerControl.cpp
     TestCoordinatedReactiveControl.cpp
@@ -13,9 +18,13 @@ set(TEST_SOURCES
     TestTerminal.cpp
     TestBus.cpp
     TestLine.cpp
+    TestSwitch.cpp
+    TestTwoWindingsTransformerTapChanger.cpp
+    TestBusbarSection.cpp
     TestConnect.cpp
     TestBackendSelector.cpp
     TestIntegration.cpp
+    TestShuntCompensatorNonLinear.cpp
 )
 
 add_executable(iidmbridge_tests ${TEST_SOURCES})

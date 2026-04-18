@@ -1,6 +1,8 @@
 #include <iidm/Generator.h>
 #include <iidm/ActivePowerControl.h>
 #include <iidm/CoordinatedReactiveControl.h>
+#include <iidm/MinMaxReactiveLimits.h>
+#include <iidm/ReactiveCapabilityCurve.h>
 #include <iidm/BackendProvider.h>
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
@@ -85,6 +87,22 @@ bool Generator::hasCoordinatedReactiveControl() const {
 
 CoordinatedReactiveControl Generator::getCoordinatedReactiveControl() const {
     return CoordinatedReactiveControl(handle_, backend_);
+}
+
+bool Generator::hasMinMaxReactiveLimits() const {
+    return backend_->getInt(handle_, prop::GEN_REACTIVE_LIMITS_KIND) == 1;
+}
+
+MinMaxReactiveLimits Generator::getMinMaxReactiveLimits() const {
+    return MinMaxReactiveLimits(handle_, backend_, prop::GEN_MIN_Q, prop::GEN_MAX_Q);
+}
+
+bool Generator::hasReactiveCapabilityCurve() const {
+    return backend_->getInt(handle_, prop::GEN_REACTIVE_LIMITS_KIND) == 2;
+}
+
+ReactiveCapabilityCurve Generator::getReactiveCapabilityCurve() const {
+    return ReactiveCapabilityCurve(handle_, backend_);
 }
 
 void Generator::connect() {

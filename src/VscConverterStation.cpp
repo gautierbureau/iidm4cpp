@@ -1,4 +1,6 @@
 #include <iidm/VscConverterStation.h>
+#include <iidm/MinMaxReactiveLimits.h>
+#include <iidm/ReactiveCapabilityCurve.h>
 #include <iidm/BackendProvider.h>
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
@@ -45,6 +47,22 @@ double VscConverterStation::getReactivePowerSetpoint() const {
 VscConverterStation& VscConverterStation::setReactivePowerSetpoint(double value) {
     backend_->setDouble(handle_, prop::VSC_REACTIVE_POWER_SETPOINT, value);
     return *this;
+}
+
+bool VscConverterStation::hasMinMaxReactiveLimits() const {
+    return backend_->getInt(handle_, prop::VSC_REACTIVE_LIMITS_KIND) == 1;
+}
+
+MinMaxReactiveLimits VscConverterStation::getMinMaxReactiveLimits() const {
+    return MinMaxReactiveLimits(handle_, backend_, prop::VSC_MIN_Q, prop::VSC_MAX_Q);
+}
+
+bool VscConverterStation::hasReactiveCapabilityCurve() const {
+    return backend_->getInt(handle_, prop::VSC_REACTIVE_LIMITS_KIND) == 2;
+}
+
+ReactiveCapabilityCurve VscConverterStation::getReactiveCapabilityCurve() const {
+    return ReactiveCapabilityCurve(handle_, backend_);
 }
 
 Terminal VscConverterStation::getTerminal() const {

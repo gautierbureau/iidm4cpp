@@ -25,6 +25,19 @@ public final class PropertyCodes {
     public static final int LCC_CONVERTER_STATION      = 13;
     public static final int TERMINAL                   = 14;
     public static final int BUS                        = 15;
+    public static final int SWITCH                     = 16;
+    public static final int BUSBAR_SECTION             = 17;
+    public static final int BATTERY                    = 18;
+    public static final int REACTIVE_CURVE_POINT       = 19;
+    public static final int TWO_WT_RTC_STEP            = 20;
+    public static final int TWO_WT_PTC_STEP            = 21;
+    public static final int THREE_WT_LEG1_RTC_STEP     = 22;
+    public static final int THREE_WT_LEG2_RTC_STEP     = 23;
+    public static final int THREE_WT_LEG3_RTC_STEP     = 24;
+    public static final int THREE_WT_LEG1_PTC_STEP     = 25;
+    public static final int THREE_WT_LEG2_PTC_STEP     = 26;
+    public static final int THREE_WT_LEG3_PTC_STEP     = 27;
+    public static final int SHUNT_SECTION               = 28;
 
     // ── Shared properties ─────────────────────────────────────────────────
     public static final int ID      = 100;
@@ -39,6 +52,9 @@ public final class PropertyCodes {
     public static final int GEN_MAX_P                = 204;
     public static final int GEN_VOLTAGE_REGULATOR_ON = 205;
     public static final int GEN_ENERGY_SOURCE        = 206;
+    public static final int GEN_REACTIVE_LIMITS_KIND = 207; // 0=NONE 1=MIN_MAX 2=CURVE
+    public static final int GEN_MIN_Q                = 208;
+    public static final int GEN_MAX_Q                = 209;
 
     // ── Load ─────────────────────────────────────────────────────────────
     public static final int LOAD_P0   = 300;
@@ -50,6 +66,7 @@ public final class PropertyCodes {
     public static final int TERMINAL_Q         = 401;
     public static final int TERMINAL_CONNECTED = 402;
     public static final int TERMINAL_BUS_ID    = 403;
+    public static final int TERMINAL_NODE      = 404;
 
     // ── Bus ──────────────────────────────────────────────────────────────
     public static final int BUS_V     = 500;
@@ -76,7 +93,98 @@ public final class PropertyCodes {
     public static final int TWO_WT_B        = 803;
     public static final int TWO_WT_RATED_U1 = 804;
     public static final int TWO_WT_RATED_U2 = 805;
-    public static final int TWO_WT_RATED_S  = 806;
+    public static final int TWO_WT_RATED_S         = 806;
+    public static final int TWO_WT_RTC_EXISTS      = 807;
+    public static final int TWO_WT_RTC_TAP_POSITION = 808;
+    public static final int TWO_WT_RTC_LOW_TAP     = 809;
+    public static final int TWO_WT_RTC_HIGH_TAP    = 810;
+    public static final int TWO_WT_RTC_REGULATING  = 811;
+    public static final int TWO_WT_RTC_TARGET_V    = 812;
+    public static final int TWO_WT_PTC_EXISTS      = 813;
+    public static final int TWO_WT_PTC_TAP_POSITION = 814;
+    public static final int TWO_WT_PTC_LOW_TAP     = 815;
+    public static final int TWO_WT_PTC_HIGH_TAP    = 816;
+    public static final int TWO_WT_PTC_REGULATING  = 817;
+    public static final int TWO_WT_PTC_REG_MODE    = 818;
+    public static final int TWO_WT_PTC_REG_VALUE   = 819;
+
+    // ── ThreeWindingsTransformer legs ─────────────────────────────────────────
+    public static final int THREE_WT_LEG1_BASE = 820;
+    public static final int THREE_WT_LEG2_BASE = 840;
+    public static final int THREE_WT_LEG3_BASE = 860;
+    // Leg 1
+    public static final int THREE_WT_LEG1_R              = 820;
+    public static final int THREE_WT_LEG1_X              = 821;
+    public static final int THREE_WT_LEG1_G              = 822;
+    public static final int THREE_WT_LEG1_B              = 823;
+    public static final int THREE_WT_LEG1_RATED_U        = 824;
+    public static final int THREE_WT_LEG1_RATED_S        = 825;
+    public static final int THREE_WT_LEG1_RTC_EXISTS     = 826;
+    public static final int THREE_WT_LEG1_RTC_TAP_POS    = 827;
+    public static final int THREE_WT_LEG1_RTC_LOW_TAP    = 828;
+    public static final int THREE_WT_LEG1_RTC_HIGH_TAP   = 829;
+    public static final int THREE_WT_LEG1_RTC_REGULATING = 830;
+    public static final int THREE_WT_LEG1_RTC_TARGET_V   = 831;
+    public static final int THREE_WT_LEG1_PTC_EXISTS     = 832;
+    public static final int THREE_WT_LEG1_PTC_TAP_POS    = 833;
+    public static final int THREE_WT_LEG1_PTC_LOW_TAP    = 834;
+    public static final int THREE_WT_LEG1_PTC_HIGH_TAP   = 835;
+    public static final int THREE_WT_LEG1_PTC_REGULATING = 836;
+    public static final int THREE_WT_LEG1_PTC_REG_MODE   = 837;
+    public static final int THREE_WT_LEG1_PTC_REG_VALUE  = 838;
+    // Leg 2
+    public static final int THREE_WT_LEG2_R              = 840;
+    public static final int THREE_WT_LEG2_X              = 841;
+    public static final int THREE_WT_LEG2_G              = 842;
+    public static final int THREE_WT_LEG2_B              = 843;
+    public static final int THREE_WT_LEG2_RATED_U        = 844;
+    public static final int THREE_WT_LEG2_RATED_S        = 845;
+    public static final int THREE_WT_LEG2_RTC_EXISTS     = 846;
+    public static final int THREE_WT_LEG2_RTC_TAP_POS    = 847;
+    public static final int THREE_WT_LEG2_RTC_LOW_TAP    = 848;
+    public static final int THREE_WT_LEG2_RTC_HIGH_TAP   = 849;
+    public static final int THREE_WT_LEG2_RTC_REGULATING = 850;
+    public static final int THREE_WT_LEG2_RTC_TARGET_V   = 851;
+    public static final int THREE_WT_LEG2_PTC_EXISTS     = 852;
+    public static final int THREE_WT_LEG2_PTC_TAP_POS    = 853;
+    public static final int THREE_WT_LEG2_PTC_LOW_TAP    = 854;
+    public static final int THREE_WT_LEG2_PTC_HIGH_TAP   = 855;
+    public static final int THREE_WT_LEG2_PTC_REGULATING = 856;
+    public static final int THREE_WT_LEG2_PTC_REG_MODE   = 857;
+    public static final int THREE_WT_LEG2_PTC_REG_VALUE  = 858;
+    // Leg 3
+    public static final int THREE_WT_LEG3_R              = 860;
+    public static final int THREE_WT_LEG3_X              = 861;
+    public static final int THREE_WT_LEG3_G              = 862;
+    public static final int THREE_WT_LEG3_B              = 863;
+    public static final int THREE_WT_LEG3_RATED_U        = 864;
+    public static final int THREE_WT_LEG3_RATED_S        = 865;
+    public static final int THREE_WT_LEG3_RTC_EXISTS     = 866;
+    public static final int THREE_WT_LEG3_RTC_TAP_POS    = 867;
+    public static final int THREE_WT_LEG3_RTC_LOW_TAP    = 868;
+    public static final int THREE_WT_LEG3_RTC_HIGH_TAP   = 869;
+    public static final int THREE_WT_LEG3_RTC_REGULATING = 870;
+    public static final int THREE_WT_LEG3_RTC_TARGET_V   = 871;
+    public static final int THREE_WT_LEG3_PTC_EXISTS     = 872;
+    public static final int THREE_WT_LEG3_PTC_TAP_POS    = 873;
+    public static final int THREE_WT_LEG3_PTC_LOW_TAP    = 874;
+    public static final int THREE_WT_LEG3_PTC_HIGH_TAP   = 875;
+    public static final int THREE_WT_LEG3_PTC_REGULATING = 876;
+    public static final int THREE_WT_LEG3_PTC_REG_MODE   = 877;
+    public static final int THREE_WT_LEG3_PTC_REG_VALUE  = 878;
+
+    // ── TapChangerStep properties ─────────────────────────────────────────────
+    public static final int RTC_STEP_RHO   = 1900;
+    public static final int RTC_STEP_R     = 1901;
+    public static final int RTC_STEP_X     = 1902;
+    public static final int RTC_STEP_G     = 1903;
+    public static final int RTC_STEP_B     = 1904;
+    public static final int PTC_STEP_ALPHA = 1910;
+    public static final int PTC_STEP_RHO   = 1911;
+    public static final int PTC_STEP_R     = 1912;
+    public static final int PTC_STEP_X     = 1913;
+    public static final int PTC_STEP_G     = 1914;
+    public static final int PTC_STEP_B     = 1915;
 
     // ── HvdcLine ─────────────────────────────────────────────────────────
     public static final int HVDC_R                   = 900;
@@ -98,6 +206,9 @@ public final class PropertyCodes {
     public static final int SHUNT_MAX_SECTION_COUNT = 1101;
     public static final int SHUNT_B_PER_SECTION     = 1102;
     public static final int SHUNT_G_PER_SECTION     = 1103;
+    public static final int SHUNT_MODEL_KIND        = 1104; // 0=LINEAR 1=NON_LINEAR
+    public static final int SHUNT_SECTION_B         = 1105; // on section handle
+    public static final int SHUNT_SECTION_G         = 1106; // on section handle
 
     // ── StaticVarCompensator ─────────────────────────────────────────────
     public static final int SVC_B_MIN                   = 1200;
@@ -111,10 +222,33 @@ public final class PropertyCodes {
     public static final int VSC_VOLTAGE_REGULATOR_ON    = 1301;
     public static final int VSC_VOLTAGE_SETPOINT        = 1302;
     public static final int VSC_REACTIVE_POWER_SETPOINT = 1303;
+    public static final int VSC_REACTIVE_LIMITS_KIND    = 1304; // 0=NONE 1=MIN_MAX 2=CURVE
+    public static final int VSC_MIN_Q                   = 1305;
+    public static final int VSC_MAX_Q                   = 1306;
 
     // ── LccConverterStation ──────────────────────────────────────────────
     public static final int LCC_LOSS_FACTOR  = 1400;
     public static final int LCC_POWER_FACTOR = 1401;
+
+    // ── BusbarSection ────────────────────────────────────────────────────────
+    public static final int BBS_V     = 1600;
+    public static final int BBS_ANGLE = 1601;
+
+    // ── Battery ───────────────────────────────────────────────────────────────
+    public static final int BAT_TARGET_P = 1700;
+    public static final int BAT_TARGET_Q = 1701;
+    public static final int BAT_MIN_P    = 1702;
+    public static final int BAT_MAX_P    = 1703;
+
+    // ── ReactiveCapabilityCurve point properties ──────────────────────────────
+    public static final int POINT_P     = 1800;
+    public static final int POINT_MIN_Q = 1801;
+    public static final int POINT_MAX_Q = 1802;
+
+    // ── Switch ───────────────────────────────────────────────────────────────
+    public static final int SW_OPEN     = 1500;
+    public static final int SW_RETAINED = 1501;
+    public static final int SW_KIND     = 1502;
 
     // ── Extension: ActivePowerControl ────────────────────────────────────
     public static final int EXT_APC_EXISTS      = 3000;
@@ -144,11 +278,12 @@ public final class PropertyCodes {
     public static final int EXT_ST_EXISTS = 3500;
 
     // ── Relations ────────────────────────────────────────────────────────
-    public static final int REL_TERMINAL1      = 2000;
-    public static final int REL_TERMINAL2      = 2001;
-    public static final int REL_TERMINAL       = 2002;
-    public static final int REL_BUS            = 2003;
-    public static final int REL_VOLTAGE_LEVEL  = 2004;
-    public static final int REL_SUBSTATION     = 2005;
-    public static final int REL_SLACK_TERMINAL = 2006;
+    public static final int REL_TERMINAL1        = 2000;
+    public static final int REL_TERMINAL2        = 2001;
+    public static final int REL_TERMINAL         = 2002;
+    public static final int REL_BUS              = 2003;
+    public static final int REL_VOLTAGE_LEVEL    = 2004;
+    public static final int REL_SUBSTATION       = 2005;
+    public static final int REL_SLACK_TERMINAL   = 2006;
+    public static final int REL_CONNECTABLE_BUS  = 2007;
 }

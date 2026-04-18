@@ -2,6 +2,7 @@
 
 #include <iidm/ObjectHandle.h>
 #include <iidm/Terminal.h>
+#include <iidm/ShuntCompensatorNonLinearModel.h>
 #include <string>
 
 namespace iidm {
@@ -21,8 +22,12 @@ public:
 
     int getMaximumSectionCount() const;
 
+    bool hasLinearModel() const;
     double getBPerSection() const;
     double getGPerSection() const;
+
+    bool hasNonLinearModel() const;
+    ShuntCompensatorNonLinearModel getNonLinearModel() const;
 
     Terminal getTerminal() const;
 

@@ -59,6 +59,10 @@ std::vector<VoltageLevel> Network::getVoltageLevels() const {
     return buildList<VoltageLevel>(backend_.get(), prop::VOLTAGE_LEVEL);
 }
 
+std::vector<Battery> Network::getBatteries() const {
+    return buildList<Battery>(backend_.get(), prop::BATTERY);
+}
+
 std::vector<Generator> Network::getGenerators() const {
     return buildList<Generator>(backend_.get(), prop::GENERATOR);
 }
@@ -105,6 +109,10 @@ std::vector<LccConverterStation> Network::getLccConverterStations() const {
 
 // ── Lookup by ID ─────────────────────────────────────────────────────────────
 
+std::optional<Battery> Network::getBattery(const std::string& id) const {
+    return findById<Battery>(backend_.get(), prop::BATTERY, id);
+}
+
 std::optional<Generator> Network::getGenerator(const std::string& id) const {
     return findById<Generator>(backend_.get(), prop::GENERATOR, id);
 }
@@ -147,6 +155,14 @@ std::optional<VscConverterStation> Network::getVscConverterStation(const std::st
 
 std::optional<LccConverterStation> Network::getLccConverterStation(const std::string& id) const {
     return findById<LccConverterStation>(backend_.get(), prop::LCC_CONVERTER_STATION, id);
+}
+
+std::optional<Switch> Network::getSwitch(const std::string& id) const {
+    return findById<Switch>(backend_.get(), prop::SWITCH, id);
+}
+
+std::optional<BusbarSection> Network::getBusbarSection(const std::string& id) const {
+    return findById<BusbarSection>(backend_.get(), prop::BUSBAR_SECTION, id);
 }
 
 } // namespace iidm

@@ -39,6 +39,13 @@ set(IIDM_BRIDGE_SOURCES
     src/Network.cpp
     src/NetworkFactory.cpp
     src/BackendSelector.cpp
+    src/Battery.cpp
+    src/MinMaxReactiveLimits.cpp
+    src/ReactiveCapabilityCurve.cpp
+    src/RatioTapChangerStep.cpp
+    src/PhaseTapChangerStep.cpp
+    src/RatioTapChanger.cpp
+    src/PhaseTapChanger.cpp
     src/ActivePowerControl.cpp
     src/CoordinatedReactiveControl.cpp
     src/HvdcAngleDroopActivePowerControl.cpp
@@ -57,9 +64,12 @@ set(IIDM_BRIDGE_SOURCES
     src/HvdcLine.cpp
     src/DanglingLine.cpp
     src/ShuntCompensator.cpp
+    src/ShuntCompensatorNonLinearModel.cpp
     src/StaticVarCompensator.cpp
     src/VscConverterStation.cpp
     src/LccConverterStation.cpp
+    src/Switch.cpp
+    src/BusbarSection.cpp
 )
 
 if(IIDM_BRIDGE_ENABLE_GRAALVM)
