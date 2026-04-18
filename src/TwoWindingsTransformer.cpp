@@ -59,7 +59,9 @@ std::optional<RatioTapChanger> TwoWindingsTransformer::getRatioTapChanger() cons
         prop::TWO_WT_RTC_HIGH_TAP,
         prop::TWO_WT_RTC_REGULATING,
         prop::TWO_WT_RTC_TARGET_V,
-        prop::TWO_WT_RTC_STEP
+        prop::TWO_WT_RTC_STEP,
+        prop::TWO_WT_RTC_TARGET_DEADBAND,
+        prop::TWO_WT_RTC_REG_TERMINAL_ID
     });
 }
 
@@ -112,7 +114,9 @@ std::optional<PhaseTapChanger> TwoWindingsTransformer::getPhaseTapChanger() cons
         prop::TWO_WT_PTC_REGULATING,
         prop::TWO_WT_PTC_REG_MODE,
         prop::TWO_WT_PTC_REG_VALUE,
-        prop::TWO_WT_PTC_STEP
+        prop::TWO_WT_PTC_STEP,
+        prop::TWO_WT_PTC_TARGET_DEADBAND,
+        prop::TWO_WT_PTC_REG_TERMINAL_ID
     });
 }
 

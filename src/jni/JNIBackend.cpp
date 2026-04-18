@@ -194,12 +194,14 @@ void JNIBackend::cacheMethodIds() {
     checkJNIException(env_);
 
     // Switch
-    cache_.switch_isOpen      = env_->GetMethodID(cache_.switchClass, "isOpen",      "()Z");
-    cache_.switch_setOpen     = env_->GetMethodID(cache_.switchClass, "setOpen",     "(Z)V");
-    cache_.switch_isRetained  = env_->GetMethodID(cache_.switchClass, "isRetained",  "()Z");
-    cache_.switch_setRetained = env_->GetMethodID(cache_.switchClass, "setRetained", "(Z)V");
-    cache_.switch_getKind     = env_->GetMethodID(cache_.switchClass, "getKind",
+    cache_.switch_isOpen         = env_->GetMethodID(cache_.switchClass, "isOpen",      "()Z");
+    cache_.switch_setOpen        = env_->GetMethodID(cache_.switchClass, "setOpen",     "(Z)V");
+    cache_.switch_isRetained     = env_->GetMethodID(cache_.switchClass, "isRetained",  "()Z");
+    cache_.switch_setRetained    = env_->GetMethodID(cache_.switchClass, "setRetained", "(Z)V");
+    cache_.switch_getKind        = env_->GetMethodID(cache_.switchClass, "getKind",
         "()Lcom/powsybl/iidm/network/SwitchKind;");
+    cache_.switch_getVoltageLevel = env_->GetMethodID(cache_.switchClass, "getVoltageLevel",
+        "()Lcom/powsybl/iidm/network/VoltageLevel;");
     checkJNIException(env_);
 
     // VoltageLevel topology views (for Switch child navigation)
@@ -215,6 +217,16 @@ void JNIBackend::cacheMethodIds() {
         "getSwitches", "()Ljava/lang/Iterable;");
     cache_.nbView_getSwitches = env_->GetMethodID(cache_.vlNodeBreakerViewClass,
         "getSwitches", "()Ljava/lang/Iterable;");
+    cache_.nbView_getNode1 = env_->GetMethodID(cache_.vlNodeBreakerViewClass,
+        "getNode1", "(Ljava/lang/String;)I");
+    cache_.nbView_getNode2 = env_->GetMethodID(cache_.vlNodeBreakerViewClass,
+        "getNode2", "(Ljava/lang/String;)I");
+    cache_.nbView_getInternalConnections = env_->GetMethodID(cache_.vlNodeBreakerViewClass,
+        "getInternalConnections", "()Ljava/lang/Iterable;");
+    cacheClass(cache_.internalConnectionClass,
+        "com/powsybl/iidm/network/VoltageLevel$NodeBreakerView$InternalConnection");
+    cache_.ic_getNode1 = env_->GetMethodID(cache_.internalConnectionClass, "getNode1", "()I");
+    cache_.ic_getNode2 = env_->GetMethodID(cache_.internalConnectionClass, "getNode2", "()I");
     checkJNIException(env_);
 
     // Network.getSwitch(String id)
@@ -432,6 +444,47 @@ void JNIBackend::cacheMethodIds() {
         "getAllSections", "()Ljava/util/List;");
     cache_.shuntSection_getB = env_->GetMethodID(cache_.shuntSectionClass, "getB", "()D");
     cache_.shuntSection_getG = env_->GetMethodID(cache_.shuntSectionClass, "getG", "()D");
+    {
+        jclass shuntCls = env_->FindClass("com/powsybl/iidm/network/ShuntCompensator");
+        cache_.shunt_isVoltageRegulatorOn = env_->GetMethodID(shuntCls, "isVoltageRegulatorOn", "()Z");
+        cache_.shunt_getTargetV = env_->GetMethodID(shuntCls, "getTargetV", "()D");
+        cache_.shunt_getRegulatingTerminal = env_->GetMethodID(shuntCls, "getRegulatingTerminal",
+            "()Lcom/powsybl/iidm/network/Terminal;");
+        env_->DeleteLocalRef(shuntCls);
+    }
+    checkJNIException(env_);
+
+    // HvdcLine converter stations
+    cacheClass(cache_.hvdcConverterStationClass, "com/powsybl/iidm/network/HvdcConverterStation");
+    {
+        jclass hvdcCls = env_->FindClass("com/powsybl/iidm/network/HvdcLine");
+        cache_.hvdc_getConverterStation1 = env_->GetMethodID(hvdcCls, "getConverterStation1",
+            "()Lcom/powsybl/iidm/network/HvdcConverterStation;");
+        cache_.hvdc_getConverterStation2 = env_->GetMethodID(hvdcCls, "getConverterStation2",
+            "()Lcom/powsybl/iidm/network/HvdcConverterStation;");
+        env_->DeleteLocalRef(hvdcCls);
+    }
+    checkJNIException(env_);
+
+    // TapChanger: targetDeadband, regulationTerminal
+    cache_.tc_getTargetDeadband = env_->GetMethodID(cache_.tapChangerClass, "getTargetDeadband", "()D");
+    cache_.tc_getRegulationTerminal = env_->GetMethodID(cache_.tapChangerClass, "getRegulationTerminal",
+        "()Lcom/powsybl/iidm/network/Terminal;");
+    checkJNIException(env_);
+
+    // Terminal navigation
+    cache_.terminal_getVoltageLevel = env_->GetMethodID(cache_.terminalClass, "getVoltageLevel",
+        "()Lcom/powsybl/iidm/network/VoltageLevel;");
+    cache_.terminal_getConnectable = env_->GetMethodID(cache_.terminalClass, "getConnectable",
+        "()Lcom/powsybl/iidm/network/Connectable;");
+    checkJNIException(env_);
+
+    // Identifiable::getId (general)
+    {
+        jclass identCls = env_->FindClass("com/powsybl/iidm/network/Identifiable");
+        cache_.identifiable_getId = env_->GetMethodID(identCls, "getId", "()Ljava/lang/String;");
+        env_->DeleteLocalRef(identCls);
+    }
     checkJNIException(env_);
 
     // VoltageLevel BusBreakerView.getBuses()
@@ -716,6 +769,19 @@ double JNIBackend::getDouble(ObjectHandle h, int property) const {
         case prop::PTC_STEP_B:     result = env_->CallDoubleMethod(obj, cache_.ptcStep_getB);     break;
         case prop::SHUNT_SECTION_B: result = env_->CallDoubleMethod(obj, cache_.shuntSection_getB); break;
         case prop::SHUNT_SECTION_G: result = env_->CallDoubleMethod(obj, cache_.shuntSection_getG); break;
+        case prop::SHUNT_TARGET_V:  result = env_->CallDoubleMethod(obj, cache_.shunt_getTargetV);  break;
+        case prop::TWO_WT_RTC_TARGET_DEADBAND: {
+            jobject rtc = env_->CallObjectMethod(obj, cache_.twt_getRatioTapChanger);
+            if (!rtc) throw PropertyNotFoundException("RatioTapChanger not present");
+            result = env_->CallDoubleMethod(rtc, cache_.tc_getTargetDeadband);
+            env_->DeleteLocalRef(rtc); break;
+        }
+        case prop::TWO_WT_PTC_TARGET_DEADBAND: {
+            jobject ptc = env_->CallObjectMethod(obj, cache_.twt_getPhaseTapChanger);
+            if (!ptc) throw PropertyNotFoundException("PhaseTapChanger not present");
+            result = env_->CallDoubleMethod(ptc, cache_.tc_getTargetDeadband);
+            env_->DeleteLocalRef(ptc); break;
+        }
         // ThreeWT leg doubles — helper lambda to avoid code duplication
         default: {
             // Handle ThreeWT leg property codes (820-878)
@@ -754,7 +820,25 @@ double JNIBackend::getDouble(ObjectHandle h, int property) const {
                 result = twtLegDouble(prop::THREE_WT_LEG2_BASE);
             else if (property >= prop::THREE_WT_LEG3_BASE && property < prop::THREE_WT_LEG3_BASE + 20)
                 result = twtLegDouble(prop::THREE_WT_LEG3_BASE);
-            else
+            else if (property >= prop::THREE_WT_LEG1_RTC_TARGET_DEADBAND
+                     && property <= prop::THREE_WT_LEG3_PTC_TARGET_DEADBAND
+                     && (property - prop::THREE_WT_LEG1_RTC_TARGET_DEADBAND) % 2 == 0) {
+                // Codes 1950/1952/1954 (RTC) and 1956/1958/1960 (PTC) — deadband
+                int idx = (property >= prop::THREE_WT_LEG1_PTC_TARGET_DEADBAND)
+                    ? (property - prop::THREE_WT_LEG1_PTC_TARGET_DEADBAND) / 2
+                    : (property - prop::THREE_WT_LEG1_RTC_TARGET_DEADBAND) / 2;
+                bool isPtc = (property >= prop::THREE_WT_LEG1_PTC_TARGET_DEADBAND);
+                jmethodID getLeg = (idx == 0) ? cache_.threeWT_getLeg1
+                                 : (idx == 1) ? cache_.threeWT_getLeg2
+                                 : cache_.threeWT_getLeg3;
+                jobject leg = env_->CallObjectMethod(obj, getLeg);
+                jmethodID getTc = isPtc ? cache_.leg_getPhaseTapChanger : cache_.leg_getRatioTapChanger;
+                jobject tc = env_->CallObjectMethod(leg, getTc);
+                env_->DeleteLocalRef(leg);
+                result = tc ? env_->CallDoubleMethod(tc, cache_.tc_getTargetDeadband)
+                            : std::numeric_limits<double>::quiet_NaN();
+                if (tc) env_->DeleteLocalRef(tc);
+            } else
                 throw PropertyNotFoundException("Unknown double property: " + std::to_string(property));
         }
     }
@@ -972,6 +1056,38 @@ int JNIBackend::getInt(ObjectHandle h, int property) const {
             checkJNIException(env_);
             return node;
         }
+        case prop::SW_NODE1: {
+            jstring swId = (jstring)env_->CallObjectMethod(obj, cache_.identifiable_getId);
+            jobject vl   = env_->CallObjectMethod(obj, cache_.switch_getVoltageLevel);
+            jobject nbv  = env_->CallObjectMethod(vl, cache_.vl_getNodeBreakerView);
+            env_->DeleteLocalRef(vl);
+            int v = env_->CallIntMethod(nbv, cache_.nbView_getNode1, swId);
+            env_->DeleteLocalRef(nbv);
+            env_->DeleteLocalRef(swId);
+            checkJNIException(env_);
+            return v;
+        }
+        case prop::SW_NODE2: {
+            jstring swId = (jstring)env_->CallObjectMethod(obj, cache_.identifiable_getId);
+            jobject vl   = env_->CallObjectMethod(obj, cache_.switch_getVoltageLevel);
+            jobject nbv  = env_->CallObjectMethod(vl, cache_.vl_getNodeBreakerView);
+            env_->DeleteLocalRef(vl);
+            int v = env_->CallIntMethod(nbv, cache_.nbView_getNode2, swId);
+            env_->DeleteLocalRef(nbv);
+            env_->DeleteLocalRef(swId);
+            checkJNIException(env_);
+            return v;
+        }
+        case prop::IC_NODE1: {
+            int v = env_->CallIntMethod(obj, cache_.ic_getNode1);
+            checkJNIException(env_);
+            return v;
+        }
+        case prop::IC_NODE2: {
+            int v = env_->CallIntMethod(obj, cache_.ic_getNode2);
+            checkJNIException(env_);
+            return v;
+        }
         default: {
             // ThreeWT leg int properties (820-878)
             auto twtLegInt = [&](int legBase) -> int {
@@ -1078,6 +1194,9 @@ bool JNIBackend::getBool(ObjectHandle h, int property) const {
     switch (property) {
         case prop::GEN_VOLTAGE_REGULATOR_ON:
             result = env_->CallBooleanMethod(obj, cache_.generator_isVoltageRegulatorOn);
+            break;
+        case prop::SHUNT_VOLTAGE_REGULATOR_ON:
+            result = env_->CallBooleanMethod(obj, cache_.shunt_isVoltageRegulatorOn);
             break;
         case prop::TERMINAL_CONNECTED:
             result = env_->CallBooleanMethod(obj, cache_.terminal_isConnected);
@@ -1301,8 +1420,103 @@ std::string JNIBackend::getString(ObjectHandle h, int property) const {
             env_->DeleteLocalRef(busViewClass);
             break;
         }
-        default:
-            throw PropertyNotFoundException("Unknown string property: " + std::to_string(property));
+        case prop::SHUNT_REGULATING_TERMINAL_ID: {
+            jobject term = env_->CallObjectMethod(obj, cache_.shunt_getRegulatingTerminal);
+            if (term) {
+                jobject conn = env_->CallObjectMethod(term, cache_.terminal_getConnectable);
+                env_->DeleteLocalRef(term);
+                if (conn) {
+                    jstr = (jstring)env_->CallObjectMethod(conn, cache_.identifiable_getId);
+                    env_->DeleteLocalRef(conn);
+                }
+            }
+            break;
+        }
+        case prop::HVDC_CONVERTER_STATION1_ID: {
+            jobject cs = env_->CallObjectMethod(obj, cache_.hvdc_getConverterStation1);
+            if (cs) {
+                jstr = (jstring)env_->CallObjectMethod(cs, cache_.identifiable_getId);
+                env_->DeleteLocalRef(cs);
+            }
+            break;
+        }
+        case prop::HVDC_CONVERTER_STATION2_ID: {
+            jobject cs = env_->CallObjectMethod(obj, cache_.hvdc_getConverterStation2);
+            if (cs) {
+                jstr = (jstring)env_->CallObjectMethod(cs, cache_.identifiable_getId);
+                env_->DeleteLocalRef(cs);
+            }
+            break;
+        }
+        case prop::TWO_WT_RTC_REG_TERMINAL_ID: {
+            jobject rtc = env_->CallObjectMethod(obj, cache_.twt_getRatioTapChanger);
+            if (rtc) {
+                jobject term = env_->CallObjectMethod(rtc, cache_.tc_getRegulationTerminal);
+                env_->DeleteLocalRef(rtc);
+                if (term) {
+                    jobject conn = env_->CallObjectMethod(term, cache_.terminal_getConnectable);
+                    env_->DeleteLocalRef(term);
+                    if (conn) {
+                        jstr = (jstring)env_->CallObjectMethod(conn, cache_.identifiable_getId);
+                        env_->DeleteLocalRef(conn);
+                    }
+                }
+            }
+            break;
+        }
+        case prop::TWO_WT_PTC_REG_TERMINAL_ID: {
+            jobject ptc = env_->CallObjectMethod(obj, cache_.twt_getPhaseTapChanger);
+            if (ptc) {
+                jobject term = env_->CallObjectMethod(ptc, cache_.tc_getRegulationTerminal);
+                env_->DeleteLocalRef(ptc);
+                if (term) {
+                    jobject conn = env_->CallObjectMethod(term, cache_.terminal_getConnectable);
+                    env_->DeleteLocalRef(term);
+                    if (conn) {
+                        jstr = (jstring)env_->CallObjectMethod(conn, cache_.identifiable_getId);
+                        env_->DeleteLocalRef(conn);
+                    }
+                }
+            }
+            break;
+        }
+        default: {
+            // 3WT leg regulation terminal ID (1951,1953,1955,1957,1959,1961)
+            auto is3WTLegRegTermId = [](int p) {
+                return (p == prop::THREE_WT_LEG1_RTC_REG_TERMINAL_ID ||
+                        p == prop::THREE_WT_LEG2_RTC_REG_TERMINAL_ID ||
+                        p == prop::THREE_WT_LEG3_RTC_REG_TERMINAL_ID ||
+                        p == prop::THREE_WT_LEG1_PTC_REG_TERMINAL_ID ||
+                        p == prop::THREE_WT_LEG2_PTC_REG_TERMINAL_ID ||
+                        p == prop::THREE_WT_LEG3_PTC_REG_TERMINAL_ID);
+            };
+            if (!is3WTLegRegTermId(property))
+                throw PropertyNotFoundException("Unknown string property: " + std::to_string(property));
+            bool isPtc = (property >= prop::THREE_WT_LEG1_PTC_REG_TERMINAL_ID);
+            int legIdx = isPtc
+                ? (property - prop::THREE_WT_LEG1_PTC_REG_TERMINAL_ID) / 2
+                : (property - prop::THREE_WT_LEG1_RTC_REG_TERMINAL_ID) / 2;
+            jmethodID getLeg = (legIdx == 0) ? cache_.threeWT_getLeg1
+                             : (legIdx == 1) ? cache_.threeWT_getLeg2
+                             : cache_.threeWT_getLeg3;
+            jobject leg = env_->CallObjectMethod(obj, getLeg);
+            jmethodID getTc = isPtc ? cache_.leg_getPhaseTapChanger : cache_.leg_getRatioTapChanger;
+            jobject tc = env_->CallObjectMethod(leg, getTc);
+            env_->DeleteLocalRef(leg);
+            if (tc) {
+                jobject term = env_->CallObjectMethod(tc, cache_.tc_getRegulationTerminal);
+                env_->DeleteLocalRef(tc);
+                if (term) {
+                    jobject conn = env_->CallObjectMethod(term, cache_.terminal_getConnectable);
+                    env_->DeleteLocalRef(term);
+                    if (conn) {
+                        jstr = (jstring)env_->CallObjectMethod(conn, cache_.identifiable_getId);
+                        env_->DeleteLocalRef(conn);
+                    }
+                }
+            }
+            break;
+        }
     }
     checkJNIException(env_);
 
@@ -1357,6 +1571,12 @@ std::vector<ObjectHandle> JNIBackend::getChildren(ObjectHandle h, int childType)
             // obj is a VoltageLevel in node-breaker topology
             jobject view = env_->CallObjectMethod(obj, cache_.vl_getNodeBreakerView);
             collection   = env_->CallObjectMethod(view, cache_.nbView_getBusbarSections);
+            env_->DeleteLocalRef(view);
+            break;
+        }
+        case prop::INTERNAL_CONNECTION: {
+            jobject view = env_->CallObjectMethod(obj, cache_.vl_getNodeBreakerView);
+            collection   = env_->CallObjectMethod(view, cache_.nbView_getInternalConnections);
             env_->DeleteLocalRef(view);
             break;
         }
@@ -1515,6 +1735,21 @@ ObjectHandle JNIBackend::getRelated(ObjectHandle h, int relation) const {
                 related = env_->CallObjectMethod(bbv, cache_.termBBView_getConnectableBus);
                 env_->DeleteLocalRef(bbv);
             }
+            break;
+        }
+        case prop::REL_VOLTAGE_LEVEL:
+            related = env_->CallObjectMethod(obj, cache_.terminal_getVoltageLevel);
+            break;
+        case prop::REL_REGULATING_TERMINAL: {
+            jclass cls = env_->GetObjectClass(obj);
+            jmethodID mid = env_->GetMethodID(cls, "getRegulatingTerminal",
+                "()Lcom/powsybl/iidm/network/Terminal;");
+            env_->DeleteLocalRef(cls);
+            if (env_->ExceptionCheck()) {
+                env_->ExceptionClear();
+                throw PropertyNotFoundException("Object does not have getRegulatingTerminal()");
+            }
+            if (mid) related = env_->CallObjectMethod(obj, mid);
             break;
         }
         default:

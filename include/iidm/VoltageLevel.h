@@ -6,6 +6,7 @@
 #include <iidm/SlackTerminal.h>
 #include <iidm/BusbarSection.h>
 #include <iidm/Switch.h>
+#include <iidm/InternalConnection.h>
 #include <optional>
 #include <string>
 #include <vector>
@@ -22,8 +23,9 @@ public:
         NodeBreakerView() = default;
         explicit NodeBreakerView(ObjectHandle vlHandle, BackendProvider* backend);
 
-        std::vector<Switch>        getSwitches() const;
-        std::vector<BusbarSection> getBusbarSections() const;
+        std::vector<Switch>             getSwitches() const;
+        std::vector<BusbarSection>      getBusbarSections() const;
+        std::vector<InternalConnection> getInternalConnections() const;
 
         bool isValid() const { return handle_ != INVALID_HANDLE; }
 

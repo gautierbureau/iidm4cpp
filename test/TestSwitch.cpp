@@ -74,3 +74,11 @@ TEST_F(SwitchTest, Equality) {
     EXPECT_EQ(a, b);
     EXPECT_NE(a, c);
 }
+
+TEST_F(SwitchTest, GetNode1Node2) {
+    backend.ints[{SW_HANDLE, prop::SW_NODE1}] = 3;
+    backend.ints[{SW_HANDLE, prop::SW_NODE2}] = 7;
+    Switch sw(SW_HANDLE, &backend);
+    EXPECT_EQ(sw.getNode1(), 3);
+    EXPECT_EQ(sw.getNode2(), 7);
+}

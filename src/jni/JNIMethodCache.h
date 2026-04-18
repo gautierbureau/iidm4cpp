@@ -175,15 +175,24 @@ struct JNIMethodCache {
     jmethodID switch_setOpen     = nullptr;
     jmethodID switch_isRetained  = nullptr;
     jmethodID switch_setRetained = nullptr;
-    jmethodID switch_getKind     = nullptr;
+    jmethodID switch_getKind        = nullptr;
+    jmethodID switch_getVoltageLevel = nullptr;
 
     // ── VoltageLevel topology views (for Switch navigation) ──────────────────
-    jclass    vlBusBreakerViewClass  = nullptr;
-    jclass    vlNodeBreakerViewClass = nullptr;
-    jmethodID vl_getBusBreakerView   = nullptr;
-    jmethodID vl_getNodeBreakerView  = nullptr;
-    jmethodID bbView_getSwitches     = nullptr;
-    jmethodID nbView_getSwitches     = nullptr;
+    jclass    vlBusBreakerViewClass      = nullptr;
+    jclass    vlNodeBreakerViewClass     = nullptr;
+    jmethodID vl_getBusBreakerView       = nullptr;
+    jmethodID vl_getNodeBreakerView      = nullptr;
+    jmethodID bbView_getSwitches         = nullptr;
+    jmethodID nbView_getSwitches         = nullptr;
+    jmethodID nbView_getNode1            = nullptr;
+    jmethodID nbView_getNode2            = nullptr;
+    jmethodID nbView_getInternalConnections = nullptr;
+
+    // ── InternalConnection ────────────────────────────────────────────────────
+    jclass    internalConnectionClass    = nullptr;
+    jmethodID ic_getNode1                = nullptr;
+    jmethodID ic_getNode2                = nullptr;
 
     // ── Network getSwitch by ID ───────────────────────────────────────────────
     jmethodID network_getSwitch = nullptr;
@@ -293,6 +302,27 @@ struct JNIMethodCache {
     jmethodID leg_getRatedS             = nullptr;
     jmethodID leg_getRatioTapChanger    = nullptr;
     jmethodID leg_getPhaseTapChanger    = nullptr;
+    // ── ShuntCompensator voltage regulator ───────────────────────────────────
+    jmethodID shunt_isVoltageRegulatorOn  = nullptr;
+    jmethodID shunt_getTargetV            = nullptr;
+    jmethodID shunt_getRegulatingTerminal = nullptr;
+
+    // ── HvdcLine converter stations ───────────────────────────────────────────
+    jclass    hvdcConverterStationClass   = nullptr;
+    jmethodID hvdc_getConverterStation1   = nullptr;
+    jmethodID hvdc_getConverterStation2   = nullptr;
+
+    // ── TapChanger: targetDeadband and regulationTerminal ─────────────────────
+    jmethodID tc_getTargetDeadband        = nullptr;
+    jmethodID tc_getRegulationTerminal    = nullptr;
+
+    // ── Terminal navigation ───────────────────────────────────────────────────
+    jmethodID terminal_getVoltageLevel    = nullptr;
+    jmethodID terminal_getConnectable     = nullptr;
+
+    // ── Identifiable::getId (cached for general use) ──────────────────────────
+    jmethodID identifiable_getId          = nullptr;
+
     // ── ShuntCompensator non-linear model ─────────────────────────────────────
     jclass    shuntNLModelClass          = nullptr;
     jclass    shuntSectionClass          = nullptr;

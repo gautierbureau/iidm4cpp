@@ -83,8 +83,10 @@ public final class PropertyDispatcher {
             case EXT_HOAR_OPR_CS1_TO_CS2 -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class).getOprFromCS1toCS2();
             case EXT_HOAR_OPR_CS2_TO_CS1 -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class).getOprFromCS2toCS1();
             case EXT_VPRC_SLOPE -> ((StaticVarCompensator) obj).getExtension(VoltagePerReactivePowerControl.class).getSlope();
-            case TWO_WT_RTC_TARGET_V  -> ((TwoWindingsTransformer) obj).getRatioTapChanger().getTargetV();
-            case TWO_WT_PTC_REG_VALUE -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().getRegulationValue();
+            case TWO_WT_RTC_TARGET_V        -> ((TwoWindingsTransformer) obj).getRatioTapChanger().getTargetV();
+            case TWO_WT_PTC_REG_VALUE       -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().getRegulationValue();
+            case TWO_WT_RTC_TARGET_DEADBAND -> ((TwoWindingsTransformer) obj).getRatioTapChanger().getTargetDeadband();
+            case TWO_WT_PTC_TARGET_DEADBAND -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().getTargetDeadband();
             case BBS_V     -> ((BusbarSection) obj).getV();
             case BBS_ANGLE -> ((BusbarSection) obj).getAngle();
             // Battery
@@ -115,6 +117,7 @@ public final class PropertyDispatcher {
             case PTC_STEP_X     -> ((PhaseTapChangerStep) obj).getX();
             case PTC_STEP_G     -> ((PhaseTapChangerStep) obj).getG();
             case PTC_STEP_B     -> ((PhaseTapChangerStep) obj).getB();
+            case SHUNT_TARGET_V  -> ((ShuntCompensator) obj).getTargetV();
             // ShuntCompensatorNonLinearModel.Section (non-linear model)
             case SHUNT_SECTION_B -> ((ShuntCompensatorNonLinearModel.Section) obj).getB();
             case SHUNT_SECTION_G -> ((ShuntCompensatorNonLinearModel.Section) obj).getG();
@@ -125,24 +128,30 @@ public final class PropertyDispatcher {
             case THREE_WT_LEG1_B       -> ((ThreeWindingsTransformer) obj).getLeg1().getB();
             case THREE_WT_LEG1_RATED_U -> ((ThreeWindingsTransformer) obj).getLeg1().getRatedU();
             case THREE_WT_LEG1_RATED_S -> ((ThreeWindingsTransformer) obj).getLeg1().getRatedS();
-            case THREE_WT_LEG1_RTC_TARGET_V  -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().getTargetV();
-            case THREE_WT_LEG1_PTC_REG_VALUE -> ((ThreeWindingsTransformer) obj).getLeg1().getPhaseTapChanger().getRegulationValue();
+            case THREE_WT_LEG1_RTC_TARGET_V        -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().getTargetV();
+            case THREE_WT_LEG1_PTC_REG_VALUE       -> ((ThreeWindingsTransformer) obj).getLeg1().getPhaseTapChanger().getRegulationValue();
+            case THREE_WT_LEG1_RTC_TARGET_DEADBAND -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().getTargetDeadband();
+            case THREE_WT_LEG1_PTC_TARGET_DEADBAND -> ((ThreeWindingsTransformer) obj).getLeg1().getPhaseTapChanger().getTargetDeadband();
             case THREE_WT_LEG2_R       -> ((ThreeWindingsTransformer) obj).getLeg2().getR();
             case THREE_WT_LEG2_X       -> ((ThreeWindingsTransformer) obj).getLeg2().getX();
             case THREE_WT_LEG2_G       -> ((ThreeWindingsTransformer) obj).getLeg2().getG();
             case THREE_WT_LEG2_B       -> ((ThreeWindingsTransformer) obj).getLeg2().getB();
             case THREE_WT_LEG2_RATED_U -> ((ThreeWindingsTransformer) obj).getLeg2().getRatedU();
             case THREE_WT_LEG2_RATED_S -> ((ThreeWindingsTransformer) obj).getLeg2().getRatedS();
-            case THREE_WT_LEG2_RTC_TARGET_V  -> ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger().getTargetV();
-            case THREE_WT_LEG2_PTC_REG_VALUE -> ((ThreeWindingsTransformer) obj).getLeg2().getPhaseTapChanger().getRegulationValue();
+            case THREE_WT_LEG2_RTC_TARGET_V        -> ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger().getTargetV();
+            case THREE_WT_LEG2_PTC_REG_VALUE       -> ((ThreeWindingsTransformer) obj).getLeg2().getPhaseTapChanger().getRegulationValue();
+            case THREE_WT_LEG2_RTC_TARGET_DEADBAND -> ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger().getTargetDeadband();
+            case THREE_WT_LEG2_PTC_TARGET_DEADBAND -> ((ThreeWindingsTransformer) obj).getLeg2().getPhaseTapChanger().getTargetDeadband();
             case THREE_WT_LEG3_R       -> ((ThreeWindingsTransformer) obj).getLeg3().getR();
             case THREE_WT_LEG3_X       -> ((ThreeWindingsTransformer) obj).getLeg3().getX();
             case THREE_WT_LEG3_G       -> ((ThreeWindingsTransformer) obj).getLeg3().getG();
             case THREE_WT_LEG3_B       -> ((ThreeWindingsTransformer) obj).getLeg3().getB();
             case THREE_WT_LEG3_RATED_U -> ((ThreeWindingsTransformer) obj).getLeg3().getRatedU();
             case THREE_WT_LEG3_RATED_S -> ((ThreeWindingsTransformer) obj).getLeg3().getRatedS();
-            case THREE_WT_LEG3_RTC_TARGET_V  -> ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().getTargetV();
-            case THREE_WT_LEG3_PTC_REG_VALUE -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().getRegulationValue();
+            case THREE_WT_LEG3_RTC_TARGET_V        -> ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().getTargetV();
+            case THREE_WT_LEG3_PTC_REG_VALUE       -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().getRegulationValue();
+            case THREE_WT_LEG3_RTC_TARGET_DEADBAND -> ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().getTargetDeadband();
+            case THREE_WT_LEG3_PTC_TARGET_DEADBAND -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().getTargetDeadband();
             default -> throw new IllegalArgumentException("Unknown double property: " + property);
         };
     }
@@ -201,7 +210,11 @@ public final class PropertyDispatcher {
             case SVC_REGULATION_MODE  -> ((StaticVarCompensator) obj).getRegulationMode().ordinal();
             case SHUNT_SECTION_COUNT     -> ((ShuntCompensator) obj).getSectionCount();
             case SHUNT_MAX_SECTION_COUNT -> ((ShuntCompensator) obj).getMaximumSectionCount();
-            case SW_KIND -> ((Switch) obj).getKind().ordinal();
+            case SW_KIND  -> ((Switch) obj).getKind().ordinal();
+            case SW_NODE1 -> ((Switch) obj).getVoltageLevel().getNodeBreakerView().getNode1(((Switch) obj).getId());
+            case SW_NODE2 -> ((Switch) obj).getVoltageLevel().getNodeBreakerView().getNode2(((Switch) obj).getId());
+            case IC_NODE1 -> ((VoltageLevel.NodeBreakerView.InternalConnection) obj).getNode1();
+            case IC_NODE2 -> ((VoltageLevel.NodeBreakerView.InternalConnection) obj).getNode2();
             case TWO_WT_RTC_TAP_POSITION -> ((TwoWindingsTransformer) obj).getRatioTapChanger().getTapPosition();
             case TWO_WT_RTC_LOW_TAP      -> ((TwoWindingsTransformer) obj).getRatioTapChanger().getLowTapPosition();
             case TWO_WT_RTC_HIGH_TAP     -> ((TwoWindingsTransformer) obj).getRatioTapChanger().getHighTapPosition();
@@ -302,9 +315,10 @@ public final class PropertyDispatcher {
     public static int getBool(long handle, int property) {
         Object obj = NetworkRegistry.lookup(handle);
         boolean val = switch (property) {
-            case GEN_VOLTAGE_REGULATOR_ON -> ((Generator) obj).isVoltageRegulatorOn();
-            case TERMINAL_CONNECTED       -> ((Terminal) obj).isConnected();
-            case VSC_VOLTAGE_REGULATOR_ON -> ((VscConverterStation) obj).isVoltageRegulatorOn();
+            case GEN_VOLTAGE_REGULATOR_ON   -> ((Generator) obj).isVoltageRegulatorOn();
+            case TERMINAL_CONNECTED         -> ((Terminal) obj).isConnected();
+            case VSC_VOLTAGE_REGULATOR_ON   -> ((VscConverterStation) obj).isVoltageRegulatorOn();
+            case SHUNT_VOLTAGE_REGULATOR_ON -> ((ShuntCompensator) obj).isVoltageRegulatorOn();
             case SW_OPEN     -> ((Switch) obj).isOpen();
             case SW_RETAINED -> ((Switch) obj).isRetained();
             case TWO_WT_RTC_EXISTS     -> ((TwoWindingsTransformer) obj).getRatioTapChanger() != null;
@@ -377,6 +391,44 @@ public final class PropertyDispatcher {
                 Bus bus = t.getBusView().getConnectableBus();
                 yield bus != null ? bus.getId() : "";
             }
+            case SHUNT_REGULATING_TERMINAL_ID -> {
+                Terminal rt = ((ShuntCompensator) obj).getRegulatingTerminal();
+                yield rt != null ? rt.getConnectable().getId() : "";
+            }
+            case HVDC_CONVERTER_STATION1_ID -> ((HvdcLine) obj).getConverterStation1().getId();
+            case HVDC_CONVERTER_STATION2_ID -> ((HvdcLine) obj).getConverterStation2().getId();
+            case TWO_WT_RTC_REG_TERMINAL_ID -> {
+                Terminal rt = ((TwoWindingsTransformer) obj).getRatioTapChanger().getRegulationTerminal();
+                yield rt != null ? rt.getConnectable().getId() : "";
+            }
+            case TWO_WT_PTC_REG_TERMINAL_ID -> {
+                Terminal rt = ((TwoWindingsTransformer) obj).getPhaseTapChanger().getRegulationTerminal();
+                yield rt != null ? rt.getConnectable().getId() : "";
+            }
+            case THREE_WT_LEG1_RTC_REG_TERMINAL_ID -> {
+                Terminal rt = ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().getRegulationTerminal();
+                yield rt != null ? rt.getConnectable().getId() : "";
+            }
+            case THREE_WT_LEG1_PTC_REG_TERMINAL_ID -> {
+                Terminal rt = ((ThreeWindingsTransformer) obj).getLeg1().getPhaseTapChanger().getRegulationTerminal();
+                yield rt != null ? rt.getConnectable().getId() : "";
+            }
+            case THREE_WT_LEG2_RTC_REG_TERMINAL_ID -> {
+                Terminal rt = ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger().getRegulationTerminal();
+                yield rt != null ? rt.getConnectable().getId() : "";
+            }
+            case THREE_WT_LEG2_PTC_REG_TERMINAL_ID -> {
+                Terminal rt = ((ThreeWindingsTransformer) obj).getLeg2().getPhaseTapChanger().getRegulationTerminal();
+                yield rt != null ? rt.getConnectable().getId() : "";
+            }
+            case THREE_WT_LEG3_RTC_REG_TERMINAL_ID -> {
+                Terminal rt = ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().getRegulationTerminal();
+                yield rt != null ? rt.getConnectable().getId() : "";
+            }
+            case THREE_WT_LEG3_PTC_REG_TERMINAL_ID -> {
+                Terminal rt = ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().getRegulationTerminal();
+                yield rt != null ? rt.getConnectable().getId() : "";
+            }
             default -> throw new IllegalArgumentException("Unknown string property: " + property);
         };
     }
@@ -422,6 +474,8 @@ public final class PropertyDispatcher {
             }
             case BUSBAR_SECTION -> StreamSupport.stream(
                 ((VoltageLevel) obj).getNodeBreakerView().getBusbarSections().spliterator(), false);
+            case INTERNAL_CONNECTION -> StreamSupport.stream(
+                ((VoltageLevel) obj).getNodeBreakerView().getInternalConnections().spliterator(), false);
             case BUS -> StreamSupport.stream(
                 ((VoltageLevel) obj).getBusBreakerView().getBuses().spliterator(), false);
             case BATTERY -> ((Network) obj).getBatteryStream();
@@ -502,6 +556,13 @@ public final class PropertyDispatcher {
                 yield st.getTerminal();
             }
             case REL_CONNECTABLE_BUS -> ((Terminal) obj).getBusBreakerView().getConnectableBus();
+            case REL_REGULATING_TERMINAL -> {
+                if (obj instanceof ShuntCompensator sc) yield sc.getRegulatingTerminal();
+                if (obj instanceof StaticVarCompensator svc) yield svc.getRegulatingTerminal();
+                if (obj instanceof Generator gen) yield gen.getRegulatingTerminal();
+                if (obj instanceof VscConverterStation vsc) yield vsc.getRegulatingTerminal();
+                throw new IllegalArgumentException("Object does not have a regulating terminal: " + obj);
+            }
             default -> throw new IllegalArgumentException("Unknown relation: " + relation);
         };
         if (related == null) return 0L; // INVALID_HANDLE
