@@ -37,6 +37,7 @@ public final class PropertyCodes {
     public static final int THREE_WT_LEG1_PTC_STEP     = 25;
     public static final int THREE_WT_LEG2_PTC_STEP     = 26;
     public static final int THREE_WT_LEG3_PTC_STEP     = 27;
+    public static final int SHUNT_SECTION               = 28;
 
     // ── Shared properties ─────────────────────────────────────────────────
     public static final int ID      = 100;
@@ -205,6 +206,9 @@ public final class PropertyCodes {
     public static final int SHUNT_MAX_SECTION_COUNT = 1101;
     public static final int SHUNT_B_PER_SECTION     = 1102;
     public static final int SHUNT_G_PER_SECTION     = 1103;
+    public static final int SHUNT_MODEL_KIND        = 1104; // 0=LINEAR 1=NON_LINEAR
+    public static final int SHUNT_SECTION_B         = 1105; // on section handle
+    public static final int SHUNT_SECTION_G         = 1106; // on section handle
 
     // ── StaticVarCompensator ─────────────────────────────────────────────
     public static final int SVC_B_MIN                   = 1200;

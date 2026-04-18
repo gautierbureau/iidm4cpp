@@ -24,6 +24,7 @@ set(TEST_SOURCES
     TestConnect.cpp
     TestBackendSelector.cpp
     TestIntegration.cpp
+    TestShuntCompensatorNonLinear.cpp
 )
 
 add_executable(iidmbridge_tests ${TEST_SOURCES})

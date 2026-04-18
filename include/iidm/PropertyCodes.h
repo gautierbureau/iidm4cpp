@@ -30,6 +30,7 @@ constexpr int THREE_WT_LEG3_RTC_STEP      = 24;
 constexpr int THREE_WT_LEG1_PTC_STEP      = 25;
 constexpr int THREE_WT_LEG2_PTC_STEP      = 26;
 constexpr int THREE_WT_LEG3_PTC_STEP      = 27;
+constexpr int SHUNT_SECTION               = 28;
 
 // ── Shared properties (applicable to many types) ────────────────────────────
 constexpr int ID                          = 100;
@@ -160,6 +161,9 @@ constexpr int SHUNT_SECTION_COUNT         = 1100;
 constexpr int SHUNT_MAX_SECTION_COUNT     = 1101;
 constexpr int SHUNT_B_PER_SECTION         = 1102;
 constexpr int SHUNT_G_PER_SECTION         = 1103;
+constexpr int SHUNT_MODEL_KIND            = 1104; // 0=LINEAR 1=NON_LINEAR
+constexpr int SHUNT_SECTION_B             = 1105; // on section handle
+constexpr int SHUNT_SECTION_G             = 1106; // on section handle
 
 // ── StaticVarCompensator ─────────────────────────────────────────────────────
 constexpr int SVC_B_MIN                   = 1200;
