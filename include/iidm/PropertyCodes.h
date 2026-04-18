@@ -32,6 +32,8 @@ constexpr int THREE_WT_LEG2_PTC_STEP      = 26;
 constexpr int THREE_WT_LEG3_PTC_STEP      = 27;
 constexpr int SHUNT_SECTION               = 28;
 constexpr int INTERNAL_CONNECTION         = 29;
+constexpr int CURRENT_LIMITS              = 30;
+constexpr int TEMPORARY_LIMIT             = 31;
 
 // ── Shared properties (applicable to many types) ────────────────────────────
 constexpr int ID                          = 100;
@@ -264,6 +266,15 @@ constexpr int EXT_VPRC_SLOPE  = 3401;
 // ── Extension: SlackTerminal ──────────────────────────────────────────────────
 constexpr int EXT_ST_EXISTS = 3500;
 
+// ── CurrentLimits ─────────────────────────────────────────────────────────────
+constexpr int CL_PERMANENT_LIMIT          = 1970;
+
+// ── TemporaryLimit (child of CurrentLimits) ───────────────────────────────────
+constexpr int TL_VALUE                    = 1971;
+constexpr int TL_ACCEPTABLE_DURATION      = 1972;
+constexpr int TL_FICTITIOUS               = 1973;
+constexpr int TL_NAME                     = 1974;
+
 // ── Relations (used in getRelated) ──────────────────────────────────────────
 constexpr int REL_TERMINAL1               = 2000;
 constexpr int REL_TERMINAL2               = 2001;
@@ -274,5 +285,8 @@ constexpr int REL_SUBSTATION              = 2005;
 constexpr int REL_SLACK_TERMINAL          = 2006;
 constexpr int REL_CONNECTABLE_BUS         = 2007; // bus-breaker topology bus (may differ from bus view)
 constexpr int REL_REGULATING_TERMINAL     = 2008;
+constexpr int REL_CURRENT_LIMITS1         = 2009; // Branch side 1, or ThreeWT leg 1
+constexpr int REL_CURRENT_LIMITS2         = 2010; // Branch side 2, or ThreeWT leg 2
+constexpr int REL_CURRENT_LIMITS3         = 2011; // ThreeWT leg 3
 
 } // namespace iidm::prop

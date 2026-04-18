@@ -2,6 +2,7 @@ package com.powsybl.iidmbridge;
 
 import com.powsybl.iidm.network.*;
 import com.powsybl.iidm.network.ShuntCompensatorNonLinearModel;
+import com.powsybl.iidm.network.LoadingLimits.TemporaryLimit;
 import com.powsybl.iidm.network.extensions.ActivePowerControl;
 import com.powsybl.iidm.network.extensions.CoordinatedReactiveControl;
 import com.powsybl.iidm.network.extensions.HvdcAngleDroopActivePowerControl;
@@ -104,6 +105,10 @@ public final class PropertyDispatcher {
             case POINT_P     -> ((ReactiveCapabilityCurve.Point) obj).getP();
             case POINT_MIN_Q -> ((ReactiveCapabilityCurve.Point) obj).getMinQ();
             case POINT_MAX_Q -> ((ReactiveCapabilityCurve.Point) obj).getMaxQ();
+            // CurrentLimits
+            case CL_PERMANENT_LIMIT -> ((LoadingLimits) obj).getPermanentLimit();
+            // TemporaryLimit
+            case TL_VALUE -> ((TemporaryLimit) obj).getValue();
             // RatioTapChangerStep
             case RTC_STEP_RHO -> ((RatioTapChangerStep) obj).getRho();
             case RTC_STEP_R   -> ((RatioTapChangerStep) obj).getR();
@@ -215,6 +220,7 @@ public final class PropertyDispatcher {
             case SW_NODE2 -> ((Switch) obj).getVoltageLevel().getNodeBreakerView().getNode2(((Switch) obj).getId());
             case IC_NODE1 -> ((VoltageLevel.NodeBreakerView.InternalConnection) obj).getNode1();
             case IC_NODE2 -> ((VoltageLevel.NodeBreakerView.InternalConnection) obj).getNode2();
+            case TL_ACCEPTABLE_DURATION -> ((TemporaryLimit) obj).getAcceptableDuration();
             case TWO_WT_RTC_TAP_POSITION -> ((TwoWindingsTransformer) obj).getRatioTapChanger().getTapPosition();
             case TWO_WT_RTC_LOW_TAP      -> ((TwoWindingsTransformer) obj).getRatioTapChanger().getLowTapPosition();
             case TWO_WT_RTC_HIGH_TAP     -> ((TwoWindingsTransformer) obj).getRatioTapChanger().getHighTapPosition();
@@ -319,6 +325,7 @@ public final class PropertyDispatcher {
             case TERMINAL_CONNECTED         -> ((Terminal) obj).isConnected();
             case VSC_VOLTAGE_REGULATOR_ON   -> ((VscConverterStation) obj).isVoltageRegulatorOn();
             case SHUNT_VOLTAGE_REGULATOR_ON -> ((ShuntCompensator) obj).isVoltageRegulatorOn();
+            case TL_FICTITIOUS -> ((TemporaryLimit) obj).isFictitious();
             case SW_OPEN     -> ((Switch) obj).isOpen();
             case SW_RETAINED -> ((Switch) obj).isRetained();
             case TWO_WT_RTC_EXISTS     -> ((TwoWindingsTransformer) obj).getRatioTapChanger() != null;
@@ -386,6 +393,7 @@ public final class PropertyDispatcher {
         return switch (property) {
             case ID   -> ((Identifiable<?>) obj).getId();
             case NAME -> ((Identifiable<?>) obj).getNameOrId();
+            case TL_NAME -> ((TemporaryLimit) obj).getName();
             case TERMINAL_BUS_ID -> {
                 Terminal t = (Terminal) obj;
                 Bus bus = t.getBusView().getConnectableBus();
@@ -521,6 +529,7 @@ public final class PropertyDispatcher {
                 ShuntCompensator sc = (ShuntCompensator) obj;
                 yield sc.getModel(ShuntCompensatorNonLinearModel.class).getAllSections().stream();
             }
+            case TEMPORARY_LIMIT -> ((LoadingLimits) obj).getTemporaryLimits().stream();
             default -> throw new IllegalArgumentException("Unknown child type: " + childType);
         };
         return children.mapToLong(NetworkRegistry::register).toArray();
@@ -563,6 +572,17 @@ public final class PropertyDispatcher {
                 if (obj instanceof VscConverterStation vsc) yield vsc.getRegulatingTerminal();
                 throw new IllegalArgumentException("Object does not have a regulating terminal: " + obj);
             }
+            case REL_CURRENT_LIMITS1 -> {
+                if (obj instanceof ThreeWindingsTransformer twt)
+                    yield twt.getLeg1().getCurrentLimits().orElse(null);
+                yield ((Branch<?>) obj).getCurrentLimits1().orElse(null);
+            }
+            case REL_CURRENT_LIMITS2 -> {
+                if (obj instanceof ThreeWindingsTransformer twt)
+                    yield twt.getLeg2().getCurrentLimits().orElse(null);
+                yield ((Branch<?>) obj).getCurrentLimits2().orElse(null);
+            }
+            case REL_CURRENT_LIMITS3 -> ((ThreeWindingsTransformer) obj).getLeg3().getCurrentLimits().orElse(null);
             default -> throw new IllegalArgumentException("Unknown relation: " + relation);
         };
         if (related == null) return 0L; // INVALID_HANDLE

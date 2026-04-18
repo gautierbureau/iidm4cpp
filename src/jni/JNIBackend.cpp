@@ -513,6 +513,31 @@ void JNIBackend::cacheMethodIds() {
     }
     checkJNIException(env_);
 
+    // CurrentLimits / LoadingLimits
+    cacheClass(cache_.loadingLimitsClass, "com/powsybl/iidm/network/LoadingLimits");
+    cache_.cl_getPermanentLimit  = env_->GetMethodID(cache_.loadingLimitsClass, "getPermanentLimit", "()D");
+    cache_.cl_getTemporaryLimits = env_->GetMethodID(cache_.loadingLimitsClass, "getTemporaryLimits",
+        "()Ljava/util/Collection;");
+    cacheClass(cache_.temporaryLimitClass, "com/powsybl/iidm/network/LoadingLimits$TemporaryLimit");
+    cache_.tl_getName               = env_->GetMethodID(cache_.temporaryLimitClass, "getName", "()Ljava/lang/String;");
+    cache_.tl_getValue              = env_->GetMethodID(cache_.temporaryLimitClass, "getValue", "()D");
+    cache_.tl_getAcceptableDuration = env_->GetMethodID(cache_.temporaryLimitClass, "getAcceptableDuration", "()I");
+    cache_.tl_isFictitious          = env_->GetMethodID(cache_.temporaryLimitClass, "isFictitious", "()Z");
+    checkJNIException(env_);
+
+    // Branch.getCurrentLimits1/2 (default methods on Branch interface)
+    {
+        cacheClass(cache_.branchClass, "com/powsybl/iidm/network/Branch");
+        cache_.branch_getCurrentLimits1 = env_->GetMethodID(cache_.branchClass,
+            "getCurrentLimits1", "()Ljava/util/Optional;");
+        cache_.branch_getCurrentLimits2 = env_->GetMethodID(cache_.branchClass,
+            "getCurrentLimits2", "()Ljava/util/Optional;");
+    }
+    // ThreeWT.Leg.getCurrentLimits (default method from FlowsLimitsHolder)
+    cache_.leg_getCurrentLimits = env_->GetMethodID(cache_.threeWTLegClass,
+        "getCurrentLimits", "()Ljava/util/Optional;");
+    checkJNIException(env_);
+
     // Retrieve the network object via IidmBridgeRegistry
     jstring jId = env_->NewStringUTF(networkId_.c_str());
     jobject netObj = env_->CallStaticObjectMethod(cache_.iidmRegistryClass, cache_.registry_get, jId);
@@ -770,6 +795,10 @@ double JNIBackend::getDouble(ObjectHandle h, int property) const {
         case prop::SHUNT_SECTION_B: result = env_->CallDoubleMethod(obj, cache_.shuntSection_getB); break;
         case prop::SHUNT_SECTION_G: result = env_->CallDoubleMethod(obj, cache_.shuntSection_getG); break;
         case prop::SHUNT_TARGET_V:  result = env_->CallDoubleMethod(obj, cache_.shunt_getTargetV);  break;
+        case prop::CL_PERMANENT_LIMIT:
+            result = env_->CallDoubleMethod(obj, cache_.cl_getPermanentLimit); break;
+        case prop::TL_VALUE:
+            result = env_->CallDoubleMethod(obj, cache_.tl_getValue); break;
         case prop::TWO_WT_RTC_TARGET_DEADBAND: {
             jobject rtc = env_->CallObjectMethod(obj, cache_.twt_getRatioTapChanger);
             if (!rtc) throw PropertyNotFoundException("RatioTapChanger not present");
@@ -1146,6 +1175,8 @@ int JNIBackend::getInt(ObjectHandle h, int property) const {
                 return twtLegInt(prop::THREE_WT_LEG2_BASE);
             if (property >= prop::THREE_WT_LEG3_BASE && property < prop::THREE_WT_LEG3_BASE + 20)
                 return twtLegInt(prop::THREE_WT_LEG3_BASE);
+            if (property == prop::TL_ACCEPTABLE_DURATION)
+                return env_->CallIntMethod(obj, cache_.tl_getAcceptableDuration);
             throw PropertyNotFoundException("Unknown int property: " + std::to_string(property));
         }
     }
@@ -1324,6 +1355,8 @@ bool JNIBackend::getBool(ObjectHandle h, int property) const {
                 result = twtLegBool(prop::THREE_WT_LEG2_BASE);
             else if (property >= prop::THREE_WT_LEG3_BASE && property < prop::THREE_WT_LEG3_BASE + 20)
                 result = twtLegBool(prop::THREE_WT_LEG3_BASE);
+            else if (property == prop::TL_FICTITIOUS)
+                result = env_->CallBooleanMethod(obj, cache_.tl_isFictitious);
             else
                 throw PropertyNotFoundException("Unknown bool property: " + std::to_string(property));
         }
@@ -1490,6 +1523,10 @@ std::string JNIBackend::getString(ObjectHandle h, int property) const {
                         p == prop::THREE_WT_LEG2_PTC_REG_TERMINAL_ID ||
                         p == prop::THREE_WT_LEG3_PTC_REG_TERMINAL_ID);
             };
+            if (property == prop::TL_NAME) {
+                jstr = (jstring)env_->CallObjectMethod(obj, cache_.tl_getName);
+                break;
+            }
             if (!is3WTLegRegTermId(property))
                 throw PropertyNotFoundException("Unknown string property: " + std::to_string(property));
             bool isPtc = (property >= prop::THREE_WT_LEG1_PTC_REG_TERMINAL_ID);
@@ -1675,6 +1712,9 @@ std::vector<ObjectHandle> JNIBackend::getChildren(ObjectHandle h, int childType)
             env_->DeleteLocalRef(nlm);
             break;
         }
+        case prop::TEMPORARY_LIMIT:
+            collection = env_->CallObjectMethod(obj, cache_.cl_getTemporaryLimits);
+            break;
         default:
             throw PropertyNotFoundException("Unknown child type: " + std::to_string(childType));
     }
@@ -1750,6 +1790,29 @@ ObjectHandle JNIBackend::getRelated(ObjectHandle h, int relation) const {
                 throw PropertyNotFoundException("Object does not have getRegulatingTerminal()");
             }
             if (mid) related = env_->CallObjectMethod(obj, mid);
+            break;
+        }
+        case prop::REL_CURRENT_LIMITS1:
+        case prop::REL_CURRENT_LIMITS2:
+        case prop::REL_CURRENT_LIMITS3: {
+            jobject opt = nullptr;
+            if (env_->IsInstanceOf(obj, cache_.threeWTClass)) {
+                int legIdx = relation - prop::REL_CURRENT_LIMITS1; // 0, 1, or 2
+                jmethodID getLeg = (legIdx == 0) ? cache_.threeWT_getLeg1
+                                 : (legIdx == 1) ? cache_.threeWT_getLeg2
+                                 : cache_.threeWT_getLeg3;
+                jobject leg = env_->CallObjectMethod(obj, getLeg);
+                opt = env_->CallObjectMethod(leg, cache_.leg_getCurrentLimits);
+                env_->DeleteLocalRef(leg);
+            } else {
+                jmethodID getCL = (relation == prop::REL_CURRENT_LIMITS1)
+                                  ? cache_.branch_getCurrentLimits1
+                                  : cache_.branch_getCurrentLimits2;
+                opt = env_->CallObjectMethod(obj, getCL);
+            }
+            if (opt && env_->CallBooleanMethod(opt, cache_.optional_isPresent))
+                related = env_->CallObjectMethod(opt, cache_.optional_get);
+            if (opt) env_->DeleteLocalRef(opt);
             break;
         }
         default:

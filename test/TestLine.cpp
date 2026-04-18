@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <iidm/Line.h>
+#include <iidm/CurrentLimits.h>
 #include <iidm/PropertyCodes.h>
 #include "MockBackend.h"
 
@@ -53,4 +54,64 @@ TEST_F(LineTest, GetTerminals) {
     EXPECT_TRUE(t1.isValid());
     EXPECT_TRUE(t2.isValid());
     EXPECT_NE(t1, t2);
+}
+
+// ── getCurrentLimits ──────────────────────────────────────────────────────────
+
+static constexpr ObjectHandle CL1_HANDLE = 60;
+static constexpr ObjectHandle CL2_HANDLE = 61;
+static constexpr ObjectHandle TL1_HANDLE = 70;
+
+TEST_F(LineTest, GetCurrentLimitsAbsent) {
+    Line line(LINE_HANDLE, &backend);
+    EXPECT_FALSE(line.getCurrentLimits1().has_value());
+    EXPECT_FALSE(line.getCurrentLimits2().has_value());
+}
+
+TEST_F(LineTest, GetCurrentLimits1PermanentLimit) {
+    backend.related[{LINE_HANDLE, prop::REL_CURRENT_LIMITS1}] = CL1_HANDLE;
+    backend.doubles[{CL1_HANDLE, prop::CL_PERMANENT_LIMIT}]   = 1000.0;
+    Line line(LINE_HANDLE, &backend);
+    auto cl = line.getCurrentLimits1();
+    ASSERT_TRUE(cl.has_value());
+    EXPECT_TRUE(cl->isValid());
+    EXPECT_DOUBLE_EQ(cl->getPermanentLimit(), 1000.0);
+}
+
+TEST_F(LineTest, GetCurrentLimits2PermanentLimit) {
+    backend.related[{LINE_HANDLE, prop::REL_CURRENT_LIMITS2}] = CL2_HANDLE;
+    backend.doubles[{CL2_HANDLE, prop::CL_PERMANENT_LIMIT}]   = 800.0;
+    Line line(LINE_HANDLE, &backend);
+    auto cl = line.getCurrentLimits2();
+    ASSERT_TRUE(cl.has_value());
+    EXPECT_DOUBLE_EQ(cl->getPermanentLimit(), 800.0);
+}
+
+TEST_F(LineTest, GetCurrentLimitsTemporaryLimits) {
+    backend.related[{LINE_HANDLE, prop::REL_CURRENT_LIMITS1}] = CL1_HANDLE;
+    backend.doubles[{CL1_HANDLE, prop::CL_PERMANENT_LIMIT}]   = 1000.0;
+    backend.children[{CL1_HANDLE, prop::TEMPORARY_LIMIT}]     = {TL1_HANDLE};
+    backend.strings[{TL1_HANDLE, prop::TL_NAME}]              = "10min";
+    backend.doubles[{TL1_HANDLE, prop::TL_VALUE}]             = 1200.0;
+    backend.ints   [{TL1_HANDLE, prop::TL_ACCEPTABLE_DURATION}] = 600;
+    backend.bools  [{TL1_HANDLE, prop::TL_FICTITIOUS}]         = false;
+
+    Line line(LINE_HANDLE, &backend);
+    auto cl = line.getCurrentLimits1();
+    ASSERT_TRUE(cl.has_value());
+    auto tls = cl->getTemporaryLimits();
+    ASSERT_EQ(tls.size(), 1u);
+    EXPECT_EQ(tls[0].name,               "10min");
+    EXPECT_DOUBLE_EQ(tls[0].value,        1200.0);
+    EXPECT_EQ(tls[0].acceptableDuration,  600);
+    EXPECT_FALSE(tls[0].fictitious);
+}
+
+TEST_F(LineTest, GetCurrentLimitsNoTemporaryLimits) {
+    backend.related[{LINE_HANDLE, prop::REL_CURRENT_LIMITS1}] = CL1_HANDLE;
+    backend.doubles[{CL1_HANDLE, prop::CL_PERMANENT_LIMIT}]   = 500.0;
+    Line line(LINE_HANDLE, &backend);
+    auto cl = line.getCurrentLimits1();
+    ASSERT_TRUE(cl.has_value());
+    EXPECT_EQ(cl->getTemporaryLimits().size(), 0u);
 }

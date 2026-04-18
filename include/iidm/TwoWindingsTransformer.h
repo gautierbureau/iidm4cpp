@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iidm/ObjectHandle.h>
+#include <iidm/CurrentLimits.h>
 #include <iidm/Enums.h>
 #include <iidm/RatioTapChanger.h>
 #include <iidm/PhaseTapChanger.h>
@@ -30,6 +31,9 @@ public:
 
     Terminal getTerminal1() const;
     Terminal getTerminal2() const;
+
+    std::optional<CurrentLimits> getCurrentLimits1() const;
+    std::optional<CurrentLimits> getCurrentLimits2() const;
 
     // ── RatioTapChanger ──────────────────────────────────────────────────────
     bool hasRatioTapChanger() const;

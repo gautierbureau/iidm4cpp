@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iidm/ObjectHandle.h>
+#include <iidm/CurrentLimits.h>
 #include <iidm/Enums.h>
 #include <iidm/RatioTapChanger.h>
 #include <iidm/PhaseTapChanger.h>
@@ -36,6 +37,8 @@ public:
         PhaseTapChanger getPhaseTapChanger() const;
 
         Terminal getTerminal() const;
+
+        std::optional<CurrentLimits> getCurrentLimits() const;
 
         bool isValid() const { return handle_ != INVALID_HANDLE; }
 
