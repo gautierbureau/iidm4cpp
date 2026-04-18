@@ -24,6 +24,7 @@ public:
     std::map<std::pair<int,std::string>, ObjectHandle>               byId;
     ObjectHandle networkHandle = 1;
     bool closed = false;
+    std::string lastSavedPath;
 
     // ── BackendProvider interface ─────────────────────────────────────────
     double getDouble(ObjectHandle h, int p) const override {
@@ -81,6 +82,7 @@ public:
 
     ObjectHandle getNetworkHandle() const override { return networkHandle; }
     void loadNetwork(const std::string&) override {}
+    void saveNetwork(const std::string& path) override { lastSavedPath = path; }
     void close() override { closed = true; }
 };
 

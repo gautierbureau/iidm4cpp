@@ -1,7 +1,9 @@
 package com.powsybl.iidmbridge.jni;
 
 import com.powsybl.iidm.network.Network;
+import com.powsybl.iidm.serde.NetworkSerDe;
 
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -85,5 +87,16 @@ public final class IidmBridgeRegistry {
      */
     public static void clear() {
         networks.clear();
+    }
+
+    /**
+     * Called from JNI to save a registered network to an XIIDM file.
+     *
+     * @param id       network identifier
+     * @param filePath destination file path
+     */
+    public static void save(String id, String filePath) {
+        Network network = get(id);
+        NetworkSerDe.write(network, Path.of(filePath));
     }
 }

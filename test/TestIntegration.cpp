@@ -90,4 +90,18 @@ TEST_F(IntegrationTest, SetGeneratorTargetP) {
     EXPECT_NEAR(gen->getTargetP(), original * 0.9, 1e-6);
 }
 
+TEST_F(IntegrationTest, SaveNetwork) {
+    if (!available()) GTEST_SKIP() << "IIDM_BRIDGE_GRAALVM_LIB / IIDM_IEEE14_NETWORK_PATH not set";
+
+    Network net = loadNetwork();
+
+    const std::string outPath = "/tmp/ieee14_roundtrip.xiidm";
+    ASSERT_NO_THROW(net.save(outPath));
+
+    // Reload and verify identity is preserved
+    Network reloaded = NetworkFactory::load(outPath,
+        {BackendMode::GRAALVM, libPath(), ""});
+    EXPECT_EQ(reloaded.getId(), net.getId());
+}
+
 #endif // IIDM_BRIDGE_GRAALVM_ENABLED

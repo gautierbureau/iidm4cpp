@@ -39,6 +39,7 @@ public:
     ObjectHandle getNetworkHandle() const override;
 
     void loadNetwork(const std::string& filePath) override;
+    void saveNetwork(const std::string& filePath) override;
     void close() override;
 
 private:
@@ -56,6 +57,7 @@ private:
     using FnCreateIsolate   = int(*)(void*, graal_isolate_t**, graal_isolatethread_t**);
     using FnTearDownIsolate = int(*)(graal_isolatethread_t*);
     using FnLoadNetwork     = ObjectHandle(*)(graal_isolatethread_t*, const char*);
+    using FnSaveNetwork     = int(*)(graal_isolatethread_t*, ObjectHandle, const char*);
     using FnGetDouble       = double(*)(graal_isolatethread_t*, ObjectHandle, int);
     using FnSetDouble       = void(*)(graal_isolatethread_t*, ObjectHandle, int, double);
     using FnGetInt          = int(*)(graal_isolatethread_t*, ObjectHandle, int);
@@ -73,6 +75,7 @@ private:
     FnCreateIsolate   fnCreateIsolate_   = nullptr;
     FnTearDownIsolate fnTearDownIsolate_ = nullptr;
     FnLoadNetwork     fnLoadNetwork_     = nullptr;
+    FnSaveNetwork     fnSaveNetwork_     = nullptr;
     FnGetDouble       fnGetDouble_       = nullptr;
     FnSetDouble       fnSetDouble_       = nullptr;
     FnGetInt          fnGetInt_          = nullptr;

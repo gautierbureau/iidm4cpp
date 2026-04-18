@@ -70,6 +70,8 @@ void JNIBackend::cacheMethodIds() {
     // IidmBridgeRegistry
     cache_.registry_get = env_->GetStaticMethodID(cache_.iidmRegistryClass,
         "get", "(Ljava/lang/String;)Lcom/powsybl/iidm/network/Network;");
+    cache_.registry_save = env_->GetStaticMethodID(cache_.iidmRegistryClass,
+        "save", "(Ljava/lang/String;Ljava/lang/String;)V");
     checkJNIException(env_);
 
     // Network
@@ -473,6 +475,15 @@ void JNIBackend::cacheMethodIds() {
 void JNIBackend::loadNetwork(const std::string& /*filePath*/) {
     // In JNI mode the network is already in the JVM; loadNetwork is a no-op.
     // If needed, the Java side should have loaded it before C++ attach.
+}
+
+void JNIBackend::saveNetwork(const std::string& filePath) {
+    jstring jId   = env_->NewStringUTF(networkId_.c_str());
+    jstring jPath = env_->NewStringUTF(filePath.c_str());
+    env_->CallStaticVoidMethod(cache_.iidmRegistryClass, cache_.registry_save, jId, jPath);
+    env_->DeleteLocalRef(jId);
+    env_->DeleteLocalRef(jPath);
+    checkJNIException(env_);
 }
 
 void JNIBackend::close() {
