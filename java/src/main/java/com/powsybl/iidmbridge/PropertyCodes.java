@@ -39,6 +39,8 @@ public final class PropertyCodes {
     public static final int THREE_WT_LEG3_PTC_STEP     = 27;
     public static final int SHUNT_SECTION               = 28;
     public static final int INTERNAL_CONNECTION         = 29;
+    public static final int CURRENT_LIMITS              = 30;
+    public static final int TEMPORARY_LIMIT             = 31;
 
     // ── Shared properties ─────────────────────────────────────────────────
     public static final int ID      = 100;
@@ -307,6 +309,15 @@ public final class PropertyCodes {
     // ── Extension: SlackTerminal ──────────────────────────────────────────
     public static final int EXT_ST_EXISTS = 3500;
 
+    // ── CurrentLimits ─────────────────────────────────────────────────────
+    public static final int CL_PERMANENT_LIMIT    = 1970;
+
+    // ── TemporaryLimit (child of CurrentLimits) ───────────────────────────
+    public static final int TL_VALUE              = 1971;
+    public static final int TL_ACCEPTABLE_DURATION = 1972;
+    public static final int TL_FICTITIOUS         = 1973;
+    public static final int TL_NAME               = 1974;
+
     // ── Relations ────────────────────────────────────────────────────────
     public static final int REL_TERMINAL1        = 2000;
     public static final int REL_TERMINAL2        = 2001;
@@ -317,4 +328,7 @@ public final class PropertyCodes {
     public static final int REL_SLACK_TERMINAL   = 2006;
     public static final int REL_CONNECTABLE_BUS      = 2007;
     public static final int REL_REGULATING_TERMINAL  = 2008;
+    public static final int REL_CURRENT_LIMITS1      = 2009; // Branch side 1 or ThreeWT leg 1
+    public static final int REL_CURRENT_LIMITS2      = 2010; // Branch side 2 or ThreeWT leg 2
+    public static final int REL_CURRENT_LIMITS3      = 2011; // ThreeWT leg 3
 }

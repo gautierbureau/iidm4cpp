@@ -176,6 +176,18 @@ Terminal TwoWindingsTransformer::getTerminal2() const {
     return Terminal(termHandle, backend_);
 }
 
+std::optional<CurrentLimits> TwoWindingsTransformer::getCurrentLimits1() const {
+    ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS1);
+    if (h == INVALID_HANDLE) return std::nullopt;
+    return CurrentLimits(h, backend_);
+}
+
+std::optional<CurrentLimits> TwoWindingsTransformer::getCurrentLimits2() const {
+    ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS2);
+    if (h == INVALID_HANDLE) return std::nullopt;
+    return CurrentLimits(h, backend_);
+}
+
 void TwoWindingsTransformer::connect() {
     getTerminal1().connect();
     getTerminal2().connect();

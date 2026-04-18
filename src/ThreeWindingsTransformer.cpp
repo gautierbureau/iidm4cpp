@@ -1,5 +1,6 @@
 #include <iidm/ThreeWindingsTransformer.h>
 #include <iidm/BackendProvider.h>
+#include <iidm/CurrentLimits.h>
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
 
@@ -72,6 +73,13 @@ PhaseTapChanger ThreeWindingsTransformer::Leg::getPhaseTapChanger() const {
 
 Terminal ThreeWindingsTransformer::Leg::getTerminal() const {
     return Terminal(backend_->getRelated(handle_, relTerminal_), backend_);
+}
+
+std::optional<CurrentLimits> ThreeWindingsTransformer::Leg::getCurrentLimits() const {
+    int legIdx = (legBase_ - prop::THREE_WT_LEG1_BASE) / 20; // 0, 1, or 2
+    ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS1 + legIdx);
+    if (h == INVALID_HANDLE) return std::nullopt;
+    return CurrentLimits(h, backend_);
 }
 
 // ── ThreeWindingsTransformer ──────────────────────────────────────────────────

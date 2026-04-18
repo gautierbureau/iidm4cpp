@@ -71,6 +71,7 @@ set(IIDM_BRIDGE_SOURCES
     src/Switch.cpp
     src/BusbarSection.cpp
     src/InternalConnection.cpp
+    src/CurrentLimits.cpp
 )
 
 if(IIDM_BRIDGE_ENABLE_GRAALVM)

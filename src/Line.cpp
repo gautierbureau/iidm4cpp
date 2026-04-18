@@ -50,6 +50,18 @@ Terminal Line::getTerminal2() const {
     return Terminal(termHandle, backend_);
 }
 
+std::optional<CurrentLimits> Line::getCurrentLimits1() const {
+    ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS1);
+    if (h == INVALID_HANDLE) return std::nullopt;
+    return CurrentLimits(h, backend_);
+}
+
+std::optional<CurrentLimits> Line::getCurrentLimits2() const {
+    ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS2);
+    if (h == INVALID_HANDLE) return std::nullopt;
+    return CurrentLimits(h, backend_);
+}
+
 void Line::connect() {
     getTerminal1().connect();
     getTerminal2().connect();

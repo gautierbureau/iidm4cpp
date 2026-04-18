@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <iidm/ThreeWindingsTransformer.h>
+#include <iidm/CurrentLimits.h>
 #include <iidm/PropertyCodes.h>
 #include "MockBackend.h"
 
@@ -122,4 +123,34 @@ TEST_F(ThreeWindingsTransformerLegTest, LegTerminals) {
     EXPECT_TRUE(twt.getLeg1().getTerminal().isValid());
     EXPECT_TRUE(twt.getLeg2().getTerminal().isValid());
     EXPECT_TRUE(twt.getLeg3().getTerminal().isValid());
+}
+
+// ── Leg::getCurrentLimits ─────────────────────────────────────────────────────
+
+static constexpr ObjectHandle CL1_H = 80;
+static constexpr ObjectHandle CL3_H = 81;
+
+TEST_F(ThreeWindingsTransformerLegTest, Leg1NoCurrentLimits) {
+    ThreeWindingsTransformer twt(TWT_HANDLE, &backend);
+    EXPECT_FALSE(twt.getLeg1().getCurrentLimits().has_value());
+}
+
+TEST_F(ThreeWindingsTransformerLegTest, Leg1CurrentLimits) {
+    // Leg1 uses REL_CURRENT_LIMITS1 (2009)
+    backend.related[{TWT_HANDLE, prop::REL_CURRENT_LIMITS1}] = CL1_H;
+    backend.doubles[{CL1_H, prop::CL_PERMANENT_LIMIT}] = 600.0;
+    ThreeWindingsTransformer twt(TWT_HANDLE, &backend);
+    auto cl = twt.getLeg1().getCurrentLimits();
+    ASSERT_TRUE(cl.has_value());
+    EXPECT_DOUBLE_EQ(cl->getPermanentLimit(), 600.0);
+}
+
+TEST_F(ThreeWindingsTransformerLegTest, Leg3CurrentLimits) {
+    // Leg3 uses REL_CURRENT_LIMITS3 (2011)
+    backend.related[{TWT_HANDLE, prop::REL_CURRENT_LIMITS3}] = CL3_H;
+    backend.doubles[{CL3_H, prop::CL_PERMANENT_LIMIT}] = 300.0;
+    ThreeWindingsTransformer twt(TWT_HANDLE, &backend);
+    auto cl = twt.getLeg3().getCurrentLimits();
+    ASSERT_TRUE(cl.has_value());
+    EXPECT_DOUBLE_EQ(cl->getPermanentLimit(), 300.0);
 }

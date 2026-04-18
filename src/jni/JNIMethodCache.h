@@ -346,6 +346,24 @@ struct JNIMethodCache {
     // ── ThreeWT/TwoWT findById ────────────────────────────────────────────────
     jmethodID network_getThreeWTById    = nullptr;
     jmethodID network_getTwoWTById      = nullptr;
+
+    // ── CurrentLimits / LoadingLimits ─────────────────────────────────────────
+    jclass    loadingLimitsClass        = nullptr;
+    jmethodID cl_getPermanentLimit      = nullptr;
+    jmethodID cl_getTemporaryLimits     = nullptr;
+    jclass    temporaryLimitClass       = nullptr;
+    jmethodID tl_getName                = nullptr;
+    jmethodID tl_getValue               = nullptr;
+    jmethodID tl_getAcceptableDuration  = nullptr;
+    jmethodID tl_isFictitious           = nullptr;
+
+    // ── Branch.getCurrentLimits1/2 (Line and TwoWT) ───────────────────────────
+    jclass    branchClass               = nullptr;
+    jmethodID branch_getCurrentLimits1  = nullptr;
+    jmethodID branch_getCurrentLimits2  = nullptr;
+
+    // ── ThreeWT.Leg.getCurrentLimits ──────────────────────────────────────────
+    jmethodID leg_getCurrentLimits      = nullptr;
 };
 
 } // namespace iidm
