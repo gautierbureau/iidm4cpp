@@ -65,6 +65,7 @@ public final class PropertyCodes {
     public static final int TERMINAL_Q         = 401;
     public static final int TERMINAL_CONNECTED = 402;
     public static final int TERMINAL_BUS_ID    = 403;
+    public static final int TERMINAL_NODE      = 404;
 
     // ── Bus ──────────────────────────────────────────────────────────────
     public static final int BUS_V     = 500;
@@ -275,11 +276,12 @@ public final class PropertyCodes {
     public static final int EXT_ST_EXISTS = 3500;
 
     // ── Relations ────────────────────────────────────────────────────────
-    public static final int REL_TERMINAL1      = 2000;
-    public static final int REL_TERMINAL2      = 2001;
-    public static final int REL_TERMINAL       = 2002;
-    public static final int REL_BUS            = 2003;
-    public static final int REL_VOLTAGE_LEVEL  = 2004;
-    public static final int REL_SUBSTATION     = 2005;
-    public static final int REL_SLACK_TERMINAL = 2006;
+    public static final int REL_TERMINAL1        = 2000;
+    public static final int REL_TERMINAL2        = 2001;
+    public static final int REL_TERMINAL         = 2002;
+    public static final int REL_BUS              = 2003;
+    public static final int REL_VOLTAGE_LEVEL    = 2004;
+    public static final int REL_SUBSTATION       = 2005;
+    public static final int REL_SLACK_TERMINAL   = 2006;
+    public static final int REL_CONNECTABLE_BUS  = 2007;
 }

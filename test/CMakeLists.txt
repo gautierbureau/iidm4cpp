@@ -6,6 +6,7 @@ set(TEST_SOURCES
     TestReactiveLimits.cpp
     TestTapChangerObjects.cpp
     TestThreeWindingsTransformerLeg.cpp
+    TestTopologyViews.cpp
     TestGenerator.cpp
     TestActivePowerControl.cpp
     TestCoordinatedReactiveControl.cpp

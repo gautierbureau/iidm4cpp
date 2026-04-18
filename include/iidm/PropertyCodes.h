@@ -58,6 +58,7 @@ constexpr int TERMINAL_P                  = 400;
 constexpr int TERMINAL_Q                  = 401;
 constexpr int TERMINAL_CONNECTED          = 402;
 constexpr int TERMINAL_BUS_ID            = 403;
+constexpr int TERMINAL_NODE               = 404; // node number (node-breaker topology)
 
 // ── Bus ──────────────────────────────────────────────────────────────────────
 constexpr int BUS_V                       = 500;
@@ -237,5 +238,6 @@ constexpr int REL_BUS                     = 2003;
 constexpr int REL_VOLTAGE_LEVEL           = 2004;
 constexpr int REL_SUBSTATION              = 2005;
 constexpr int REL_SLACK_TERMINAL          = 2006;
+constexpr int REL_CONNECTABLE_BUS         = 2007; // bus-breaker topology bus (may differ from bus view)
 
 } // namespace iidm::prop

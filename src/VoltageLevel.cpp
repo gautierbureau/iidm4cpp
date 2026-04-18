@@ -3,10 +3,55 @@
 #include <iidm/BackendProvider.h>
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
+#include <iidm/Bus.h>
 #include <iidm/Switch.h>
 #include <iidm/BusbarSection.h>
 
 namespace iidm {
+
+// ── NodeBreakerView ───────────────────────────────────────────────────────────
+
+VoltageLevel::NodeBreakerView::NodeBreakerView(ObjectHandle h, BackendProvider* b)
+    : handle_(h), backend_(b) {}
+
+std::vector<Switch> VoltageLevel::NodeBreakerView::getSwitches() const {
+    auto handles = backend_->getChildren(handle_, prop::SWITCH);
+    std::vector<Switch> result;
+    result.reserve(handles.size());
+    for (auto h : handles) result.emplace_back(h, backend_);
+    return result;
+}
+
+std::vector<BusbarSection> VoltageLevel::NodeBreakerView::getBusbarSections() const {
+    auto handles = backend_->getChildren(handle_, prop::BUSBAR_SECTION);
+    std::vector<BusbarSection> result;
+    result.reserve(handles.size());
+    for (auto h : handles) result.emplace_back(h, backend_);
+    return result;
+}
+
+// ── BusBreakerView ────────────────────────────────────────────────────────────
+
+VoltageLevel::BusBreakerView::BusBreakerView(ObjectHandle h, BackendProvider* b)
+    : handle_(h), backend_(b) {}
+
+std::vector<Bus> VoltageLevel::BusBreakerView::getBuses() const {
+    auto handles = backend_->getChildren(handle_, prop::BUS);
+    std::vector<Bus> result;
+    result.reserve(handles.size());
+    for (auto h : handles) result.emplace_back(h, backend_);
+    return result;
+}
+
+std::vector<Switch> VoltageLevel::BusBreakerView::getSwitches() const {
+    auto handles = backend_->getChildren(handle_, prop::SWITCH);
+    std::vector<Switch> result;
+    result.reserve(handles.size());
+    for (auto h : handles) result.emplace_back(h, backend_);
+    return result;
+}
+
+// ── VoltageLevel ──────────────────────────────────────────────────────────────
 
 VoltageLevel::VoltageLevel(ObjectHandle handle, BackendProvider* backend)
     : handle_(handle), backend_(backend) {}
@@ -61,6 +106,14 @@ std::vector<BusbarSection> VoltageLevel::getBusbarSections() const {
         result.emplace_back(h, backend_);
     }
     return result;
+}
+
+VoltageLevel::NodeBreakerView VoltageLevel::getNodeBreakerView() const {
+    return NodeBreakerView(handle_, backend_);
+}
+
+VoltageLevel::BusBreakerView VoltageLevel::getBusBreakerView() const {
+    return BusBreakerView(handle_, backend_);
 }
 
 bool VoltageLevel::operator==(const VoltageLevel& other) const {
