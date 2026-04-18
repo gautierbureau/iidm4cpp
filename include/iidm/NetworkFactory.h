@@ -26,6 +26,9 @@ public:
     static Network load(const std::string& filePath,
                         const NetworkLoadOptions& options = {});
 
+    // Save a network to an XIIDM file.
+    static void save(const Network& network, const std::string& filePath);
+
     // Embedded mode only: wrap a network that is already in the JVM without
     // loading from file. The Java side must have called
     // IidmBridgeRegistry.register(network) before this point.

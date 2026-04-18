@@ -31,6 +31,11 @@ public:
 
     Terminal getTerminal() const;
 
+    bool isVoltageRegulatorOn() const;
+    double getTargetV() const;
+    std::string getRegulatingTerminalId() const;
+    Terminal getRegulatingTerminal() const;
+
     void connect();
     void disconnect();
     bool isConnected() const;

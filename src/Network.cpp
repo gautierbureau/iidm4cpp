@@ -29,6 +29,10 @@ BackendProvider& Network::getBackend() {
     return *backend_;
 }
 
+void Network::save(const std::string& filePath) const {
+    backend_->saveNetwork(filePath);
+}
+
 // ── Helper: build vector of component objects from handles ────────────────────
 
 template<typename T>

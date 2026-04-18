@@ -48,6 +48,14 @@ HvdcLine& HvdcLine::setConvertersMode(HvdcConverterStationMode mode) {
     return *this;
 }
 
+std::string HvdcLine::getConverterStation1Id() const {
+    return backend_->getString(handle_, prop::HVDC_CONVERTER_STATION1_ID);
+}
+
+std::string HvdcLine::getConverterStation2Id() const {
+    return backend_->getString(handle_, prop::HVDC_CONVERTER_STATION2_ID);
+}
+
 bool HvdcLine::hasHvdcAngleDroopActivePowerControl() const {
     return backend_->getBool(handle_, prop::EXT_HADAPC_EXISTS);
 }

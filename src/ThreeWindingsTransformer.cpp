@@ -1,5 +1,6 @@
 #include <iidm/ThreeWindingsTransformer.h>
 #include <iidm/BackendProvider.h>
+#include <iidm/CurrentLimits.h>
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
 
@@ -37,6 +38,7 @@ bool ThreeWindingsTransformer::Leg::hasRatioTapChanger() const {
     return backend_->getBool(handle_, legBase_ + prop::THREE_WT_LEG_RTC_EXISTS_OFF);
 }
 RatioTapChanger ThreeWindingsTransformer::Leg::getRatioTapChanger() const {
+    int legIdx = (legBase_ - prop::THREE_WT_LEG1_BASE) / 20;
     return RatioTapChanger(handle_, backend_, RatioTapChangerConfig{
         legBase_ + prop::THREE_WT_LEG_RTC_EXISTS_OFF,
         legBase_ + prop::THREE_WT_LEG_RTC_TAP_POS_OFF,
@@ -44,7 +46,9 @@ RatioTapChanger ThreeWindingsTransformer::Leg::getRatioTapChanger() const {
         legBase_ + prop::THREE_WT_LEG_RTC_HIGH_TAP_OFF,
         legBase_ + prop::THREE_WT_LEG_RTC_REGULATING_OFF,
         legBase_ + prop::THREE_WT_LEG_RTC_TARGET_V_OFF,
-        rtcStepChildType_
+        rtcStepChildType_,
+        prop::THREE_WT_LEG1_RTC_TARGET_DEADBAND + legIdx * 2,
+        prop::THREE_WT_LEG1_RTC_REG_TERMINAL_ID + legIdx * 2
     });
 }
 
@@ -52,6 +56,7 @@ bool ThreeWindingsTransformer::Leg::hasPhaseTapChanger() const {
     return backend_->getBool(handle_, legBase_ + prop::THREE_WT_LEG_PTC_EXISTS_OFF);
 }
 PhaseTapChanger ThreeWindingsTransformer::Leg::getPhaseTapChanger() const {
+    int legIdx = (legBase_ - prop::THREE_WT_LEG1_BASE) / 20;
     return PhaseTapChanger(handle_, backend_, PhaseTapChangerConfig{
         legBase_ + prop::THREE_WT_LEG_PTC_EXISTS_OFF,
         legBase_ + prop::THREE_WT_LEG_PTC_TAP_POS_OFF,
@@ -60,12 +65,21 @@ PhaseTapChanger ThreeWindingsTransformer::Leg::getPhaseTapChanger() const {
         legBase_ + prop::THREE_WT_LEG_PTC_REGULATING_OFF,
         legBase_ + prop::THREE_WT_LEG_PTC_REG_MODE_OFF,
         legBase_ + prop::THREE_WT_LEG_PTC_REG_VALUE_OFF,
-        ptcStepChildType_
+        ptcStepChildType_,
+        prop::THREE_WT_LEG1_PTC_TARGET_DEADBAND + legIdx * 2,
+        prop::THREE_WT_LEG1_PTC_REG_TERMINAL_ID + legIdx * 2
     });
 }
 
 Terminal ThreeWindingsTransformer::Leg::getTerminal() const {
     return Terminal(backend_->getRelated(handle_, relTerminal_), backend_);
+}
+
+std::optional<CurrentLimits> ThreeWindingsTransformer::Leg::getCurrentLimits() const {
+    int legIdx = (legBase_ - prop::THREE_WT_LEG1_BASE) / 20; // 0, 1, or 2
+    ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS1 + legIdx);
+    if (h == INVALID_HANDLE) return std::nullopt;
+    return CurrentLimits(h, backend_);
 }
 
 // ── ThreeWindingsTransformer ──────────────────────────────────────────────────

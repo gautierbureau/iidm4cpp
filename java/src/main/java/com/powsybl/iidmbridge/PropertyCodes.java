@@ -38,6 +38,9 @@ public final class PropertyCodes {
     public static final int THREE_WT_LEG2_PTC_STEP     = 26;
     public static final int THREE_WT_LEG3_PTC_STEP     = 27;
     public static final int SHUNT_SECTION               = 28;
+    public static final int INTERNAL_CONNECTION         = 29;
+    public static final int CURRENT_LIMITS              = 30;
+    public static final int TEMPORARY_LIMIT             = 31;
 
     // ── Shared properties ─────────────────────────────────────────────────
     public static final int ID      = 100;
@@ -186,12 +189,34 @@ public final class PropertyCodes {
     public static final int PTC_STEP_G     = 1914;
     public static final int PTC_STEP_B     = 1915;
 
+    // ── TwoWT tap changer additional properties ───────────────────────────────
+    public static final int TWO_WT_RTC_TARGET_DEADBAND = 1920;
+    public static final int TWO_WT_RTC_REG_TERMINAL_ID = 1921;
+    public static final int TWO_WT_PTC_TARGET_DEADBAND = 1922;
+    public static final int TWO_WT_PTC_REG_TERMINAL_ID = 1923;
+
+    // ── ThreeWT leg tap changer additional properties ─────────────────────────
+    public static final int THREE_WT_LEG1_RTC_TARGET_DEADBAND = 1950;
+    public static final int THREE_WT_LEG1_RTC_REG_TERMINAL_ID = 1951;
+    public static final int THREE_WT_LEG2_RTC_TARGET_DEADBAND = 1952;
+    public static final int THREE_WT_LEG2_RTC_REG_TERMINAL_ID = 1953;
+    public static final int THREE_WT_LEG3_RTC_TARGET_DEADBAND = 1954;
+    public static final int THREE_WT_LEG3_RTC_REG_TERMINAL_ID = 1955;
+    public static final int THREE_WT_LEG1_PTC_TARGET_DEADBAND = 1956;
+    public static final int THREE_WT_LEG1_PTC_REG_TERMINAL_ID = 1957;
+    public static final int THREE_WT_LEG2_PTC_TARGET_DEADBAND = 1958;
+    public static final int THREE_WT_LEG2_PTC_REG_TERMINAL_ID = 1959;
+    public static final int THREE_WT_LEG3_PTC_TARGET_DEADBAND = 1960;
+    public static final int THREE_WT_LEG3_PTC_REG_TERMINAL_ID = 1961;
+
     // ── HvdcLine ─────────────────────────────────────────────────────────
-    public static final int HVDC_R                   = 900;
-    public static final int HVDC_NOMINAL_V           = 901;
-    public static final int HVDC_ACTIVE_POWER_SETPOINT = 902;
-    public static final int HVDC_MAX_P               = 903;
-    public static final int HVDC_CONVERTERS_MODE     = 904;
+    public static final int HVDC_R                      = 900;
+    public static final int HVDC_NOMINAL_V              = 901;
+    public static final int HVDC_ACTIVE_POWER_SETPOINT  = 902;
+    public static final int HVDC_MAX_P                  = 903;
+    public static final int HVDC_CONVERTERS_MODE        = 904;
+    public static final int HVDC_CONVERTER_STATION1_ID  = 905;
+    public static final int HVDC_CONVERTER_STATION2_ID  = 906;
 
     // ── DanglingLine ─────────────────────────────────────────────────────
     public static final int DL_P0 = 1000;
@@ -202,13 +227,16 @@ public final class PropertyCodes {
     public static final int DL_B  = 1005;
 
     // ── ShuntCompensator ─────────────────────────────────────────────────
-    public static final int SHUNT_SECTION_COUNT     = 1100;
-    public static final int SHUNT_MAX_SECTION_COUNT = 1101;
-    public static final int SHUNT_B_PER_SECTION     = 1102;
-    public static final int SHUNT_G_PER_SECTION     = 1103;
-    public static final int SHUNT_MODEL_KIND        = 1104; // 0=LINEAR 1=NON_LINEAR
-    public static final int SHUNT_SECTION_B         = 1105; // on section handle
-    public static final int SHUNT_SECTION_G         = 1106; // on section handle
+    public static final int SHUNT_SECTION_COUNT        = 1100;
+    public static final int SHUNT_MAX_SECTION_COUNT    = 1101;
+    public static final int SHUNT_B_PER_SECTION        = 1102;
+    public static final int SHUNT_G_PER_SECTION        = 1103;
+    public static final int SHUNT_MODEL_KIND           = 1104; // 0=LINEAR 1=NON_LINEAR
+    public static final int SHUNT_SECTION_B            = 1105; // on section handle
+    public static final int SHUNT_SECTION_G            = 1106; // on section handle
+    public static final int SHUNT_VOLTAGE_REGULATOR_ON = 1107;
+    public static final int SHUNT_TARGET_V             = 1108;
+    public static final int SHUNT_REGULATING_TERMINAL_ID = 1109;
 
     // ── StaticVarCompensator ─────────────────────────────────────────────
     public static final int SVC_B_MIN                   = 1200;
@@ -233,6 +261,8 @@ public final class PropertyCodes {
     // ── BusbarSection ────────────────────────────────────────────────────────
     public static final int BBS_V     = 1600;
     public static final int BBS_ANGLE = 1601;
+    public static final int IC_NODE1  = 1610;
+    public static final int IC_NODE2  = 1611;
 
     // ── Battery ───────────────────────────────────────────────────────────────
     public static final int BAT_TARGET_P = 1700;
@@ -249,6 +279,8 @@ public final class PropertyCodes {
     public static final int SW_OPEN     = 1500;
     public static final int SW_RETAINED = 1501;
     public static final int SW_KIND     = 1502;
+    public static final int SW_NODE1    = 1503;
+    public static final int SW_NODE2    = 1504;
 
     // ── Extension: ActivePowerControl ────────────────────────────────────
     public static final int EXT_APC_EXISTS      = 3000;
@@ -277,6 +309,15 @@ public final class PropertyCodes {
     // ── Extension: SlackTerminal ──────────────────────────────────────────
     public static final int EXT_ST_EXISTS = 3500;
 
+    // ── CurrentLimits ─────────────────────────────────────────────────────
+    public static final int CL_PERMANENT_LIMIT    = 1970;
+
+    // ── TemporaryLimit (child of CurrentLimits) ───────────────────────────
+    public static final int TL_VALUE              = 1971;
+    public static final int TL_ACCEPTABLE_DURATION = 1972;
+    public static final int TL_FICTITIOUS         = 1973;
+    public static final int TL_NAME               = 1974;
+
     // ── Relations ────────────────────────────────────────────────────────
     public static final int REL_TERMINAL1        = 2000;
     public static final int REL_TERMINAL2        = 2001;
@@ -285,5 +326,9 @@ public final class PropertyCodes {
     public static final int REL_VOLTAGE_LEVEL    = 2004;
     public static final int REL_SUBSTATION       = 2005;
     public static final int REL_SLACK_TERMINAL   = 2006;
-    public static final int REL_CONNECTABLE_BUS  = 2007;
+    public static final int REL_CONNECTABLE_BUS      = 2007;
+    public static final int REL_REGULATING_TERMINAL  = 2008;
+    public static final int REL_CURRENT_LIMITS1      = 2009; // Branch side 1 or ThreeWT leg 1
+    public static final int REL_CURRENT_LIMITS2      = 2010; // Branch side 2 or ThreeWT leg 2
+    public static final int REL_CURRENT_LIMITS3      = 2011; // ThreeWT leg 3
 }

@@ -3,6 +3,7 @@
 #include <iidm/ObjectHandle.h>
 #include <iidm/RatioTapChangerStep.h>
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace iidm {
@@ -17,6 +18,8 @@ struct RatioTapChangerConfig {
     int regulating;
     int targetV;
     int stepChildType;
+    int targetDeadband;
+    int regulationTerminalId;
 };
 
 class RatioTapChanger {
@@ -36,6 +39,9 @@ public:
 
     double getTargetV() const;
     RatioTapChanger& setTargetV(double v);
+
+    std::optional<double> getTargetDeadband() const;
+    std::string getRegulationTerminalId() const;
 
     std::vector<RatioTapChangerStep> getAllSteps() const;
     RatioTapChangerStep getCurrentStep() const;

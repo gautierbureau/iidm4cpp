@@ -85,6 +85,7 @@ void GraalVMBackend::resolveSymbols() {
     fnCreateIsolate_   = resolveSymbol<FnCreateIsolate>  (libHandle_, "graal_create_isolate");
     fnTearDownIsolate_ = resolveSymbol<FnTearDownIsolate>(libHandle_, "graal_tear_down_isolate");
     fnLoadNetwork_     = resolveSymbol<FnLoadNetwork>    (libHandle_, "iidm_load_network");
+    fnSaveNetwork_     = resolveSymbol<FnSaveNetwork>    (libHandle_, "iidm_save_network");
     fnGetDouble_       = resolveSymbol<FnGetDouble>      (libHandle_, "iidm_get_double");
     fnSetDouble_       = resolveSymbol<FnSetDouble>      (libHandle_, "iidm_set_double");
     fnGetInt_          = resolveSymbol<FnGetInt>         (libHandle_, "iidm_get_int");
@@ -103,6 +104,13 @@ void GraalVMBackend::loadNetwork(const std::string& filePath) {
     networkHandle_ = fnLoadNetwork_(thread_, filePath.c_str());
     if (networkHandle_ == INVALID_HANDLE) {
         throw IidmException("Failed to load network from: " + filePath);
+    }
+}
+
+void GraalVMBackend::saveNetwork(const std::string& filePath) {
+    int rc = fnSaveNetwork_(thread_, networkHandle_, filePath.c_str());
+    if (rc != 0) {
+        throw IidmException("Failed to save network to: " + filePath);
     }
 }
 

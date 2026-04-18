@@ -70,6 +70,8 @@ set(IIDM_BRIDGE_SOURCES
     src/LccConverterStation.cpp
     src/Switch.cpp
     src/BusbarSection.cpp
+    src/InternalConnection.cpp
+    src/CurrentLimits.cpp
 )
 
 if(IIDM_BRIDGE_ENABLE_GRAALVM)

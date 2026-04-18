@@ -35,6 +35,7 @@ public:
     ObjectHandle getNetworkHandle() const override;
 
     void loadNetwork(const std::string& filePath) override;
+    void saveNetwork(const std::string& filePath) override;
     void close() override;
 
 private:

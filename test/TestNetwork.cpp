@@ -79,3 +79,23 @@ TEST(NetworkTest, MoveSemantics) {
     Network net2 = std::move(net1);
     EXPECT_EQ(net2.getId(), "test-network");
 }
+
+TEST(NetworkTest, SaveDelegatesToBackend) {
+    auto backend = std::make_unique<iidm::test::MockBackend>();
+    backend->strings[{1, prop::ID}] = "test-network";
+    auto* raw = backend.get();
+    Network net = NetworkFactory::createFromBackend(std::move(backend));
+
+    net.save("/tmp/out.xiidm");
+    EXPECT_EQ(raw->lastSavedPath, "/tmp/out.xiidm");
+}
+
+TEST(NetworkTest, FactorySaveDelegatesToBackend) {
+    auto backend = std::make_unique<iidm::test::MockBackend>();
+    backend->strings[{1, prop::ID}] = "test-network";
+    auto* raw = backend.get();
+    Network net = NetworkFactory::createFromBackend(std::move(backend));
+
+    NetworkFactory::save(net, "/tmp/factory-out.xiidm");
+    EXPECT_EQ(raw->lastSavedPath, "/tmp/factory-out.xiidm");
+}

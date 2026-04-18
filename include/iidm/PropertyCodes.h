@@ -31,6 +31,9 @@ constexpr int THREE_WT_LEG1_PTC_STEP      = 25;
 constexpr int THREE_WT_LEG2_PTC_STEP      = 26;
 constexpr int THREE_WT_LEG3_PTC_STEP      = 27;
 constexpr int SHUNT_SECTION               = 28;
+constexpr int INTERNAL_CONNECTION         = 29;
+constexpr int CURRENT_LIMITS              = 30;
+constexpr int TEMPORARY_LIMIT             = 31;
 
 // ── Shared properties (applicable to many types) ────────────────────────────
 constexpr int ID                          = 100;
@@ -141,12 +144,36 @@ constexpr int PTC_STEP_X                  = 1913;
 constexpr int PTC_STEP_G                  = 1914;
 constexpr int PTC_STEP_B                  = 1915;
 
+// ── TwoWT tap changer additional properties ───────────────────────────────────
+constexpr int TWO_WT_RTC_TARGET_DEADBAND  = 1920;
+constexpr int TWO_WT_RTC_REG_TERMINAL_ID  = 1921;
+constexpr int TWO_WT_PTC_TARGET_DEADBAND  = 1922;
+constexpr int TWO_WT_PTC_REG_TERMINAL_ID  = 1923;
+
+// ── ThreeWT leg tap changer additional properties (legIdx=0,1,2) ──────────────
+// RTC: 1950 + legIdx*2 + 0/1 (deadband / regTermId)
+// PTC: 1956 + legIdx*2 + 0/1
+constexpr int THREE_WT_LEG1_RTC_TARGET_DEADBAND = 1950;
+constexpr int THREE_WT_LEG1_RTC_REG_TERMINAL_ID = 1951;
+constexpr int THREE_WT_LEG2_RTC_TARGET_DEADBAND = 1952;
+constexpr int THREE_WT_LEG2_RTC_REG_TERMINAL_ID = 1953;
+constexpr int THREE_WT_LEG3_RTC_TARGET_DEADBAND = 1954;
+constexpr int THREE_WT_LEG3_RTC_REG_TERMINAL_ID = 1955;
+constexpr int THREE_WT_LEG1_PTC_TARGET_DEADBAND = 1956;
+constexpr int THREE_WT_LEG1_PTC_REG_TERMINAL_ID = 1957;
+constexpr int THREE_WT_LEG2_PTC_TARGET_DEADBAND = 1958;
+constexpr int THREE_WT_LEG2_PTC_REG_TERMINAL_ID = 1959;
+constexpr int THREE_WT_LEG3_PTC_TARGET_DEADBAND = 1960;
+constexpr int THREE_WT_LEG3_PTC_REG_TERMINAL_ID = 1961;
+
 // ── HvdcLine ─────────────────────────────────────────────────────────────────
 constexpr int HVDC_R                      = 900;
 constexpr int HVDC_NOMINAL_V             = 901;
 constexpr int HVDC_ACTIVE_POWER_SETPOINT = 902;
 constexpr int HVDC_MAX_P                  = 903;
 constexpr int HVDC_CONVERTERS_MODE        = 904;
+constexpr int HVDC_CONVERTER_STATION1_ID  = 905;
+constexpr int HVDC_CONVERTER_STATION2_ID  = 906;
 
 // ── DanglingLine ─────────────────────────────────────────────────────────────
 constexpr int DL_P0                       = 1000;
@@ -164,6 +191,9 @@ constexpr int SHUNT_G_PER_SECTION         = 1103;
 constexpr int SHUNT_MODEL_KIND            = 1104; // 0=LINEAR 1=NON_LINEAR
 constexpr int SHUNT_SECTION_B             = 1105; // on section handle
 constexpr int SHUNT_SECTION_G             = 1106; // on section handle
+constexpr int SHUNT_VOLTAGE_REGULATOR_ON  = 1107;
+constexpr int SHUNT_TARGET_V              = 1108;
+constexpr int SHUNT_REGULATING_TERMINAL_ID = 1109;
 
 // ── StaticVarCompensator ─────────────────────────────────────────────────────
 constexpr int SVC_B_MIN                   = 1200;
@@ -188,6 +218,8 @@ constexpr int LCC_POWER_FACTOR            = 1401;
 // ── BusbarSection ────────────────────────────────────────────────────────────
 constexpr int BBS_V                       = 1600;
 constexpr int BBS_ANGLE                   = 1601;
+constexpr int IC_NODE1                    = 1610;
+constexpr int IC_NODE2                    = 1611;
 
 // ── Battery ───────────────────────────────────────────────────────────────────
 constexpr int BAT_TARGET_P                = 1700;
@@ -204,6 +236,8 @@ constexpr int POINT_MAX_Q                 = 1802;
 constexpr int SW_OPEN                     = 1500;
 constexpr int SW_RETAINED                 = 1501;
 constexpr int SW_KIND                     = 1502;
+constexpr int SW_NODE1                    = 1503;
+constexpr int SW_NODE2                    = 1504;
 
 // ── Extension: ActivePowerControl ────────────────────────────────────────────
 constexpr int EXT_APC_EXISTS              = 3000;
@@ -232,6 +266,15 @@ constexpr int EXT_VPRC_SLOPE  = 3401;
 // ── Extension: SlackTerminal ──────────────────────────────────────────────────
 constexpr int EXT_ST_EXISTS = 3500;
 
+// ── CurrentLimits ─────────────────────────────────────────────────────────────
+constexpr int CL_PERMANENT_LIMIT          = 1970;
+
+// ── TemporaryLimit (child of CurrentLimits) ───────────────────────────────────
+constexpr int TL_VALUE                    = 1971;
+constexpr int TL_ACCEPTABLE_DURATION      = 1972;
+constexpr int TL_FICTITIOUS               = 1973;
+constexpr int TL_NAME                     = 1974;
+
 // ── Relations (used in getRelated) ──────────────────────────────────────────
 constexpr int REL_TERMINAL1               = 2000;
 constexpr int REL_TERMINAL2               = 2001;
@@ -241,5 +284,9 @@ constexpr int REL_VOLTAGE_LEVEL           = 2004;
 constexpr int REL_SUBSTATION              = 2005;
 constexpr int REL_SLACK_TERMINAL          = 2006;
 constexpr int REL_CONNECTABLE_BUS         = 2007; // bus-breaker topology bus (may differ from bus view)
+constexpr int REL_REGULATING_TERMINAL     = 2008;
+constexpr int REL_CURRENT_LIMITS1         = 2009; // Branch side 1, or ThreeWT leg 1
+constexpr int REL_CURRENT_LIMITS2         = 2010; // Branch side 2, or ThreeWT leg 2
+constexpr int REL_CURRENT_LIMITS3         = 2011; // ThreeWT leg 3
 
 } // namespace iidm::prop

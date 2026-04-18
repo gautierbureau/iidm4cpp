@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <iidm/ShuntCompensator.h>
 #include <iidm/ShuntCompensatorNonLinearModel.h>
+#include <iidm/Terminal.h>
 #include <iidm/PropertyCodes.h>
 #include "MockBackend.h"
 
@@ -63,4 +64,47 @@ TEST_F(ShuntNonLinearTest, EmptySectionsWhenNoneRegistered) {
     ShuntCompensator sc(SHUNT_HANDLE, &b2);
     auto sections = sc.getNonLinearModel().getAllSections();
     EXPECT_EQ(sections.size(), 0u);
+}
+
+// ── Voltage regulator properties ──────────────────────────────────────────────
+
+static constexpr ObjectHandle TERM_HANDLE2 = 60;
+
+TEST_F(ShuntNonLinearTest, IsVoltageRegulatorOn) {
+    backend.bools[{SHUNT_HANDLE, prop::SHUNT_VOLTAGE_REGULATOR_ON}] = true;
+    ShuntCompensator sc(SHUNT_HANDLE, &backend);
+    EXPECT_TRUE(sc.isVoltageRegulatorOn());
+}
+
+TEST_F(ShuntNonLinearTest, IsVoltageRegulatorOff) {
+    backend.bools[{SHUNT_HANDLE, prop::SHUNT_VOLTAGE_REGULATOR_ON}] = false;
+    ShuntCompensator sc(SHUNT_HANDLE, &backend);
+    EXPECT_FALSE(sc.isVoltageRegulatorOn());
+}
+
+TEST_F(ShuntNonLinearTest, GetTargetV) {
+    backend.doubles[{SHUNT_HANDLE, prop::SHUNT_TARGET_V}] = 400.0;
+    ShuntCompensator sc(SHUNT_HANDLE, &backend);
+    EXPECT_DOUBLE_EQ(sc.getTargetV(), 400.0);
+}
+
+TEST_F(ShuntNonLinearTest, GetRegulatingTerminalId) {
+    backend.strings[{SHUNT_HANDLE, prop::SHUNT_REGULATING_TERMINAL_ID}] = "BUS1";
+    ShuntCompensator sc(SHUNT_HANDLE, &backend);
+    EXPECT_EQ(sc.getRegulatingTerminalId(), "BUS1");
+}
+
+TEST_F(ShuntNonLinearTest, GetRegulatingTerminal) {
+    backend.related[{SHUNT_HANDLE, prop::REL_REGULATING_TERMINAL}] = TERM_HANDLE2;
+    backend.doubles[{TERM_HANDLE2, prop::TERMINAL_P}] = 10.0;
+    ShuntCompensator sc(SHUNT_HANDLE, &backend);
+    Terminal t = sc.getRegulatingTerminal();
+    EXPECT_TRUE(t.isValid());
+    EXPECT_DOUBLE_EQ(t.getP(), 10.0);
+}
+
+TEST_F(ShuntNonLinearTest, GetRegulatingTerminalInvalidWhenMissing) {
+    ShuntCompensator sc(SHUNT_HANDLE, &backend);
+    Terminal t = sc.getRegulatingTerminal();
+    EXPECT_FALSE(t.isValid());
 }

@@ -59,7 +59,9 @@ std::optional<RatioTapChanger> TwoWindingsTransformer::getRatioTapChanger() cons
         prop::TWO_WT_RTC_HIGH_TAP,
         prop::TWO_WT_RTC_REGULATING,
         prop::TWO_WT_RTC_TARGET_V,
-        prop::TWO_WT_RTC_STEP
+        prop::TWO_WT_RTC_STEP,
+        prop::TWO_WT_RTC_TARGET_DEADBAND,
+        prop::TWO_WT_RTC_REG_TERMINAL_ID
     });
 }
 
@@ -112,7 +114,9 @@ std::optional<PhaseTapChanger> TwoWindingsTransformer::getPhaseTapChanger() cons
         prop::TWO_WT_PTC_REGULATING,
         prop::TWO_WT_PTC_REG_MODE,
         prop::TWO_WT_PTC_REG_VALUE,
-        prop::TWO_WT_PTC_STEP
+        prop::TWO_WT_PTC_STEP,
+        prop::TWO_WT_PTC_TARGET_DEADBAND,
+        prop::TWO_WT_PTC_REG_TERMINAL_ID
     });
 }
 
@@ -170,6 +174,18 @@ Terminal TwoWindingsTransformer::getTerminal1() const {
 Terminal TwoWindingsTransformer::getTerminal2() const {
     ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_TERMINAL2);
     return Terminal(termHandle, backend_);
+}
+
+std::optional<CurrentLimits> TwoWindingsTransformer::getCurrentLimits1() const {
+    ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS1);
+    if (h == INVALID_HANDLE) return std::nullopt;
+    return CurrentLimits(h, backend_);
+}
+
+std::optional<CurrentLimits> TwoWindingsTransformer::getCurrentLimits2() const {
+    ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS2);
+    if (h == INVALID_HANDLE) return std::nullopt;
+    return CurrentLimits(h, backend_);
 }
 
 void TwoWindingsTransformer::connect() {

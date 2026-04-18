@@ -118,6 +118,7 @@ struct JNIMethodCache {
 
     // ── IidmBridgeRegistry ───────────────────────────────────────────────
     jmethodID registry_get     = nullptr;
+    jmethodID registry_save    = nullptr;
     jmethodID registry_listIds = nullptr;
 
     // ── List ─────────────────────────────────────────────────────────────
@@ -174,15 +175,24 @@ struct JNIMethodCache {
     jmethodID switch_setOpen     = nullptr;
     jmethodID switch_isRetained  = nullptr;
     jmethodID switch_setRetained = nullptr;
-    jmethodID switch_getKind     = nullptr;
+    jmethodID switch_getKind        = nullptr;
+    jmethodID switch_getVoltageLevel = nullptr;
 
     // ── VoltageLevel topology views (for Switch navigation) ──────────────────
-    jclass    vlBusBreakerViewClass  = nullptr;
-    jclass    vlNodeBreakerViewClass = nullptr;
-    jmethodID vl_getBusBreakerView   = nullptr;
-    jmethodID vl_getNodeBreakerView  = nullptr;
-    jmethodID bbView_getSwitches     = nullptr;
-    jmethodID nbView_getSwitches     = nullptr;
+    jclass    vlBusBreakerViewClass      = nullptr;
+    jclass    vlNodeBreakerViewClass     = nullptr;
+    jmethodID vl_getBusBreakerView       = nullptr;
+    jmethodID vl_getNodeBreakerView      = nullptr;
+    jmethodID bbView_getSwitches         = nullptr;
+    jmethodID nbView_getSwitches         = nullptr;
+    jmethodID nbView_getNode1            = nullptr;
+    jmethodID nbView_getNode2            = nullptr;
+    jmethodID nbView_getInternalConnections = nullptr;
+
+    // ── InternalConnection ────────────────────────────────────────────────────
+    jclass    internalConnectionClass    = nullptr;
+    jmethodID ic_getNode1                = nullptr;
+    jmethodID ic_getNode2                = nullptr;
 
     // ── Network getSwitch by ID ───────────────────────────────────────────────
     jmethodID network_getSwitch = nullptr;
@@ -292,6 +302,27 @@ struct JNIMethodCache {
     jmethodID leg_getRatedS             = nullptr;
     jmethodID leg_getRatioTapChanger    = nullptr;
     jmethodID leg_getPhaseTapChanger    = nullptr;
+    // ── ShuntCompensator voltage regulator ───────────────────────────────────
+    jmethodID shunt_isVoltageRegulatorOn  = nullptr;
+    jmethodID shunt_getTargetV            = nullptr;
+    jmethodID shunt_getRegulatingTerminal = nullptr;
+
+    // ── HvdcLine converter stations ───────────────────────────────────────────
+    jclass    hvdcConverterStationClass   = nullptr;
+    jmethodID hvdc_getConverterStation1   = nullptr;
+    jmethodID hvdc_getConverterStation2   = nullptr;
+
+    // ── TapChanger: targetDeadband and regulationTerminal ─────────────────────
+    jmethodID tc_getTargetDeadband        = nullptr;
+    jmethodID tc_getRegulationTerminal    = nullptr;
+
+    // ── Terminal navigation ───────────────────────────────────────────────────
+    jmethodID terminal_getVoltageLevel    = nullptr;
+    jmethodID terminal_getConnectable     = nullptr;
+
+    // ── Identifiable::getId (cached for general use) ──────────────────────────
+    jmethodID identifiable_getId          = nullptr;
+
     // ── ShuntCompensator non-linear model ─────────────────────────────────────
     jclass    shuntNLModelClass          = nullptr;
     jclass    shuntSectionClass          = nullptr;
@@ -315,6 +346,24 @@ struct JNIMethodCache {
     // ── ThreeWT/TwoWT findById ────────────────────────────────────────────────
     jmethodID network_getThreeWTById    = nullptr;
     jmethodID network_getTwoWTById      = nullptr;
+
+    // ── CurrentLimits / LoadingLimits ─────────────────────────────────────────
+    jclass    loadingLimitsClass        = nullptr;
+    jmethodID cl_getPermanentLimit      = nullptr;
+    jmethodID cl_getTemporaryLimits     = nullptr;
+    jclass    temporaryLimitClass       = nullptr;
+    jmethodID tl_getName                = nullptr;
+    jmethodID tl_getValue               = nullptr;
+    jmethodID tl_getAcceptableDuration  = nullptr;
+    jmethodID tl_isFictitious           = nullptr;
+
+    // ── Branch.getCurrentLimits1/2 (Line and TwoWT) ───────────────────────────
+    jclass    branchClass               = nullptr;
+    jmethodID branch_getCurrentLimits1  = nullptr;
+    jmethodID branch_getCurrentLimits2  = nullptr;
+
+    // ── ThreeWT.Leg.getCurrentLimits ──────────────────────────────────────────
+    jmethodID leg_getCurrentLimits      = nullptr;
 };
 
 } // namespace iidm

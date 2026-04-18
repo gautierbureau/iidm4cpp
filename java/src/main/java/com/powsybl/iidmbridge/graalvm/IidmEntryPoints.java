@@ -1,6 +1,7 @@
 package com.powsybl.iidmbridge.graalvm;
 
 import com.powsybl.iidm.network.Network;
+import com.powsybl.iidm.serde.NetworkSerDe;
 import com.powsybl.iidmbridge.PropertyDispatcher;
 import org.graalvm.nativeimage.IsolateThread;
 import org.graalvm.nativeimage.UnmanagedMemory;
@@ -31,6 +32,18 @@ public final class IidmEntryPoints {
             return NetworkRegistry.register(network);
         } catch (Exception e) {
             return 0L; // INVALID_HANDLE
+        }
+    }
+
+    @CEntryPoint(name = "iidm_save_network")
+    public static int saveNetwork(IsolateThread thread, long handle, CCharPointer filePath) {
+        try {
+            String path = CTypeConversion.toJavaString(filePath);
+            Network network = (Network) NetworkRegistry.lookup(handle);
+            NetworkSerDe.write(network, Path.of(path));
+            return 0;
+        } catch (Exception e) {
+            return 1;
         }
     }
 

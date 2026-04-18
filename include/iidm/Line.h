@@ -1,7 +1,9 @@
 #pragma once
 
 #include <iidm/ObjectHandle.h>
+#include <iidm/CurrentLimits.h>
 #include <iidm/Terminal.h>
+#include <optional>
 #include <string>
 
 namespace iidm {
@@ -25,6 +27,9 @@ public:
 
     Terminal getTerminal1() const;
     Terminal getTerminal2() const;
+
+    std::optional<CurrentLimits> getCurrentLimits1() const;
+    std::optional<CurrentLimits> getCurrentLimits2() const;
 
     void connect();
     void disconnect();
