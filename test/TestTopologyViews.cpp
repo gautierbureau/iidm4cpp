@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <iidm/Terminal.h>
 #include <iidm/VoltageLevel.h>
+#include <iidm/InternalConnection.h>
 #include <iidm/PropertyCodes.h>
 #include "MockBackend.h"
 
@@ -13,6 +14,8 @@ static constexpr ObjectHandle BUS1        = 20;
 static constexpr ObjectHandle BUS2        = 21;
 static constexpr ObjectHandle SW1         = 30;
 static constexpr ObjectHandle BBS1        = 40;
+static constexpr ObjectHandle IC1         = 50;
+static constexpr ObjectHandle IC2         = 51;
 
 class TopologyViewTest : public ::testing::Test {
 protected:
@@ -162,4 +165,48 @@ TEST_F(TopologyViewTest, NodeBreakerViewMatchesDirectAccessors) {
               vl.getNodeBreakerView().getSwitches().size());
     EXPECT_EQ(vl.getBusbarSections().size(),
               vl.getNodeBreakerView().getBusbarSections().size());
+}
+
+// ── VoltageLevel::NodeBreakerView::getInternalConnections ────────────────────
+
+TEST_F(TopologyViewTest, VlNodeBreakerViewGetInternalConnectionsEmpty) {
+    VoltageLevel vl(VL_HANDLE, &backend);
+    // No internal connections registered → empty vector
+    EXPECT_EQ(vl.getNodeBreakerView().getInternalConnections().size(), 0u);
+}
+
+TEST_F(TopologyViewTest, VlNodeBreakerViewGetInternalConnections) {
+    backend.children[{VL_HANDLE, prop::INTERNAL_CONNECTION}] = {IC1, IC2};
+    backend.ints[{IC1, prop::IC_NODE1}] = 0;
+    backend.ints[{IC1, prop::IC_NODE2}] = 1;
+    backend.ints[{IC2, prop::IC_NODE1}] = 2;
+    backend.ints[{IC2, prop::IC_NODE2}] = 3;
+
+    VoltageLevel vl(VL_HANDLE, &backend);
+    auto ics = vl.getNodeBreakerView().getInternalConnections();
+    ASSERT_EQ(ics.size(), 2u);
+    EXPECT_TRUE(ics[0].isValid());
+    EXPECT_EQ(ics[0].getNode1(), 0);
+    EXPECT_EQ(ics[0].getNode2(), 1);
+    EXPECT_EQ(ics[1].getNode1(), 2);
+    EXPECT_EQ(ics[1].getNode2(), 3);
+}
+
+// ── Terminal::getVoltageLevel ─────────────────────────────────────────────────
+
+TEST_F(TopologyViewTest, TerminalGetVoltageLevel) {
+    backend.related[{TERM_HANDLE, prop::REL_VOLTAGE_LEVEL}] = VL_HANDLE;
+    backend.strings[{VL_HANDLE, prop::ID}] = "VL1";
+
+    Terminal t(TERM_HANDLE, &backend);
+    VoltageLevel vl = t.getVoltageLevel();
+    EXPECT_TRUE(vl.isValid());
+    EXPECT_EQ(vl.getId(), "VL1");
+}
+
+TEST_F(TopologyViewTest, TerminalGetVoltageLevelInvalidWhenMissing) {
+    MockBackend b2;
+    Terminal t(TERM_HANDLE, &b2);
+    VoltageLevel vl = t.getVoltageLevel();
+    EXPECT_FALSE(vl.isValid());
 }

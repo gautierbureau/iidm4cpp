@@ -6,6 +6,7 @@
 #include <iidm/Bus.h>
 #include <iidm/Switch.h>
 #include <iidm/BusbarSection.h>
+#include <iidm/InternalConnection.h>
 
 namespace iidm {
 
@@ -25,6 +26,14 @@ std::vector<Switch> VoltageLevel::NodeBreakerView::getSwitches() const {
 std::vector<BusbarSection> VoltageLevel::NodeBreakerView::getBusbarSections() const {
     auto handles = backend_->getChildren(handle_, prop::BUSBAR_SECTION);
     std::vector<BusbarSection> result;
+    result.reserve(handles.size());
+    for (auto h : handles) result.emplace_back(h, backend_);
+    return result;
+}
+
+std::vector<InternalConnection> VoltageLevel::NodeBreakerView::getInternalConnections() const {
+    auto handles = backend_->getChildren(handle_, prop::INTERNAL_CONNECTION);
+    std::vector<InternalConnection> result;
     result.reserve(handles.size());
     for (auto h : handles) result.emplace_back(h, backend_);
     return result;

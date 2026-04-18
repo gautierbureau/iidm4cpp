@@ -7,6 +7,7 @@
 namespace iidm {
 
 class BackendProvider;
+class VoltageLevel;
 
 class Terminal {
 public:
@@ -57,6 +58,8 @@ public:
 
     Bus getBusView() const;
     std::string getBusId() const;
+
+    VoltageLevel getVoltageLevel() const;
 
     BusBreakerView  getBusBreakerView()  const;
     NodeBreakerView getNodeBreakerView() const;

@@ -24,6 +24,9 @@ public:
 
     SwitchKind getKind() const;
 
+    int getNode1() const;
+    int getNode2() const;
+
     bool isValid() const { return handle_ != INVALID_HANDLE; }
 
     bool operator==(const Switch& other) const;

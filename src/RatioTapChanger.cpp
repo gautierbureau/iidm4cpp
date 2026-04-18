@@ -1,5 +1,6 @@
 #include <iidm/RatioTapChanger.h>
 #include <iidm/BackendProvider.h>
+#include <cmath>
 
 namespace iidm {
 
@@ -30,6 +31,16 @@ double RatioTapChanger::getTargetV() const {
 RatioTapChanger& RatioTapChanger::setTargetV(double v) {
     backend_->setDouble(handle_, cfg_.targetV, v);
     return *this;
+}
+
+std::optional<double> RatioTapChanger::getTargetDeadband() const {
+    double v = backend_->getDouble(handle_, cfg_.targetDeadband);
+    if (std::isnan(v)) return std::nullopt;
+    return v;
+}
+
+std::string RatioTapChanger::getRegulationTerminalId() const {
+    return backend_->getString(handle_, cfg_.regulationTerminalId);
 }
 
 std::vector<RatioTapChangerStep> RatioTapChanger::getAllSteps() const {

@@ -4,6 +4,7 @@
 #include <iidm/Enums.h>
 #include <iidm/PhaseTapChangerStep.h>
 #include <optional>
+#include <string>
 #include <vector>
 
 namespace iidm {
@@ -19,6 +20,8 @@ struct PhaseTapChangerConfig {
     int regulationMode;
     int regulationValue;
     int stepChildType;
+    int targetDeadband;
+    int regulationTerminalId;
 };
 
 class PhaseTapChanger {
@@ -41,6 +44,9 @@ public:
 
     double getRegulationValue() const;
     PhaseTapChanger& setRegulationValue(double val);
+
+    std::optional<double> getTargetDeadband() const;
+    std::string getRegulationTerminalId() const;
 
     std::vector<PhaseTapChangerStep> getAllSteps() const;
     PhaseTapChangerStep getCurrentStep() const;

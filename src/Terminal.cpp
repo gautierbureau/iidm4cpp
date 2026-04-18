@@ -1,4 +1,5 @@
 #include <iidm/Terminal.h>
+#include <iidm/VoltageLevel.h>
 #include <iidm/BackendProvider.h>
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
@@ -69,6 +70,10 @@ Bus Terminal::getBusView() const {
 
 std::string Terminal::getBusId() const {
     return backend_->getString(handle_, prop::TERMINAL_BUS_ID);
+}
+
+VoltageLevel Terminal::getVoltageLevel() const {
+    return VoltageLevel(backend_->getRelated(handle_, prop::REL_VOLTAGE_LEVEL), backend_);
 }
 
 Terminal::BusBreakerView Terminal::getBusBreakerView() const {

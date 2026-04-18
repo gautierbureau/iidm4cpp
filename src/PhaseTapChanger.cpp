@@ -1,5 +1,6 @@
 #include <iidm/PhaseTapChanger.h>
 #include <iidm/BackendProvider.h>
+#include <cmath>
 
 namespace iidm {
 
@@ -38,6 +39,16 @@ double PhaseTapChanger::getRegulationValue() const {
 PhaseTapChanger& PhaseTapChanger::setRegulationValue(double val) {
     backend_->setDouble(handle_, cfg_.regulationValue, val);
     return *this;
+}
+
+std::optional<double> PhaseTapChanger::getTargetDeadband() const {
+    double v = backend_->getDouble(handle_, cfg_.targetDeadband);
+    if (std::isnan(v)) return std::nullopt;
+    return v;
+}
+
+std::string PhaseTapChanger::getRegulationTerminalId() const {
+    return backend_->getString(handle_, cfg_.regulationTerminalId);
 }
 
 std::vector<PhaseTapChangerStep> PhaseTapChanger::getAllSteps() const {

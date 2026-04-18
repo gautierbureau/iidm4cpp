@@ -55,6 +55,23 @@ Terminal ShuntCompensator::getTerminal() const {
     return Terminal(termHandle, backend_);
 }
 
+bool ShuntCompensator::isVoltageRegulatorOn() const {
+    return backend_->getBool(handle_, prop::SHUNT_VOLTAGE_REGULATOR_ON);
+}
+
+double ShuntCompensator::getTargetV() const {
+    return backend_->getDouble(handle_, prop::SHUNT_TARGET_V);
+}
+
+std::string ShuntCompensator::getRegulatingTerminalId() const {
+    return backend_->getString(handle_, prop::SHUNT_REGULATING_TERMINAL_ID);
+}
+
+Terminal ShuntCompensator::getRegulatingTerminal() const {
+    ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_REGULATING_TERMINAL);
+    return Terminal(termHandle, backend_);
+}
+
 void ShuntCompensator::connect() {
     getTerminal().connect();
 }

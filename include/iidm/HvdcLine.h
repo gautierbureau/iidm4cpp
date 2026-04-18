@@ -27,6 +27,9 @@ public:
     HvdcConverterStationMode getConvertersMode() const;
     HvdcLine& setConvertersMode(HvdcConverterStationMode mode);
 
+    std::string getConverterStation1Id() const;
+    std::string getConverterStation2Id() const;
+
     bool hasHvdcAngleDroopActivePowerControl() const;
     HvdcAngleDroopActivePowerControl getHvdcAngleDroopActivePowerControl() const;
 

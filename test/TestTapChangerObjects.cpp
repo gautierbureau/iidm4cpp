@@ -154,3 +154,64 @@ TEST(TapChangerObjectTest, PtcCurrentStep) {
     ASSERT_TRUE(ptc.has_value());
     EXPECT_DOUBLE_EQ(ptc->getCurrentStep().getAlpha(), 0.0);
 }
+
+// ── RatioTapChanger: getTargetDeadband / getRegulationTerminalId ──────────────
+
+TEST(TapChangerObjectTest, RtcTargetDeadbandPresent) {
+    auto b = makeTwtBackend();
+    b.doubles[{TWT_HANDLE, prop::TWO_WT_RTC_TARGET_DEADBAND}] = 0.5;
+    TwoWindingsTransformer twt(TWT_HANDLE, &b);
+    auto rtc = twt.getRatioTapChanger();
+    ASSERT_TRUE(rtc.has_value());
+    auto db = rtc->getTargetDeadband();
+    ASSERT_TRUE(db.has_value());
+    EXPECT_DOUBLE_EQ(*db, 0.5);
+}
+
+TEST(TapChangerObjectTest, RtcTargetDeadbandAbsent) {
+    auto b = makeTwtBackend();
+    // No entry → getDouble returns NaN → nullopt
+    TwoWindingsTransformer twt(TWT_HANDLE, &b);
+    auto rtc = twt.getRatioTapChanger();
+    ASSERT_TRUE(rtc.has_value());
+    EXPECT_FALSE(rtc->getTargetDeadband().has_value());
+}
+
+TEST(TapChangerObjectTest, RtcRegulationTerminalId) {
+    auto b = makeTwtBackend();
+    b.strings[{TWT_HANDLE, prop::TWO_WT_RTC_REG_TERMINAL_ID}] = "T1";
+    TwoWindingsTransformer twt(TWT_HANDLE, &b);
+    auto rtc = twt.getRatioTapChanger();
+    ASSERT_TRUE(rtc.has_value());
+    EXPECT_EQ(rtc->getRegulationTerminalId(), "T1");
+}
+
+// ── PhaseTapChanger: getTargetDeadband / getRegulationTerminalId ──────────────
+
+TEST(TapChangerObjectTest, PtcTargetDeadbandPresent) {
+    auto b = makeTwtBackend();
+    b.doubles[{TWT_HANDLE, prop::TWO_WT_PTC_TARGET_DEADBAND}] = 1.0;
+    TwoWindingsTransformer twt(TWT_HANDLE, &b);
+    auto ptc = twt.getPhaseTapChanger();
+    ASSERT_TRUE(ptc.has_value());
+    auto db = ptc->getTargetDeadband();
+    ASSERT_TRUE(db.has_value());
+    EXPECT_DOUBLE_EQ(*db, 1.0);
+}
+
+TEST(TapChangerObjectTest, PtcTargetDeadbandAbsent) {
+    auto b = makeTwtBackend();
+    TwoWindingsTransformer twt(TWT_HANDLE, &b);
+    auto ptc = twt.getPhaseTapChanger();
+    ASSERT_TRUE(ptc.has_value());
+    EXPECT_FALSE(ptc->getTargetDeadband().has_value());
+}
+
+TEST(TapChangerObjectTest, PtcRegulationTerminalId) {
+    auto b = makeTwtBackend();
+    b.strings[{TWT_HANDLE, prop::TWO_WT_PTC_REG_TERMINAL_ID}] = "T2";
+    TwoWindingsTransformer twt(TWT_HANDLE, &b);
+    auto ptc = twt.getPhaseTapChanger();
+    ASSERT_TRUE(ptc.has_value());
+    EXPECT_EQ(ptc->getRegulationTerminalId(), "T2");
+}
