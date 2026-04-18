@@ -2,6 +2,8 @@
 
 set(TEST_SOURCES
     TestNetwork.cpp
+    TestBattery.cpp
+    TestReactiveLimits.cpp
     TestGenerator.cpp
     TestActivePowerControl.cpp
     TestCoordinatedReactiveControl.cpp

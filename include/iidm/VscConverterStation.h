@@ -1,6 +1,8 @@
 #pragma once
 
 #include <iidm/ObjectHandle.h>
+#include <iidm/MinMaxReactiveLimits.h>
+#include <iidm/ReactiveCapabilityCurve.h>
 #include <iidm/Terminal.h>
 #include <string>
 
@@ -26,6 +28,12 @@ public:
 
     double getReactivePowerSetpoint() const;
     VscConverterStation& setReactivePowerSetpoint(double value);
+
+    bool hasMinMaxReactiveLimits() const;
+    MinMaxReactiveLimits getMinMaxReactiveLimits() const;
+
+    bool hasReactiveCapabilityCurve() const;
+    ReactiveCapabilityCurve getReactiveCapabilityCurve() const;
 
     Terminal getTerminal() const;
 

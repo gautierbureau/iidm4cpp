@@ -3,6 +3,8 @@
 #include <iidm/ObjectHandle.h>
 #include <iidm/ActivePowerControl.h>
 #include <iidm/CoordinatedReactiveControl.h>
+#include <iidm/MinMaxReactiveLimits.h>
+#include <iidm/ReactiveCapabilityCurve.h>
 #include <iidm/Enums.h>
 #include <iidm/Terminal.h>
 #include <string>
@@ -43,6 +45,12 @@ public:
 
     bool hasCoordinatedReactiveControl() const;
     CoordinatedReactiveControl getCoordinatedReactiveControl() const;
+
+    bool hasMinMaxReactiveLimits() const;
+    MinMaxReactiveLimits getMinMaxReactiveLimits() const;
+
+    bool hasReactiveCapabilityCurve() const;
+    ReactiveCapabilityCurve getReactiveCapabilityCurve() const;
 
     void connect();
     void disconnect();

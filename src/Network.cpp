@@ -59,6 +59,10 @@ std::vector<VoltageLevel> Network::getVoltageLevels() const {
     return buildList<VoltageLevel>(backend_.get(), prop::VOLTAGE_LEVEL);
 }
 
+std::vector<Battery> Network::getBatteries() const {
+    return buildList<Battery>(backend_.get(), prop::BATTERY);
+}
+
 std::vector<Generator> Network::getGenerators() const {
     return buildList<Generator>(backend_.get(), prop::GENERATOR);
 }
@@ -104,6 +108,10 @@ std::vector<LccConverterStation> Network::getLccConverterStations() const {
 }
 
 // ── Lookup by ID ─────────────────────────────────────────────────────────────
+
+std::optional<Battery> Network::getBattery(const std::string& id) const {
+    return findById<Battery>(backend_.get(), prop::BATTERY, id);
+}
 
 std::optional<Generator> Network::getGenerator(const std::string& id) const {
     return findById<Generator>(backend_.get(), prop::GENERATOR, id);

@@ -27,6 +27,8 @@ public final class PropertyCodes {
     public static final int BUS                        = 15;
     public static final int SWITCH                     = 16;
     public static final int BUSBAR_SECTION             = 17;
+    public static final int BATTERY                    = 18;
+    public static final int REACTIVE_CURVE_POINT       = 19;
 
     // ── Shared properties ─────────────────────────────────────────────────
     public static final int ID      = 100;
@@ -41,6 +43,9 @@ public final class PropertyCodes {
     public static final int GEN_MAX_P                = 204;
     public static final int GEN_VOLTAGE_REGULATOR_ON = 205;
     public static final int GEN_ENERGY_SOURCE        = 206;
+    public static final int GEN_REACTIVE_LIMITS_KIND = 207; // 0=NONE 1=MIN_MAX 2=CURVE
+    public static final int GEN_MIN_Q                = 208;
+    public static final int GEN_MAX_Q                = 209;
 
     // ── Load ─────────────────────────────────────────────────────────────
     public static final int LOAD_P0   = 300;
@@ -126,6 +131,9 @@ public final class PropertyCodes {
     public static final int VSC_VOLTAGE_REGULATOR_ON    = 1301;
     public static final int VSC_VOLTAGE_SETPOINT        = 1302;
     public static final int VSC_REACTIVE_POWER_SETPOINT = 1303;
+    public static final int VSC_REACTIVE_LIMITS_KIND    = 1304; // 0=NONE 1=MIN_MAX 2=CURVE
+    public static final int VSC_MIN_Q                   = 1305;
+    public static final int VSC_MAX_Q                   = 1306;
 
     // ── LccConverterStation ──────────────────────────────────────────────
     public static final int LCC_LOSS_FACTOR  = 1400;
@@ -134,6 +142,19 @@ public final class PropertyCodes {
     // ── BusbarSection ────────────────────────────────────────────────────────
     public static final int BBS_V     = 1600;
     public static final int BBS_ANGLE = 1601;
+
+    // ── Battery ───────────────────────────────────────────────────────────────
+    public static final int BAT_TARGET_P = 1700;
+    public static final int BAT_TARGET_Q = 1701;
+    public static final int BAT_MIN_P    = 1702;
+    public static final int BAT_MAX_P    = 1703;
+    public static final int BAT_P0       = 1704;
+    public static final int BAT_Q0       = 1705;
+
+    // ── ReactiveCapabilityCurve point properties ──────────────────────────────
+    public static final int POINT_P     = 1800;
+    public static final int POINT_MIN_Q = 1801;
+    public static final int POINT_MAX_Q = 1802;
 
     // ── Switch ───────────────────────────────────────────────────────────────
     public static final int SW_OPEN     = 1500;

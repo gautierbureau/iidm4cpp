@@ -3,6 +3,7 @@
 #include <iidm/BackendProvider.h>
 #include <iidm/Substation.h>
 #include <iidm/VoltageLevel.h>
+#include <iidm/Battery.h>
 #include <iidm/Generator.h>
 #include <iidm/Load.h>
 #include <iidm/Line.h>
@@ -41,6 +42,7 @@ public:
     // ── Iteration helpers ────────────────────────────────────────────────
     std::vector<Substation>              getSubstations() const;
     std::vector<VoltageLevel>            getVoltageLevels() const;
+    std::vector<Battery>                 getBatteries() const;
     std::vector<Generator>               getGenerators() const;
     std::vector<Load>                    getLoads() const;
     std::vector<Line>                    getLines() const;
@@ -54,6 +56,7 @@ public:
     std::vector<LccConverterStation>     getLccConverterStations() const;
 
     // ── Lookup by ID ─────────────────────────────────────────────────────
+    std::optional<Battery>                 getBattery(const std::string& id) const;
     std::optional<Generator>               getGenerator(const std::string& id) const;
     std::optional<Load>                    getLoad(const std::string& id) const;
     std::optional<Line>                    getLine(const std::string& id) const;

@@ -39,6 +39,9 @@ set(IIDM_BRIDGE_SOURCES
     src/Network.cpp
     src/NetworkFactory.cpp
     src/BackendSelector.cpp
+    src/Battery.cpp
+    src/MinMaxReactiveLimits.cpp
+    src/ReactiveCapabilityCurve.cpp
     src/ActivePowerControl.cpp
     src/CoordinatedReactiveControl.cpp
     src/HvdcAngleDroopActivePowerControl.cpp

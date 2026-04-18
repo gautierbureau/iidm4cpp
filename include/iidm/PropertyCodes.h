@@ -20,6 +20,8 @@ constexpr int TERMINAL                    = 14;
 constexpr int BUS                         = 15;
 constexpr int SWITCH                      = 16;
 constexpr int BUSBAR_SECTION              = 17;
+constexpr int BATTERY                     = 18;
+constexpr int REACTIVE_CURVE_POINT        = 19;
 
 // ── Shared properties (applicable to many types) ────────────────────────────
 constexpr int ID                          = 100;
@@ -34,6 +36,9 @@ constexpr int GEN_MIN_P                   = 203;
 constexpr int GEN_MAX_P                   = 204;
 constexpr int GEN_VOLTAGE_REGULATOR_ON    = 205;
 constexpr int GEN_ENERGY_SOURCE           = 206;
+constexpr int GEN_REACTIVE_LIMITS_KIND    = 207; // 0=NONE 1=MIN_MAX 2=CURVE
+constexpr int GEN_MIN_Q                   = 208;
+constexpr int GEN_MAX_Q                   = 209;
 
 // ── Load-specific ────────────────────────────────────────────────────────────
 constexpr int LOAD_P0                     = 300;
@@ -119,6 +124,9 @@ constexpr int VSC_LOSS_FACTOR             = 1300;
 constexpr int VSC_VOLTAGE_REGULATOR_ON    = 1301;
 constexpr int VSC_VOLTAGE_SETPOINT        = 1302;
 constexpr int VSC_REACTIVE_POWER_SETPOINT = 1303;
+constexpr int VSC_REACTIVE_LIMITS_KIND    = 1304; // 0=NONE 1=MIN_MAX 2=CURVE
+constexpr int VSC_MIN_Q                   = 1305;
+constexpr int VSC_MAX_Q                   = 1306;
 
 // ── LccConverterStation ──────────────────────────────────────────────────────
 constexpr int LCC_LOSS_FACTOR             = 1400;
@@ -127,6 +135,19 @@ constexpr int LCC_POWER_FACTOR            = 1401;
 // ── BusbarSection ────────────────────────────────────────────────────────────
 constexpr int BBS_V                       = 1600;
 constexpr int BBS_ANGLE                   = 1601;
+
+// ── Battery ───────────────────────────────────────────────────────────────────
+constexpr int BAT_TARGET_P                = 1700;
+constexpr int BAT_TARGET_Q                = 1701;
+constexpr int BAT_MIN_P                   = 1702;
+constexpr int BAT_MAX_P                   = 1703;
+constexpr int BAT_P0                      = 1704;
+constexpr int BAT_Q0                      = 1705;
+
+// ── ReactiveCapabilityCurve point properties ──────────────────────────────────
+constexpr int POINT_P                     = 1800;
+constexpr int POINT_MIN_Q                 = 1801;
+constexpr int POINT_MAX_Q                 = 1802;
 
 // ── Switch ───────────────────────────────────────────────────────────────────
 constexpr int SW_OPEN                     = 1500;
