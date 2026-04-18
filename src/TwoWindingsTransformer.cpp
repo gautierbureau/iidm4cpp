@@ -1,4 +1,6 @@
 #include <iidm/TwoWindingsTransformer.h>
+#include <iidm/RatioTapChanger.h>
+#include <iidm/PhaseTapChanger.h>
 #include <iidm/BackendProvider.h>
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
@@ -48,6 +50,19 @@ bool TwoWindingsTransformer::hasRatioTapChanger() const {
     return backend_->getBool(handle_, prop::TWO_WT_RTC_EXISTS);
 }
 
+std::optional<RatioTapChanger> TwoWindingsTransformer::getRatioTapChanger() const {
+    if (!hasRatioTapChanger()) return std::nullopt;
+    return RatioTapChanger(handle_, backend_, RatioTapChangerConfig{
+        prop::TWO_WT_RTC_EXISTS,
+        prop::TWO_WT_RTC_TAP_POSITION,
+        prop::TWO_WT_RTC_LOW_TAP,
+        prop::TWO_WT_RTC_HIGH_TAP,
+        prop::TWO_WT_RTC_REGULATING,
+        prop::TWO_WT_RTC_TARGET_V,
+        prop::TWO_WT_RTC_STEP
+    });
+}
+
 int TwoWindingsTransformer::getRatioTapPosition() const {
     return backend_->getInt(handle_, prop::TWO_WT_RTC_TAP_POSITION);
 }
@@ -85,6 +100,20 @@ TwoWindingsTransformer& TwoWindingsTransformer::setRatioTapTargetV(double v) {
 
 bool TwoWindingsTransformer::hasPhaseTapChanger() const {
     return backend_->getBool(handle_, prop::TWO_WT_PTC_EXISTS);
+}
+
+std::optional<PhaseTapChanger> TwoWindingsTransformer::getPhaseTapChanger() const {
+    if (!hasPhaseTapChanger()) return std::nullopt;
+    return PhaseTapChanger(handle_, backend_, PhaseTapChangerConfig{
+        prop::TWO_WT_PTC_EXISTS,
+        prop::TWO_WT_PTC_TAP_POSITION,
+        prop::TWO_WT_PTC_LOW_TAP,
+        prop::TWO_WT_PTC_HIGH_TAP,
+        prop::TWO_WT_PTC_REGULATING,
+        prop::TWO_WT_PTC_REG_MODE,
+        prop::TWO_WT_PTC_REG_VALUE,
+        prop::TWO_WT_PTC_STEP
+    });
 }
 
 int TwoWindingsTransformer::getPhaseTapPosition() const {

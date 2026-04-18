@@ -42,6 +42,10 @@ set(IIDM_BRIDGE_SOURCES
     src/Battery.cpp
     src/MinMaxReactiveLimits.cpp
     src/ReactiveCapabilityCurve.cpp
+    src/RatioTapChangerStep.cpp
+    src/PhaseTapChangerStep.cpp
+    src/RatioTapChanger.cpp
+    src/PhaseTapChanger.cpp
     src/ActivePowerControl.cpp
     src/CoordinatedReactiveControl.cpp
     src/HvdcAngleDroopActivePowerControl.cpp

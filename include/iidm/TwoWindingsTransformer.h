@@ -2,6 +2,8 @@
 
 #include <iidm/ObjectHandle.h>
 #include <iidm/Enums.h>
+#include <iidm/RatioTapChanger.h>
+#include <iidm/PhaseTapChanger.h>
 #include <iidm/Terminal.h>
 #include <optional>
 #include <string>
@@ -31,6 +33,7 @@ public:
 
     // ── RatioTapChanger ──────────────────────────────────────────────────────
     bool hasRatioTapChanger() const;
+    std::optional<RatioTapChanger> getRatioTapChanger() const;
     int  getRatioTapPosition() const;
     TwoWindingsTransformer& setRatioTapPosition(int pos);
     int  getRatioTapLow() const;
@@ -42,6 +45,7 @@ public:
 
     // ── PhaseTapChanger ──────────────────────────────────────────────────────
     bool hasPhaseTapChanger() const;
+    std::optional<PhaseTapChanger> getPhaseTapChanger() const;
     int  getPhaseTapPosition() const;
     TwoWindingsTransformer& setPhaseTapPosition(int pos);
     int  getPhaseTapLow() const;

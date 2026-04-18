@@ -22,6 +22,14 @@ constexpr int SWITCH                      = 16;
 constexpr int BUSBAR_SECTION              = 17;
 constexpr int BATTERY                     = 18;
 constexpr int REACTIVE_CURVE_POINT        = 19;
+constexpr int TWO_WT_RTC_STEP             = 20;
+constexpr int TWO_WT_PTC_STEP             = 21;
+constexpr int THREE_WT_LEG1_RTC_STEP      = 22;
+constexpr int THREE_WT_LEG2_RTC_STEP      = 23;
+constexpr int THREE_WT_LEG3_RTC_STEP      = 24;
+constexpr int THREE_WT_LEG1_PTC_STEP      = 25;
+constexpr int THREE_WT_LEG2_PTC_STEP      = 26;
+constexpr int THREE_WT_LEG3_PTC_STEP      = 27;
 
 // ── Shared properties (applicable to many types) ────────────────────────────
 constexpr int ID                          = 100;
@@ -69,6 +77,33 @@ constexpr int LINE_B1                     = 703;
 constexpr int LINE_G2                     = 704;
 constexpr int LINE_B2                     = 705;
 
+// ── ThreeWindingsTransformer legs ─────────────────────────────────────────────
+// Each leg uses a 20-code block: legBase + offset below.
+// Leg1 base=820, Leg2 base=840, Leg3 base=860.
+constexpr int THREE_WT_LEG1_BASE          = 820;
+constexpr int THREE_WT_LEG2_BASE          = 840;
+constexpr int THREE_WT_LEG3_BASE          = 860;
+// Leg property offsets (add to LEG*_BASE)
+constexpr int THREE_WT_LEG_R_OFF              = 0;
+constexpr int THREE_WT_LEG_X_OFF              = 1;
+constexpr int THREE_WT_LEG_G_OFF              = 2;
+constexpr int THREE_WT_LEG_B_OFF              = 3;
+constexpr int THREE_WT_LEG_RATED_U_OFF        = 4;
+constexpr int THREE_WT_LEG_RATED_S_OFF        = 5;
+constexpr int THREE_WT_LEG_RTC_EXISTS_OFF     = 6;
+constexpr int THREE_WT_LEG_RTC_TAP_POS_OFF    = 7;
+constexpr int THREE_WT_LEG_RTC_LOW_TAP_OFF    = 8;
+constexpr int THREE_WT_LEG_RTC_HIGH_TAP_OFF   = 9;
+constexpr int THREE_WT_LEG_RTC_REGULATING_OFF = 10;
+constexpr int THREE_WT_LEG_RTC_TARGET_V_OFF   = 11;
+constexpr int THREE_WT_LEG_PTC_EXISTS_OFF     = 12;
+constexpr int THREE_WT_LEG_PTC_TAP_POS_OFF    = 13;
+constexpr int THREE_WT_LEG_PTC_LOW_TAP_OFF    = 14;
+constexpr int THREE_WT_LEG_PTC_HIGH_TAP_OFF   = 15;
+constexpr int THREE_WT_LEG_PTC_REGULATING_OFF = 16;
+constexpr int THREE_WT_LEG_PTC_REG_MODE_OFF   = 17;
+constexpr int THREE_WT_LEG_PTC_REG_VALUE_OFF  = 18;
+
 // ── TwoWindingsTransformer ───────────────────────────────────────────────────
 constexpr int TWO_WT_R                    = 800;
 constexpr int TWO_WT_X                    = 801;
@@ -90,6 +125,19 @@ constexpr int TWO_WT_PTC_HIGH_TAP         = 816;
 constexpr int TWO_WT_PTC_REGULATING       = 817;
 constexpr int TWO_WT_PTC_REG_MODE         = 818;
 constexpr int TWO_WT_PTC_REG_VALUE        = 819;
+
+// ── TapChangerStep properties (shared by RTC and PTC step handles) ────────────
+constexpr int RTC_STEP_RHO                = 1900;
+constexpr int RTC_STEP_R                  = 1901;
+constexpr int RTC_STEP_X                  = 1902;
+constexpr int RTC_STEP_G                  = 1903;
+constexpr int RTC_STEP_B                  = 1904;
+constexpr int PTC_STEP_ALPHA              = 1910;
+constexpr int PTC_STEP_RHO                = 1911;
+constexpr int PTC_STEP_R                  = 1912;
+constexpr int PTC_STEP_X                  = 1913;
+constexpr int PTC_STEP_G                  = 1914;
+constexpr int PTC_STEP_B                  = 1915;
 
 // ── HvdcLine ─────────────────────────────────────────────────────────────────
 constexpr int HVDC_R                      = 900;

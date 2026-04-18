@@ -29,6 +29,14 @@ public final class PropertyCodes {
     public static final int BUSBAR_SECTION             = 17;
     public static final int BATTERY                    = 18;
     public static final int REACTIVE_CURVE_POINT       = 19;
+    public static final int TWO_WT_RTC_STEP            = 20;
+    public static final int TWO_WT_PTC_STEP            = 21;
+    public static final int THREE_WT_LEG1_RTC_STEP     = 22;
+    public static final int THREE_WT_LEG2_RTC_STEP     = 23;
+    public static final int THREE_WT_LEG3_RTC_STEP     = 24;
+    public static final int THREE_WT_LEG1_PTC_STEP     = 25;
+    public static final int THREE_WT_LEG2_PTC_STEP     = 26;
+    public static final int THREE_WT_LEG3_PTC_STEP     = 27;
 
     // ── Shared properties ─────────────────────────────────────────────────
     public static final int ID      = 100;
@@ -97,6 +105,84 @@ public final class PropertyCodes {
     public static final int TWO_WT_PTC_REGULATING  = 817;
     public static final int TWO_WT_PTC_REG_MODE    = 818;
     public static final int TWO_WT_PTC_REG_VALUE   = 819;
+
+    // ── ThreeWindingsTransformer legs ─────────────────────────────────────────
+    public static final int THREE_WT_LEG1_BASE = 820;
+    public static final int THREE_WT_LEG2_BASE = 840;
+    public static final int THREE_WT_LEG3_BASE = 860;
+    // Leg 1
+    public static final int THREE_WT_LEG1_R              = 820;
+    public static final int THREE_WT_LEG1_X              = 821;
+    public static final int THREE_WT_LEG1_G              = 822;
+    public static final int THREE_WT_LEG1_B              = 823;
+    public static final int THREE_WT_LEG1_RATED_U        = 824;
+    public static final int THREE_WT_LEG1_RATED_S        = 825;
+    public static final int THREE_WT_LEG1_RTC_EXISTS     = 826;
+    public static final int THREE_WT_LEG1_RTC_TAP_POS    = 827;
+    public static final int THREE_WT_LEG1_RTC_LOW_TAP    = 828;
+    public static final int THREE_WT_LEG1_RTC_HIGH_TAP   = 829;
+    public static final int THREE_WT_LEG1_RTC_REGULATING = 830;
+    public static final int THREE_WT_LEG1_RTC_TARGET_V   = 831;
+    public static final int THREE_WT_LEG1_PTC_EXISTS     = 832;
+    public static final int THREE_WT_LEG1_PTC_TAP_POS    = 833;
+    public static final int THREE_WT_LEG1_PTC_LOW_TAP    = 834;
+    public static final int THREE_WT_LEG1_PTC_HIGH_TAP   = 835;
+    public static final int THREE_WT_LEG1_PTC_REGULATING = 836;
+    public static final int THREE_WT_LEG1_PTC_REG_MODE   = 837;
+    public static final int THREE_WT_LEG1_PTC_REG_VALUE  = 838;
+    // Leg 2
+    public static final int THREE_WT_LEG2_R              = 840;
+    public static final int THREE_WT_LEG2_X              = 841;
+    public static final int THREE_WT_LEG2_G              = 842;
+    public static final int THREE_WT_LEG2_B              = 843;
+    public static final int THREE_WT_LEG2_RATED_U        = 844;
+    public static final int THREE_WT_LEG2_RATED_S        = 845;
+    public static final int THREE_WT_LEG2_RTC_EXISTS     = 846;
+    public static final int THREE_WT_LEG2_RTC_TAP_POS    = 847;
+    public static final int THREE_WT_LEG2_RTC_LOW_TAP    = 848;
+    public static final int THREE_WT_LEG2_RTC_HIGH_TAP   = 849;
+    public static final int THREE_WT_LEG2_RTC_REGULATING = 850;
+    public static final int THREE_WT_LEG2_RTC_TARGET_V   = 851;
+    public static final int THREE_WT_LEG2_PTC_EXISTS     = 852;
+    public static final int THREE_WT_LEG2_PTC_TAP_POS    = 853;
+    public static final int THREE_WT_LEG2_PTC_LOW_TAP    = 854;
+    public static final int THREE_WT_LEG2_PTC_HIGH_TAP   = 855;
+    public static final int THREE_WT_LEG2_PTC_REGULATING = 856;
+    public static final int THREE_WT_LEG2_PTC_REG_MODE   = 857;
+    public static final int THREE_WT_LEG2_PTC_REG_VALUE  = 858;
+    // Leg 3
+    public static final int THREE_WT_LEG3_R              = 860;
+    public static final int THREE_WT_LEG3_X              = 861;
+    public static final int THREE_WT_LEG3_G              = 862;
+    public static final int THREE_WT_LEG3_B              = 863;
+    public static final int THREE_WT_LEG3_RATED_U        = 864;
+    public static final int THREE_WT_LEG3_RATED_S        = 865;
+    public static final int THREE_WT_LEG3_RTC_EXISTS     = 866;
+    public static final int THREE_WT_LEG3_RTC_TAP_POS    = 867;
+    public static final int THREE_WT_LEG3_RTC_LOW_TAP    = 868;
+    public static final int THREE_WT_LEG3_RTC_HIGH_TAP   = 869;
+    public static final int THREE_WT_LEG3_RTC_REGULATING = 870;
+    public static final int THREE_WT_LEG3_RTC_TARGET_V   = 871;
+    public static final int THREE_WT_LEG3_PTC_EXISTS     = 872;
+    public static final int THREE_WT_LEG3_PTC_TAP_POS    = 873;
+    public static final int THREE_WT_LEG3_PTC_LOW_TAP    = 874;
+    public static final int THREE_WT_LEG3_PTC_HIGH_TAP   = 875;
+    public static final int THREE_WT_LEG3_PTC_REGULATING = 876;
+    public static final int THREE_WT_LEG3_PTC_REG_MODE   = 877;
+    public static final int THREE_WT_LEG3_PTC_REG_VALUE  = 878;
+
+    // ── TapChangerStep properties ─────────────────────────────────────────────
+    public static final int RTC_STEP_RHO   = 1900;
+    public static final int RTC_STEP_R     = 1901;
+    public static final int RTC_STEP_X     = 1902;
+    public static final int RTC_STEP_G     = 1903;
+    public static final int RTC_STEP_B     = 1904;
+    public static final int PTC_STEP_ALPHA = 1910;
+    public static final int PTC_STEP_RHO   = 1911;
+    public static final int PTC_STEP_R     = 1912;
+    public static final int PTC_STEP_X     = 1913;
+    public static final int PTC_STEP_G     = 1914;
+    public static final int PTC_STEP_B     = 1915;
 
     // ── HvdcLine ─────────────────────────────────────────────────────────
     public static final int HVDC_R                   = 900;
