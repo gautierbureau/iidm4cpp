@@ -9,6 +9,7 @@
 namespace iidm {
 
 class BackendProvider;
+class HvdcLine;
 
 class VscConverterStation {
 public:
@@ -36,6 +37,8 @@ public:
     ReactiveCapabilityCurve getReactiveCapabilityCurve() const;
 
     Terminal getTerminal() const;
+    Terminal getRegulatingTerminal() const;
+    HvdcLine getHvdcLine() const;
 
     void connect();
     void disconnect();

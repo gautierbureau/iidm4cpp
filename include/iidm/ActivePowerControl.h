@@ -6,12 +6,14 @@ namespace iidm {
 
 class BackendProvider;
 
-// Typed wrapper for the PowSyBl ActivePowerControl extension attached to a Generator.
-// Uses the generator's handle with EXT_APC_* property codes to dispatch through the backend.
+// Typed wrapper for the PowSyBl ActivePowerControl extension.
+// Accepts explicit property codes so it can serve both Generator (EXT_APC_*) and
+// Battery (EXT_BAT_APC_*) without duplicating the class.
 class ActivePowerControl {
 public:
     ActivePowerControl() = default;
-    explicit ActivePowerControl(ObjectHandle handle, BackendProvider* backend);
+    explicit ActivePowerControl(ObjectHandle handle, BackendProvider* backend,
+                                int droopCode, int participateCode);
 
     bool isParticipate() const;
     ActivePowerControl& setParticipate(bool participate);
@@ -25,8 +27,10 @@ public:
     bool operator!=(const ActivePowerControl& other) const;
 
 private:
-    ObjectHandle     handle_  = INVALID_HANDLE;
-    BackendProvider* backend_ = nullptr;
+    ObjectHandle     handle_       = INVALID_HANDLE;
+    BackendProvider* backend_      = nullptr;
+    int              droopCode_    = 0;
+    int              participateCode_ = 0;
 };
 
 } // namespace iidm

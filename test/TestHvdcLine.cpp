@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 #include <iidm/HvdcLine.h>
+#include <iidm/VscConverterStation.h>
+#include <iidm/LccConverterStation.h>
 #include <iidm/PropertyCodes.h>
 #include "MockBackend.h"
 
@@ -43,4 +45,26 @@ TEST_F(HvdcLineTest, GetConverterStationIdsEmpty) {
     HvdcLine hvdc(HVDC_HANDLE, &backend);
     EXPECT_EQ(hvdc.getConverterStation1Id(), "");
     EXPECT_EQ(hvdc.getConverterStation2Id(), "");
+}
+
+// ── Converter station getHvdcLine ─────────────────────────────────────────────
+
+TEST_F(HvdcLineTest, VscGetHvdcLine) {
+    static constexpr ObjectHandle VSC_H = 80;
+    backend.strings[{VSC_H, prop::ID}] = "VSC1";
+    backend.related[{VSC_H, prop::REL_HVDC_LINE}] = HVDC_HANDLE;
+    VscConverterStation vsc(VSC_H, &backend);
+    HvdcLine line = vsc.getHvdcLine();
+    EXPECT_TRUE(line.isValid());
+    EXPECT_EQ(line.getId(), "HVDC1");
+}
+
+TEST_F(HvdcLineTest, LccGetHvdcLine) {
+    static constexpr ObjectHandle LCC_H = 81;
+    backend.strings[{LCC_H, prop::ID}] = "LCC1";
+    backend.related[{LCC_H, prop::REL_HVDC_LINE}] = HVDC_HANDLE;
+    LccConverterStation lcc(LCC_H, &backend);
+    HvdcLine line = lcc.getHvdcLine();
+    EXPECT_TRUE(line.isValid());
+    EXPECT_EQ(line.getId(), "HVDC1");
 }

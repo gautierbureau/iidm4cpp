@@ -39,6 +39,7 @@ public:
     EnergySource getEnergySource() const;
 
     Terminal getTerminal() const;
+    Terminal getRegulatingTerminal() const;
 
     bool hasActivePowerControl() const;
     ActivePowerControl getActivePowerControl() const;

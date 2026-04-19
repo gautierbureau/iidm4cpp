@@ -1,4 +1,5 @@
 #include <iidm/LccConverterStation.h>
+#include <iidm/HvdcLine.h>
 #include <iidm/BackendProvider.h>
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
@@ -27,6 +28,11 @@ float LccConverterStation::getPowerFactor() const {
 Terminal LccConverterStation::getTerminal() const {
     ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_TERMINAL);
     return Terminal(termHandle, backend_);
+}
+
+HvdcLine LccConverterStation::getHvdcLine() const {
+    ObjectHandle hvdcHandle = backend_->getRelated(handle_, prop::REL_HVDC_LINE);
+    return HvdcLine(hvdcHandle, backend_);
 }
 
 void LccConverterStation::connect() {

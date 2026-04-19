@@ -42,6 +42,10 @@ double ShuntCompensator::getGPerSection() const {
     return backend_->getDouble(handle_, prop::SHUNT_G_PER_SECTION);
 }
 
+double ShuntCompensator::getB() const {
+    return backend_->getDouble(handle_, prop::SHUNT_B);
+}
+
 bool ShuntCompensator::hasNonLinearModel() const {
     return backend_->getInt(handle_, prop::SHUNT_MODEL_KIND) == 1;
 }

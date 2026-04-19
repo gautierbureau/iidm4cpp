@@ -83,12 +83,13 @@ struct JNIMethodCache {
     jmethodID terminal_getBusView    = nullptr;
 
     // ── Bus methods ──────────────────────────────────────────────────────
-    jmethodID bus_getId    = nullptr;
-    jmethodID bus_getName  = nullptr;
-    jmethodID bus_getV     = nullptr;
-    jmethodID bus_setV     = nullptr;
-    jmethodID bus_getAngle = nullptr;
-    jmethodID bus_setAngle = nullptr;
+    jmethodID bus_getId           = nullptr;
+    jmethodID bus_getName         = nullptr;
+    jmethodID bus_getV            = nullptr;
+    jmethodID bus_setV            = nullptr;
+    jmethodID bus_getAngle        = nullptr;
+    jmethodID bus_setAngle        = nullptr;
+    jmethodID bus_getVoltageLevel = nullptr;
 
     // ── Substation methods ───────────────────────────────────────────────
     jmethodID substation_getId             = nullptr;
@@ -188,6 +189,8 @@ struct JNIMethodCache {
     jmethodID nbView_getNode1            = nullptr;
     jmethodID nbView_getNode2            = nullptr;
     jmethodID nbView_getInternalConnections = nullptr;
+    jmethodID nbView_getNodes            = nullptr; // returns int[]
+    jmethodID nbView_getTerminal         = nullptr; // getTerminal(int node)
 
     // ── InternalConnection ────────────────────────────────────────────────────
     jclass    internalConnectionClass    = nullptr;
@@ -258,6 +261,7 @@ struct JNIMethodCache {
     jmethodID battery_getMaxP       = nullptr;
     jmethodID network_getBatteries  = nullptr;
     jmethodID network_getBattery    = nullptr;
+    jmethodID bat_getReactiveLimits = nullptr;
 
     // ── Reactive limits ────────────────────────────────────────────────────────
     jclass    reactiveLimitsClass   = nullptr;
@@ -303,6 +307,7 @@ struct JNIMethodCache {
     jmethodID leg_getRatioTapChanger    = nullptr;
     jmethodID leg_getPhaseTapChanger    = nullptr;
     // ── ShuntCompensator voltage regulator ───────────────────────────────────
+    jmethodID shunt_getB                 = nullptr;
     jmethodID shunt_isVoltageRegulatorOn  = nullptr;
     jmethodID shunt_getTargetV            = nullptr;
     jmethodID shunt_getRegulatingTerminal = nullptr;
@@ -311,6 +316,7 @@ struct JNIMethodCache {
     jclass    hvdcConverterStationClass   = nullptr;
     jmethodID hvdc_getConverterStation1   = nullptr;
     jmethodID hvdc_getConverterStation2   = nullptr;
+    jmethodID cs_getHvdcLine             = nullptr;
 
     // ── TapChanger: targetDeadband and regulationTerminal ─────────────────────
     jmethodID tc_getTargetDeadband        = nullptr;
@@ -334,6 +340,16 @@ struct JNIMethodCache {
 
     // ── VoltageLevel BusBreakerView.getBuses() ────────────────────────────────
     jmethodID bbView_getBuses            = nullptr;
+
+    // ── VoltageLevel per-injector getters ─────────────────────────────────────
+    jmethodID vl_getGenerators           = nullptr;
+    jmethodID vl_getLoads                = nullptr;
+    jmethodID vl_getBatteries            = nullptr;
+    jmethodID vl_getShuntCompensators    = nullptr;
+    jmethodID vl_getStaticVarCompensators = nullptr;
+    jmethodID vl_getDanglingLines        = nullptr;
+    jmethodID vl_getLccConverterStations = nullptr;
+    jmethodID vl_getVscConverterStations = nullptr;
 
     // ── Terminal BusBreakerView / NodeBreakerView ─────────────────────────────
     jclass    termBBViewClass                = nullptr;

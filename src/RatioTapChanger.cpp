@@ -1,5 +1,7 @@
 #include <iidm/RatioTapChanger.h>
+#include <iidm/Terminal.h>
 #include <iidm/BackendProvider.h>
+#include <iidm/PropertyCodes.h>
 #include <cmath>
 
 namespace iidm {
@@ -41,6 +43,11 @@ std::optional<double> RatioTapChanger::getTargetDeadband() const {
 
 std::string RatioTapChanger::getRegulationTerminalId() const {
     return backend_->getString(handle_, cfg_.regulationTerminalId);
+}
+
+Terminal RatioTapChanger::getRegulationTerminal() const {
+    ObjectHandle termHandle = backend_->getRelated(handle_, cfg_.regulationTerminalRelation);
+    return Terminal(termHandle, backend_);
 }
 
 std::vector<RatioTapChangerStep> RatioTapChanger::getAllSteps() const {

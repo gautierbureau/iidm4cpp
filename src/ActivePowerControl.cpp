@@ -4,24 +4,26 @@
 
 namespace iidm {
 
-ActivePowerControl::ActivePowerControl(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(backend) {}
+ActivePowerControl::ActivePowerControl(ObjectHandle handle, BackendProvider* backend,
+                                       int droopCode, int participateCode)
+    : handle_(handle), backend_(backend),
+      droopCode_(droopCode), participateCode_(participateCode) {}
 
 bool ActivePowerControl::isParticipate() const {
-    return backend_->getBool(handle_, prop::EXT_APC_PARTICIPATE);
+    return backend_->getBool(handle_, participateCode_);
 }
 
 ActivePowerControl& ActivePowerControl::setParticipate(bool participate) {
-    backend_->setBool(handle_, prop::EXT_APC_PARTICIPATE, participate);
+    backend_->setBool(handle_, participateCode_, participate);
     return *this;
 }
 
 double ActivePowerControl::getDroop() const {
-    return backend_->getDouble(handle_, prop::EXT_APC_DROOP);
+    return backend_->getDouble(handle_, droopCode_);
 }
 
 ActivePowerControl& ActivePowerControl::setDroop(double droop) {
-    backend_->setDouble(handle_, prop::EXT_APC_DROOP, droop);
+    backend_->setDouble(handle_, droopCode_, droop);
     return *this;
 }
 

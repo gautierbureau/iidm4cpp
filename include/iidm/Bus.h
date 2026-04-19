@@ -6,6 +6,7 @@
 namespace iidm {
 
 class BackendProvider;
+class VoltageLevel;
 
 class Bus {
 public:
@@ -20,6 +21,8 @@ public:
 
     double getAngle() const;
     Bus& setAngle(double angle);
+
+    VoltageLevel getVoltageLevel() const;
 
     bool isValid() const { return handle_ != INVALID_HANDLE; }
 

@@ -49,7 +49,8 @@ RatioTapChanger ThreeWindingsTransformer::Leg::getRatioTapChanger() const {
         legBase_ + prop::THREE_WT_LEG_RTC_TARGET_V_OFF,
         rtcStepChildType_,
         prop::THREE_WT_LEG1_RTC_TARGET_DEADBAND + legIdx * 2,
-        prop::THREE_WT_LEG1_RTC_REG_TERMINAL_ID + legIdx * 2
+        prop::THREE_WT_LEG1_RTC_REG_TERMINAL_ID + legIdx * 2,
+        prop::REL_THREE_WT_LEG1_RTC_REG_TERMINAL + legIdx
     });
 }
 

@@ -30,6 +30,8 @@ public:
 
     std::vector<ObjectHandle> getChildren(ObjectHandle h, int childType) const override;
     ObjectHandle              getRelated(ObjectHandle h, int relation) const override;
+    std::vector<int>          getIntList(ObjectHandle h, int listCode) const override;
+    ObjectHandle              getRelatedByIndex(ObjectHandle h, int relation, int index) const override;
 
     ObjectHandle findById(int objectType, const std::string& id) const override;
     ObjectHandle getNetworkHandle() const override;

@@ -2,6 +2,14 @@
 #include <iidm/Terminal.h>
 #include <iidm/VoltageLevel.h>
 #include <iidm/InternalConnection.h>
+#include <iidm/Generator.h>
+#include <iidm/Load.h>
+#include <iidm/Battery.h>
+#include <iidm/ShuntCompensator.h>
+#include <iidm/StaticVarCompensator.h>
+#include <iidm/DanglingLine.h>
+#include <iidm/LccConverterStation.h>
+#include <iidm/VscConverterStation.h>
 #include <iidm/PropertyCodes.h>
 #include "MockBackend.h"
 
@@ -209,4 +217,142 @@ TEST_F(TopologyViewTest, TerminalGetVoltageLevelInvalidWhenMissing) {
     Terminal t(TERM_HANDLE, &b2);
     VoltageLevel vl = t.getVoltageLevel();
     EXPECT_FALSE(vl.isValid());
+}
+
+// ── Bus::getVoltageLevel ──────────────────────────────────────────────────────
+
+TEST_F(TopologyViewTest, BusGetVoltageLevel) {
+    backend.related[{BUS1, prop::REL_VOLTAGE_LEVEL}] = VL_HANDLE;
+    Bus bus(BUS1, &backend);
+    VoltageLevel vl = bus.getVoltageLevel();
+    EXPECT_TRUE(vl.isValid());
+    EXPECT_EQ(vl.getId(), "VL1");
+}
+
+TEST_F(TopologyViewTest, BusGetVoltageLevelInvalidWhenMissing) {
+    MockBackend b2;
+    Bus bus(BUS1, &b2);
+    VoltageLevel vl = bus.getVoltageLevel();
+    EXPECT_FALSE(vl.isValid());
+}
+
+// ── NodeBreakerView::getNodes / getSwitch(id) / getTerminal(node) ─────────────
+
+TEST_F(TopologyViewTest, VlNodeBreakerViewGetNodes) {
+    backend.intLists[{VL_HANDLE, prop::VL_NBV_NODES}] = {0, 1, 2, 5};
+    VoltageLevel vl(VL_HANDLE, &backend);
+    auto nodes = vl.getNodeBreakerView().getNodes();
+    ASSERT_EQ(nodes.size(), 4u);
+    EXPECT_EQ(nodes[0], 0);
+    EXPECT_EQ(nodes[1], 1);
+    EXPECT_EQ(nodes[2], 2);
+    EXPECT_EQ(nodes[3], 5);
+}
+
+TEST_F(TopologyViewTest, VlNodeBreakerViewGetNodesEmpty) {
+    VoltageLevel vl(VL_HANDLE, &backend);
+    auto nodes = vl.getNodeBreakerView().getNodes();
+    EXPECT_TRUE(nodes.empty());
+}
+
+TEST_F(TopologyViewTest, VlNodeBreakerViewGetSwitchById) {
+    backend.byId[{prop::SWITCH, "SW1"}] = SW1;
+    backend.strings[{SW1, prop::ID}] = "SW1";
+    VoltageLevel vl(VL_HANDLE, &backend);
+    auto sw = vl.getNodeBreakerView().getSwitch("SW1");
+    ASSERT_TRUE(sw.has_value());
+    EXPECT_EQ(sw->getId(), "SW1");
+}
+
+TEST_F(TopologyViewTest, VlNodeBreakerViewGetSwitchByIdMissing) {
+    VoltageLevel vl(VL_HANDLE, &backend);
+    auto sw = vl.getNodeBreakerView().getSwitch("NONEXISTENT");
+    EXPECT_FALSE(sw.has_value());
+}
+
+TEST_F(TopologyViewTest, VlNodeBreakerViewGetTerminalAtNode) {
+    backend.relatedByIndex[{VL_HANDLE, prop::REL_NBV_TERMINAL_AT_NODE, 7}] = TERM_HANDLE;
+    backend.doubles[{TERM_HANDLE, prop::TERMINAL_P}] = 100.0;
+    VoltageLevel vl(VL_HANDLE, &backend);
+    Terminal t = vl.getNodeBreakerView().getTerminal(7);
+    EXPECT_TRUE(t.isValid());
+    EXPECT_DOUBLE_EQ(t.getP(), 100.0);
+}
+
+// ── VoltageLevel per-injector getters ─────────────────────────────────────────
+
+static constexpr ObjectHandle GEN1 = 60, LOAD1 = 61, BAT1 = 62;
+static constexpr ObjectHandle SHUNT1 = 63, SVC1 = 64, DL1 = 65;
+static constexpr ObjectHandle LCC1 = 66, VSC1 = 67;
+
+TEST_F(TopologyViewTest, VlGetGenerators) {
+    backend.children[{VL_HANDLE, prop::GENERATOR}] = {GEN1};
+    backend.strings[{GEN1, prop::ID}] = "GEN1";
+    VoltageLevel vl(VL_HANDLE, &backend);
+    auto gens = vl.getGenerators();
+    ASSERT_EQ(gens.size(), 1u);
+    EXPECT_EQ(gens[0].getId(), "GEN1");
+}
+
+TEST_F(TopologyViewTest, VlGetLoads) {
+    backend.children[{VL_HANDLE, prop::LOAD}] = {LOAD1};
+    backend.strings[{LOAD1, prop::ID}] = "LOAD1";
+    VoltageLevel vl(VL_HANDLE, &backend);
+    auto loads = vl.getLoads();
+    ASSERT_EQ(loads.size(), 1u);
+    EXPECT_EQ(loads[0].getId(), "LOAD1");
+}
+
+TEST_F(TopologyViewTest, VlGetBatteries) {
+    backend.children[{VL_HANDLE, prop::BATTERY}] = {BAT1};
+    backend.strings[{BAT1, prop::ID}] = "BAT1";
+    VoltageLevel vl(VL_HANDLE, &backend);
+    auto bats = vl.getBatteries();
+    ASSERT_EQ(bats.size(), 1u);
+    EXPECT_EQ(bats[0].getId(), "BAT1");
+}
+
+TEST_F(TopologyViewTest, VlGetShuntCompensators) {
+    backend.children[{VL_HANDLE, prop::SHUNT_COMPENSATOR}] = {SHUNT1};
+    backend.strings[{SHUNT1, prop::ID}] = "SHUNT1";
+    VoltageLevel vl(VL_HANDLE, &backend);
+    auto shunts = vl.getShuntCompensators();
+    ASSERT_EQ(shunts.size(), 1u);
+    EXPECT_EQ(shunts[0].getId(), "SHUNT1");
+}
+
+TEST_F(TopologyViewTest, VlGetStaticVarCompensators) {
+    backend.children[{VL_HANDLE, prop::STATIC_VAR_COMPENSATOR}] = {SVC1};
+    backend.strings[{SVC1, prop::ID}] = "SVC1";
+    VoltageLevel vl(VL_HANDLE, &backend);
+    auto svcs = vl.getStaticVarCompensators();
+    ASSERT_EQ(svcs.size(), 1u);
+    EXPECT_EQ(svcs[0].getId(), "SVC1");
+}
+
+TEST_F(TopologyViewTest, VlGetDanglingLines) {
+    backend.children[{VL_HANDLE, prop::DANGLING_LINE}] = {DL1};
+    backend.strings[{DL1, prop::ID}] = "DL1";
+    VoltageLevel vl(VL_HANDLE, &backend);
+    auto dls = vl.getDanglingLines();
+    ASSERT_EQ(dls.size(), 1u);
+    EXPECT_EQ(dls[0].getId(), "DL1");
+}
+
+TEST_F(TopologyViewTest, VlGetLccConverterStations) {
+    backend.children[{VL_HANDLE, prop::LCC_CONVERTER_STATION}] = {LCC1};
+    backend.strings[{LCC1, prop::ID}] = "LCC1";
+    VoltageLevel vl(VL_HANDLE, &backend);
+    auto lccs = vl.getLccConverterStations();
+    ASSERT_EQ(lccs.size(), 1u);
+    EXPECT_EQ(lccs[0].getId(), "LCC1");
+}
+
+TEST_F(TopologyViewTest, VlGetVscConverterStations) {
+    backend.children[{VL_HANDLE, prop::VSC_CONVERTER_STATION}] = {VSC1};
+    backend.strings[{VSC1, prop::ID}] = "VSC1";
+    VoltageLevel vl(VL_HANDLE, &backend);
+    auto vscs = vl.getVscConverterStations();
+    ASSERT_EQ(vscs.size(), 1u);
+    EXPECT_EQ(vscs[0].getId(), "VSC1");
 }
