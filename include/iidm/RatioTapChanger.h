@@ -2,6 +2,7 @@
 
 #include <iidm/ObjectHandle.h>
 #include <iidm/RatioTapChangerStep.h>
+#include <iidm/Terminal.h>
 #include <optional>
 #include <string>
 #include <vector>
@@ -20,6 +21,7 @@ struct RatioTapChangerConfig {
     int stepChildType;
     int targetDeadband;
     int regulationTerminalId;
+    int regulationTerminalRelation; // relation code for getRegulationTerminal()
 };
 
 class RatioTapChanger {
@@ -42,6 +44,7 @@ public:
 
     std::optional<double> getTargetDeadband() const;
     std::string getRegulationTerminalId() const;
+    Terminal getRegulationTerminal() const;
 
     std::vector<RatioTapChangerStep> getAllSteps() const;
     RatioTapChangerStep getCurrentStep() const;

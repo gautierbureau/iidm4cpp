@@ -1,6 +1,7 @@
 #include <iidm/VscConverterStation.h>
 #include <iidm/MinMaxReactiveLimits.h>
 #include <iidm/ReactiveCapabilityCurve.h>
+#include <iidm/HvdcLine.h>
 #include <iidm/BackendProvider.h>
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
@@ -68,6 +69,16 @@ ReactiveCapabilityCurve VscConverterStation::getReactiveCapabilityCurve() const 
 Terminal VscConverterStation::getTerminal() const {
     ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_TERMINAL);
     return Terminal(termHandle, backend_);
+}
+
+Terminal VscConverterStation::getRegulatingTerminal() const {
+    ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_REGULATING_TERMINAL);
+    return Terminal(termHandle, backend_);
+}
+
+HvdcLine VscConverterStation::getHvdcLine() const {
+    ObjectHandle hvdcHandle = backend_->getRelated(handle_, prop::REL_HVDC_LINE);
+    return HvdcLine(hvdcHandle, backend_);
 }
 
 void VscConverterStation::connect() {

@@ -1,6 +1,9 @@
 #pragma once
 
 #include <iidm/ObjectHandle.h>
+#include <iidm/ActivePowerControl.h>
+#include <iidm/MinMaxReactiveLimits.h>
+#include <iidm/ReactiveCapabilityCurve.h>
 #include <iidm/Terminal.h>
 #include <string>
 
@@ -24,6 +27,15 @@ public:
 
     double getMinP() const;
     double getMaxP() const;
+
+    bool hasActivePowerControl() const;
+    ActivePowerControl getActivePowerControl() const;
+
+    bool hasMinMaxReactiveLimits() const;
+    MinMaxReactiveLimits getMinMaxReactiveLimits() const;
+
+    bool hasReactiveCapabilityCurve() const;
+    ReactiveCapabilityCurve getReactiveCapabilityCurve() const;
 
     Terminal getTerminal() const;
 

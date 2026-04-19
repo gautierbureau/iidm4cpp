@@ -31,6 +31,7 @@ public:
     StaticVarCompensator& setRegulationMode(StaticVarCompensatorRegulationMode mode);
 
     Terminal getTerminal() const;
+    Terminal getRegulatingTerminal() const;
 
     bool hasVoltagePerReactivePowerControl() const;
     VoltagePerReactivePowerControl getVoltagePerReactivePowerControl() const;

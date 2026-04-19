@@ -32,6 +32,8 @@ public:
     // ── Navigation (children, terminals, etc.) ───────────────────────────
     virtual std::vector<ObjectHandle> getChildren(ObjectHandle h, int childType) const = 0;
     virtual ObjectHandle              getRelated(ObjectHandle h, int relation) const = 0;
+    virtual std::vector<int>          getIntList(ObjectHandle h, int listCode) const = 0;
+    virtual ObjectHandle              getRelatedByIndex(ObjectHandle h, int relation, int index) const = 0;
 
     // ── Lookup by ID ─────────────────────────────────────────────────────
     virtual ObjectHandle findById(int objectType, const std::string& id) const = 0;

@@ -60,16 +60,16 @@ TEST_F(ActivePowerControlTest, MethodChaining) {
 }
 
 TEST_F(ActivePowerControlTest, IsValid) {
-    ActivePowerControl valid(GEN_HANDLE, &backend);
+    ActivePowerControl valid(GEN_HANDLE, &backend, prop::EXT_APC_DROOP, prop::EXT_APC_PARTICIPATE);
     ActivePowerControl invalid;
     EXPECT_TRUE(valid.isValid());
     EXPECT_FALSE(invalid.isValid());
 }
 
 TEST_F(ActivePowerControlTest, Equality) {
-    ActivePowerControl apc1(GEN_HANDLE, &backend);
-    ActivePowerControl apc2(GEN_HANDLE, &backend);
-    ActivePowerControl apc3(99, &backend);
+    ActivePowerControl apc1(GEN_HANDLE, &backend, prop::EXT_APC_DROOP, prop::EXT_APC_PARTICIPATE);
+    ActivePowerControl apc2(GEN_HANDLE, &backend, prop::EXT_APC_DROOP, prop::EXT_APC_PARTICIPATE);
+    ActivePowerControl apc3(99, &backend, prop::EXT_APC_DROOP, prop::EXT_APC_PARTICIPATE);
     EXPECT_EQ(apc1, apc2);
     EXPECT_NE(apc1, apc3);
 }

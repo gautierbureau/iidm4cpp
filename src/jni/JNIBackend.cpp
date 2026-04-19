@@ -133,12 +133,13 @@ void JNIBackend::cacheMethodIds() {
     checkJNIException(env_);
 
     // Bus
-    cache_.bus_getId    = env_->GetMethodID(cache_.busClass, "getId",    "()Ljava/lang/String;");
-    cache_.bus_getName  = env_->GetMethodID(cache_.busClass, "getNameOrId",  "()Ljava/lang/String;");
-    cache_.bus_getV     = env_->GetMethodID(cache_.busClass, "getV",     "()D");
-    cache_.bus_setV     = env_->GetMethodID(cache_.busClass, "setV",     "(D)Lcom/powsybl/iidm/network/Bus;");
-    cache_.bus_getAngle = env_->GetMethodID(cache_.busClass, "getAngle", "()D");
-    cache_.bus_setAngle = env_->GetMethodID(cache_.busClass, "setAngle", "(D)Lcom/powsybl/iidm/network/Bus;");
+    cache_.bus_getId           = env_->GetMethodID(cache_.busClass, "getId",    "()Ljava/lang/String;");
+    cache_.bus_getName         = env_->GetMethodID(cache_.busClass, "getNameOrId",  "()Ljava/lang/String;");
+    cache_.bus_getV            = env_->GetMethodID(cache_.busClass, "getV",     "()D");
+    cache_.bus_setV            = env_->GetMethodID(cache_.busClass, "setV",     "(D)Lcom/powsybl/iidm/network/Bus;");
+    cache_.bus_getAngle        = env_->GetMethodID(cache_.busClass, "getAngle", "()D");
+    cache_.bus_setAngle        = env_->GetMethodID(cache_.busClass, "setAngle", "(D)Lcom/powsybl/iidm/network/Bus;");
+    cache_.bus_getVoltageLevel = env_->GetMethodID(cache_.busClass, "getVoltageLevel", "()Lcom/powsybl/iidm/network/VoltageLevel;");
     checkJNIException(env_);
 
     // Line
@@ -223,6 +224,10 @@ void JNIBackend::cacheMethodIds() {
         "getNode2", "(Ljava/lang/String;)I");
     cache_.nbView_getInternalConnections = env_->GetMethodID(cache_.vlNodeBreakerViewClass,
         "getInternalConnections", "()Ljava/lang/Iterable;");
+    cache_.nbView_getNodes = env_->GetMethodID(cache_.vlNodeBreakerViewClass,
+        "getNodes", "()[I");
+    cache_.nbView_getTerminal = env_->GetMethodID(cache_.vlNodeBreakerViewClass,
+        "getTerminal", "(I)Lcom/powsybl/iidm/network/Terminal;");
     cacheClass(cache_.internalConnectionClass,
         "com/powsybl/iidm/network/VoltageLevel$NodeBreakerView$InternalConnection");
     cache_.ic_getNode1 = env_->GetMethodID(cache_.internalConnectionClass, "getNode1", "()I");
@@ -361,6 +366,8 @@ void JNIBackend::cacheMethodIds() {
     cache_.battery_setTargetQ = env_->GetMethodID(cache_.batteryClass, "setTargetQ", "(D)Lcom/powsybl/iidm/network/Battery;");
     cache_.battery_getMinP    = env_->GetMethodID(cache_.batteryClass, "getMinP", "()D");
     cache_.battery_getMaxP    = env_->GetMethodID(cache_.batteryClass, "getMaxP", "()D");
+    cache_.bat_getReactiveLimits = env_->GetMethodID(cache_.batteryClass,
+        "getReactiveLimits", "()Lcom/powsybl/iidm/network/ReactiveLimits;");
     cache_.network_getBatteries = env_->GetMethodID(cache_.networkClass, "getBatteries", "()Ljava/lang/Iterable;");
     cache_.network_getBattery   = env_->GetMethodID(cache_.networkClass, "getBattery",
         "(Ljava/lang/String;)Lcom/powsybl/iidm/network/Battery;");
@@ -446,6 +453,7 @@ void JNIBackend::cacheMethodIds() {
     cache_.shuntSection_getG = env_->GetMethodID(cache_.shuntSectionClass, "getG", "()D");
     {
         jclass shuntCls = env_->FindClass("com/powsybl/iidm/network/ShuntCompensator");
+        cache_.shunt_getB                 = env_->GetMethodID(shuntCls, "getB", "()D");
         cache_.shunt_isVoltageRegulatorOn = env_->GetMethodID(shuntCls, "isVoltageRegulatorOn", "()Z");
         cache_.shunt_getTargetV = env_->GetMethodID(shuntCls, "getTargetV", "()D");
         cache_.shunt_getRegulatingTerminal = env_->GetMethodID(shuntCls, "getRegulatingTerminal",
@@ -464,6 +472,8 @@ void JNIBackend::cacheMethodIds() {
             "()Lcom/powsybl/iidm/network/HvdcConverterStation;");
         env_->DeleteLocalRef(hvdcCls);
     }
+    cache_.cs_getHvdcLine = env_->GetMethodID(cache_.hvdcConverterStationClass, "getHvdcLine",
+        "()Lcom/powsybl/iidm/network/HvdcLine;");
     checkJNIException(env_);
 
     // TapChanger: targetDeadband, regulationTerminal
@@ -490,6 +500,25 @@ void JNIBackend::cacheMethodIds() {
     // VoltageLevel BusBreakerView.getBuses()
     cache_.bbView_getBuses = env_->GetMethodID(cache_.vlBusBreakerViewClass,
         "getBuses", "()Ljava/lang/Iterable;");
+    checkJNIException(env_);
+
+    // VoltageLevel per-injector getters
+    cache_.vl_getGenerators = env_->GetMethodID(cache_.voltageLevelClass,
+        "getGenerators", "()Ljava/lang/Iterable;");
+    cache_.vl_getLoads = env_->GetMethodID(cache_.voltageLevelClass,
+        "getLoads", "()Ljava/lang/Iterable;");
+    cache_.vl_getBatteries = env_->GetMethodID(cache_.voltageLevelClass,
+        "getBatteries", "()Ljava/lang/Iterable;");
+    cache_.vl_getShuntCompensators = env_->GetMethodID(cache_.voltageLevelClass,
+        "getShuntCompensators", "()Ljava/lang/Iterable;");
+    cache_.vl_getStaticVarCompensators = env_->GetMethodID(cache_.voltageLevelClass,
+        "getStaticVarCompensators", "()Ljava/lang/Iterable;");
+    cache_.vl_getDanglingLines = env_->GetMethodID(cache_.voltageLevelClass,
+        "getDanglingLines", "()Ljava/lang/Iterable;");
+    cache_.vl_getLccConverterStations = env_->GetMethodID(cache_.voltageLevelClass,
+        "getLccConverterStations", "()Ljava/lang/Iterable;");
+    cache_.vl_getVscConverterStations = env_->GetMethodID(cache_.voltageLevelClass,
+        "getVscConverterStations", "()Ljava/lang/Iterable;");
     checkJNIException(env_);
 
     // Terminal BusBreakerView / NodeBreakerView
@@ -775,6 +804,16 @@ double JNIBackend::getDouble(ObjectHandle h, int property) const {
         case prop::BAT_TARGET_Q: result = env_->CallDoubleMethod(obj, cache_.battery_getTargetQ); break;
         case prop::BAT_MIN_P:    result = env_->CallDoubleMethod(obj, cache_.battery_getMinP);    break;
         case prop::BAT_MAX_P:    result = env_->CallDoubleMethod(obj, cache_.battery_getMaxP);    break;
+        case prop::BAT_MIN_Q: {
+            jobject rl = env_->CallObjectMethod(obj, cache_.bat_getReactiveLimits);
+            result = env_->CallDoubleMethod(rl, cache_.minMaxRL_getMinQ);
+            env_->DeleteLocalRef(rl); break;
+        }
+        case prop::BAT_MAX_Q: {
+            jobject rl = env_->CallObjectMethod(obj, cache_.bat_getReactiveLimits);
+            result = env_->CallDoubleMethod(rl, cache_.minMaxRL_getMaxQ);
+            env_->DeleteLocalRef(rl); break;
+        }
         case prop::GEN_MIN_Q: {
             jobject rl = env_->CallObjectMethod(obj, cache_.gen_getReactiveLimits);
             result = env_->CallDoubleMethod(rl, cache_.minMaxRL_getMinQ);
@@ -812,6 +851,13 @@ double JNIBackend::getDouble(ObjectHandle h, int property) const {
         case prop::SHUNT_SECTION_B: result = env_->CallDoubleMethod(obj, cache_.shuntSection_getB); break;
         case prop::SHUNT_SECTION_G: result = env_->CallDoubleMethod(obj, cache_.shuntSection_getG); break;
         case prop::SHUNT_TARGET_V:  result = env_->CallDoubleMethod(obj, cache_.shunt_getTargetV);  break;
+        case prop::SHUNT_B:         result = env_->CallDoubleMethod(obj, cache_.shunt_getB);        break;
+        case prop::EXT_BAT_APC_DROOP: {
+            jobject apc = fetchExtension(obj, "activePowerControl");
+            if (!apc) throw PropertyNotFoundException("ActivePowerControl extension not present on Battery");
+            result = env_->CallDoubleMethod(apc, cache_.apc_getDroop);
+            env_->DeleteLocalRef(apc); break;
+        }
         case prop::CL_PERMANENT_LIMIT:
             result = env_->CallDoubleMethod(obj, cache_.cl_getPermanentLimit); break;
         case prop::TL_VALUE:
@@ -969,6 +1015,12 @@ void JNIBackend::setDouble(ObjectHandle h, int property, double value) {
         }
         case prop::BAT_TARGET_P: env_->CallObjectMethod(obj, cache_.battery_setTargetP, value); break;
         case prop::BAT_TARGET_Q: env_->CallObjectMethod(obj, cache_.battery_setTargetQ, value); break;
+        case prop::EXT_BAT_APC_DROOP: {
+            jobject apc = fetchExtension(obj, "activePowerControl");
+            if (!apc) throw PropertyNotFoundException("ActivePowerControl extension not present on Battery");
+            env_->CallVoidMethod(apc, cache_.apc_setDroop, value);
+            env_->DeleteLocalRef(apc); break;
+        }
         default:
             throw PropertyNotFoundException("Unknown double property for set: " + std::to_string(property));
     }
@@ -1077,6 +1129,17 @@ int JNIBackend::getInt(ObjectHandle h, int property) const {
         }
         case prop::VSC_REACTIVE_LIMITS_KIND: {
             jobject rl = env_->CallObjectMethod(obj, cache_.vsc_getReactiveLimits);
+            int kind = 0;
+            if (rl) {
+                if (env_->IsInstanceOf(rl, cache_.minMaxRLClass))  kind = 1;
+                else if (env_->IsInstanceOf(rl, cache_.rcCurveClass)) kind = 2;
+                env_->DeleteLocalRef(rl);
+            }
+            checkJNIException(env_);
+            return kind;
+        }
+        case prop::BAT_REACTIVE_LIMITS_KIND: {
+            jobject rl = env_->CallObjectMethod(obj, cache_.bat_getReactiveLimits);
             int kind = 0;
             if (rl) {
                 if (env_->IsInstanceOf(rl, cache_.minMaxRLClass))  kind = 1;
@@ -1331,6 +1394,19 @@ bool JNIBackend::getBool(ObjectHandle h, int property) const {
             if (ext) env_->DeleteLocalRef(ext);
             break;
         }
+        case prop::EXT_BAT_APC_EXISTS: {
+            jobject apc = fetchExtension(obj, "activePowerControl");
+            result = (apc != nullptr) ? JNI_TRUE : JNI_FALSE;
+            if (apc) env_->DeleteLocalRef(apc);
+            break;
+        }
+        case prop::EXT_BAT_APC_PARTICIPATE: {
+            jobject apc = fetchExtension(obj, "activePowerControl");
+            if (!apc) throw PropertyNotFoundException("ActivePowerControl extension not present on Battery");
+            result = env_->CallBooleanMethod(apc, cache_.apc_isParticipate);
+            env_->DeleteLocalRef(apc);
+            break;
+        }
         default: {
             // ThreeWT leg bool properties
             auto twtLegBool = [&](int legBase) -> jboolean {
@@ -1427,6 +1503,13 @@ void JNIBackend::setBool(ObjectHandle h, int property, bool value) {
             if (!ext) throw PropertyNotFoundException("HvdcAngleDroopActivePowerControl extension not present");
             env_->CallObjectMethod(ext, cache_.hadapc_setEnabled, static_cast<jboolean>(value));
             env_->DeleteLocalRef(ext);
+            break;
+        }
+        case prop::EXT_BAT_APC_PARTICIPATE: {
+            jobject apc = fetchExtension(obj, "activePowerControl");
+            if (!apc) throw PropertyNotFoundException("ActivePowerControl extension not present on Battery");
+            env_->CallVoidMethod(apc, cache_.apc_setParticipate, static_cast<jboolean>(value));
+            env_->DeleteLocalRef(apc);
             break;
         }
         default:
@@ -1622,8 +1705,18 @@ std::vector<ObjectHandle> JNIBackend::getChildren(ObjectHandle h, int childType)
     jobject collection = nullptr;
 
     switch (childType) {
-        case prop::GENERATOR:    collection = env_->CallObjectMethod(obj, cache_.network_getGenerators);    break;
-        case prop::LOAD:         collection = env_->CallObjectMethod(obj, cache_.network_getLoads);         break;
+        case prop::GENERATOR:
+            if (env_->IsInstanceOf(obj, cache_.voltageLevelClass))
+                collection = env_->CallObjectMethod(obj, cache_.vl_getGenerators);
+            else
+                collection = env_->CallObjectMethod(obj, cache_.network_getGenerators);
+            break;
+        case prop::LOAD:
+            if (env_->IsInstanceOf(obj, cache_.voltageLevelClass))
+                collection = env_->CallObjectMethod(obj, cache_.vl_getLoads);
+            else
+                collection = env_->CallObjectMethod(obj, cache_.network_getLoads);
+            break;
         case prop::LINE:         collection = env_->CallObjectMethod(obj, cache_.network_getLines);         break;
         case prop::SUBSTATION:   collection = env_->CallObjectMethod(obj, cache_.network_getSubstations);   break;
         case prop::VOLTAGE_LEVEL: collection = env_->CallObjectMethod(obj, cache_.network_getVoltageLevels); break;
@@ -1664,7 +1757,25 @@ std::vector<ObjectHandle> JNIBackend::getChildren(ObjectHandle h, int childType)
             break;
         }
         case prop::BATTERY:
-            collection = env_->CallObjectMethod(obj, cache_.network_getBatteries);
+            if (env_->IsInstanceOf(obj, cache_.voltageLevelClass))
+                collection = env_->CallObjectMethod(obj, cache_.vl_getBatteries);
+            else
+                collection = env_->CallObjectMethod(obj, cache_.network_getBatteries);
+            break;
+        case prop::SHUNT_COMPENSATOR:
+            collection = env_->CallObjectMethod(obj, cache_.vl_getShuntCompensators);
+            break;
+        case prop::STATIC_VAR_COMPENSATOR:
+            collection = env_->CallObjectMethod(obj, cache_.vl_getStaticVarCompensators);
+            break;
+        case prop::DANGLING_LINE:
+            collection = env_->CallObjectMethod(obj, cache_.vl_getDanglingLines);
+            break;
+        case prop::LCC_CONVERTER_STATION:
+            collection = env_->CallObjectMethod(obj, cache_.vl_getLccConverterStations);
+            break;
+        case prop::VSC_CONVERTER_STATION:
+            collection = env_->CallObjectMethod(obj, cache_.vl_getVscConverterStations);
             break;
         case prop::REACTIVE_CURVE_POINT: {
             // obj is a Generator; get its reactive capability curve points
@@ -1816,7 +1927,10 @@ ObjectHandle JNIBackend::getRelated(ObjectHandle h, int relation) const {
             break;
         }
         case prop::REL_VOLTAGE_LEVEL:
-            related = env_->CallObjectMethod(obj, cache_.terminal_getVoltageLevel);
+            if (env_->IsInstanceOf(obj, cache_.busClass))
+                related = env_->CallObjectMethod(obj, cache_.bus_getVoltageLevel);
+            else
+                related = env_->CallObjectMethod(obj, cache_.terminal_getVoltageLevel);
             break;
         case prop::REL_REGULATING_TERMINAL: {
             jclass cls = env_->GetObjectClass(obj);
@@ -1883,6 +1997,35 @@ ObjectHandle JNIBackend::getRelated(ObjectHandle h, int relation) const {
             if (opt) env_->DeleteLocalRef(opt);
             break;
         }
+        case prop::REL_HVDC_LINE:
+            related = env_->CallObjectMethod(obj, cache_.cs_getHvdcLine);
+            break;
+        case prop::REL_TWO_WT_RTC_REG_TERMINAL: {
+            jobject rtc = env_->CallObjectMethod(obj, cache_.twt_getRatioTapChanger);
+            if (rtc) {
+                related = env_->CallObjectMethod(rtc, cache_.tc_getRegulationTerminal);
+                env_->DeleteLocalRef(rtc);
+            }
+            break;
+        }
+        case prop::REL_THREE_WT_LEG1_RTC_REG_TERMINAL:
+        case prop::REL_THREE_WT_LEG2_RTC_REG_TERMINAL:
+        case prop::REL_THREE_WT_LEG3_RTC_REG_TERMINAL: {
+            int legIdx = relation - prop::REL_THREE_WT_LEG1_RTC_REG_TERMINAL;
+            jmethodID getLeg = (legIdx == 0) ? cache_.threeWT_getLeg1
+                             : (legIdx == 1) ? cache_.threeWT_getLeg2
+                             : cache_.threeWT_getLeg3;
+            jobject leg = env_->CallObjectMethod(obj, getLeg);
+            if (leg) {
+                jobject rtc = env_->CallObjectMethod(leg, cache_.leg_getRatioTapChanger);
+                env_->DeleteLocalRef(leg);
+                if (rtc) {
+                    related = env_->CallObjectMethod(rtc, cache_.tc_getRegulationTerminal);
+                    env_->DeleteLocalRef(rtc);
+                }
+            }
+            break;
+        }
         default:
             throw PropertyNotFoundException("Unknown relation: " + std::to_string(relation));
     }
@@ -1930,6 +2073,47 @@ ObjectHandle JNIBackend::findById(int objectType, const std::string& id) const {
 
     ObjectHandle handle = makeHandle(result);
     if (result) env_->DeleteLocalRef(result);
+    return handle;
+}
+
+std::vector<int> JNIBackend::getIntList(ObjectHandle h, int listCode) const {
+    jobject obj = toObject(h);
+    switch (listCode) {
+        case prop::VL_NBV_NODES: {
+            jobject nbv = env_->CallObjectMethod(obj, cache_.vl_getNodeBreakerView);
+            jintArray arr = static_cast<jintArray>(
+                env_->CallObjectMethod(nbv, cache_.nbView_getNodes));
+            env_->DeleteLocalRef(nbv);
+            checkJNIException(env_);
+            if (!arr) return {};
+            jsize len = env_->GetArrayLength(arr);
+            jint* elems = env_->GetIntArrayElements(arr, nullptr);
+            std::vector<int> result(elems, elems + len);
+            env_->ReleaseIntArrayElements(arr, elems, JNI_ABORT);
+            env_->DeleteLocalRef(arr);
+            return result;
+        }
+        default:
+            throw PropertyNotFoundException("Unknown int list code: " + std::to_string(listCode));
+    }
+}
+
+ObjectHandle JNIBackend::getRelatedByIndex(ObjectHandle h, int relation, int index) const {
+    jobject obj = toObject(h);
+    jobject related = nullptr;
+    switch (relation) {
+        case prop::REL_NBV_TERMINAL_AT_NODE: {
+            jobject nbv = env_->CallObjectMethod(obj, cache_.vl_getNodeBreakerView);
+            related = env_->CallObjectMethod(nbv, cache_.nbView_getTerminal, static_cast<jint>(index));
+            env_->DeleteLocalRef(nbv);
+            break;
+        }
+        default:
+            throw PropertyNotFoundException("Unknown indexed relation: " + std::to_string(relation));
+    }
+    checkJNIException(env_);
+    ObjectHandle handle = makeHandle(related);
+    if (related) env_->DeleteLocalRef(related);
     return handle;
 }
 

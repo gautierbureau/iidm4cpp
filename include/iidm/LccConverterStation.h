@@ -7,6 +7,7 @@
 namespace iidm {
 
 class BackendProvider;
+class HvdcLine;
 
 class LccConverterStation {
 public:
@@ -20,6 +21,7 @@ public:
     float getPowerFactor() const;
 
     Terminal getTerminal() const;
+    HvdcLine getHvdcLine() const;
 
     void connect();
     void disconnect();

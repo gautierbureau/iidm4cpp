@@ -25,6 +25,7 @@ public:
     bool hasLinearModel() const;
     double getBPerSection() const;
     double getGPerSection() const;
+    double getB() const;
 
     bool hasNonLinearModel() const;
     ShuntCompensatorNonLinearModel getNonLinearModel() const;

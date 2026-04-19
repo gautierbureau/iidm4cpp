@@ -78,6 +78,7 @@ constexpr int VL_NOMINAL_V                = 600;
 constexpr int VL_LOW_VOLTAGE_LIMIT        = 601;
 constexpr int VL_HIGH_VOLTAGE_LIMIT       = 602;
 constexpr int VL_TOPOLOGY_KIND            = 603;
+constexpr int VL_NBV_NODES               = 604; // int list: node numbers in NodeBreakerView
 
 // ── Line ─────────────────────────────────────────────────────────────────────
 constexpr int LINE_R                      = 700;
@@ -199,6 +200,7 @@ constexpr int SHUNT_SECTION_G             = 1106; // on section handle
 constexpr int SHUNT_VOLTAGE_REGULATOR_ON  = 1107;
 constexpr int SHUNT_TARGET_V              = 1108;
 constexpr int SHUNT_REGULATING_TERMINAL_ID = 1109;
+constexpr int SHUNT_B                     = 1110; // total B for current section count
 
 // ── StaticVarCompensator ─────────────────────────────────────────────────────
 constexpr int SVC_B_MIN                   = 1200;
@@ -231,6 +233,9 @@ constexpr int BAT_TARGET_P                = 1700;
 constexpr int BAT_TARGET_Q                = 1701;
 constexpr int BAT_MIN_P                   = 1702;
 constexpr int BAT_MAX_P                   = 1703;
+constexpr int BAT_REACTIVE_LIMITS_KIND    = 1704; // 0=NONE 1=MIN_MAX 2=CURVE
+constexpr int BAT_MIN_Q                   = 1705;
+constexpr int BAT_MAX_Q                   = 1706;
 
 // ── ReactiveCapabilityCurve point properties ──────────────────────────────────
 constexpr int POINT_P                     = 1800;
@@ -271,6 +276,11 @@ constexpr int EXT_VPRC_SLOPE  = 3401;
 // ── Extension: SlackTerminal ──────────────────────────────────────────────────
 constexpr int EXT_ST_EXISTS = 3500;
 
+// ── Extension: ActivePowerControl (Battery) ───────────────────────────────────
+constexpr int EXT_BAT_APC_EXISTS      = 3600;
+constexpr int EXT_BAT_APC_DROOP       = 3601;
+constexpr int EXT_BAT_APC_PARTICIPATE = 3602;
+
 // ── CurrentLimits ─────────────────────────────────────────────────────────────
 constexpr int CL_PERMANENT_LIMIT          = 1970;
 
@@ -301,5 +311,11 @@ constexpr int REL_SELECTED_OLG1           = 2012; // Branch side 1 or ThreeWT le
 constexpr int REL_SELECTED_OLG2           = 2013; // Branch side 2 or ThreeWT leg 2 → selected OLG
 constexpr int REL_SELECTED_OLG3           = 2014; // ThreeWT leg 3 → selected OLG
 constexpr int REL_OLG_CURRENT_LIMITS      = 2015; // OLG → its CurrentLimits
+constexpr int REL_HVDC_LINE               = 2016; // LCC/VSC converter station → its HvdcLine
+constexpr int REL_TWO_WT_RTC_REG_TERMINAL        = 2017; // TwoWT → RTC regulating terminal
+constexpr int REL_THREE_WT_LEG1_RTC_REG_TERMINAL = 2018; // ThreeWT Leg1 → RTC regulating terminal
+constexpr int REL_THREE_WT_LEG2_RTC_REG_TERMINAL = 2019; // ThreeWT Leg2 → RTC regulating terminal
+constexpr int REL_THREE_WT_LEG3_RTC_REG_TERMINAL = 2020; // ThreeWT Leg3 → RTC regulating terminal
+constexpr int REL_NBV_TERMINAL_AT_NODE    = 2021; // NodeBreakerView: terminal at node (use getRelatedByIndex)
 
 } // namespace iidm::prop

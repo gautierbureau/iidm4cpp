@@ -73,12 +73,17 @@ Terminal Generator::getTerminal() const {
     return Terminal(termHandle, backend_);
 }
 
+Terminal Generator::getRegulatingTerminal() const {
+    ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_REGULATING_TERMINAL);
+    return Terminal(termHandle, backend_);
+}
+
 bool Generator::hasActivePowerControl() const {
     return backend_->getBool(handle_, prop::EXT_APC_EXISTS);
 }
 
 ActivePowerControl Generator::getActivePowerControl() const {
-    return ActivePowerControl(handle_, backend_);
+    return ActivePowerControl(handle_, backend_, prop::EXT_APC_DROOP, prop::EXT_APC_PARTICIPATE);
 }
 
 bool Generator::hasCoordinatedReactiveControl() const {

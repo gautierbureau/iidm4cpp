@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <iidm/Generator.h>
+#include <iidm/Terminal.h>
 #include <iidm/PropertyCodes.h>
 #include "MockBackend.h"
 #include <cmath>
@@ -83,4 +84,16 @@ TEST_F(GeneratorTest, Equality) {
     Generator gen3(99, &backend);
     EXPECT_EQ(gen1, gen2);
     EXPECT_NE(gen1, gen3);
+}
+
+// ── Generator::getRegulatingTerminal ─────────────────────────────────────────
+
+TEST_F(GeneratorTest, GetRegulatingTerminal) {
+    static constexpr ObjectHandle TERM_H = 200;
+    backend.related[{GEN_HANDLE, prop::REL_REGULATING_TERMINAL}] = TERM_H;
+    backend.doubles[{TERM_H, prop::TERMINAL_P}] = 75.0;
+    Generator gen(GEN_HANDLE, &backend);
+    Terminal t = gen.getRegulatingTerminal();
+    EXPECT_TRUE(t.isValid());
+    EXPECT_DOUBLE_EQ(t.getP(), 75.0);
 }

@@ -215,3 +215,18 @@ TEST(TapChangerObjectTest, PtcRegulationTerminalId) {
     ASSERT_TRUE(ptc.has_value());
     EXPECT_EQ(ptc->getRegulationTerminalId(), "T2");
 }
+
+// ── RatioTapChanger::getRegulationTerminal ────────────────────────────────────
+
+TEST(TapChangerObjectTest, RtcGetRegulationTerminal) {
+    auto b = makeTwtBackend();
+    static constexpr ObjectHandle TERM_H = 500;
+    b.related[{TWT_HANDLE, prop::REL_TWO_WT_RTC_REG_TERMINAL}] = TERM_H;
+    b.doubles[{TERM_H, prop::TERMINAL_P}] = 42.0;
+    TwoWindingsTransformer twt(TWT_HANDLE, &b);
+    auto rtc = twt.getRatioTapChanger();
+    ASSERT_TRUE(rtc.has_value());
+    Terminal t = rtc->getRegulationTerminal();
+    EXPECT_TRUE(t.isValid());
+    EXPECT_DOUBLE_EQ(t.getP(), 42.0);
+}

@@ -58,6 +58,11 @@ Terminal StaticVarCompensator::getTerminal() const {
     return Terminal(termHandle, backend_);
 }
 
+Terminal StaticVarCompensator::getRegulatingTerminal() const {
+    ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_REGULATING_TERMINAL);
+    return Terminal(termHandle, backend_);
+}
+
 bool StaticVarCompensator::hasVoltagePerReactivePowerControl() const {
     return backend_->getBool(handle_, prop::EXT_VPRC_EXISTS);
 }

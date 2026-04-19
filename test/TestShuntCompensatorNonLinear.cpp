@@ -108,3 +108,11 @@ TEST_F(ShuntNonLinearTest, GetRegulatingTerminalInvalidWhenMissing) {
     Terminal t = sc.getRegulatingTerminal();
     EXPECT_FALSE(t.isValid());
 }
+
+// ── ShuntCompensator::getB ────────────────────────────────────────────────────
+
+TEST_F(ShuntNonLinearTest, GetB) {
+    backend.doubles[{SHUNT_HANDLE, prop::SHUNT_B}] = 3e-4;
+    ShuntCompensator sc(SHUNT_HANDLE, &backend);
+    EXPECT_DOUBLE_EQ(sc.getB(), 3e-4);
+}

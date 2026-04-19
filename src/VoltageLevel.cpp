@@ -7,6 +7,15 @@
 #include <iidm/Switch.h>
 #include <iidm/BusbarSection.h>
 #include <iidm/InternalConnection.h>
+#include <iidm/Terminal.h>
+#include <iidm/Generator.h>
+#include <iidm/Load.h>
+#include <iidm/Battery.h>
+#include <iidm/ShuntCompensator.h>
+#include <iidm/StaticVarCompensator.h>
+#include <iidm/DanglingLine.h>
+#include <iidm/LccConverterStation.h>
+#include <iidm/VscConverterStation.h>
 
 namespace iidm {
 
@@ -37,6 +46,21 @@ std::vector<InternalConnection> VoltageLevel::NodeBreakerView::getInternalConnec
     result.reserve(handles.size());
     for (auto h : handles) result.emplace_back(h, backend_);
     return result;
+}
+
+std::vector<int> VoltageLevel::NodeBreakerView::getNodes() const {
+    return backend_->getIntList(handle_, prop::VL_NBV_NODES);
+}
+
+std::optional<Switch> VoltageLevel::NodeBreakerView::getSwitch(const std::string& id) const {
+    ObjectHandle h = backend_->findById(prop::SWITCH, id);
+    if (h == INVALID_HANDLE) return std::nullopt;
+    return Switch(h, backend_);
+}
+
+Terminal VoltageLevel::NodeBreakerView::getTerminal(int node) const {
+    ObjectHandle h = backend_->getRelatedByIndex(handle_, prop::REL_NBV_TERMINAL_AT_NODE, node);
+    return Terminal(h, backend_);
 }
 
 // ── BusBreakerView ────────────────────────────────────────────────────────────
@@ -114,6 +138,70 @@ std::vector<BusbarSection> VoltageLevel::getBusbarSections() const {
     for (auto h : handles) {
         result.emplace_back(h, backend_);
     }
+    return result;
+}
+
+std::vector<Generator> VoltageLevel::getGenerators() const {
+    auto handles = backend_->getChildren(handle_, prop::GENERATOR);
+    std::vector<Generator> result;
+    result.reserve(handles.size());
+    for (auto h : handles) result.emplace_back(h, backend_);
+    return result;
+}
+
+std::vector<Load> VoltageLevel::getLoads() const {
+    auto handles = backend_->getChildren(handle_, prop::LOAD);
+    std::vector<Load> result;
+    result.reserve(handles.size());
+    for (auto h : handles) result.emplace_back(h, backend_);
+    return result;
+}
+
+std::vector<Battery> VoltageLevel::getBatteries() const {
+    auto handles = backend_->getChildren(handle_, prop::BATTERY);
+    std::vector<Battery> result;
+    result.reserve(handles.size());
+    for (auto h : handles) result.emplace_back(h, backend_);
+    return result;
+}
+
+std::vector<ShuntCompensator> VoltageLevel::getShuntCompensators() const {
+    auto handles = backend_->getChildren(handle_, prop::SHUNT_COMPENSATOR);
+    std::vector<ShuntCompensator> result;
+    result.reserve(handles.size());
+    for (auto h : handles) result.emplace_back(h, backend_);
+    return result;
+}
+
+std::vector<StaticVarCompensator> VoltageLevel::getStaticVarCompensators() const {
+    auto handles = backend_->getChildren(handle_, prop::STATIC_VAR_COMPENSATOR);
+    std::vector<StaticVarCompensator> result;
+    result.reserve(handles.size());
+    for (auto h : handles) result.emplace_back(h, backend_);
+    return result;
+}
+
+std::vector<DanglingLine> VoltageLevel::getDanglingLines() const {
+    auto handles = backend_->getChildren(handle_, prop::DANGLING_LINE);
+    std::vector<DanglingLine> result;
+    result.reserve(handles.size());
+    for (auto h : handles) result.emplace_back(h, backend_);
+    return result;
+}
+
+std::vector<LccConverterStation> VoltageLevel::getLccConverterStations() const {
+    auto handles = backend_->getChildren(handle_, prop::LCC_CONVERTER_STATION);
+    std::vector<LccConverterStation> result;
+    result.reserve(handles.size());
+    for (auto h : handles) result.emplace_back(h, backend_);
+    return result;
+}
+
+std::vector<VscConverterStation> VoltageLevel::getVscConverterStations() const {
+    auto handles = backend_->getChildren(handle_, prop::VSC_CONVERTER_STATION);
+    std::vector<VscConverterStation> result;
+    result.reserve(handles.size());
+    for (auto h : handles) result.emplace_back(h, backend_);
     return result;
 }
 

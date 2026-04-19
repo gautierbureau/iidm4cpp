@@ -22,6 +22,8 @@ public:
     std::map<std::pair<ObjectHandle,int>, std::vector<ObjectHandle>> children;
     std::map<std::pair<ObjectHandle,int>, ObjectHandle>              related;
     std::map<std::pair<int,std::string>, ObjectHandle>               byId;
+    std::map<std::pair<ObjectHandle,int>, std::vector<int>>          intLists;
+    std::map<std::tuple<ObjectHandle,int,int>, ObjectHandle>         relatedByIndex;
     ObjectHandle networkHandle = 1;
     bool closed = false;
     std::string lastSavedPath;
@@ -71,6 +73,18 @@ public:
     ObjectHandle getRelated(ObjectHandle h, int relation) const override {
         auto it = related.find({h, relation});
         if (it == related.end()) return INVALID_HANDLE;
+        return it->second;
+    }
+
+    std::vector<int> getIntList(ObjectHandle h, int listCode) const override {
+        auto it = intLists.find({h, listCode});
+        if (it == intLists.end()) return {};
+        return it->second;
+    }
+
+    ObjectHandle getRelatedByIndex(ObjectHandle h, int relation, int index) const override {
+        auto it = relatedByIndex.find({h, relation, index});
+        if (it == relatedByIndex.end()) return INVALID_HANDLE;
         return it->second;
     }
 
