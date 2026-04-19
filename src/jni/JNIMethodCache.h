@@ -364,6 +364,22 @@ struct JNIMethodCache {
 
     // ── ThreeWT.Leg.getCurrentLimits ──────────────────────────────────────────
     jmethodID leg_getCurrentLimits      = nullptr;
+
+    // ── OperationalLimitsGroup ────────────────────────────────────────────────────
+    jclass    olgClass                   = nullptr;
+    jmethodID olg_getId                  = nullptr;
+    jmethodID olg_isEmpty                = nullptr;
+    jmethodID olg_getCurrentLimits       = nullptr;
+
+    // ── Branch: getOperationalLimitsGroups and getSelectedOperationalLimitsGroup ──
+    jmethodID branch_getOLGs1            = nullptr;
+    jmethodID branch_getOLGs2            = nullptr;
+    jmethodID branch_getSelectedOLG1     = nullptr;
+    jmethodID branch_getSelectedOLG2     = nullptr;
+
+    // ── ThreeWT.Leg: getOperationalLimitsGroups and getSelectedOLG ────────────────
+    jmethodID leg_getOLGs                = nullptr;
+    jmethodID leg_getSelectedOLG         = nullptr;
 };
 
 } // namespace iidm

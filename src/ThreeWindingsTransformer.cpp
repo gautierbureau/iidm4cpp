@@ -2,6 +2,7 @@
 #include <iidm/BackendProvider.h>
 #include <iidm/CurrentLimits.h>
 #include <iidm/IidmException.h>
+#include <iidm/OperationalLimitsGroup.h>
 #include <iidm/PropertyCodes.h>
 
 namespace iidm {
@@ -80,6 +81,22 @@ std::optional<CurrentLimits> ThreeWindingsTransformer::Leg::getCurrentLimits() c
     ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS1 + legIdx);
     if (h == INVALID_HANDLE) return std::nullopt;
     return CurrentLimits(h, backend_);
+}
+
+std::vector<OperationalLimitsGroup> ThreeWindingsTransformer::Leg::getOperationalLimitsGroups() const {
+    int legIdx = (legBase_ - prop::THREE_WT_LEG1_BASE) / 20;
+    auto handles = backend_->getChildren(handle_, prop::OLG_LEG1 + legIdx);
+    std::vector<OperationalLimitsGroup> result;
+    result.reserve(handles.size());
+    for (auto h : handles) result.emplace_back(h, backend_);
+    return result;
+}
+
+std::optional<OperationalLimitsGroup> ThreeWindingsTransformer::Leg::getSelectedOperationalLimitsGroup() const {
+    int legIdx = (legBase_ - prop::THREE_WT_LEG1_BASE) / 20;
+    ObjectHandle h = backend_->getRelated(handle_, prop::REL_SELECTED_OLG1 + legIdx);
+    if (h == INVALID_HANDLE) return std::nullopt;
+    return OperationalLimitsGroup(h, backend_);
 }
 
 // ── ThreeWindingsTransformer ──────────────────────────────────────────────────

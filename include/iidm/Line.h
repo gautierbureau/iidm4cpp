@@ -2,9 +2,11 @@
 
 #include <iidm/ObjectHandle.h>
 #include <iidm/CurrentLimits.h>
+#include <iidm/OperationalLimitsGroup.h>
 #include <iidm/Terminal.h>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace iidm {
 
@@ -30,6 +32,11 @@ public:
 
     std::optional<CurrentLimits> getCurrentLimits1() const;
     std::optional<CurrentLimits> getCurrentLimits2() const;
+
+    std::vector<OperationalLimitsGroup> getOperationalLimitsGroups1() const;
+    std::vector<OperationalLimitsGroup> getOperationalLimitsGroups2() const;
+    std::optional<OperationalLimitsGroup> getSelectedOperationalLimitsGroup1() const;
+    std::optional<OperationalLimitsGroup> getSelectedOperationalLimitsGroup2() const;
 
     void connect();
     void disconnect();

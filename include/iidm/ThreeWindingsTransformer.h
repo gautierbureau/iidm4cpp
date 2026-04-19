@@ -2,12 +2,14 @@
 
 #include <iidm/ObjectHandle.h>
 #include <iidm/CurrentLimits.h>
+#include <iidm/OperationalLimitsGroup.h>
 #include <iidm/Enums.h>
 #include <iidm/RatioTapChanger.h>
 #include <iidm/PhaseTapChanger.h>
 #include <iidm/Terminal.h>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace iidm {
 
@@ -39,6 +41,9 @@ public:
         Terminal getTerminal() const;
 
         std::optional<CurrentLimits> getCurrentLimits() const;
+
+        std::vector<OperationalLimitsGroup> getOperationalLimitsGroups() const;
+        std::optional<OperationalLimitsGroup> getSelectedOperationalLimitsGroup() const;
 
         bool isValid() const { return handle_ != INVALID_HANDLE; }
 

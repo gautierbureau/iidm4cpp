@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <iidm/Line.h>
 #include <iidm/CurrentLimits.h>
+#include <iidm/OperationalLimitsGroup.h>
 #include <iidm/PropertyCodes.h>
 #include "MockBackend.h"
 
@@ -114,4 +115,60 @@ TEST_F(LineTest, GetCurrentLimitsNoTemporaryLimits) {
     auto cl = line.getCurrentLimits1();
     ASSERT_TRUE(cl.has_value());
     EXPECT_EQ(cl->getTemporaryLimits().size(), 0u);
+}
+
+// ── OperationalLimitsGroup ────────────────────────────────────────────────────
+
+static constexpr ObjectHandle OLG1_HANDLE = 80;
+static constexpr ObjectHandle OLG2_HANDLE = 81;
+
+TEST_F(LineTest, GetOperationalLimitsGroupsEmpty) {
+    Line line(LINE_HANDLE, &backend);
+    EXPECT_EQ(line.getOperationalLimitsGroups1().size(), 0u);
+    EXPECT_FALSE(line.getSelectedOperationalLimitsGroup1().has_value());
+}
+
+TEST_F(LineTest, GetOperationalLimitsGroups1) {
+    backend.children[{LINE_HANDLE, prop::OLG_SIDE1}] = {OLG1_HANDLE};
+    backend.strings[{OLG1_HANDLE, prop::OLG_ID}]    = "DEFAULT";
+    backend.bools  [{OLG1_HANDLE, prop::OLG_EMPTY}]  = false;
+    Line line(LINE_HANDLE, &backend);
+    auto olgs = line.getOperationalLimitsGroups1();
+    ASSERT_EQ(olgs.size(), 1u);
+    EXPECT_TRUE(olgs[0].isValid());
+    EXPECT_EQ(olgs[0].getId(), "DEFAULT");
+    EXPECT_FALSE(olgs[0].isEmpty());
+}
+
+TEST_F(LineTest, GetSelectedOperationalLimitsGroup1) {
+    backend.related[{LINE_HANDLE, prop::REL_SELECTED_OLG1}] = OLG1_HANDLE;
+    backend.strings[{OLG1_HANDLE, prop::OLG_ID}] = "DEFAULT";
+    Line line(LINE_HANDLE, &backend);
+    auto olg = line.getSelectedOperationalLimitsGroup1();
+    ASSERT_TRUE(olg.has_value());
+    EXPECT_EQ(olg->getId(), "DEFAULT");
+}
+
+TEST_F(LineTest, GetCurrentLimitsFromOLG) {
+    backend.related[{LINE_HANDLE, prop::REL_SELECTED_OLG1}] = OLG1_HANDLE;
+    backend.strings[{OLG1_HANDLE, prop::OLG_ID}]              = "DEFAULT";
+    backend.related[{OLG1_HANDLE, prop::REL_OLG_CURRENT_LIMITS}] = CL1_HANDLE;
+    backend.doubles[{CL1_HANDLE, prop::CL_PERMANENT_LIMIT}]   = 1000.0;
+    Line line(LINE_HANDLE, &backend);
+    auto olg = line.getSelectedOperationalLimitsGroup1();
+    ASSERT_TRUE(olg.has_value());
+    auto cl = olg->getCurrentLimits();
+    ASSERT_TRUE(cl.has_value());
+    EXPECT_DOUBLE_EQ(cl->getPermanentLimit(), 1000.0);
+}
+
+TEST_F(LineTest, OlgNoCurrentLimits) {
+    backend.related[{LINE_HANDLE, prop::REL_SELECTED_OLG2}] = OLG2_HANDLE;
+    backend.strings[{OLG2_HANDLE, prop::OLG_ID}]            = "EMPTY";
+    backend.bools  [{OLG2_HANDLE, prop::OLG_EMPTY}]          = true;
+    Line line(LINE_HANDLE, &backend);
+    auto olg = line.getSelectedOperationalLimitsGroup2();
+    ASSERT_TRUE(olg.has_value());
+    EXPECT_TRUE(olg->isEmpty());
+    EXPECT_FALSE(olg->getCurrentLimits().has_value());
 }

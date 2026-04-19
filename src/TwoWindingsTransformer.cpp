@@ -3,6 +3,7 @@
 #include <iidm/PhaseTapChanger.h>
 #include <iidm/BackendProvider.h>
 #include <iidm/IidmException.h>
+#include <iidm/OperationalLimitsGroup.h>
 #include <iidm/PropertyCodes.h>
 
 namespace iidm {
@@ -186,6 +187,34 @@ std::optional<CurrentLimits> TwoWindingsTransformer::getCurrentLimits2() const {
     ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS2);
     if (h == INVALID_HANDLE) return std::nullopt;
     return CurrentLimits(h, backend_);
+}
+
+std::vector<OperationalLimitsGroup> TwoWindingsTransformer::getOperationalLimitsGroups1() const {
+    auto handles = backend_->getChildren(handle_, prop::OLG_SIDE1);
+    std::vector<OperationalLimitsGroup> result;
+    result.reserve(handles.size());
+    for (auto h : handles) result.emplace_back(h, backend_);
+    return result;
+}
+
+std::vector<OperationalLimitsGroup> TwoWindingsTransformer::getOperationalLimitsGroups2() const {
+    auto handles = backend_->getChildren(handle_, prop::OLG_SIDE2);
+    std::vector<OperationalLimitsGroup> result;
+    result.reserve(handles.size());
+    for (auto h : handles) result.emplace_back(h, backend_);
+    return result;
+}
+
+std::optional<OperationalLimitsGroup> TwoWindingsTransformer::getSelectedOperationalLimitsGroup1() const {
+    ObjectHandle h = backend_->getRelated(handle_, prop::REL_SELECTED_OLG1);
+    if (h == INVALID_HANDLE) return std::nullopt;
+    return OperationalLimitsGroup(h, backend_);
+}
+
+std::optional<OperationalLimitsGroup> TwoWindingsTransformer::getSelectedOperationalLimitsGroup2() const {
+    ObjectHandle h = backend_->getRelated(handle_, prop::REL_SELECTED_OLG2);
+    if (h == INVALID_HANDLE) return std::nullopt;
+    return OperationalLimitsGroup(h, backend_);
 }
 
 void TwoWindingsTransformer::connect() {
