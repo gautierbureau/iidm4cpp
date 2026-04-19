@@ -95,6 +95,11 @@ public final class PropertyDispatcher {
             case BAT_TARGET_Q -> ((Battery) obj).getTargetQ();
             case BAT_MIN_P    -> ((Battery) obj).getMinP();
             case BAT_MAX_P    -> ((Battery) obj).getMaxP();
+            case BAT_MIN_Q    -> ((Battery) obj).getReactiveLimits(MinMaxReactiveLimits.class).getMinQ();
+            case BAT_MAX_Q    -> ((Battery) obj).getReactiveLimits(MinMaxReactiveLimits.class).getMaxQ();
+            case EXT_BAT_APC_DROOP -> ((Battery) obj).getExtension(ActivePowerControl.class).getDroop();
+            // ShuntCompensator total B for current section count
+            case SHUNT_B -> ((ShuntCompensator) obj).getB();
             // Generator reactive limits (min-max kind)
             case GEN_MIN_Q -> ((Generator) obj).getReactiveLimits(MinMaxReactiveLimits.class).getMinQ();
             case GEN_MAX_Q -> ((Generator) obj).getReactiveLimits(MinMaxReactiveLimits.class).getMaxQ();
@@ -193,6 +198,7 @@ public final class PropertyDispatcher {
             case TWO_WT_PTC_REG_VALUE -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().setRegulationValue(value);
             case BAT_TARGET_P -> ((Battery) obj).setTargetP(value);
             case BAT_TARGET_Q -> ((Battery) obj).setTargetQ(value);
+            case EXT_BAT_APC_DROOP -> ((Battery) obj).getExtension(ActivePowerControl.class).setDroop(value);
             case THREE_WT_LEG1_RTC_TARGET_V  -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().setTargetV(value);
             case THREE_WT_LEG1_PTC_REG_VALUE -> ((ThreeWindingsTransformer) obj).getLeg1().getPhaseTapChanger().setRegulationValue(value);
             case THREE_WT_LEG2_RTC_TARGET_V  -> ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger().setTargetV(value);
@@ -231,6 +237,13 @@ public final class PropertyDispatcher {
             // Generator reactive limits kind: 0=NONE, 1=MIN_MAX, 2=CURVE
             case GEN_REACTIVE_LIMITS_KIND -> {
                 ReactiveLimits rl = ((Generator) obj).getReactiveLimits();
+                if (rl instanceof MinMaxReactiveLimits) yield 1;
+                if (rl instanceof ReactiveCapabilityCurve) yield 2;
+                yield 0;
+            }
+            // Battery reactive limits kind: 0=NONE, 1=MIN_MAX, 2=CURVE
+            case BAT_REACTIVE_LIMITS_KIND -> {
+                ReactiveLimits rl = ((Battery) obj).getReactiveLimits();
                 if (rl instanceof MinMaxReactiveLimits) yield 1;
                 if (rl instanceof ReactiveCapabilityCurve) yield 2;
                 yield 0;
@@ -334,6 +347,8 @@ public final class PropertyDispatcher {
             case TWO_WT_PTC_REGULATING -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().isRegulating();
             case EXT_APC_EXISTS      -> ((Generator) obj).getExtension(ActivePowerControl.class) != null;
             case EXT_APC_PARTICIPATE -> ((Generator) obj).getExtension(ActivePowerControl.class).isParticipate();
+            case EXT_BAT_APC_EXISTS      -> ((Battery) obj).getExtension(ActivePowerControl.class) != null;
+            case EXT_BAT_APC_PARTICIPATE -> ((Battery) obj).getExtension(ActivePowerControl.class).isParticipate();
             case EXT_CRC_EXISTS      -> ((Generator) obj).getExtension(CoordinatedReactiveControl.class) != null;
             case EXT_HADAPC_EXISTS   -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class) != null;
             case EXT_HADAPC_ENABLED  -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).isEnabled();
@@ -375,7 +390,8 @@ public final class PropertyDispatcher {
             case SW_RETAINED -> ((Switch) obj).setRetained(bval);
             case TWO_WT_RTC_REGULATING -> ((TwoWindingsTransformer) obj).getRatioTapChanger().setRegulating(bval);
             case TWO_WT_PTC_REGULATING -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().setRegulating(bval);
-            case EXT_APC_PARTICIPATE -> ((Generator) obj).getExtension(ActivePowerControl.class).setParticipate(bval);
+            case EXT_APC_PARTICIPATE     -> ((Generator) obj).getExtension(ActivePowerControl.class).setParticipate(bval);
+            case EXT_BAT_APC_PARTICIPATE -> ((Battery) obj).getExtension(ActivePowerControl.class).setParticipate(bval);
             case EXT_HADAPC_ENABLED  -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).setEnabled(bval);
             case THREE_WT_LEG1_RTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().setRegulating(bval);
             case THREE_WT_LEG1_PTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg1().getPhaseTapChanger().setRegulating(bval);
@@ -459,19 +475,44 @@ public final class PropertyDispatcher {
     public static long[] getChildren(long parentHandle, int childType) {
         Object obj = NetworkRegistry.lookup(parentHandle);
         Stream<?> children = switch (childType) {
-            case GENERATOR   -> ((Network) obj).getGeneratorStream();
-            case LOAD        -> ((Network) obj).getLoadStream();
+            case GENERATOR -> {
+                if (obj instanceof VoltageLevel vl) yield StreamSupport.stream(vl.getConnectables(Generator.class).spliterator(), false);
+                yield ((Network) obj).getGeneratorStream();
+            }
+            case LOAD -> {
+                if (obj instanceof VoltageLevel vl) yield StreamSupport.stream(vl.getConnectables(Load.class).spliterator(), false);
+                yield ((Network) obj).getLoadStream();
+            }
+            case BATTERY -> {
+                if (obj instanceof VoltageLevel vl) yield StreamSupport.stream(vl.getConnectables(Battery.class).spliterator(), false);
+                yield ((Network) obj).getBatteryStream();
+            }
+            case SHUNT_COMPENSATOR -> {
+                if (obj instanceof VoltageLevel vl) yield StreamSupport.stream(vl.getConnectables(ShuntCompensator.class).spliterator(), false);
+                yield ((Network) obj).getShuntCompensatorStream();
+            }
+            case STATIC_VAR_COMPENSATOR -> {
+                if (obj instanceof VoltageLevel vl) yield StreamSupport.stream(vl.getConnectables(StaticVarCompensator.class).spliterator(), false);
+                yield ((Network) obj).getStaticVarCompensatorStream();
+            }
+            case DANGLING_LINE -> {
+                if (obj instanceof VoltageLevel vl) yield StreamSupport.stream(vl.getConnectables(DanglingLine.class).spliterator(), false);
+                yield ((Network) obj).getDanglingLineStream();
+            }
+            case LCC_CONVERTER_STATION -> {
+                if (obj instanceof VoltageLevel vl) yield StreamSupport.stream(vl.getConnectables(LccConverterStation.class).spliterator(), false);
+                yield ((Network) obj).getLccConverterStationStream();
+            }
+            case VSC_CONVERTER_STATION -> {
+                if (obj instanceof VoltageLevel vl) yield StreamSupport.stream(vl.getConnectables(VscConverterStation.class).spliterator(), false);
+                yield ((Network) obj).getVscConverterStationStream();
+            }
             case LINE        -> ((Network) obj).getLineStream();
             case SUBSTATION  -> ((Network) obj).getSubstationStream();
             case VOLTAGE_LEVEL -> ((Network) obj).getVoltageLevelStream();
             case TWO_WINDINGS_TRANSFORMER   -> ((Network) obj).getTwoWindingsTransformerStream();
             case THREE_WINDINGS_TRANSFORMER -> ((Network) obj).getThreeWindingsTransformerStream();
             case HVDC_LINE           -> ((Network) obj).getHvdcLineStream();
-            case DANGLING_LINE       -> ((Network) obj).getDanglingLineStream();
-            case SHUNT_COMPENSATOR   -> ((Network) obj).getShuntCompensatorStream();
-            case STATIC_VAR_COMPENSATOR -> ((Network) obj).getStaticVarCompensatorStream();
-            case VSC_CONVERTER_STATION  -> ((Network) obj).getVscConverterStationStream();
-            case LCC_CONVERTER_STATION  -> ((Network) obj).getLccConverterStationStream();
             case SWITCH -> {
                 VoltageLevel vl = (VoltageLevel) obj;
                 if (vl.getTopologyKind() == TopologyKind.NODE_BREAKER) {
@@ -488,7 +529,6 @@ public final class PropertyDispatcher {
                 ((VoltageLevel) obj).getNodeBreakerView().getInternalConnections().spliterator(), false);
             case BUS -> StreamSupport.stream(
                 ((VoltageLevel) obj).getBusBreakerView().getBuses().spliterator(), false);
-            case BATTERY -> ((Network) obj).getBatteryStream();
             case REACTIVE_CURVE_POINT -> {
                 Generator gen = (Generator) obj;
                 Collection<ReactiveCapabilityCurve.Point> pts =
@@ -563,7 +603,15 @@ public final class PropertyDispatcher {
                 Terminal t = (Terminal) obj;
                 yield t.getBusView().getConnectableBus();
             }
-            case REL_VOLTAGE_LEVEL -> ((Terminal) obj).getVoltageLevel();
+            case REL_VOLTAGE_LEVEL -> {
+                if (obj instanceof Bus b) yield b.getVoltageLevel();
+                yield ((Terminal) obj).getVoltageLevel();
+            }
+            case REL_HVDC_LINE -> ((HvdcConverterStation<?>) obj).getHvdcLine();
+            case REL_TWO_WT_RTC_REG_TERMINAL        -> ((TwoWindingsTransformer) obj).getRatioTapChanger().getRegulationTerminal();
+            case REL_THREE_WT_LEG1_RTC_REG_TERMINAL -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().getRegulationTerminal();
+            case REL_THREE_WT_LEG2_RTC_REG_TERMINAL -> ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger().getRegulationTerminal();
+            case REL_THREE_WT_LEG3_RTC_REG_TERMINAL -> ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().getRegulationTerminal();
             case REL_SUBSTATION    -> ((VoltageLevel) obj).getSubstation().orElse(null);
             case REL_SLACK_TERMINAL -> {
                 VoltageLevel vl = (VoltageLevel) obj;
@@ -603,6 +651,28 @@ public final class PropertyDispatcher {
             case REL_SELECTED_OLG3 -> ((ThreeWindingsTransformer) obj).getLeg3().getSelectedOperationalLimitsGroup().orElse(null);
             case REL_OLG_CURRENT_LIMITS -> ((OperationalLimitsGroup) obj).getCurrentLimits().orElse(null);
             default -> throw new IllegalArgumentException("Unknown relation: " + relation);
+        };
+        if (related == null) return 0L; // INVALID_HANDLE
+        return NetworkRegistry.register(related);
+    }
+
+    // ── Int list (navigation) ─────────────────────────────────────────────
+
+    public static int[] getIntList(long handle, int listCode) {
+        Object obj = NetworkRegistry.lookup(handle);
+        return switch (listCode) {
+            case VL_NBV_NODES -> ((VoltageLevel) obj).getNodeBreakerView().getNodes();
+            default -> throw new IllegalArgumentException("Unknown int list code: " + listCode);
+        };
+    }
+
+    // ── Related by index (navigation) ─────────────────────────────────────
+
+    public static long getRelatedByIndex(long handle, int relation, int index) {
+        Object obj = NetworkRegistry.lookup(handle);
+        Object related = switch (relation) {
+            case REL_NBV_TERMINAL_AT_NODE -> ((VoltageLevel) obj).getNodeBreakerView().getTerminal(index);
+            default -> throw new IllegalArgumentException("Unknown indexed relation: " + relation);
         };
         if (related == null) return 0L; // INVALID_HANDLE
         return NetworkRegistry.register(related);
