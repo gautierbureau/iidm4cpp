@@ -34,6 +34,11 @@ constexpr int SHUNT_SECTION               = 28;
 constexpr int INTERNAL_CONNECTION         = 29;
 constexpr int CURRENT_LIMITS              = 30;
 constexpr int TEMPORARY_LIMIT             = 31;
+constexpr int OLG_SIDE1                   = 32; // all OperationalLimitsGroups for Branch side 1
+constexpr int OLG_SIDE2                   = 33; // all OperationalLimitsGroups for Branch side 2
+constexpr int OLG_LEG1                    = 34; // all OperationalLimitsGroups for ThreeWT leg 1
+constexpr int OLG_LEG2                    = 35; // all OperationalLimitsGroups for ThreeWT leg 2
+constexpr int OLG_LEG3                    = 36; // all OperationalLimitsGroups for ThreeWT leg 3
 
 // ── Shared properties (applicable to many types) ────────────────────────────
 constexpr int ID                          = 100;
@@ -275,6 +280,10 @@ constexpr int TL_ACCEPTABLE_DURATION      = 1972;
 constexpr int TL_FICTITIOUS               = 1973;
 constexpr int TL_NAME                     = 1974;
 
+// ── OperationalLimitsGroup ────────────────────────────────────────────────────
+constexpr int OLG_ID                      = 1980; // string: group identifier
+constexpr int OLG_EMPTY                   = 1981; // bool: isEmpty()
+
 // ── Relations (used in getRelated) ──────────────────────────────────────────
 constexpr int REL_TERMINAL1               = 2000;
 constexpr int REL_TERMINAL2               = 2001;
@@ -288,5 +297,9 @@ constexpr int REL_REGULATING_TERMINAL     = 2008;
 constexpr int REL_CURRENT_LIMITS1         = 2009; // Branch side 1, or ThreeWT leg 1
 constexpr int REL_CURRENT_LIMITS2         = 2010; // Branch side 2, or ThreeWT leg 2
 constexpr int REL_CURRENT_LIMITS3         = 2011; // ThreeWT leg 3
+constexpr int REL_SELECTED_OLG1           = 2012; // Branch side 1 or ThreeWT leg 1 → selected OLG
+constexpr int REL_SELECTED_OLG2           = 2013; // Branch side 2 or ThreeWT leg 2 → selected OLG
+constexpr int REL_SELECTED_OLG3           = 2014; // ThreeWT leg 3 → selected OLG
+constexpr int REL_OLG_CURRENT_LIMITS      = 2015; // OLG → its CurrentLimits
 
 } // namespace iidm::prop

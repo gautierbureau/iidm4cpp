@@ -41,6 +41,11 @@ public final class PropertyCodes {
     public static final int INTERNAL_CONNECTION         = 29;
     public static final int CURRENT_LIMITS              = 30;
     public static final int TEMPORARY_LIMIT             = 31;
+    public static final int OLG_SIDE1                   = 32; // all OperationalLimitsGroups for Branch side 1
+    public static final int OLG_SIDE2                   = 33; // all OperationalLimitsGroups for Branch side 2
+    public static final int OLG_LEG1                    = 34; // all OperationalLimitsGroups for ThreeWT leg 1
+    public static final int OLG_LEG2                    = 35; // all OperationalLimitsGroups for ThreeWT leg 2
+    public static final int OLG_LEG3                    = 36; // all OperationalLimitsGroups for ThreeWT leg 3
 
     // ── Shared properties ─────────────────────────────────────────────────
     public static final int ID      = 100;
@@ -318,6 +323,10 @@ public final class PropertyCodes {
     public static final int TL_FICTITIOUS         = 1973;
     public static final int TL_NAME               = 1974;
 
+    // ── OperationalLimitsGroup ────────────────────────────────────────────
+    public static final int OLG_ID    = 1980; // string: group identifier
+    public static final int OLG_EMPTY = 1981; // bool: isEmpty()
+
     // ── Relations ────────────────────────────────────────────────────────
     public static final int REL_TERMINAL1        = 2000;
     public static final int REL_TERMINAL2        = 2001;
@@ -331,4 +340,8 @@ public final class PropertyCodes {
     public static final int REL_CURRENT_LIMITS1      = 2009; // Branch side 1 or ThreeWT leg 1
     public static final int REL_CURRENT_LIMITS2      = 2010; // Branch side 2 or ThreeWT leg 2
     public static final int REL_CURRENT_LIMITS3      = 2011; // ThreeWT leg 3
+    public static final int REL_SELECTED_OLG1        = 2012; // Branch side 1 or ThreeWT leg 1 → selected OLG
+    public static final int REL_SELECTED_OLG2        = 2013; // Branch side 2 or ThreeWT leg 2 → selected OLG
+    public static final int REL_SELECTED_OLG3        = 2014; // ThreeWT leg 3 → selected OLG
+    public static final int REL_OLG_CURRENT_LIMITS   = 2015; // OLG → its CurrentLimits
 }

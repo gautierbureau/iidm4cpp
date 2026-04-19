@@ -353,6 +353,7 @@ public final class PropertyDispatcher {
             case THREE_WT_LEG3_RTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().isRegulating();
             case THREE_WT_LEG3_PTC_EXISTS     -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger() != null;
             case THREE_WT_LEG3_PTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().isRegulating();
+            case OLG_EMPTY -> ((OperationalLimitsGroup) obj).isEmpty();
             default -> throw new IllegalArgumentException("Unknown bool property: " + property);
         };
         return val ? 1 : 0;
@@ -437,6 +438,7 @@ public final class PropertyDispatcher {
                 Terminal rt = ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().getRegulationTerminal();
                 yield rt != null ? rt.getConnectable().getId() : "";
             }
+            case OLG_ID -> ((OperationalLimitsGroup) obj).getId();
             default -> throw new IllegalArgumentException("Unknown string property: " + property);
         };
     }
@@ -530,6 +532,11 @@ public final class PropertyDispatcher {
                 yield sc.getModel(ShuntCompensatorNonLinearModel.class).getAllSections().stream();
             }
             case TEMPORARY_LIMIT -> ((LoadingLimits) obj).getTemporaryLimits().stream();
+            case OLG_SIDE1 -> ((Branch<?>) obj).getOperationalLimitsGroups1().stream();
+            case OLG_SIDE2 -> ((Branch<?>) obj).getOperationalLimitsGroups2().stream();
+            case OLG_LEG1  -> ((ThreeWindingsTransformer) obj).getLeg1().getOperationalLimitsGroups().stream();
+            case OLG_LEG2  -> ((ThreeWindingsTransformer) obj).getLeg2().getOperationalLimitsGroups().stream();
+            case OLG_LEG3  -> ((ThreeWindingsTransformer) obj).getLeg3().getOperationalLimitsGroups().stream();
             default -> throw new IllegalArgumentException("Unknown child type: " + childType);
         };
         return children.mapToLong(NetworkRegistry::register).toArray();
@@ -583,6 +590,18 @@ public final class PropertyDispatcher {
                 yield ((Branch<?>) obj).getCurrentLimits2().orElse(null);
             }
             case REL_CURRENT_LIMITS3 -> ((ThreeWindingsTransformer) obj).getLeg3().getCurrentLimits().orElse(null);
+            case REL_SELECTED_OLG1 -> {
+                if (obj instanceof ThreeWindingsTransformer twt)
+                    yield twt.getLeg1().getSelectedOperationalLimitsGroup().orElse(null);
+                yield ((Branch<?>) obj).getSelectedOperationalLimitsGroup1().orElse(null);
+            }
+            case REL_SELECTED_OLG2 -> {
+                if (obj instanceof ThreeWindingsTransformer twt)
+                    yield twt.getLeg2().getSelectedOperationalLimitsGroup().orElse(null);
+                yield ((Branch<?>) obj).getSelectedOperationalLimitsGroup2().orElse(null);
+            }
+            case REL_SELECTED_OLG3 -> ((ThreeWindingsTransformer) obj).getLeg3().getSelectedOperationalLimitsGroup().orElse(null);
+            case REL_OLG_CURRENT_LIMITS -> ((OperationalLimitsGroup) obj).getCurrentLimits().orElse(null);
             default -> throw new IllegalArgumentException("Unknown relation: " + relation);
         };
         if (related == null) return 0L; // INVALID_HANDLE

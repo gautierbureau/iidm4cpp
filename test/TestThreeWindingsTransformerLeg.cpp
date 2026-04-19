@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <iidm/ThreeWindingsTransformer.h>
 #include <iidm/CurrentLimits.h>
+#include <iidm/OperationalLimitsGroup.h>
 #include <iidm/PropertyCodes.h>
 #include "MockBackend.h"
 
@@ -127,8 +128,8 @@ TEST_F(ThreeWindingsTransformerLegTest, LegTerminals) {
 
 // ── Leg::getCurrentLimits ─────────────────────────────────────────────────────
 
-static constexpr ObjectHandle CL1_H = 80;
-static constexpr ObjectHandle CL3_H = 81;
+static constexpr ObjectHandle CL1_H = 85;
+static constexpr ObjectHandle CL3_H = 86;
 
 TEST_F(ThreeWindingsTransformerLegTest, Leg1NoCurrentLimits) {
     ThreeWindingsTransformer twt(TWT_HANDLE, &backend);
@@ -153,4 +154,38 @@ TEST_F(ThreeWindingsTransformerLegTest, Leg3CurrentLimits) {
     auto cl = twt.getLeg3().getCurrentLimits();
     ASSERT_TRUE(cl.has_value());
     EXPECT_DOUBLE_EQ(cl->getPermanentLimit(), 300.0);
+}
+
+// ── Leg::getOperationalLimitsGroups / getSelectedOperationalLimitsGroup ────────
+
+static constexpr ObjectHandle OLG_H = 90;
+
+TEST_F(ThreeWindingsTransformerLegTest, Leg1NoOLGs) {
+    ThreeWindingsTransformer twt(TWT_HANDLE, &backend);
+    EXPECT_EQ(twt.getLeg1().getOperationalLimitsGroups().size(), 0u);
+    EXPECT_FALSE(twt.getLeg1().getSelectedOperationalLimitsGroup().has_value());
+}
+
+TEST_F(ThreeWindingsTransformerLegTest, Leg1OLGs) {
+    // Leg1 uses OLG_LEG1 (34)
+    backend.children[{TWT_HANDLE, prop::OLG_LEG1}] = {OLG_H};
+    backend.strings [{OLG_H, prop::OLG_ID}]        = "DEFAULT";
+    backend.bools   [{OLG_H, prop::OLG_EMPTY}]     = false;
+    ThreeWindingsTransformer twt(TWT_HANDLE, &backend);
+    auto olgs = twt.getLeg1().getOperationalLimitsGroups();
+    ASSERT_EQ(olgs.size(), 1u);
+    EXPECT_EQ(olgs[0].getId(), "DEFAULT");
+}
+
+TEST_F(ThreeWindingsTransformerLegTest, Leg1SelectedOLGWithCurrentLimits) {
+    backend.related[{TWT_HANDLE, prop::REL_SELECTED_OLG1}]     = OLG_H;
+    backend.strings[{OLG_H, prop::OLG_ID}]                     = "DEFAULT";
+    backend.related[{OLG_H, prop::REL_OLG_CURRENT_LIMITS}]     = CL1_H;
+    backend.doubles[{CL1_H, prop::CL_PERMANENT_LIMIT}]          = 500.0;
+    ThreeWindingsTransformer twt(TWT_HANDLE, &backend);
+    auto olg = twt.getLeg1().getSelectedOperationalLimitsGroup();
+    ASSERT_TRUE(olg.has_value());
+    auto cl = olg->getCurrentLimits();
+    ASSERT_TRUE(cl.has_value());
+    EXPECT_DOUBLE_EQ(cl->getPermanentLimit(), 500.0);
 }

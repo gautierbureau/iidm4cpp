@@ -538,6 +538,23 @@ void JNIBackend::cacheMethodIds() {
         "getCurrentLimits", "()Ljava/util/Optional;");
     checkJNIException(env_);
 
+    // OperationalLimitsGroup
+    cacheClass(cache_.olgClass, "com/powsybl/iidm/network/OperationalLimitsGroup");
+    cache_.olg_getId           = env_->GetMethodID(cache_.olgClass, "getId", "()Ljava/lang/String;");
+    cache_.olg_isEmpty         = env_->GetMethodID(cache_.olgClass, "isEmpty", "()Z");
+    cache_.olg_getCurrentLimits = env_->GetMethodID(cache_.olgClass, "getCurrentLimits", "()Ljava/util/Optional;");
+    checkJNIException(env_);
+
+    // Branch OLG methods (branchClass already cached)
+    cache_.branch_getOLGs1        = env_->GetMethodID(cache_.branchClass, "getOperationalLimitsGroups1", "()Ljava/util/Collection;");
+    cache_.branch_getOLGs2        = env_->GetMethodID(cache_.branchClass, "getOperationalLimitsGroups2", "()Ljava/util/Collection;");
+    cache_.branch_getSelectedOLG1 = env_->GetMethodID(cache_.branchClass, "getSelectedOperationalLimitsGroup1", "()Ljava/util/Optional;");
+    cache_.branch_getSelectedOLG2 = env_->GetMethodID(cache_.branchClass, "getSelectedOperationalLimitsGroup2", "()Ljava/util/Optional;");
+    // ThreeWT.Leg OLG methods (threeWTLegClass already cached)
+    cache_.leg_getOLGs        = env_->GetMethodID(cache_.threeWTLegClass, "getOperationalLimitsGroups", "()Ljava/util/Collection;");
+    cache_.leg_getSelectedOLG = env_->GetMethodID(cache_.threeWTLegClass, "getSelectedOperationalLimitsGroup", "()Ljava/util/Optional;");
+    checkJNIException(env_);
+
     // Retrieve the network object via IidmBridgeRegistry
     jstring jId = env_->NewStringUTF(networkId_.c_str());
     jobject netObj = env_->CallStaticObjectMethod(cache_.iidmRegistryClass, cache_.registry_get, jId);
@@ -1357,6 +1374,8 @@ bool JNIBackend::getBool(ObjectHandle h, int property) const {
                 result = twtLegBool(prop::THREE_WT_LEG3_BASE);
             else if (property == prop::TL_FICTITIOUS)
                 result = env_->CallBooleanMethod(obj, cache_.tl_isFictitious);
+            else if (property == prop::OLG_EMPTY)
+                result = env_->CallBooleanMethod(obj, cache_.olg_isEmpty);
             else
                 throw PropertyNotFoundException("Unknown bool property: " + std::to_string(property));
         }
@@ -1523,6 +1542,10 @@ std::string JNIBackend::getString(ObjectHandle h, int property) const {
                         p == prop::THREE_WT_LEG2_PTC_REG_TERMINAL_ID ||
                         p == prop::THREE_WT_LEG3_PTC_REG_TERMINAL_ID);
             };
+            if (property == prop::OLG_ID) {
+                jstr = (jstring)env_->CallObjectMethod(obj, cache_.olg_getId);
+                break;
+            }
             if (property == prop::TL_NAME) {
                 jstr = (jstring)env_->CallObjectMethod(obj, cache_.tl_getName);
                 break;
@@ -1715,6 +1738,21 @@ std::vector<ObjectHandle> JNIBackend::getChildren(ObjectHandle h, int childType)
         case prop::TEMPORARY_LIMIT:
             collection = env_->CallObjectMethod(obj, cache_.cl_getTemporaryLimits);
             break;
+        case prop::OLG_SIDE1:
+            collection = env_->CallObjectMethod(obj, cache_.branch_getOLGs1); break;
+        case prop::OLG_SIDE2:
+            collection = env_->CallObjectMethod(obj, cache_.branch_getOLGs2); break;
+        case prop::OLG_LEG1:
+        case prop::OLG_LEG2:
+        case prop::OLG_LEG3: {
+            jmethodID getLeg = (childType == prop::OLG_LEG1) ? cache_.threeWT_getLeg1
+                             : (childType == prop::OLG_LEG2) ? cache_.threeWT_getLeg2
+                             : cache_.threeWT_getLeg3;
+            jobject leg = env_->CallObjectMethod(obj, getLeg);
+            collection = env_->CallObjectMethod(leg, cache_.leg_getOLGs);
+            env_->DeleteLocalRef(leg);
+            break;
+        }
         default:
             throw PropertyNotFoundException("Unknown child type: " + std::to_string(childType));
     }
@@ -1810,6 +1848,36 @@ ObjectHandle JNIBackend::getRelated(ObjectHandle h, int relation) const {
                                   : cache_.branch_getCurrentLimits2;
                 opt = env_->CallObjectMethod(obj, getCL);
             }
+            if (opt && env_->CallBooleanMethod(opt, cache_.optional_isPresent))
+                related = env_->CallObjectMethod(opt, cache_.optional_get);
+            if (opt) env_->DeleteLocalRef(opt);
+            break;
+        }
+        case prop::REL_SELECTED_OLG1:
+        case prop::REL_SELECTED_OLG2:
+        case prop::REL_SELECTED_OLG3: {
+            jobject opt = nullptr;
+            if (env_->IsInstanceOf(obj, cache_.threeWTClass)) {
+                int legIdx = relation - prop::REL_SELECTED_OLG1;
+                jmethodID getLeg = (legIdx == 0) ? cache_.threeWT_getLeg1
+                                 : (legIdx == 1) ? cache_.threeWT_getLeg2
+                                 : cache_.threeWT_getLeg3;
+                jobject leg = env_->CallObjectMethod(obj, getLeg);
+                opt = env_->CallObjectMethod(leg, cache_.leg_getSelectedOLG);
+                env_->DeleteLocalRef(leg);
+            } else {
+                jmethodID getOLG = (relation == prop::REL_SELECTED_OLG1)
+                                   ? cache_.branch_getSelectedOLG1
+                                   : cache_.branch_getSelectedOLG2;
+                opt = env_->CallObjectMethod(obj, getOLG);
+            }
+            if (opt && env_->CallBooleanMethod(opt, cache_.optional_isPresent))
+                related = env_->CallObjectMethod(opt, cache_.optional_get);
+            if (opt) env_->DeleteLocalRef(opt);
+            break;
+        }
+        case prop::REL_OLG_CURRENT_LIMITS: {
+            jobject opt = env_->CallObjectMethod(obj, cache_.olg_getCurrentLimits);
             if (opt && env_->CallBooleanMethod(opt, cache_.optional_isPresent))
                 related = env_->CallObjectMethod(opt, cache_.optional_get);
             if (opt) env_->DeleteLocalRef(opt);
