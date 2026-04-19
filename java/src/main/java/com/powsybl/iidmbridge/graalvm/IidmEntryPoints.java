@@ -119,6 +119,26 @@ public final class IidmEntryPoints {
         return PropertyDispatcher.getRelated(handle, relation);
     }
 
+    @CEntryPoint(name = "iidm_get_int_list")
+    public static void getIntList(IsolateThread thread,
+                                  long handle,
+                                  int listCode,
+                                  CIntPointer outValues,
+                                  CIntPointer outCount) {
+        int[] values = PropertyDispatcher.getIntList(handle, listCode);
+        outCount.write(values.length);
+        if (outValues.isNonNull()) {
+            for (int i = 0; i < values.length; i++) {
+                outValues.addressOf(i).write(values[i]);
+            }
+        }
+    }
+
+    @CEntryPoint(name = "iidm_get_related_by_index")
+    public static long getRelatedByIndex(IsolateThread thread, long handle, int relation, int index) {
+        return PropertyDispatcher.getRelatedByIndex(handle, relation, index);
+    }
+
     @CEntryPoint(name = "iidm_find_by_id")
     public static long findById(IsolateThread thread, long networkHandle, int objectType,
                                 CCharPointer id) {
