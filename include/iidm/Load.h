@@ -24,6 +24,7 @@ public:
     Load& setQ0(double q0);
 
     LoadType getLoadType() const;
+    bool isFictitious() const;
 
     Terminal getTerminal() const;
 

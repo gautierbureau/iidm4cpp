@@ -6,6 +6,7 @@
 #include <iidm/Enums.h>
 #include <iidm/RatioTapChanger.h>
 #include <iidm/PhaseTapChanger.h>
+#include <iidm/Substation.h>
 #include <iidm/Terminal.h>
 #include <optional>
 #include <string>
@@ -62,6 +63,9 @@ public:
 
     std::string getId() const;
     std::string getName() const;
+
+    double     getRatedU0()    const;
+    Substation getSubstation() const;
 
     Leg getLeg1() const;
     Leg getLeg2() const;

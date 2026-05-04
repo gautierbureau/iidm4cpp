@@ -32,6 +32,7 @@ public:
     ObjectHandle              getRelated(ObjectHandle h, int relation) const override;
     std::vector<int>          getIntList(ObjectHandle h, int listCode) const override;
     ObjectHandle              getRelatedByIndex(ObjectHandle h, int relation, int index) const override;
+    ObjectHandle              getRelatedByString(ObjectHandle h, int relation, const std::string& key) const override;
 
     ObjectHandle findById(int objectType, const std::string& id) const override;
     ObjectHandle getNetworkHandle() const override;

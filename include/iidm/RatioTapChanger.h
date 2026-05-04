@@ -21,7 +21,8 @@ struct RatioTapChangerConfig {
     int stepChildType;
     int targetDeadband;
     int regulationTerminalId;
-    int regulationTerminalRelation; // relation code for getRegulationTerminal()
+    int regulationTerminalRelation;
+    int loadTapChangingCapabilities; // bool property code
 };
 
 class RatioTapChanger {
@@ -45,6 +46,8 @@ public:
     std::optional<double> getTargetDeadband() const;
     std::string getRegulationTerminalId() const;
     Terminal getRegulationTerminal() const;
+
+    bool hasLoadTapChangingCapabilities() const;
 
     std::vector<RatioTapChangerStep> getAllSteps() const;
     RatioTapChangerStep getCurrentStep() const;

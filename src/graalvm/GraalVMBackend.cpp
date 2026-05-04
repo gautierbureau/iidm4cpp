@@ -98,8 +98,9 @@ void GraalVMBackend::resolveSymbols() {
     fnGetChildren_     = resolveSymbol<FnGetChildren>    (libHandle_, "iidm_get_children");
     fnGetRelated_        = resolveSymbol<FnGetRelated>       (libHandle_, "iidm_get_related");
     fnGetIntList_        = resolveSymbol<FnGetIntList>       (libHandle_, "iidm_get_int_list");
-    fnGetRelatedByIndex_ = resolveSymbol<FnGetRelatedByIndex>(libHandle_, "iidm_get_related_by_index");
-    fnFindById_          = resolveSymbol<FnFindById>         (libHandle_, "iidm_find_by_id");
+    fnGetRelatedByIndex_  = resolveSymbol<FnGetRelatedByIndex> (libHandle_, "iidm_get_related_by_index");
+    fnGetRelatedByString_ = resolveSymbol<FnGetRelatedByString>(libHandle_, "iidm_get_related_by_string");
+    fnFindById_           = resolveSymbol<FnFindById>          (libHandle_, "iidm_find_by_id");
 }
 
 void GraalVMBackend::loadNetwork(const std::string& filePath) {
@@ -202,6 +203,10 @@ std::vector<int> GraalVMBackend::getIntList(ObjectHandle h, int listCode) const 
 
 ObjectHandle GraalVMBackend::getRelatedByIndex(ObjectHandle h, int relation, int index) const {
     return fnGetRelatedByIndex_(thread_, h, relation, index);
+}
+
+ObjectHandle GraalVMBackend::getRelatedByString(ObjectHandle h, int relation, const std::string& key) const {
+    return fnGetRelatedByString_(thread_, h, relation, key.c_str());
 }
 
 ObjectHandle GraalVMBackend::findById(int objectType, const std::string& id) const {

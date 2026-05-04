@@ -84,6 +84,14 @@ std::vector<Switch> VoltageLevel::BusBreakerView::getSwitches() const {
     return result;
 }
 
+Bus VoltageLevel::BusBreakerView::getBus1(const std::string& switchId) const {
+    return Bus(backend_->getRelatedByString(handle_, prop::REL_VL_BBV_BUS1, switchId), backend_);
+}
+
+Bus VoltageLevel::BusBreakerView::getBus2(const std::string& switchId) const {
+    return Bus(backend_->getRelatedByString(handle_, prop::REL_VL_BBV_BUS2, switchId), backend_);
+}
+
 // ── VoltageLevel ──────────────────────────────────────────────────────────────
 
 VoltageLevel::VoltageLevel(ObjectHandle handle, BackendProvider* backend)

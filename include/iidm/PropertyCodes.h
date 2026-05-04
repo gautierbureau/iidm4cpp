@@ -61,6 +61,7 @@ constexpr int GEN_MAX_Q                   = 209;
 constexpr int LOAD_P0                     = 300;
 constexpr int LOAD_Q0                     = 301;
 constexpr int LOAD_TYPE                   = 302;
+constexpr int LOAD_FICTITIOUS             = 303;
 
 // ── Terminal ─────────────────────────────────────────────────────────────────
 constexpr int TERMINAL_P                  = 400;
@@ -68,6 +69,7 @@ constexpr int TERMINAL_Q                  = 401;
 constexpr int TERMINAL_CONNECTED          = 402;
 constexpr int TERMINAL_BUS_ID            = 403;
 constexpr int TERMINAL_NODE               = 404; // node number (node-breaker topology)
+constexpr int TERMINAL_CONNECTABLE_ID     = 405; // string: ID of the Connectable owning this terminal
 
 // ── Bus ──────────────────────────────────────────────────────────────────────
 constexpr int BUS_V                       = 500;
@@ -112,8 +114,9 @@ constexpr int THREE_WT_LEG_PTC_TAP_POS_OFF    = 13;
 constexpr int THREE_WT_LEG_PTC_LOW_TAP_OFF    = 14;
 constexpr int THREE_WT_LEG_PTC_HIGH_TAP_OFF   = 15;
 constexpr int THREE_WT_LEG_PTC_REGULATING_OFF = 16;
-constexpr int THREE_WT_LEG_PTC_REG_MODE_OFF   = 17;
-constexpr int THREE_WT_LEG_PTC_REG_VALUE_OFF  = 18;
+constexpr int THREE_WT_LEG_PTC_REG_MODE_OFF       = 17;
+constexpr int THREE_WT_LEG_PTC_REG_VALUE_OFF      = 18;
+constexpr int THREE_WT_LEG_RTC_LOAD_TAP_CAP_OFF   = 19; // bool: hasLoadTapChangingCapabilities
 
 // ── TwoWindingsTransformer ───────────────────────────────────────────────────
 constexpr int TWO_WT_R                    = 800;
@@ -137,6 +140,9 @@ constexpr int TWO_WT_PTC_REGULATING       = 817;
 constexpr int TWO_WT_PTC_REG_MODE         = 818;
 constexpr int TWO_WT_PTC_REG_VALUE        = 819;
 
+// ── ThreeWindingsTransformer (top-level, outside leg blocks) ─────────────────
+constexpr int THREE_WT_RATED_U0           = 880; // double: ratedU0 (star-point voltage, kV)
+
 // ── TapChangerStep properties (shared by RTC and PTC step handles) ────────────
 constexpr int RTC_STEP_RHO                = 1900;
 constexpr int RTC_STEP_R                  = 1901;
@@ -155,6 +161,7 @@ constexpr int TWO_WT_RTC_TARGET_DEADBAND  = 1920;
 constexpr int TWO_WT_RTC_REG_TERMINAL_ID  = 1921;
 constexpr int TWO_WT_PTC_TARGET_DEADBAND  = 1922;
 constexpr int TWO_WT_PTC_REG_TERMINAL_ID  = 1923;
+constexpr int TWO_WT_RTC_LOAD_TAP_CAP     = 1924; // bool: RatioTapChanger.hasLoadTapChangingCapabilities()
 
 // ── ThreeWT leg tap changer additional properties (legIdx=0,1,2) ──────────────
 // RTC: 1950 + legIdx*2 + 0/1 (deadband / regTermId)
@@ -317,5 +324,11 @@ constexpr int REL_THREE_WT_LEG1_RTC_REG_TERMINAL = 2018; // ThreeWT Leg1 → RTC
 constexpr int REL_THREE_WT_LEG2_RTC_REG_TERMINAL = 2019; // ThreeWT Leg2 → RTC regulating terminal
 constexpr int REL_THREE_WT_LEG3_RTC_REG_TERMINAL = 2020; // ThreeWT Leg3 → RTC regulating terminal
 constexpr int REL_NBV_TERMINAL_AT_NODE    = 2021; // NodeBreakerView: terminal at node (use getRelatedByIndex)
+constexpr int REL_CONNECTABLE             = 2022; // Terminal → its Connectable
+constexpr int REL_VL_BBV_BUS1            = 2023; // VL (keyed by switchId) → Bus on side 1 (getRelatedByString)
+constexpr int REL_VL_BBV_BUS2            = 2024; // VL (keyed by switchId) → Bus on side 2 (getRelatedByString)
+
+// ── Child types (new) ────────────────────────────────────────────────────────
+constexpr int CONNECTABLE_TERMINALS       = 37; // all terminals of the Connectable owning a Terminal
 
 } // namespace iidm::prop

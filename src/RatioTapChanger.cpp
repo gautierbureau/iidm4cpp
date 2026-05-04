@@ -50,6 +50,10 @@ Terminal RatioTapChanger::getRegulationTerminal() const {
     return Terminal(termHandle, backend_);
 }
 
+bool RatioTapChanger::hasLoadTapChangingCapabilities() const {
+    return backend_->getBool(handle_, cfg_.loadTapChangingCapabilities);
+}
+
 std::vector<RatioTapChangerStep> RatioTapChanger::getAllSteps() const {
     auto handles = backend_->getChildren(handle_, cfg_.stepChildType);
     std::vector<RatioTapChangerStep> steps;

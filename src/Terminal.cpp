@@ -72,6 +72,18 @@ std::string Terminal::getBusId() const {
     return backend_->getString(handle_, prop::TERMINAL_BUS_ID);
 }
 
+std::string Terminal::getConnectableId() const {
+    return backend_->getString(handle_, prop::TERMINAL_CONNECTABLE_ID);
+}
+
+std::vector<Terminal> Terminal::getTerminals() const {
+    auto handles = backend_->getChildren(handle_, prop::CONNECTABLE_TERMINALS);
+    std::vector<Terminal> result;
+    result.reserve(handles.size());
+    for (auto h : handles) result.emplace_back(h, backend_);
+    return result;
+}
+
 VoltageLevel Terminal::getVoltageLevel() const {
     return VoltageLevel(backend_->getRelated(handle_, prop::REL_VOLTAGE_LEVEL), backend_);
 }

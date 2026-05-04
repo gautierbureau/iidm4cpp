@@ -114,6 +114,8 @@ public final class PropertyDispatcher {
             case CL_PERMANENT_LIMIT -> ((LoadingLimits) obj).getPermanentLimit();
             // TemporaryLimit
             case TL_VALUE -> ((TemporaryLimit) obj).getValue();
+            // ThreeWT
+            case THREE_WT_RATED_U0 -> ((ThreeWindingsTransformer) obj).getRatedU0();
             // RatioTapChangerStep
             case RTC_STEP_RHO -> ((RatioTapChangerStep) obj).getRho();
             case RTC_STEP_R   -> ((RatioTapChangerStep) obj).getR();
@@ -369,6 +371,11 @@ public final class PropertyDispatcher {
             case THREE_WT_LEG3_PTC_EXISTS     -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger() != null;
             case THREE_WT_LEG3_PTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().isRegulating();
             case OLG_EMPTY -> ((OperationalLimitsGroup) obj).isEmpty();
+            case LOAD_FICTITIOUS -> ((Load) obj).isFictitious();
+            case TWO_WT_RTC_LOAD_TAP_CAP -> ((TwoWindingsTransformer) obj).getRatioTapChanger().hasLoadTapChangingCapabilities();
+            case THREE_WT_LEG1_RTC_LOAD_TAP_CAP -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().hasLoadTapChangingCapabilities();
+            case THREE_WT_LEG2_RTC_LOAD_TAP_CAP -> ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger().hasLoadTapChangingCapabilities();
+            case THREE_WT_LEG3_RTC_LOAD_TAP_CAP -> ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().hasLoadTapChangingCapabilities();
             default -> throw new IllegalArgumentException("Unknown bool property: " + property);
         };
         return val ? 1 : 0;
@@ -416,6 +423,7 @@ public final class PropertyDispatcher {
                 Bus bus = t.getBusView().getConnectableBus();
                 yield bus != null ? bus.getId() : "";
             }
+            case TERMINAL_CONNECTABLE_ID -> ((Terminal) obj).getConnectable().getId();
             case SHUNT_REGULATING_TERMINAL_ID -> {
                 Terminal rt = ((ShuntCompensator) obj).getRegulatingTerminal();
                 yield rt != null ? rt.getConnectable().getId() : "";
@@ -572,6 +580,7 @@ public final class PropertyDispatcher {
                 yield sc.getModel(ShuntCompensatorNonLinearModel.class).getAllSections().stream();
             }
             case TEMPORARY_LIMIT -> ((LoadingLimits) obj).getTemporaryLimits().stream();
+            case CONNECTABLE_TERMINALS -> ((Terminal) obj).getConnectable().getTerminals().stream();
             case OLG_SIDE1 -> ((Branch<?>) obj).getOperationalLimitsGroups1().stream();
             case OLG_SIDE2 -> ((Branch<?>) obj).getOperationalLimitsGroups2().stream();
             case OLG_LEG1  -> ((ThreeWindingsTransformer) obj).getLeg1().getOperationalLimitsGroups().stream();
@@ -612,7 +621,11 @@ public final class PropertyDispatcher {
             case REL_THREE_WT_LEG1_RTC_REG_TERMINAL -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().getRegulationTerminal();
             case REL_THREE_WT_LEG2_RTC_REG_TERMINAL -> ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger().getRegulationTerminal();
             case REL_THREE_WT_LEG3_RTC_REG_TERMINAL -> ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().getRegulationTerminal();
-            case REL_SUBSTATION    -> ((VoltageLevel) obj).getSubstation().orElse(null);
+            case REL_SUBSTATION -> {
+                if (obj instanceof ThreeWindingsTransformer twt)
+                    yield twt.getLeg1().getTerminal().getVoltageLevel().getSubstation().orElse(null);
+                yield ((VoltageLevel) obj).getSubstation().orElse(null);
+            }
             case REL_SLACK_TERMINAL -> {
                 VoltageLevel vl = (VoltageLevel) obj;
                 SlackTerminal st = vl.getExtension(SlackTerminal.class);
@@ -630,6 +643,8 @@ public final class PropertyDispatcher {
             case REL_CURRENT_LIMITS1 -> {
                 if (obj instanceof ThreeWindingsTransformer twt)
                     yield twt.getLeg1().getCurrentLimits().orElse(null);
+                if (obj instanceof DanglingLine dl)
+                    yield dl.getCurrentLimits().orElse(null);
                 yield ((Branch<?>) obj).getCurrentLimits1().orElse(null);
             }
             case REL_CURRENT_LIMITS2 -> {
@@ -650,6 +665,7 @@ public final class PropertyDispatcher {
             }
             case REL_SELECTED_OLG3 -> ((ThreeWindingsTransformer) obj).getLeg3().getSelectedOperationalLimitsGroup().orElse(null);
             case REL_OLG_CURRENT_LIMITS -> ((OperationalLimitsGroup) obj).getCurrentLimits().orElse(null);
+            case REL_CONNECTABLE -> ((Terminal) obj).getConnectable();
             default -> throw new IllegalArgumentException("Unknown relation: " + relation);
         };
         if (related == null) return 0L; // INVALID_HANDLE
@@ -664,6 +680,19 @@ public final class PropertyDispatcher {
             case VL_NBV_NODES -> ((VoltageLevel) obj).getNodeBreakerView().getNodes();
             default -> throw new IllegalArgumentException("Unknown int list code: " + listCode);
         };
+    }
+
+    // ── Related by string key (navigation) ───────────────────────────────────
+
+    public static long getRelatedByString(long handle, int relation, String key) {
+        Object obj = NetworkRegistry.lookup(handle);
+        Object related = switch (relation) {
+            case REL_VL_BBV_BUS1 -> ((VoltageLevel) obj).getBusBreakerView().getBus1(key);
+            case REL_VL_BBV_BUS2 -> ((VoltageLevel) obj).getBusBreakerView().getBus2(key);
+            default -> throw new IllegalArgumentException("Unknown keyed relation: " + relation);
+        };
+        if (related == null) return 0L; // INVALID_HANDLE
+        return NetworkRegistry.register(related);
     }
 
     // ── Related by index (navigation) ─────────────────────────────────────

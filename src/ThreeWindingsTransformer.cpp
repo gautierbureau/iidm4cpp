@@ -4,6 +4,7 @@
 #include <iidm/IidmException.h>
 #include <iidm/OperationalLimitsGroup.h>
 #include <iidm/PropertyCodes.h>
+#include <iidm/Substation.h>
 
 namespace iidm {
 
@@ -50,7 +51,8 @@ RatioTapChanger ThreeWindingsTransformer::Leg::getRatioTapChanger() const {
         rtcStepChildType_,
         prop::THREE_WT_LEG1_RTC_TARGET_DEADBAND + legIdx * 2,
         prop::THREE_WT_LEG1_RTC_REG_TERMINAL_ID + legIdx * 2,
-        prop::REL_THREE_WT_LEG1_RTC_REG_TERMINAL + legIdx
+        prop::REL_THREE_WT_LEG1_RTC_REG_TERMINAL + legIdx,
+        legBase_ + prop::THREE_WT_LEG_RTC_LOAD_TAP_CAP_OFF
     });
 }
 
@@ -110,6 +112,14 @@ std::string ThreeWindingsTransformer::getId() const {
 }
 std::string ThreeWindingsTransformer::getName() const {
     return backend_->getString(handle_, prop::NAME);
+}
+
+double ThreeWindingsTransformer::getRatedU0() const {
+    return backend_->getDouble(handle_, prop::THREE_WT_RATED_U0);
+}
+
+Substation ThreeWindingsTransformer::getSubstation() const {
+    return Substation(backend_->getRelated(handle_, prop::REL_SUBSTATION), backend_);
 }
 
 ThreeWindingsTransformer::Leg ThreeWindingsTransformer::getLeg1() const {

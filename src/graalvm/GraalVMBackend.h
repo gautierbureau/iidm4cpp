@@ -36,6 +36,7 @@ public:
     ObjectHandle              getRelated(ObjectHandle h, int relation) const override;
     std::vector<int>          getIntList(ObjectHandle h, int listCode) const override;
     ObjectHandle              getRelatedByIndex(ObjectHandle h, int relation, int index) const override;
+    ObjectHandle              getRelatedByString(ObjectHandle h, int relation, const std::string& key) const override;
 
     ObjectHandle findById(int objectType, const std::string& id) const override;
     ObjectHandle getNetworkHandle() const override;
@@ -73,8 +74,9 @@ private:
                                       ObjectHandle*, int*);
     using FnGetRelated        = ObjectHandle(*)(graal_isolatethread_t*, ObjectHandle, int);
     using FnGetIntList        = void(*)(graal_isolatethread_t*, ObjectHandle, int, int*, int*);
-    using FnGetRelatedByIndex = ObjectHandle(*)(graal_isolatethread_t*, ObjectHandle, int, int);
-    using FnFindById          = ObjectHandle(*)(graal_isolatethread_t*, long, int, const char*);
+    using FnGetRelatedByIndex  = ObjectHandle(*)(graal_isolatethread_t*, ObjectHandle, int, int);
+    using FnGetRelatedByString = ObjectHandle(*)(graal_isolatethread_t*, ObjectHandle, int, const char*);
+    using FnFindById           = ObjectHandle(*)(graal_isolatethread_t*, long, int, const char*);
 
     FnCreateIsolate   fnCreateIsolate_   = nullptr;
     FnTearDownIsolate fnTearDownIsolate_ = nullptr;
@@ -92,8 +94,9 @@ private:
     FnGetChildren     fnGetChildren_     = nullptr;
     FnGetRelated        fnGetRelated_        = nullptr;
     FnGetIntList        fnGetIntList_        = nullptr;
-    FnGetRelatedByIndex fnGetRelatedByIndex_ = nullptr;
-    FnFindById          fnFindById_          = nullptr;
+    FnGetRelatedByIndex  fnGetRelatedByIndex_  = nullptr;
+    FnGetRelatedByString fnGetRelatedByString_ = nullptr;
+    FnFindById           fnFindById_           = nullptr;
 };
 
 } // namespace iidm
