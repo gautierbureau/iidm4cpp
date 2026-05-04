@@ -60,3 +60,20 @@ TEST_F(TerminalTest, GetBusView) {
     EXPECT_DOUBLE_EQ(bus.getV(), 1.02);
     EXPECT_DOUBLE_EQ(bus.getAngle(), 0.05);
 }
+
+TEST_F(TerminalTest, GetConnectableId) {
+    backend.strings[{TERM_HANDLE, prop::TERMINAL_CONNECTABLE_ID}] = "GEN1";
+    Terminal term(TERM_HANDLE, &backend);
+    EXPECT_EQ(term.getConnectableId(), "GEN1");
+}
+
+TEST_F(TerminalTest, GetTerminals) {
+    static constexpr ObjectHandle OTHER_TERM = 25;
+    backend.children[{TERM_HANDLE, prop::CONNECTABLE_TERMINALS}] = {TERM_HANDLE, OTHER_TERM};
+    backend.doubles[{OTHER_TERM, prop::TERMINAL_P}] = 30.0;
+    Terminal term(TERM_HANDLE, &backend);
+    auto terms = term.getTerminals();
+    ASSERT_EQ(terms.size(), 2u);
+    EXPECT_DOUBLE_EQ(terms[0].getP(), 55.0);
+    EXPECT_DOUBLE_EQ(terms[1].getP(), 30.0);
+}

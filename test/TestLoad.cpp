@@ -49,3 +49,15 @@ TEST_F(LoadTest, IsValid) {
     EXPECT_TRUE(valid.isValid());
     EXPECT_FALSE(invalid.isValid());
 }
+
+TEST_F(LoadTest, IsFictitiousTrue) {
+    backend.bools[{LOAD_HANDLE, prop::LOAD_FICTITIOUS}] = true;
+    Load load(LOAD_HANDLE, &backend);
+    EXPECT_TRUE(load.isFictitious());
+}
+
+TEST_F(LoadTest, IsFictitiousFalseDefault) {
+    // No entry → getBool returns false
+    Load load(LOAD_HANDLE, &backend);
+    EXPECT_FALSE(load.isFictitious());
+}
