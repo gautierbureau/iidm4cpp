@@ -110,16 +110,17 @@ void JNIBackend::cacheMethodIds() {
     checkJNIException(env_);
 
     // Load
-    cache_.load_getId       = env_->GetMethodID(cache_.loadClass, "getId",   "()Ljava/lang/String;");
-    cache_.load_getName     = env_->GetMethodID(cache_.loadClass, "getNameOrId", "()Ljava/lang/String;");
-    cache_.load_getP0       = env_->GetMethodID(cache_.loadClass, "getP0", "()D");
-    cache_.load_setP0       = env_->GetMethodID(cache_.loadClass, "setP0", "(D)Lcom/powsybl/iidm/network/Load;");
-    cache_.load_getQ0       = env_->GetMethodID(cache_.loadClass, "getQ0", "()D");
-    cache_.load_setQ0       = env_->GetMethodID(cache_.loadClass, "setQ0", "(D)Lcom/powsybl/iidm/network/Load;");
-    cache_.load_getLoadType = env_->GetMethodID(cache_.loadClass, "getLoadType",
+    cache_.load_getId        = env_->GetMethodID(cache_.loadClass, "getId",   "()Ljava/lang/String;");
+    cache_.load_getName      = env_->GetMethodID(cache_.loadClass, "getNameOrId", "()Ljava/lang/String;");
+    cache_.load_getP0        = env_->GetMethodID(cache_.loadClass, "getP0", "()D");
+    cache_.load_setP0        = env_->GetMethodID(cache_.loadClass, "setP0", "(D)Lcom/powsybl/iidm/network/Load;");
+    cache_.load_getQ0        = env_->GetMethodID(cache_.loadClass, "getQ0", "()D");
+    cache_.load_setQ0        = env_->GetMethodID(cache_.loadClass, "setQ0", "(D)Lcom/powsybl/iidm/network/Load;");
+    cache_.load_getLoadType  = env_->GetMethodID(cache_.loadClass, "getLoadType",
         "()Lcom/powsybl/iidm/network/LoadType;");
-    cache_.load_getTerminal = env_->GetMethodID(cache_.loadClass, "getTerminal",
+    cache_.load_getTerminal  = env_->GetMethodID(cache_.loadClass, "getTerminal",
         "()Lcom/powsybl/iidm/network/Terminal;");
+    cache_.load_isFictitious = env_->GetMethodID(cache_.loadClass, "isFictitious", "()Z");
     checkJNIException(env_);
 
     // Terminal
@@ -414,14 +415,17 @@ void JNIBackend::cacheMethodIds() {
             "()Lcom/powsybl/iidm/network/ThreeWindingsTransformer$Leg;");
         cache_.threeWT_getLeg3 = env_->GetMethodID(twtClass, "getLeg3",
             "()Lcom/powsybl/iidm/network/ThreeWindingsTransformer$Leg;");
-        cache_.network_getThreeWTById = env_->GetMethodID(cache_.networkClass,
-            "getThreeWindingsTransformer",
-            "(Ljava/lang/String;)Lcom/powsybl/iidm/network/ThreeWindingsTransformer;");
-        cache_.network_getTwoWTById = env_->GetMethodID(cache_.networkClass,
-            "getTwoWindingsTransformer",
-            "(Ljava/lang/String;)Lcom/powsybl/iidm/network/TwoWindingsTransformer;");
+        cache_.threeWT_getRatedU0 = env_->GetMethodID(twtClass, "getRatedU0", "()D");
         env_->DeleteLocalRef(twtClass);
     }
+    cache_.leg_getTerminal = env_->GetMethodID(cache_.threeWTLegClass,
+        "getTerminal", "()Lcom/powsybl/iidm/network/Terminal;");
+    cache_.network_getThreeWTById = env_->GetMethodID(cache_.networkClass,
+        "getThreeWindingsTransformer",
+        "(Ljava/lang/String;)Lcom/powsybl/iidm/network/ThreeWindingsTransformer;");
+    cache_.network_getTwoWTById = env_->GetMethodID(cache_.networkClass,
+        "getTwoWindingsTransformer",
+        "(Ljava/lang/String;)Lcom/powsybl/iidm/network/TwoWindingsTransformer;");
     cache_.leg_getR    = env_->GetMethodID(cache_.threeWTLegClass, "getR",    "()D");
     cache_.leg_getX    = env_->GetMethodID(cache_.threeWTLegClass, "getX",    "()D");
     cache_.leg_getG    = env_->GetMethodID(cache_.threeWTLegClass, "getG",    "()D");
@@ -476,10 +480,12 @@ void JNIBackend::cacheMethodIds() {
         "()Lcom/powsybl/iidm/network/HvdcLine;");
     checkJNIException(env_);
 
-    // TapChanger: targetDeadband, regulationTerminal
+    // TapChanger: targetDeadband, regulationTerminal, hasLoadTapChangingCapabilities
     cache_.tc_getTargetDeadband = env_->GetMethodID(cache_.tapChangerClass, "getTargetDeadband", "()D");
     cache_.tc_getRegulationTerminal = env_->GetMethodID(cache_.tapChangerClass, "getRegulationTerminal",
         "()Lcom/powsybl/iidm/network/Terminal;");
+    cache_.rtc_hasLoadTapChangingCap = env_->GetMethodID(cache_.ratioTapChangerClass,
+        "hasLoadTapChangingCapabilities", "()Z");
     checkJNIException(env_);
 
     // Terminal navigation
@@ -487,6 +493,12 @@ void JNIBackend::cacheMethodIds() {
         "()Lcom/powsybl/iidm/network/VoltageLevel;");
     cache_.terminal_getConnectable = env_->GetMethodID(cache_.terminalClass, "getConnectable",
         "()Lcom/powsybl/iidm/network/Connectable;");
+    checkJNIException(env_);
+
+    // Connectable.getTerminals()
+    cacheClass(cache_.connectableClass, "com/powsybl/iidm/network/Connectable");
+    cache_.connectable_getTerminals = env_->GetMethodID(cache_.connectableClass,
+        "getTerminals", "()Ljava/util/List;");
     checkJNIException(env_);
 
     // Identifiable::getId (general)
@@ -497,9 +509,13 @@ void JNIBackend::cacheMethodIds() {
     }
     checkJNIException(env_);
 
-    // VoltageLevel BusBreakerView.getBuses()
+    // VoltageLevel BusBreakerView.getBuses() / getBus1(String) / getBus2(String)
     cache_.bbView_getBuses = env_->GetMethodID(cache_.vlBusBreakerViewClass,
         "getBuses", "()Ljava/lang/Iterable;");
+    cache_.bbView_getBus1 = env_->GetMethodID(cache_.vlBusBreakerViewClass,
+        "getBus1", "(Ljava/lang/String;)Lcom/powsybl/iidm/network/Bus;");
+    cache_.bbView_getBus2 = env_->GetMethodID(cache_.vlBusBreakerViewClass,
+        "getBus2", "(Ljava/lang/String;)Lcom/powsybl/iidm/network/Bus;");
     checkJNIException(env_);
 
     // VoltageLevel per-injector getters
@@ -565,6 +581,13 @@ void JNIBackend::cacheMethodIds() {
     // ThreeWT.Leg.getCurrentLimits (default method from FlowsLimitsHolder)
     cache_.leg_getCurrentLimits = env_->GetMethodID(cache_.threeWTLegClass,
         "getCurrentLimits", "()Ljava/util/Optional;");
+    // DanglingLine.getCurrentLimits()
+    {
+        jclass dlCls = env_->FindClass("com/powsybl/iidm/network/DanglingLine");
+        cache_.dl_getCurrentLimits = env_->GetMethodID(dlCls,
+            "getCurrentLimits", "()Ljava/util/Optional;");
+        env_->DeleteLocalRef(dlCls);
+    }
     checkJNIException(env_);
 
     // OperationalLimitsGroup
@@ -862,6 +885,8 @@ double JNIBackend::getDouble(ObjectHandle h, int property) const {
             result = env_->CallDoubleMethod(obj, cache_.cl_getPermanentLimit); break;
         case prop::TL_VALUE:
             result = env_->CallDoubleMethod(obj, cache_.tl_getValue); break;
+        case prop::THREE_WT_RATED_U0:
+            result = env_->CallDoubleMethod(obj, cache_.threeWT_getRatedU0); break;
         case prop::TWO_WT_RTC_TARGET_DEADBAND: {
             jobject rtc = env_->CallObjectMethod(obj, cache_.twt_getRatioTapChanger);
             if (!rtc) throw PropertyNotFoundException("RatioTapChanger not present");
@@ -1407,6 +1432,16 @@ bool JNIBackend::getBool(ObjectHandle h, int property) const {
             env_->DeleteLocalRef(apc);
             break;
         }
+        case prop::LOAD_FICTITIOUS:
+            result = env_->CallBooleanMethod(obj, cache_.load_isFictitious);
+            break;
+        case prop::TWO_WT_RTC_LOAD_TAP_CAP: {
+            jobject rtc = env_->CallObjectMethod(obj, cache_.twt_getRatioTapChanger);
+            if (!rtc) throw PropertyNotFoundException("RatioTapChanger not present");
+            result = env_->CallBooleanMethod(rtc, cache_.rtc_hasLoadTapChangingCap);
+            env_->DeleteLocalRef(rtc);
+            break;
+        }
         default: {
             // ThreeWT leg bool properties
             auto twtLegBool = [&](int legBase) -> jboolean {
@@ -1435,6 +1470,11 @@ bool JNIBackend::getBool(ObjectHandle h, int property) const {
                     case prop::THREE_WT_LEG_PTC_REGULATING_OFF: {
                         jobject ptc = env_->CallObjectMethod(leg, cache_.leg_getPhaseTapChanger);
                         if (ptc) { val = env_->CallBooleanMethod(ptc, cache_.tc_isRegulating); env_->DeleteLocalRef(ptc); }
+                        break;
+                    }
+                    case prop::THREE_WT_LEG_RTC_LOAD_TAP_CAP_OFF: {
+                        jobject rtc = env_->CallObjectMethod(leg, cache_.leg_getRatioTapChanger);
+                        if (rtc) { val = env_->CallBooleanMethod(rtc, cache_.rtc_hasLoadTapChangingCap); env_->DeleteLocalRef(rtc); }
                         break;
                     }
                     default: break;
@@ -1580,6 +1620,14 @@ std::string JNIBackend::getString(ObjectHandle h, int property) const {
             if (cs) {
                 jstr = (jstring)env_->CallObjectMethod(cs, cache_.identifiable_getId);
                 env_->DeleteLocalRef(cs);
+            }
+            break;
+        }
+        case prop::TERMINAL_CONNECTABLE_ID: {
+            jobject conn = env_->CallObjectMethod(obj, cache_.terminal_getConnectable);
+            if (conn) {
+                jstr = (jstring)env_->CallObjectMethod(conn, cache_.identifiable_getId);
+                env_->DeleteLocalRef(conn);
             }
             break;
         }
@@ -1849,6 +1897,13 @@ std::vector<ObjectHandle> JNIBackend::getChildren(ObjectHandle h, int childType)
         case prop::TEMPORARY_LIMIT:
             collection = env_->CallObjectMethod(obj, cache_.cl_getTemporaryLimits);
             break;
+        case prop::CONNECTABLE_TERMINALS: {
+            jobject conn = env_->CallObjectMethod(obj, cache_.terminal_getConnectable);
+            if (!conn) throw PropertyNotFoundException("Terminal has no connectable");
+            collection = env_->CallObjectMethod(conn, cache_.connectable_getTerminals);
+            env_->DeleteLocalRef(conn);
+            break;
+        }
         case prop::OLG_SIDE1:
             collection = env_->CallObjectMethod(obj, cache_.branch_getOLGs1); break;
         case prop::OLG_SIDE2:
@@ -1910,7 +1965,18 @@ ObjectHandle JNIBackend::getRelated(ObjectHandle h, int relation) const {
             break;
         }
         case prop::REL_SUBSTATION: {
-            jobject opt = env_->CallObjectMethod(obj, cache_.vl_getSubstation);
+            jobject opt = nullptr;
+            if (env_->IsInstanceOf(obj, cache_.threeWTClass)) {
+                jobject leg1 = env_->CallObjectMethod(obj, cache_.threeWT_getLeg1);
+                jobject term = env_->CallObjectMethod(leg1, cache_.leg_getTerminal);
+                env_->DeleteLocalRef(leg1);
+                jobject vl = env_->CallObjectMethod(term, cache_.terminal_getVoltageLevel);
+                env_->DeleteLocalRef(term);
+                opt = env_->CallObjectMethod(vl, cache_.vl_getSubstation);
+                env_->DeleteLocalRef(vl);
+            } else {
+                opt = env_->CallObjectMethod(obj, cache_.vl_getSubstation);
+            }
             checkJNIException(env_);
             if (opt && env_->CallBooleanMethod(opt, cache_.optional_isPresent)) {
                 related = env_->CallObjectMethod(opt, cache_.optional_get);
@@ -1956,6 +2022,9 @@ ObjectHandle JNIBackend::getRelated(ObjectHandle h, int relation) const {
                 jobject leg = env_->CallObjectMethod(obj, getLeg);
                 opt = env_->CallObjectMethod(leg, cache_.leg_getCurrentLimits);
                 env_->DeleteLocalRef(leg);
+            } else if (relation == prop::REL_CURRENT_LIMITS1 &&
+                       env_->IsInstanceOf(obj, cache_.danglingLineClass)) {
+                opt = env_->CallObjectMethod(obj, cache_.dl_getCurrentLimits);
             } else {
                 jmethodID getCL = (relation == prop::REL_CURRENT_LIMITS1)
                                   ? cache_.branch_getCurrentLimits1
@@ -1965,6 +2034,10 @@ ObjectHandle JNIBackend::getRelated(ObjectHandle h, int relation) const {
             if (opt && env_->CallBooleanMethod(opt, cache_.optional_isPresent))
                 related = env_->CallObjectMethod(opt, cache_.optional_get);
             if (opt) env_->DeleteLocalRef(opt);
+            break;
+        }
+        case prop::REL_CONNECTABLE: {
+            related = env_->CallObjectMethod(obj, cache_.terminal_getConnectable);
             break;
         }
         case prop::REL_SELECTED_OLG1:
@@ -2111,6 +2184,34 @@ ObjectHandle JNIBackend::getRelatedByIndex(ObjectHandle h, int relation, int ind
         default:
             throw PropertyNotFoundException("Unknown indexed relation: " + std::to_string(relation));
     }
+    checkJNIException(env_);
+    ObjectHandle handle = makeHandle(related);
+    if (related) env_->DeleteLocalRef(related);
+    return handle;
+}
+
+ObjectHandle JNIBackend::getRelatedByString(ObjectHandle h, int relation, const std::string& key) const {
+    jobject obj = toObject(h);
+    jobject related = nullptr;
+    jstring jKey = env_->NewStringUTF(key.c_str());
+    switch (relation) {
+        case prop::REL_VL_BBV_BUS1: {
+            jobject bbv = env_->CallObjectMethod(obj, cache_.vl_getBusBreakerView);
+            related = env_->CallObjectMethod(bbv, cache_.bbView_getBus1, jKey);
+            env_->DeleteLocalRef(bbv);
+            break;
+        }
+        case prop::REL_VL_BBV_BUS2: {
+            jobject bbv = env_->CallObjectMethod(obj, cache_.vl_getBusBreakerView);
+            related = env_->CallObjectMethod(bbv, cache_.bbView_getBus2, jKey);
+            env_->DeleteLocalRef(bbv);
+            break;
+        }
+        default:
+            env_->DeleteLocalRef(jKey);
+            throw PropertyNotFoundException("Unknown keyed relation: " + std::to_string(relation));
+    }
+    env_->DeleteLocalRef(jKey);
     checkJNIException(env_);
     ObjectHandle handle = makeHandle(related);
     if (related) env_->DeleteLocalRef(related);

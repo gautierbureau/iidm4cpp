@@ -3,6 +3,7 @@
 #include <iidm/ObjectHandle.h>
 #include <iidm/Bus.h>
 #include <string>
+#include <vector>
 
 namespace iidm {
 
@@ -58,6 +59,9 @@ public:
 
     Bus getBusView() const;
     std::string getBusId() const;
+
+    std::string           getConnectableId() const;
+    std::vector<Terminal> getTerminals()     const; // all terminals of this terminal's connectable
 
     VoltageLevel getVoltageLevel() const;
 

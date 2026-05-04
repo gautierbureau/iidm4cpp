@@ -63,14 +63,15 @@ struct JNIMethodCache {
     jmethodID generator_getTerminal           = nullptr;
 
     // ── Load methods ─────────────────────────────────────────────────────
-    jmethodID load_getId        = nullptr;
-    jmethodID load_getName      = nullptr;
-    jmethodID load_getP0        = nullptr;
-    jmethodID load_setP0        = nullptr;
-    jmethodID load_getQ0        = nullptr;
-    jmethodID load_setQ0        = nullptr;
-    jmethodID load_getLoadType  = nullptr;
-    jmethodID load_getTerminal  = nullptr;
+    jmethodID load_getId         = nullptr;
+    jmethodID load_getName       = nullptr;
+    jmethodID load_getP0         = nullptr;
+    jmethodID load_setP0         = nullptr;
+    jmethodID load_getQ0         = nullptr;
+    jmethodID load_setQ0         = nullptr;
+    jmethodID load_getLoadType   = nullptr;
+    jmethodID load_getTerminal   = nullptr;
+    jmethodID load_isFictitious  = nullptr;
 
     // ── Terminal methods ─────────────────────────────────────────────────
     jmethodID terminal_getP          = nullptr;
@@ -298,6 +299,8 @@ struct JNIMethodCache {
     jmethodID threeWT_getLeg1           = nullptr;
     jmethodID threeWT_getLeg2           = nullptr;
     jmethodID threeWT_getLeg3           = nullptr;
+    jmethodID threeWT_getRatedU0        = nullptr; // getRatedU0() -> double
+    jmethodID leg_getTerminal           = nullptr; // ThreeWT.Leg.getTerminal() -> Terminal
     jmethodID leg_getR                  = nullptr;
     jmethodID leg_getX                  = nullptr;
     jmethodID leg_getG                  = nullptr;
@@ -318,13 +321,18 @@ struct JNIMethodCache {
     jmethodID hvdc_getConverterStation2   = nullptr;
     jmethodID cs_getHvdcLine             = nullptr;
 
-    // ── TapChanger: targetDeadband and regulationTerminal ─────────────────────
+    // ── TapChanger: targetDeadband, regulationTerminal, hasLoadTapChangingCap ───
     jmethodID tc_getTargetDeadband        = nullptr;
     jmethodID tc_getRegulationTerminal    = nullptr;
+    jmethodID rtc_hasLoadTapChangingCap   = nullptr; // RatioTapChanger.hasLoadTapChangingCapabilities()
 
     // ── Terminal navigation ───────────────────────────────────────────────────
     jmethodID terminal_getVoltageLevel    = nullptr;
     jmethodID terminal_getConnectable     = nullptr;
+
+    // ── Connectable terminals ─────────────────────────────────────────────────
+    jclass    connectableClass            = nullptr;
+    jmethodID connectable_getTerminals    = nullptr; // Connectable.getTerminals() -> List<Terminal>
 
     // ── Identifiable::getId (cached for general use) ──────────────────────────
     jmethodID identifiable_getId          = nullptr;
@@ -338,8 +346,10 @@ struct JNIMethodCache {
     jmethodID shuntSection_getB          = nullptr;
     jmethodID shuntSection_getG          = nullptr;
 
-    // ── VoltageLevel BusBreakerView.getBuses() ────────────────────────────────
+    // ── VoltageLevel BusBreakerView.getBuses() / getBus1/getBus2 ─────────────
     jmethodID bbView_getBuses            = nullptr;
+    jmethodID bbView_getBus1             = nullptr; // getBus1(String switchId)
+    jmethodID bbView_getBus2             = nullptr; // getBus2(String switchId)
 
     // ── VoltageLevel per-injector getters ─────────────────────────────────────
     jmethodID vl_getGenerators           = nullptr;
@@ -380,6 +390,9 @@ struct JNIMethodCache {
 
     // ── ThreeWT.Leg.getCurrentLimits ──────────────────────────────────────────
     jmethodID leg_getCurrentLimits      = nullptr;
+
+    // ── DanglingLine additional methods ──────────────────────────────────────
+    jmethodID dl_getCurrentLimits       = nullptr; // DanglingLine.getCurrentLimits() -> Optional<CurrentLimits>
 
     // ── OperationalLimitsGroup ────────────────────────────────────────────────────
     jclass    olgClass                   = nullptr;

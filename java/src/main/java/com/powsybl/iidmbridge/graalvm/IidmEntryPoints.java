@@ -139,6 +139,11 @@ public final class IidmEntryPoints {
         return PropertyDispatcher.getRelatedByIndex(handle, relation, index);
     }
 
+    @CEntryPoint(name = "iidm_get_related_by_string")
+    public static long getRelatedByString(IsolateThread thread, long handle, int relation, CCharPointer key) {
+        return PropertyDispatcher.getRelatedByString(handle, relation, CTypeConversion.toJavaString(key));
+    }
+
     @CEntryPoint(name = "iidm_find_by_id")
     public static long findById(IsolateThread thread, long networkHandle, int objectType,
                                 CCharPointer id) {

@@ -38,6 +38,10 @@ LoadType Load::getLoadType() const {
     return static_cast<LoadType>(backend_->getInt(handle_, prop::LOAD_TYPE));
 }
 
+bool Load::isFictitious() const {
+    return backend_->getBool(handle_, prop::LOAD_FICTITIOUS);
+}
+
 Terminal Load::getTerminal() const {
     ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_TERMINAL);
     return Terminal(termHandle, backend_);

@@ -63,7 +63,8 @@ std::optional<RatioTapChanger> TwoWindingsTransformer::getRatioTapChanger() cons
         prop::TWO_WT_RTC_STEP,
         prop::TWO_WT_RTC_TARGET_DEADBAND,
         prop::TWO_WT_RTC_REG_TERMINAL_ID,
-        prop::REL_TWO_WT_RTC_REG_TERMINAL
+        prop::REL_TWO_WT_RTC_REG_TERMINAL,
+        prop::TWO_WT_RTC_LOAD_TAP_CAP
     });
 }
 

@@ -65,16 +65,18 @@ public final class PropertyCodes {
     public static final int GEN_MAX_Q                = 209;
 
     // ── Load ─────────────────────────────────────────────────────────────
-    public static final int LOAD_P0   = 300;
-    public static final int LOAD_Q0   = 301;
-    public static final int LOAD_TYPE = 302;
+    public static final int LOAD_P0         = 300;
+    public static final int LOAD_Q0         = 301;
+    public static final int LOAD_TYPE       = 302;
+    public static final int LOAD_FICTITIOUS = 303;
 
     // ── Terminal ─────────────────────────────────────────────────────────
     public static final int TERMINAL_P         = 400;
     public static final int TERMINAL_Q         = 401;
     public static final int TERMINAL_CONNECTED = 402;
-    public static final int TERMINAL_BUS_ID    = 403;
-    public static final int TERMINAL_NODE      = 404;
+    public static final int TERMINAL_BUS_ID          = 403;
+    public static final int TERMINAL_NODE            = 404;
+    public static final int TERMINAL_CONNECTABLE_ID  = 405;
 
     // ── Bus ──────────────────────────────────────────────────────────────
     public static final int BUS_V     = 500;
@@ -182,6 +184,13 @@ public final class PropertyCodes {
     public static final int THREE_WT_LEG3_PTC_REG_MODE   = 877;
     public static final int THREE_WT_LEG3_PTC_REG_VALUE  = 878;
 
+    // ── ThreeWindingsTransformer (top-level) ──────────────────────────────────
+    public static final int THREE_WT_RATED_U0 = 880; // double: ratedU0 (star-point voltage, kV)
+    // Slot 19 of each leg's 20-code block — hasLoadTapChangingCapabilities
+    public static final int THREE_WT_LEG1_RTC_LOAD_TAP_CAP = 839;
+    public static final int THREE_WT_LEG2_RTC_LOAD_TAP_CAP = 859;
+    public static final int THREE_WT_LEG3_RTC_LOAD_TAP_CAP = 879;
+
     // ── TapChangerStep properties ─────────────────────────────────────────────
     public static final int RTC_STEP_RHO   = 1900;
     public static final int RTC_STEP_R     = 1901;
@@ -200,6 +209,7 @@ public final class PropertyCodes {
     public static final int TWO_WT_RTC_REG_TERMINAL_ID = 1921;
     public static final int TWO_WT_PTC_TARGET_DEADBAND = 1922;
     public static final int TWO_WT_PTC_REG_TERMINAL_ID = 1923;
+    public static final int TWO_WT_RTC_LOAD_TAP_CAP    = 1924;
 
     // ── ThreeWT leg tap changer additional properties ─────────────────────────
     public static final int THREE_WT_LEG1_RTC_TARGET_DEADBAND = 1950;
@@ -347,7 +357,7 @@ public final class PropertyCodes {
     public static final int REL_SLACK_TERMINAL   = 2006;
     public static final int REL_CONNECTABLE_BUS      = 2007;
     public static final int REL_REGULATING_TERMINAL  = 2008;
-    public static final int REL_CURRENT_LIMITS1      = 2009; // Branch side 1 or ThreeWT leg 1
+    public static final int REL_CURRENT_LIMITS1      = 2009; // Branch side 1, ThreeWT leg 1, or DanglingLine
     public static final int REL_CURRENT_LIMITS2      = 2010; // Branch side 2 or ThreeWT leg 2
     public static final int REL_CURRENT_LIMITS3      = 2011; // ThreeWT leg 3
     public static final int REL_SELECTED_OLG1        = 2012; // Branch side 1 or ThreeWT leg 1 → selected OLG
@@ -360,4 +370,10 @@ public final class PropertyCodes {
     public static final int REL_THREE_WT_LEG2_RTC_REG_TERMINAL = 2019; // ThreeWT Leg2 → RTC regulating terminal
     public static final int REL_THREE_WT_LEG3_RTC_REG_TERMINAL = 2020; // ThreeWT Leg3 → RTC regulating terminal
     public static final int REL_NBV_TERMINAL_AT_NODE           = 2021; // NodeBreakerView: terminal at node (getRelatedByIndex)
+    public static final int REL_CONNECTABLE                    = 2022; // Terminal → its Connectable
+    public static final int REL_VL_BBV_BUS1                   = 2023; // VL (keyed by switchId) → Bus side 1 (getRelatedByString)
+    public static final int REL_VL_BBV_BUS2                   = 2024; // VL (keyed by switchId) → Bus side 2 (getRelatedByString)
+
+    // ── Child types (new) ─────────────────────────────────────────────────
+    public static final int CONNECTABLE_TERMINALS = 37; // all terminals of the Connectable owning a Terminal
 }

@@ -56,6 +56,9 @@ public:
         std::vector<Bus>    getBuses()    const;
         std::vector<Switch> getSwitches() const;
 
+        Bus getBus1(const std::string& switchId) const;
+        Bus getBus2(const std::string& switchId) const;
+
         bool isValid() const { return handle_ != INVALID_HANDLE; }
 
     private:
