@@ -110,6 +110,28 @@ TEST_F(TopologyViewTest, VlBusBreakerViewEmptyWhenNoBuses) {
     EXPECT_EQ(vl.getBusBreakerView().getBuses().size(), 0u);
 }
 
+TEST_F(TopologyViewTest, VlBusBreakerViewGetBus1BySwitchId) {
+    backend.relatedByString[{VL_HANDLE, prop::REL_VL_BBV_BUS1, "SW1"}] = BUS1;
+    VoltageLevel vl(VL_HANDLE, &backend);
+    Bus b = vl.getBusBreakerView().getBus1("SW1");
+    EXPECT_TRUE(b.isValid());
+    EXPECT_EQ(b.getId(), "BUS1");
+}
+
+TEST_F(TopologyViewTest, VlBusBreakerViewGetBus2BySwitchId) {
+    backend.relatedByString[{VL_HANDLE, prop::REL_VL_BBV_BUS2, "SW1"}] = BUS2;
+    VoltageLevel vl(VL_HANDLE, &backend);
+    Bus b = vl.getBusBreakerView().getBus2("SW1");
+    EXPECT_TRUE(b.isValid());
+    EXPECT_EQ(b.getId(), "BUS2");
+}
+
+TEST_F(TopologyViewTest, VlBusBreakerViewGetBus1MissingSwitchId) {
+    VoltageLevel vl(VL_HANDLE, &backend);
+    Bus b = vl.getBusBreakerView().getBus1("NONEXISTENT");
+    EXPECT_FALSE(b.isValid());
+}
+
 // ── Terminal::NodeBreakerView ─────────────────────────────────────────────────
 
 TEST_F(TopologyViewTest, TerminalNodeBreakerViewIsValid) {

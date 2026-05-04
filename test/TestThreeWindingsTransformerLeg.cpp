@@ -2,6 +2,7 @@
 #include <iidm/ThreeWindingsTransformer.h>
 #include <iidm/CurrentLimits.h>
 #include <iidm/OperationalLimitsGroup.h>
+#include <iidm/Substation.h>
 #include <iidm/PropertyCodes.h>
 #include "MockBackend.h"
 
@@ -188,4 +189,35 @@ TEST_F(ThreeWindingsTransformerLegTest, Leg1SelectedOLGWithCurrentLimits) {
     auto cl = olg->getCurrentLimits();
     ASSERT_TRUE(cl.has_value());
     EXPECT_DOUBLE_EQ(cl->getPermanentLimit(), 500.0);
+}
+
+// ── ThreeWindingsTransformer::getRatedU0 ──────────────────────────────────────
+
+TEST_F(ThreeWindingsTransformerLegTest, GetRatedU0) {
+    backend.doubles[{TWT_HANDLE, prop::THREE_WT_RATED_U0}] = 110.0;
+    ThreeWindingsTransformer twt(TWT_HANDLE, &backend);
+    EXPECT_DOUBLE_EQ(twt.getRatedU0(), 110.0);
+}
+
+// ── ThreeWindingsTransformer::getSubstation ───────────────────────────────────
+
+TEST_F(ThreeWindingsTransformerLegTest, GetSubstation) {
+    static constexpr ObjectHandle SUB_HANDLE = 999;
+    backend.related[{TWT_HANDLE, prop::REL_SUBSTATION}] = SUB_HANDLE;
+    backend.strings[{SUB_HANDLE, prop::ID}] = "SUB1";
+    ThreeWindingsTransformer twt(TWT_HANDLE, &backend);
+    Substation sub = twt.getSubstation();
+    EXPECT_TRUE(sub.isValid());
+    EXPECT_EQ(sub.getId(), "SUB1");
+}
+
+// ── ThreeWT Leg RatioTapChanger::hasLoadTapChangingCapabilities ───────────────
+
+TEST_F(ThreeWindingsTransformerLegTest, Leg1RtcHasLoadTapChangingCapabilities) {
+    backend.bools[{TWT_HANDLE,
+        prop::THREE_WT_LEG1_BASE + prop::THREE_WT_LEG_RTC_LOAD_TAP_CAP_OFF}] = true;
+    ThreeWindingsTransformer twt(TWT_HANDLE, &backend);
+    RatioTapChanger rtc = twt.getLeg1().getRatioTapChanger();
+    EXPECT_TRUE(rtc.isValid());
+    EXPECT_TRUE(rtc.hasLoadTapChangingCapabilities());
 }

@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
 #include <iidm/TwoWindingsTransformer.h>
 #include <iidm/RatioTapChanger.h>
+#include <iidm/RatioTapChangerStep.h>
 #include <iidm/PhaseTapChanger.h>
+#include <iidm/PhaseTapChangerStep.h>
 #include <iidm/PropertyCodes.h>
 #include "MockBackend.h"
 
@@ -229,4 +231,49 @@ TEST(TapChangerObjectTest, RtcGetRegulationTerminal) {
     Terminal t = rtc->getRegulationTerminal();
     EXPECT_TRUE(t.isValid());
     EXPECT_DOUBLE_EQ(t.getP(), 42.0);
+}
+
+// ── RatioTapChanger::hasLoadTapChangingCapabilities ───────────────────────────
+
+TEST(TapChangerObjectTest, RtcHasLoadTapChangingCapabilitiesTrue) {
+    auto b = makeTwtBackend();
+    b.bools[{TWT_HANDLE, prop::TWO_WT_RTC_LOAD_TAP_CAP}] = true;
+    TwoWindingsTransformer twt(TWT_HANDLE, &b);
+    auto rtc = twt.getRatioTapChanger();
+    ASSERT_TRUE(rtc.has_value());
+    EXPECT_TRUE(rtc->hasLoadTapChangingCapabilities());
+}
+
+TEST(TapChangerObjectTest, RtcHasLoadTapChangingCapabilitiesFalse) {
+    auto b = makeTwtBackend();
+    b.bools[{TWT_HANDLE, prop::TWO_WT_RTC_LOAD_TAP_CAP}] = false;
+    TwoWindingsTransformer twt(TWT_HANDLE, &b);
+    auto rtc = twt.getRatioTapChanger();
+    ASSERT_TRUE(rtc.has_value());
+    EXPECT_FALSE(rtc->hasLoadTapChangingCapabilities());
+}
+
+// ── RatioTapChangerStep standalone constructor ────────────────────────────────
+
+TEST(TapChangerObjectTest, RtcStandaloneStepConstructor) {
+    RatioTapChangerStep step(1.05, 0.1, 0.2, 0.3, 0.4);
+    EXPECT_TRUE(step.isValid());
+    EXPECT_DOUBLE_EQ(step.getRho(), 1.05);
+    EXPECT_DOUBLE_EQ(step.getR(),   0.1);
+    EXPECT_DOUBLE_EQ(step.getX(),   0.2);
+    EXPECT_DOUBLE_EQ(step.getG(),   0.3);
+    EXPECT_DOUBLE_EQ(step.getB(),   0.4);
+}
+
+// ── PhaseTapChangerStep standalone constructor ────────────────────────────────
+
+TEST(TapChangerObjectTest, PtcStandaloneStepConstructor) {
+    PhaseTapChangerStep step(-3.5, 1.0, 0.1, 0.2, 0.3, 0.4);
+    EXPECT_TRUE(step.isValid());
+    EXPECT_DOUBLE_EQ(step.getAlpha(), -3.5);
+    EXPECT_DOUBLE_EQ(step.getRho(),    1.0);
+    EXPECT_DOUBLE_EQ(step.getR(),      0.1);
+    EXPECT_DOUBLE_EQ(step.getX(),      0.2);
+    EXPECT_DOUBLE_EQ(step.getG(),      0.3);
+    EXPECT_DOUBLE_EQ(step.getB(),      0.4);
 }
