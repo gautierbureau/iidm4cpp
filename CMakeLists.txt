@@ -36,6 +36,7 @@ endif()
 
 # ── Library sources ──────────────────────────────────────────────────────────
 set(IIDM_BRIDGE_SOURCES
+    src/Enums.cpp
     src/Network.cpp
     src/NetworkFactory.cpp
     src/BackendSelector.cpp

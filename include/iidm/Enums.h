@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 namespace iidm {
 
 enum class EnergySource { HYDRO, NUCLEAR, WIND, THERMAL, SOLAR, OTHER };
@@ -23,5 +25,7 @@ enum class StaticVarCompensatorRegulationMode { VOLTAGE, REACTIVE_POWER, OFF };
 enum class SwitchKind { BREAKER, DISCONNECTOR, LOAD_BREAK_SWITCH };
 enum class PhaseTapChangerRegulationMode { CURRENT_LIMITER, ACTIVE_POWER_CONTROL, FIXED_TAP };
 enum class HvdcOperatorActivePowerRangeSide { SIDE1, SIDE2 };
+
+std::string getCountryName(Country country);
 
 } // namespace iidm
