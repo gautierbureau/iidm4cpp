@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(IIDM_BRIDGE_ENABLE_GRAALVM "Build the GraalVM backend" ON)
 option(IIDM_BRIDGE_ENABLE_JNI     "Build the JNI backend" ON)
-option(IIDM_BRIDGE_BUILD_TESTS    "Build unit tests" ON)
+option(IIDM_BRIDGE_BUILD_TESTS    "Build unit tests" OFF)
 option(IIDM_BRIDGE_BUILD_EXAMPLES "Build examples" ON)
 option(IIDM_BRIDGE_BUILD_JAVA     "Build the Java fat-JAR via Maven" ON)
 option(IIDM_BRIDGE_BUILD_NATIVE   "Build the GraalVM native shared image via native-image" ON)
