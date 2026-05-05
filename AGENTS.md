@@ -255,7 +255,7 @@ the JNI backend is active, while the GraalVM backend continues to work.
 |---|---|---|
 | `IIDM_BRIDGE_ENABLE_JNI` | `ON` | Build the JNI backend |
 | `IIDM_BRIDGE_ENABLE_GRAALVM` | `OFF` | Build the GraalVM backend |
-| `IIDM_BRIDGE_BUILD_TESTS` | `ON` | Build GoogleTest suite |
+| `IIDM_BRIDGE_BUILD_TESTS` | `OFF` | Build GoogleTest suite |
 | `IIDM_BRIDGE_BUILD_EXAMPLES` | `OFF` | Build the example programs |
 
 ### GraalVM backend build
