@@ -212,7 +212,7 @@ if(IIDM_BRIDGE_BUILD_JAVA OR IIDM_BRIDGE_BUILD_NATIVE)
 
     add_custom_command(
         OUTPUT  "${_FAT_JAR}"
-        COMMAND "${MAVEN_EXECUTABLE}" --batch-mode --no-transfer-progress package -DskipTests
+        COMMAND "${MAVEN_EXECUTABLE}" --batch-mode package -DskipTests
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/java"
         COMMENT "Building Java fat-JAR"
         VERBATIM
