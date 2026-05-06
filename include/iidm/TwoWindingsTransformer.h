@@ -7,7 +7,7 @@
 #include <iidm/RatioTapChanger.h>
 #include <iidm/PhaseTapChanger.h>
 #include <iidm/Terminal.h>
-#include <optional>
+#include <iidm/stdcxx/optional.hpp>
 #include <string>
 #include <vector>
 
@@ -29,22 +29,22 @@ public:
     double getB() const;
     double getRatedU1() const;
     double getRatedU2() const;
-    std::optional<double> getRatedS() const;
+    iidm::optional<double> getRatedS() const;
 
     Terminal getTerminal1() const;
     Terminal getTerminal2() const;
 
-    std::optional<CurrentLimits> getCurrentLimits1() const;
-    std::optional<CurrentLimits> getCurrentLimits2() const;
+    iidm::optional<CurrentLimits> getCurrentLimits1() const;
+    iidm::optional<CurrentLimits> getCurrentLimits2() const;
 
     std::vector<OperationalLimitsGroup> getOperationalLimitsGroups1() const;
     std::vector<OperationalLimitsGroup> getOperationalLimitsGroups2() const;
-    std::optional<OperationalLimitsGroup> getSelectedOperationalLimitsGroup1() const;
-    std::optional<OperationalLimitsGroup> getSelectedOperationalLimitsGroup2() const;
+    iidm::optional<OperationalLimitsGroup> getSelectedOperationalLimitsGroup1() const;
+    iidm::optional<OperationalLimitsGroup> getSelectedOperationalLimitsGroup2() const;
 
     // ── RatioTapChanger ──────────────────────────────────────────────────────
     bool hasRatioTapChanger() const;
-    std::optional<RatioTapChanger> getRatioTapChanger() const;
+    iidm::optional<RatioTapChanger> getRatioTapChanger() const;
     int  getRatioTapPosition() const;
     TwoWindingsTransformer& setRatioTapPosition(int pos);
     int  getRatioTapLow() const;
@@ -56,7 +56,7 @@ public:
 
     // ── PhaseTapChanger ──────────────────────────────────────────────────────
     bool hasPhaseTapChanger() const;
-    std::optional<PhaseTapChanger> getPhaseTapChanger() const;
+    iidm::optional<PhaseTapChanger> getPhaseTapChanger() const;
     int  getPhaseTapPosition() const;
     TwoWindingsTransformer& setPhaseTapPosition(int pos);
     int  getPhaseTapLow() const;

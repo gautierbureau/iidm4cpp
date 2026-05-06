@@ -1,6 +1,6 @@
 #pragma once
 
-#include <optional>
+#include <iidm/stdcxx/optional.hpp>
 #include <string>
 
 namespace iidm {
@@ -28,6 +28,6 @@ enum class PhaseTapChangerRegulationMode { CURRENT_LIMITER, ACTIVE_POWER_CONTROL
 enum class HvdcOperatorActivePowerRangeSide { SIDE1, SIDE2 };
 
 std::string          getCountryName(Country country);
-std::optional<Country> countryFromName(const std::string& name);
+iidm::optional<Country> countryFromName(const std::string& name);
 
 } // namespace iidm

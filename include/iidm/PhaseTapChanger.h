@@ -3,7 +3,7 @@
 #include <iidm/ObjectHandle.h>
 #include <iidm/Enums.h>
 #include <iidm/PhaseTapChangerStep.h>
-#include <optional>
+#include <iidm/stdcxx/optional.hpp>
 #include <string>
 #include <vector>
 
@@ -45,7 +45,7 @@ public:
     double getRegulationValue() const;
     PhaseTapChanger& setRegulationValue(double val);
 
-    std::optional<double> getTargetDeadband() const;
+    iidm::optional<double> getTargetDeadband() const;
     std::string getRegulationTerminalId() const;
 
     std::vector<PhaseTapChangerStep> getAllSteps() const;

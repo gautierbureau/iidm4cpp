@@ -41,9 +41,9 @@ PhaseTapChanger& PhaseTapChanger::setRegulationValue(double val) {
     return *this;
 }
 
-std::optional<double> PhaseTapChanger::getTargetDeadband() const {
+iidm::optional<double> PhaseTapChanger::getTargetDeadband() const {
     double v = backend_->getDouble(handle_, cfg_.targetDeadband);
-    if (std::isnan(v)) return std::nullopt;
+    if (std::isnan(v)) return {};
     return v;
 }
 

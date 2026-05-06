@@ -43,7 +43,7 @@ double TwoWindingsTransformer::getRatedU2() const {
     return backend_->getDouble(handle_, prop::TWO_WT_RATED_U2);
 }
 
-std::optional<double> TwoWindingsTransformer::getRatedS() const {
+iidm::optional<double> TwoWindingsTransformer::getRatedS() const {
     return backend_->getOptDouble(handle_, prop::TWO_WT_RATED_S);
 }
 
@@ -51,8 +51,8 @@ bool TwoWindingsTransformer::hasRatioTapChanger() const {
     return backend_->getBool(handle_, prop::TWO_WT_RTC_EXISTS);
 }
 
-std::optional<RatioTapChanger> TwoWindingsTransformer::getRatioTapChanger() const {
-    if (!hasRatioTapChanger()) return std::nullopt;
+iidm::optional<RatioTapChanger> TwoWindingsTransformer::getRatioTapChanger() const {
+    if (!hasRatioTapChanger()) return {};
     return RatioTapChanger(handle_, backend_, RatioTapChangerConfig{
         prop::TWO_WT_RTC_EXISTS,
         prop::TWO_WT_RTC_TAP_POSITION,
@@ -107,8 +107,8 @@ bool TwoWindingsTransformer::hasPhaseTapChanger() const {
     return backend_->getBool(handle_, prop::TWO_WT_PTC_EXISTS);
 }
 
-std::optional<PhaseTapChanger> TwoWindingsTransformer::getPhaseTapChanger() const {
-    if (!hasPhaseTapChanger()) return std::nullopt;
+iidm::optional<PhaseTapChanger> TwoWindingsTransformer::getPhaseTapChanger() const {
+    if (!hasPhaseTapChanger()) return {};
     return PhaseTapChanger(handle_, backend_, PhaseTapChangerConfig{
         prop::TWO_WT_PTC_EXISTS,
         prop::TWO_WT_PTC_TAP_POSITION,
@@ -179,15 +179,15 @@ Terminal TwoWindingsTransformer::getTerminal2() const {
     return Terminal(termHandle, backend_);
 }
 
-std::optional<CurrentLimits> TwoWindingsTransformer::getCurrentLimits1() const {
+iidm::optional<CurrentLimits> TwoWindingsTransformer::getCurrentLimits1() const {
     ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS1);
-    if (h == INVALID_HANDLE) return std::nullopt;
+    if (h == INVALID_HANDLE) return {};
     return CurrentLimits(h, backend_);
 }
 
-std::optional<CurrentLimits> TwoWindingsTransformer::getCurrentLimits2() const {
+iidm::optional<CurrentLimits> TwoWindingsTransformer::getCurrentLimits2() const {
     ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS2);
-    if (h == INVALID_HANDLE) return std::nullopt;
+    if (h == INVALID_HANDLE) return {};
     return CurrentLimits(h, backend_);
 }
 
@@ -207,15 +207,15 @@ std::vector<OperationalLimitsGroup> TwoWindingsTransformer::getOperationalLimits
     return result;
 }
 
-std::optional<OperationalLimitsGroup> TwoWindingsTransformer::getSelectedOperationalLimitsGroup1() const {
+iidm::optional<OperationalLimitsGroup> TwoWindingsTransformer::getSelectedOperationalLimitsGroup1() const {
     ObjectHandle h = backend_->getRelated(handle_, prop::REL_SELECTED_OLG1);
-    if (h == INVALID_HANDLE) return std::nullopt;
+    if (h == INVALID_HANDLE) return {};
     return OperationalLimitsGroup(h, backend_);
 }
 
-std::optional<OperationalLimitsGroup> TwoWindingsTransformer::getSelectedOperationalLimitsGroup2() const {
+iidm::optional<OperationalLimitsGroup> TwoWindingsTransformer::getSelectedOperationalLimitsGroup2() const {
     ObjectHandle h = backend_->getRelated(handle_, prop::REL_SELECTED_OLG2);
-    if (h == INVALID_HANDLE) return std::nullopt;
+    if (h == INVALID_HANDLE) return {};
     return OperationalLimitsGroup(h, backend_);
 }
 

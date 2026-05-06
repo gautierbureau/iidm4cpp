@@ -32,7 +32,7 @@ double ThreeWindingsTransformer::Leg::getB() const {
 double ThreeWindingsTransformer::Leg::getRatedU() const {
     return backend_->getDouble(handle_, legBase_ + prop::THREE_WT_LEG_RATED_U_OFF);
 }
-std::optional<double> ThreeWindingsTransformer::Leg::getRatedS() const {
+iidm::optional<double> ThreeWindingsTransformer::Leg::getRatedS() const {
     return backend_->getOptDouble(handle_, legBase_ + prop::THREE_WT_LEG_RATED_S_OFF);
 }
 
@@ -79,10 +79,10 @@ Terminal ThreeWindingsTransformer::Leg::getTerminal() const {
     return Terminal(backend_->getRelated(handle_, relTerminal_), backend_);
 }
 
-std::optional<CurrentLimits> ThreeWindingsTransformer::Leg::getCurrentLimits() const {
+iidm::optional<CurrentLimits> ThreeWindingsTransformer::Leg::getCurrentLimits() const {
     int legIdx = (legBase_ - prop::THREE_WT_LEG1_BASE) / 20; // 0, 1, or 2
     ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS1 + legIdx);
-    if (h == INVALID_HANDLE) return std::nullopt;
+    if (h == INVALID_HANDLE) return {};
     return CurrentLimits(h, backend_);
 }
 
@@ -95,10 +95,10 @@ std::vector<OperationalLimitsGroup> ThreeWindingsTransformer::Leg::getOperationa
     return result;
 }
 
-std::optional<OperationalLimitsGroup> ThreeWindingsTransformer::Leg::getSelectedOperationalLimitsGroup() const {
+iidm::optional<OperationalLimitsGroup> ThreeWindingsTransformer::Leg::getSelectedOperationalLimitsGroup() const {
     int legIdx = (legBase_ - prop::THREE_WT_LEG1_BASE) / 20;
     ObjectHandle h = backend_->getRelated(handle_, prop::REL_SELECTED_OLG1 + legIdx);
-    if (h == INVALID_HANDLE) return std::nullopt;
+    if (h == INVALID_HANDLE) return {};
     return OperationalLimitsGroup(h, backend_);
 }
 

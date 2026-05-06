@@ -18,7 +18,7 @@
 #include <iidm/BusbarSection.h>
 #include <iidm/Switch.h>
 #include <memory>
-#include <optional>
+#include <iidm/stdcxx/optional.hpp>
 #include <string>
 #include <vector>
 
@@ -59,20 +59,20 @@ public:
     std::vector<LccConverterStation>     getLccConverterStations() const;
 
     // ── Lookup by ID ─────────────────────────────────────────────────────
-    std::optional<Battery>                 getBattery(const std::string& id) const;
-    std::optional<Generator>               getGenerator(const std::string& id) const;
-    std::optional<Load>                    getLoad(const std::string& id) const;
-    std::optional<Line>                    getLine(const std::string& id) const;
-    std::optional<TwoWindingsTransformer>  getTwoWindingsTransformer(const std::string& id) const;
-    std::optional<ThreeWindingsTransformer> getThreeWindingsTransformer(const std::string& id) const;
-    std::optional<HvdcLine>               getHvdcLine(const std::string& id) const;
-    std::optional<DanglingLine>           getDanglingLine(const std::string& id) const;
-    std::optional<ShuntCompensator>       getShuntCompensator(const std::string& id) const;
-    std::optional<StaticVarCompensator>   getStaticVarCompensator(const std::string& id) const;
-    std::optional<VscConverterStation>    getVscConverterStation(const std::string& id) const;
-    std::optional<LccConverterStation>    getLccConverterStation(const std::string& id) const;
-    std::optional<Switch>                  getSwitch(const std::string& id) const;
-    std::optional<BusbarSection>           getBusbarSection(const std::string& id) const;
+    iidm::optional<Battery>                 getBattery(const std::string& id) const;
+    iidm::optional<Generator>               getGenerator(const std::string& id) const;
+    iidm::optional<Load>                    getLoad(const std::string& id) const;
+    iidm::optional<Line>                    getLine(const std::string& id) const;
+    iidm::optional<TwoWindingsTransformer>  getTwoWindingsTransformer(const std::string& id) const;
+    iidm::optional<ThreeWindingsTransformer> getThreeWindingsTransformer(const std::string& id) const;
+    iidm::optional<HvdcLine>               getHvdcLine(const std::string& id) const;
+    iidm::optional<DanglingLine>           getDanglingLine(const std::string& id) const;
+    iidm::optional<ShuntCompensator>       getShuntCompensator(const std::string& id) const;
+    iidm::optional<StaticVarCompensator>   getStaticVarCompensator(const std::string& id) const;
+    iidm::optional<VscConverterStation>    getVscConverterStation(const std::string& id) const;
+    iidm::optional<LccConverterStation>    getLccConverterStation(const std::string& id) const;
+    iidm::optional<Switch>                  getSwitch(const std::string& id) const;
+    iidm::optional<BusbarSection>           getBusbarSection(const std::string& id) const;
 
     // Backend accessor (advanced usage only)
     BackendProvider& getBackend();

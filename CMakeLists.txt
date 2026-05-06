@@ -1,9 +1,6 @@
 cmake_minimum_required(VERSION 3.14.5)
 project(iidm-bridge-cpp VERSION 1.0.0 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 option(IIDM_BRIDGE_ENABLE_GRAALVM  "Build the GraalVM backend" ON)
 option(IIDM_BRIDGE_ENABLE_JNI      "Build the JNI backend" ON)
 option(IIDM_BRIDGE_BUILD_TESTS     "Build unit tests" OFF)
@@ -34,6 +31,13 @@ if(IIDM_BRIDGE_ENABLE_GRAALVM)
         endif()
     endif()
 endif()
+
+# ── Boost (optional; required only for C++11/14 builds) ──────────────────────
+# When the consuming project (e.g. Dynawo via ExternalProject) compiles without
+# C++17, iidm::optional<T> maps to boost::optional<T>.  Detect Boost at
+# configure time so we can expose the dependency; the library itself will build
+# fine without Boost on C++17+ toolchains.
+find_package(Boost QUIET)
 
 # ── Library sources ──────────────────────────────────────────────────────────
 set(IIDM_BRIDGE_SOURCES
@@ -93,13 +97,6 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 add_library(iidmbridge SHARED ${IIDM_BRIDGE_SOURCES})
 
-# Propagate the C++17 requirement to consumers: any target that links against
-# iidmbridge via CMake will automatically receive /std:c++17 (MSVC) or
-# -std=c++17 (GCC/Clang) for its own translation units.  This is what prevents
-# MSVC consumers from compiling our headers in C++14 mode (where <optional>
-# exists on disk but std::optional is not defined).
-target_compile_features(iidmbridge PUBLIC cxx_std_17)
-
 target_include_directories(iidmbridge
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
@@ -120,6 +117,12 @@ target_link_libraries(iidmbridge
 )
 if(IIDM_BRIDGE_ENABLE_JNI)
     target_link_libraries(iidmbridge PUBLIC ${JNI_LIBRARIES})
+endif()
+if(Boost_FOUND)
+    # Expose Boost headers to consumers building in C++11/14 mode so that
+    # iidm::optional<T> (which aliases boost::optional<T> below C++17) is
+    # resolvable without any extra include-path setup on their side.
+    target_link_libraries(iidmbridge PUBLIC Boost::boost)
 endif()
 
 target_compile_definitions(iidmbridge PRIVATE

@@ -3,7 +3,7 @@
 #include <iidm/ObjectHandle.h>
 #include <iidm/RatioTapChangerStep.h>
 #include <iidm/Terminal.h>
-#include <optional>
+#include <iidm/stdcxx/optional.hpp>
 #include <string>
 #include <vector>
 
@@ -43,7 +43,7 @@ public:
     double getTargetV() const;
     RatioTapChanger& setTargetV(double v);
 
-    std::optional<double> getTargetDeadband() const;
+    iidm::optional<double> getTargetDeadband() const;
     std::string getRegulationTerminalId() const;
     Terminal getRegulationTerminal() const;
 

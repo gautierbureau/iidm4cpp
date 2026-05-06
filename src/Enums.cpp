@@ -1,6 +1,6 @@
 #include <iidm/Enums.h>
 #include <iidm/IidmException.h>
-#include <optional>
+#include <iidm/stdcxx/optional.hpp>
 #include <string>
 #include <unordered_map>
 
@@ -203,8 +203,8 @@ std::string getCountryName(Country country) {
     }
 }
 
-std::optional<Country> countryFromName(const std::string& name) {
-    if (name.empty()) return std::nullopt;
+iidm::optional<Country> countryFromName(const std::string& name) {
+    if (name.empty()) return {};
     static const std::unordered_map<std::string, Country> table = {
         {"AF",Country::AF},{"AL",Country::AL},{"DZ",Country::DZ},{"AD",Country::AD},
         {"AO",Country::AO},{"AG",Country::AG},{"AR",Country::AR},{"AM",Country::AM},

@@ -8,7 +8,7 @@
 #include <iidm/Switch.h>
 #include <iidm/InternalConnection.h>
 #include <iidm/Terminal.h>
-#include <optional>
+#include <iidm/stdcxx/optional.hpp>
 #include <string>
 #include <vector>
 
@@ -37,7 +37,7 @@ public:
         std::vector<InternalConnection> getInternalConnections() const;
 
         std::vector<int> getNodes() const;
-        std::optional<Switch> getSwitch(const std::string& id) const;
+        iidm::optional<Switch> getSwitch(const std::string& id) const;
         Terminal getTerminal(int node) const;
 
         bool isValid() const { return handle_ != INVALID_HANDLE; }
@@ -74,8 +74,8 @@ public:
     std::string getName() const;
 
     double getNominalV() const;
-    std::optional<double> getLowVoltageLimit() const;
-    std::optional<double> getHighVoltageLimit() const;
+    iidm::optional<double> getLowVoltageLimit() const;
+    iidm::optional<double> getHighVoltageLimit() const;
 
     TopologyKind getTopologyKind() const;
 
