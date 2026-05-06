@@ -6,6 +6,7 @@ set(TEST_SOURCES
     TestReactiveLimits.cpp
     TestTapChangerObjects.cpp
     TestThreeWindingsTransformerLeg.cpp
+    TestThreeWindingsTransformer.cpp
     TestTopologyViews.cpp
     TestGenerator.cpp
     TestActivePowerControl.cpp
@@ -19,14 +20,21 @@ set(TEST_SOURCES
     TestBus.cpp
     TestLine.cpp
     TestSwitch.cpp
+    TestTwoWindingsTransformer.cpp
     TestTwoWindingsTransformerTapChanger.cpp
     TestBusbarSection.cpp
     TestConnect.cpp
     TestBackendSelector.cpp
     TestIntegration.cpp
+    TestShuntCompensator.cpp
     TestShuntCompensatorNonLinear.cpp
+    TestStaticVarCompensator.cpp
+    TestLccConverterStation.cpp
+    TestVscConverterStation.cpp
     TestHvdcLine.cpp
     TestDanglingLine.cpp
+    TestSubstation.cpp
+    TestCurrentLimits.cpp
     TestEnums.cpp
 )
 
@@ -43,6 +51,36 @@ target_link_libraries(iidmbridge_tests
         GTest::GTest
         GTest::Main
 )
+
+# ── Coverage ──────────────────────────────────────────────────────────────────
+if(IIDM_BRIDGE_ENABLE_COVERAGE)
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        message(WARNING "Coverage requires GCC or Clang; IIDM_BRIDGE_ENABLE_COVERAGE ignored.")
+    else()
+        target_compile_options(iidmbridge      PRIVATE --coverage)
+        target_link_options   (iidmbridge      PRIVATE --coverage)
+        target_compile_options(iidmbridge_tests PRIVATE --coverage)
+        target_link_options   (iidmbridge_tests PRIVATE --coverage)
+
+        find_program(GCOVR_EXECUTABLE gcovr)
+        if(GCOVR_EXECUTABLE)
+            add_custom_target(coverage
+                COMMAND ${GCOVR_EXECUTABLE}
+                    --root ${CMAKE_SOURCE_DIR}/src
+                    --object-directory ${CMAKE_BINARY_DIR}
+                    --exclude "${CMAKE_SOURCE_DIR}/src/jni/.*"
+                    --exclude "${CMAKE_SOURCE_DIR}/src/graalvm/.*"
+                    --html-details ${CMAKE_BINARY_DIR}/coverage/index.html
+                    --print-summary
+                WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+                COMMENT "Generating HTML coverage report in ${CMAKE_BINARY_DIR}/coverage/"
+                DEPENDS iidmbridge_tests
+            )
+        else()
+            message(STATUS "gcovr not found; 'coverage' target unavailable. Install gcovr to generate HTML reports.")
+        endif()
+    endif()
+endif()
 
 # On Windows there is no rpath: copy iidmbridge.dll next to the test
 # executable so it is found automatically (Windows searches the exe dir first).
