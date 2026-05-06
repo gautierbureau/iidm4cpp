@@ -53,6 +53,7 @@ jobs:
           - os: windows-latest
             cxx_standard: 17
             label: windows-latest
+          # Validate the boost::optional fallback path on macOS C++14.
           - os: macos-latest
             cxx_standard: 14
             install_boost: true
