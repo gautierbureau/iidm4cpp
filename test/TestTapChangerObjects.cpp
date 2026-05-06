@@ -253,6 +253,43 @@ TEST(TapChangerObjectTest, RtcHasLoadTapChangingCapabilitiesFalse) {
     EXPECT_FALSE(rtc->hasLoadTapChangingCapabilities());
 }
 
+// ── RatioTapChanger: getCurrentStep out-of-range / equality ──────────────────
+
+TEST(TapChangerObjectTest, RtcCurrentStepOutOfRange) {
+    auto b = makeTwtBackend();
+    // Push tap position beyond the step array
+    b.ints[{TWT_HANDLE, prop::TWO_WT_RTC_TAP_POSITION}] = 99;
+    TwoWindingsTransformer twt(TWT_HANDLE, &b);
+    auto rtc = twt.getRatioTapChanger();
+    ASSERT_TRUE(rtc.has_value());
+    RatioTapChangerStep step = rtc->getCurrentStep();
+    EXPECT_FALSE(step.isValid());
+}
+
+TEST(TapChangerObjectTest, RtcEquality) {
+    auto b = makeTwtBackend();
+    TwoWindingsTransformer twt(TWT_HANDLE, &b);
+    auto rtc1 = twt.getRatioTapChanger();
+    auto rtc2 = twt.getRatioTapChanger();
+    ASSERT_TRUE(rtc1.has_value());
+    ASSERT_TRUE(rtc2.has_value());
+    EXPECT_TRUE(*rtc1 == *rtc2);
+    EXPECT_FALSE(*rtc1 != *rtc2);
+}
+
+TEST(TapChangerObjectTest, RtcStepEquality) {
+    auto b = makeTwtBackend();
+    TwoWindingsTransformer twt(TWT_HANDLE, &b);
+    auto rtc = twt.getRatioTapChanger();
+    ASSERT_TRUE(rtc.has_value());
+    auto steps = rtc->getAllSteps();
+    ASSERT_GE(steps.size(), 2u);
+    EXPECT_TRUE(steps[0] == steps[0]);
+    EXPECT_FALSE(steps[0] == steps[1]);
+    EXPECT_FALSE(steps[0] != steps[0]);
+    EXPECT_TRUE(steps[0] != steps[1]);
+}
+
 // ── RatioTapChanger: setRegulating ────────────────────────────────────────────
 
 TEST(TapChangerObjectTest, RtcSetRegulating) {
@@ -263,6 +300,59 @@ TEST(TapChangerObjectTest, RtcSetRegulating) {
     EXPECT_TRUE(rtc->isRegulating());
     rtc->setRegulating(false);
     EXPECT_FALSE((b.bools[{TWT_HANDLE, prop::TWO_WT_RTC_REGULATING}]));
+}
+
+// ── PhaseTapChanger: setTapPosition / getRegulationValue / out-of-range / equality ──
+
+TEST(TapChangerObjectTest, PtcSetTapPosition) {
+    auto b = makeTwtBackend();
+    TwoWindingsTransformer twt(TWT_HANDLE, &b);
+    auto ptc = twt.getPhaseTapChanger();
+    ASSERT_TRUE(ptc.has_value());
+    ptc->setTapPosition(-1);
+    EXPECT_EQ((b.ints[{TWT_HANDLE, prop::TWO_WT_PTC_TAP_POSITION}]), -1);
+}
+
+TEST(TapChangerObjectTest, PtcGetRegulationValue) {
+    auto b = makeTwtBackend();
+    TwoWindingsTransformer twt(TWT_HANDLE, &b);
+    auto ptc = twt.getPhaseTapChanger();
+    ASSERT_TRUE(ptc.has_value());
+    EXPECT_DOUBLE_EQ(ptc->getRegulationValue(), 0.0);
+}
+
+TEST(TapChangerObjectTest, PtcCurrentStepOutOfRange) {
+    auto b = makeTwtBackend();
+    b.ints[{TWT_HANDLE, prop::TWO_WT_PTC_TAP_POSITION}] = 99;
+    TwoWindingsTransformer twt(TWT_HANDLE, &b);
+    auto ptc = twt.getPhaseTapChanger();
+    ASSERT_TRUE(ptc.has_value());
+    PhaseTapChangerStep step = ptc->getCurrentStep();
+    EXPECT_FALSE(step.isValid());
+}
+
+TEST(TapChangerObjectTest, PtcEquality) {
+    auto b = makeTwtBackend();
+    TwoWindingsTransformer twt(TWT_HANDLE, &b);
+    auto ptc1 = twt.getPhaseTapChanger();
+    auto ptc2 = twt.getPhaseTapChanger();
+    ASSERT_TRUE(ptc1.has_value());
+    ASSERT_TRUE(ptc2.has_value());
+    EXPECT_TRUE(*ptc1 == *ptc2);
+    EXPECT_FALSE(*ptc1 != *ptc2);
+}
+
+TEST(TapChangerObjectTest, PtcStepEquality) {
+    auto b = makeTwtBackend();
+    TwoWindingsTransformer twt(TWT_HANDLE, &b);
+    auto ptc = twt.getPhaseTapChanger();
+    ASSERT_TRUE(ptc.has_value());
+    auto steps = ptc->getAllSteps();
+    ASSERT_GE(steps.size(), 2u);
+    EXPECT_TRUE(steps[0] == steps[0]);
+    EXPECT_FALSE(steps[0] == steps[1]);
+    EXPECT_FALSE(steps[0] != steps[0]);
+    EXPECT_TRUE(steps[0] != steps[1]);
 }
 
 // ── PhaseTapChanger: setRegulating / setRegulationValue ───────────────────────

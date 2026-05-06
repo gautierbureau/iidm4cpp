@@ -106,6 +106,27 @@ TEST_F(ReactiveLimitsTest, VscCurvePoints) {
 
 // ── Generator with ReactiveCapabilityCurve ────────────────────────────────────
 
+// ── MinMaxReactiveLimits equality ─────────────────────────────────────────────
+
+TEST_F(ReactiveLimitsTest, MinMaxEquality) {
+    Generator gen(GEN_HANDLE, &backend);
+    MinMaxReactiveLimits a = gen.getMinMaxReactiveLimits();
+    MinMaxReactiveLimits b = gen.getMinMaxReactiveLimits();
+
+    // Same handle + same minQProp → equal
+    EXPECT_TRUE(a == b);
+    EXPECT_FALSE(a != b);
+
+    // Different VSC limits use a different property code → not equal
+    VscConverterStation vsc(VSC_HANDLE, &backend);
+    backend.ints[{VSC_HANDLE, prop::VSC_REACTIVE_LIMITS_KIND}] = 1; // MIN_MAX
+    backend.doubles[{VSC_HANDLE, prop::VSC_MIN_Q}] = -100.0;
+    backend.doubles[{VSC_HANDLE, prop::VSC_MAX_Q}] =  100.0;
+    MinMaxReactiveLimits c = vsc.getMinMaxReactiveLimits();
+    EXPECT_FALSE(a == c);
+    EXPECT_TRUE(a != c);
+}
+
 TEST_F(ReactiveLimitsTest, GenWithCurve) {
     MockBackend b2;
     b2.strings[{GEN_HANDLE, prop::ID}] = "GEN3";
