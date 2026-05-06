@@ -154,6 +154,21 @@ target_compile_definitions(iidmbridge PRIVATE
     $<$<BOOL:${IIDM_BRIDGE_ENABLE_JNI}>:IIDM_BRIDGE_JNI_ENABLED>
 )
 
+# Bake the resolved optional type into the PUBLIC interface so that consumers
+# always use the same type as the compiled library, regardless of their own
+# C++ standard.  A C++14 consumer of a C++17-built library would otherwise
+# resolve iidm::optional<T> to boost::optional<T> while the compiled symbols
+# use std::optional<T>, producing MSVC LNK2019 / Itanium ODR violations.
+if(CMAKE_CXX_STANDARD LESS 17)
+    target_compile_definitions(iidmbridge PUBLIC IIDM_BRIDGE_USE_BOOST_OPTIONAL=1)
+    target_compile_features(iidmbridge PUBLIC cxx_std_14)
+else()
+    target_compile_definitions(iidmbridge PUBLIC IIDM_BRIDGE_USE_STD_OPTIONAL=1)
+    # Propagate the C++17 requirement so that consumers have <optional> available
+    # and so that CMake detects a standard mismatch early rather than at link time.
+    target_compile_features(iidmbridge PUBLIC cxx_std_17)
+endif()
+
 # ── Installation & CMake config ───────────────────────────────────────────────
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
