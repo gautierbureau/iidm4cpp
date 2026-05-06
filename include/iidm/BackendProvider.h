@@ -26,7 +26,7 @@ public:
     virtual void setBool  (ObjectHandle h, int property, bool value) = 0;
     virtual void setString(ObjectHandle h, int property, const std::string& value) = 0;
 
-    // ── Optional scalars (returns std::nullopt when undefined/NaN) ───────
+    // ── Optional scalars (returns empty optional when undefined/NaN) ───────
     virtual iidm::optional<double> getOptDouble(ObjectHandle h, int property) const = 0;
 
     // ── Navigation (children, terminals, etc.) ───────────────────────────
