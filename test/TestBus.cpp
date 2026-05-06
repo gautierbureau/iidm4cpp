@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <iidm/Bus.h>
+#include <iidm/VoltageLevel.h>
 #include <iidm/PropertyCodes.h>
 #include "MockBackend.h"
 
@@ -42,4 +43,32 @@ TEST_F(BusTest, IsValid) {
     Bus invalid;
     EXPECT_TRUE(valid.isValid());
     EXPECT_FALSE(invalid.isValid());
+}
+
+TEST_F(BusTest, GetName) {
+    Bus bus(BUS_HANDLE, &backend);
+    EXPECT_EQ(bus.getName(), "Bus 1");
+}
+
+TEST_F(BusTest, GetVoltageLevel) {
+    static constexpr ObjectHandle VL_H = 50;
+    backend.related[{BUS_HANDLE, prop::REL_VOLTAGE_LEVEL}] = VL_H;
+    backend.strings[{VL_H, prop::ID}]          = "VL1";
+    backend.doubles[{VL_H, prop::VL_NOMINAL_V}] = 225.0;
+    Bus bus(BUS_HANDLE, &backend);
+    VoltageLevel vl = bus.getVoltageLevel();
+    EXPECT_TRUE(vl.isValid());
+    EXPECT_EQ(vl.getId(), "VL1");
+}
+
+TEST_F(BusTest, Equality) {
+    Bus a(BUS_HANDLE, &backend);
+    Bus b(BUS_HANDLE, &backend);
+    static constexpr ObjectHandle OTHER_H = 99;
+    backend.strings[{OTHER_H, prop::ID}] = "BUS2";
+    Bus c(OTHER_H, &backend);
+    EXPECT_TRUE(a == b);
+    EXPECT_FALSE(a != b);
+    EXPECT_FALSE(a == c);
+    EXPECT_TRUE(a != c);
 }
