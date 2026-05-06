@@ -158,15 +158,20 @@ target_compile_definitions(iidmbridge PRIVATE
 # always use the same type as the compiled library, regardless of their own
 # C++ standard.  A C++14 consumer of a C++17-built library would otherwise
 # resolve iidm::optional<T> to boost::optional<T> while the compiled symbols
-# use std::optional<T>, producing MSVC LNK2019 / Itanium ODR violations.
+# use std::optional<T>, producing MSVC LNK2019 / silent layout-mismatch crashes
+# on Itanium ABI platforms (std::optional and boost::optional have different
+# in-memory layouts: the bool flag and the value are swapped).
+#
+# NOTE: cxx_std_17 / cxx_std_14 are intentionally NOT propagated here.
+# Forcing the C++ standard on consumers via compile_features is too invasive:
+# it can break third-party headers in the consumer's link graph that use
+# features removed in C++17 (e.g. std::auto_ptr in libxml).
+# Instead, optional.hpp raises a clear #error when a standard mismatch is
+# detected, directing the user to rebuild iidmbridge with the right standard.
 if(CMAKE_CXX_STANDARD LESS 17)
     target_compile_definitions(iidmbridge PUBLIC IIDM_BRIDGE_USE_BOOST_OPTIONAL=1)
-    target_compile_features(iidmbridge PUBLIC cxx_std_14)
 else()
     target_compile_definitions(iidmbridge PUBLIC IIDM_BRIDGE_USE_STD_OPTIONAL=1)
-    # Propagate the C++17 requirement so that consumers have <optional> available
-    # and so that CMake detects a standard mismatch early rather than at link time.
-    target_compile_features(iidmbridge PUBLIC cxx_std_17)
 endif()
 
 # ── Installation & CMake config ───────────────────────────────────────────────
