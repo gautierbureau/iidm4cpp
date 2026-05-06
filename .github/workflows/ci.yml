@@ -80,10 +80,13 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install cmake ninja
 
-      # macOS C++14 entry: install Boost so boost::optional is available
+      # macOS C++14 entry: install Boost so boost::optional is available,
+      # then export its prefix so the configure step can pass -DBOOST_ROOT.
       - name: Install Boost (macOS C++14 build)
         if: matrix.install_boost
-        run: brew install boost
+        run: |
+          brew install boost
+          echo "BOOST_ROOT=$(brew --prefix boost)" >> $GITHUB_ENV
 
       # Windows: jvm.dll lives in JAVA_HOME/bin/server which actions/setup-java
       # does not add to PATH.  iidmbridge.dll (built with JNI=ON) lists jvm.dll
@@ -106,6 +109,7 @@ jobs:
             -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CXX_STANDARD=${{ matrix.cxx_standard }} \
+            ${BOOST_ROOT:+-DBOOST_ROOT:PATH="${BOOST_ROOT}"} \
             -DIIDM_BRIDGE_ENABLE_GRAALVM=OFF \
             -DIIDM_BRIDGE_ENABLE_JNI=ON \
             -DIIDM_BRIDGE_BUILD_TESTS=ON \
