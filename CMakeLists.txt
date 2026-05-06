@@ -45,6 +45,18 @@ endif()
 # iidm::optional<T> resolves to std::optional (C++17) or boost::optional
 # (C++11/14).  Boost is required when building below C++17; silently optional
 # otherwise so that C++17 builds work without Boost installed.
+#
+# Only boost::optional is used; it is header-only — no compiled Boost
+# libraries are required, so no COMPONENTS need to be listed.
+#
+# Custom Boost location hints (forwarded by ExternalProject consumers):
+#   -DBOOST_ROOT:PATH=/path/to/boost
+#   -DBOOST_LIBRARYDIR=/path/to/boost/lib   (MSVC binary distributions)
+# When BOOST_ROOT is set, disable system-path searching so the specified
+# root takes precedence over any ambient system installation.
+if(BOOST_ROOT)
+    set(Boost_NO_SYSTEM_PATHS ON CACHE BOOL "Restrict Boost search to BOOST_ROOT" FORCE)
+endif()
 if(CMAKE_CXX_STANDARD LESS 17)
     find_package(Boost REQUIRED)
 else()
