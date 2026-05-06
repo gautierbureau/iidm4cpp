@@ -12,9 +12,9 @@ std::string OperationalLimitsGroup::getId() const {
 bool OperationalLimitsGroup::isEmpty() const {
     return backend_->getBool(handle_, prop::OLG_EMPTY);
 }
-std::optional<CurrentLimits> OperationalLimitsGroup::getCurrentLimits() const {
+iidm::optional<CurrentLimits> OperationalLimitsGroup::getCurrentLimits() const {
     ObjectHandle h = backend_->getRelated(handle_, prop::REL_OLG_CURRENT_LIMITS);
-    if (h == INVALID_HANDLE) return std::nullopt;
+    if (h == INVALID_HANDLE) return {};
     return CurrentLimits(h, backend_);
 }
 } // namespace iidm

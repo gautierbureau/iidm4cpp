@@ -3,7 +3,7 @@
 #include <iidm/ObjectHandle.h>
 #include <iidm/CurrentLimits.h>
 #include <iidm/Terminal.h>
-#include <optional>
+#include <iidm/stdcxx/optional.hpp>
 #include <string>
 
 namespace iidm {
@@ -29,7 +29,7 @@ public:
     double getG() const;
     double getB() const;
 
-    std::optional<CurrentLimits> getCurrentLimits() const;
+    iidm::optional<CurrentLimits> getCurrentLimits() const;
 
     Terminal getTerminal() const;
 

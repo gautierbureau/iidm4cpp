@@ -35,9 +35,9 @@ RatioTapChanger& RatioTapChanger::setTargetV(double v) {
     return *this;
 }
 
-std::optional<double> RatioTapChanger::getTargetDeadband() const {
+iidm::optional<double> RatioTapChanger::getTargetDeadband() const {
     double v = backend_->getDouble(handle_, cfg_.targetDeadband);
-    if (std::isnan(v)) return std::nullopt;
+    if (std::isnan(v)) return {};
     return v;
 }
 

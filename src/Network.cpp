@@ -47,9 +47,9 @@ static std::vector<T> buildList(BackendProvider* backend, int childType) {
 }
 
 template<typename T>
-static std::optional<T> findById(BackendProvider* backend, int objectType, const std::string& id) {
+static iidm::optional<T> findById(BackendProvider* backend, int objectType, const std::string& id) {
     ObjectHandle h = backend->findById(objectType, id);
-    if (h == INVALID_HANDLE) return std::nullopt;
+    if (h == INVALID_HANDLE) return {};
     return T(h, backend);
 }
 
@@ -113,59 +113,59 @@ std::vector<LccConverterStation> Network::getLccConverterStations() const {
 
 // ── Lookup by ID ─────────────────────────────────────────────────────────────
 
-std::optional<Battery> Network::getBattery(const std::string& id) const {
+iidm::optional<Battery> Network::getBattery(const std::string& id) const {
     return findById<Battery>(backend_.get(), prop::BATTERY, id);
 }
 
-std::optional<Generator> Network::getGenerator(const std::string& id) const {
+iidm::optional<Generator> Network::getGenerator(const std::string& id) const {
     return findById<Generator>(backend_.get(), prop::GENERATOR, id);
 }
 
-std::optional<Load> Network::getLoad(const std::string& id) const {
+iidm::optional<Load> Network::getLoad(const std::string& id) const {
     return findById<Load>(backend_.get(), prop::LOAD, id);
 }
 
-std::optional<Line> Network::getLine(const std::string& id) const {
+iidm::optional<Line> Network::getLine(const std::string& id) const {
     return findById<Line>(backend_.get(), prop::LINE, id);
 }
 
-std::optional<TwoWindingsTransformer> Network::getTwoWindingsTransformer(const std::string& id) const {
+iidm::optional<TwoWindingsTransformer> Network::getTwoWindingsTransformer(const std::string& id) const {
     return findById<TwoWindingsTransformer>(backend_.get(), prop::TWO_WINDINGS_TRANSFORMER, id);
 }
 
-std::optional<ThreeWindingsTransformer> Network::getThreeWindingsTransformer(const std::string& id) const {
+iidm::optional<ThreeWindingsTransformer> Network::getThreeWindingsTransformer(const std::string& id) const {
     return findById<ThreeWindingsTransformer>(backend_.get(), prop::THREE_WINDINGS_TRANSFORMER, id);
 }
 
-std::optional<HvdcLine> Network::getHvdcLine(const std::string& id) const {
+iidm::optional<HvdcLine> Network::getHvdcLine(const std::string& id) const {
     return findById<HvdcLine>(backend_.get(), prop::HVDC_LINE, id);
 }
 
-std::optional<DanglingLine> Network::getDanglingLine(const std::string& id) const {
+iidm::optional<DanglingLine> Network::getDanglingLine(const std::string& id) const {
     return findById<DanglingLine>(backend_.get(), prop::DANGLING_LINE, id);
 }
 
-std::optional<ShuntCompensator> Network::getShuntCompensator(const std::string& id) const {
+iidm::optional<ShuntCompensator> Network::getShuntCompensator(const std::string& id) const {
     return findById<ShuntCompensator>(backend_.get(), prop::SHUNT_COMPENSATOR, id);
 }
 
-std::optional<StaticVarCompensator> Network::getStaticVarCompensator(const std::string& id) const {
+iidm::optional<StaticVarCompensator> Network::getStaticVarCompensator(const std::string& id) const {
     return findById<StaticVarCompensator>(backend_.get(), prop::STATIC_VAR_COMPENSATOR, id);
 }
 
-std::optional<VscConverterStation> Network::getVscConverterStation(const std::string& id) const {
+iidm::optional<VscConverterStation> Network::getVscConverterStation(const std::string& id) const {
     return findById<VscConverterStation>(backend_.get(), prop::VSC_CONVERTER_STATION, id);
 }
 
-std::optional<LccConverterStation> Network::getLccConverterStation(const std::string& id) const {
+iidm::optional<LccConverterStation> Network::getLccConverterStation(const std::string& id) const {
     return findById<LccConverterStation>(backend_.get(), prop::LCC_CONVERTER_STATION, id);
 }
 
-std::optional<Switch> Network::getSwitch(const std::string& id) const {
+iidm::optional<Switch> Network::getSwitch(const std::string& id) const {
     return findById<Switch>(backend_.get(), prop::SWITCH, id);
 }
 
-std::optional<BusbarSection> Network::getBusbarSection(const std::string& id) const {
+iidm::optional<BusbarSection> Network::getBusbarSection(const std::string& id) const {
     return findById<BusbarSection>(backend_.get(), prop::BUSBAR_SECTION, id);
 }
 

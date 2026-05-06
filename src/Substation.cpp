@@ -16,7 +16,7 @@ std::string Substation::getName() const {
     return backend_->getString(handle_, prop::NAME);
 }
 
-std::optional<Country> Substation::getCountry() const {
+iidm::optional<Country> Substation::getCountry() const {
     return countryFromName(backend_->getString(handle_, prop::COUNTRY));
 }
 

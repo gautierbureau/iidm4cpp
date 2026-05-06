@@ -52,9 +52,9 @@ std::vector<int> VoltageLevel::NodeBreakerView::getNodes() const {
     return backend_->getIntList(handle_, prop::VL_NBV_NODES);
 }
 
-std::optional<Switch> VoltageLevel::NodeBreakerView::getSwitch(const std::string& id) const {
+iidm::optional<Switch> VoltageLevel::NodeBreakerView::getSwitch(const std::string& id) const {
     ObjectHandle h = backend_->findById(prop::SWITCH, id);
-    if (h == INVALID_HANDLE) return std::nullopt;
+    if (h == INVALID_HANDLE) return {};
     return Switch(h, backend_);
 }
 
@@ -109,11 +109,11 @@ double VoltageLevel::getNominalV() const {
     return backend_->getDouble(handle_, prop::VL_NOMINAL_V);
 }
 
-std::optional<double> VoltageLevel::getLowVoltageLimit() const {
+iidm::optional<double> VoltageLevel::getLowVoltageLimit() const {
     return backend_->getOptDouble(handle_, prop::VL_LOW_VOLTAGE_LIMIT);
 }
 
-std::optional<double> VoltageLevel::getHighVoltageLimit() const {
+iidm::optional<double> VoltageLevel::getHighVoltageLimit() const {
     return backend_->getOptDouble(handle_, prop::VL_HIGH_VOLTAGE_LIMIT);
 }
 
