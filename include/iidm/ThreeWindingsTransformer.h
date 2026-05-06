@@ -8,7 +8,7 @@
 #include <iidm/PhaseTapChanger.h>
 #include <iidm/Substation.h>
 #include <iidm/Terminal.h>
-#include <optional>
+#include <iidm/stdcxx/optional.hpp>
 #include <string>
 #include <vector>
 
@@ -31,7 +31,7 @@ public:
         double getG() const;
         double getB() const;
         double getRatedU() const;
-        std::optional<double> getRatedS() const;
+        iidm::optional<double> getRatedS() const;
 
         bool hasRatioTapChanger() const;
         RatioTapChanger getRatioTapChanger() const;
@@ -41,10 +41,10 @@ public:
 
         Terminal getTerminal() const;
 
-        std::optional<CurrentLimits> getCurrentLimits() const;
+        iidm::optional<CurrentLimits> getCurrentLimits() const;
 
         std::vector<OperationalLimitsGroup> getOperationalLimitsGroups() const;
-        std::optional<OperationalLimitsGroup> getSelectedOperationalLimitsGroup() const;
+        iidm::optional<OperationalLimitsGroup> getSelectedOperationalLimitsGroup() const;
 
         bool isValid() const { return handle_ != INVALID_HANDLE; }
 

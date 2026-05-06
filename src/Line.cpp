@@ -51,15 +51,15 @@ Terminal Line::getTerminal2() const {
     return Terminal(termHandle, backend_);
 }
 
-std::optional<CurrentLimits> Line::getCurrentLimits1() const {
+iidm::optional<CurrentLimits> Line::getCurrentLimits1() const {
     ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS1);
-    if (h == INVALID_HANDLE) return std::nullopt;
+    if (h == INVALID_HANDLE) return {};
     return CurrentLimits(h, backend_);
 }
 
-std::optional<CurrentLimits> Line::getCurrentLimits2() const {
+iidm::optional<CurrentLimits> Line::getCurrentLimits2() const {
     ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS2);
-    if (h == INVALID_HANDLE) return std::nullopt;
+    if (h == INVALID_HANDLE) return {};
     return CurrentLimits(h, backend_);
 }
 
@@ -79,15 +79,15 @@ std::vector<OperationalLimitsGroup> Line::getOperationalLimitsGroups2() const {
     return result;
 }
 
-std::optional<OperationalLimitsGroup> Line::getSelectedOperationalLimitsGroup1() const {
+iidm::optional<OperationalLimitsGroup> Line::getSelectedOperationalLimitsGroup1() const {
     ObjectHandle h = backend_->getRelated(handle_, prop::REL_SELECTED_OLG1);
-    if (h == INVALID_HANDLE) return std::nullopt;
+    if (h == INVALID_HANDLE) return {};
     return OperationalLimitsGroup(h, backend_);
 }
 
-std::optional<OperationalLimitsGroup> Line::getSelectedOperationalLimitsGroup2() const {
+iidm::optional<OperationalLimitsGroup> Line::getSelectedOperationalLimitsGroup2() const {
     ObjectHandle h = backend_->getRelated(handle_, prop::REL_SELECTED_OLG2);
-    if (h == INVALID_HANDLE) return std::nullopt;
+    if (h == INVALID_HANDLE) return {};
     return OperationalLimitsGroup(h, backend_);
 }
 

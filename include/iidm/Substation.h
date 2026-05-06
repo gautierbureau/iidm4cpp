@@ -3,7 +3,7 @@
 #include <iidm/ObjectHandle.h>
 #include <iidm/Enums.h>
 #include <iidm/VoltageLevel.h>
-#include <optional>
+#include <iidm/stdcxx/optional.hpp>
 #include <string>
 #include <vector>
 
@@ -19,7 +19,7 @@ public:
     std::string getId() const;
     std::string getName() const;
 
-    std::optional<Country> getCountry() const;
+    iidm::optional<Country> getCountry() const;
 
     std::vector<VoltageLevel> getVoltageLevels() const;
 

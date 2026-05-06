@@ -1,5 +1,7 @@
 #include <iidm/Enums.h>
 #include <iidm/IidmException.h>
+#include <string>
+#include <unordered_map>
 
 namespace iidm {
 
@@ -198,6 +200,63 @@ std::string getCountryName(Country country) {
         case Country::ZW: return "ZW";
         default: throw IidmException("Unknown Country enum value");
     }
+}
+
+iidm::optional<Country> countryFromName(const std::string& name) {
+    if (name.empty()) return {};
+    static const std::unordered_map<std::string, Country> table = {
+        {"AF",Country::AF},{"AL",Country::AL},{"DZ",Country::DZ},{"AD",Country::AD},
+        {"AO",Country::AO},{"AG",Country::AG},{"AR",Country::AR},{"AM",Country::AM},
+        {"AU",Country::AU},{"AT",Country::AT},{"AZ",Country::AZ},{"BS",Country::BS},
+        {"BH",Country::BH},{"BD",Country::BD},{"BB",Country::BB},{"BY",Country::BY},
+        {"BE",Country::BE},{"BZ",Country::BZ},{"BJ",Country::BJ},{"BT",Country::BT},
+        {"BO",Country::BO},{"BA",Country::BA},{"BW",Country::BW},{"BR",Country::BR},
+        {"BN",Country::BN},{"BG",Country::BG},{"BF",Country::BF},{"BI",Country::BI},
+        {"CV",Country::CV},{"KH",Country::KH},{"CM",Country::CM},{"CA",Country::CA},
+        {"CF",Country::CF},{"TD",Country::TD},{"CL",Country::CL},{"CN",Country::CN},
+        {"CO",Country::CO},{"KM",Country::KM},{"CG",Country::CG},{"CR",Country::CR},
+        {"HR",Country::HR},{"CU",Country::CU},{"CY",Country::CY},{"CZ",Country::CZ},
+        {"DK",Country::DK},{"DJ",Country::DJ},{"DM",Country::DM},{"DO",Country::DO},
+        {"EC",Country::EC},{"EG",Country::EG},{"SV",Country::SV},{"GQ",Country::GQ},
+        {"ER",Country::ER},{"EE",Country::EE},{"SZ",Country::SZ},{"ET",Country::ET},
+        {"FJ",Country::FJ},{"FI",Country::FI},{"FR",Country::FR},{"GA",Country::GA},
+        {"GM",Country::GM},{"GE",Country::GE},{"DE",Country::DE},{"GH",Country::GH},
+        {"GR",Country::GR},{"GD",Country::GD},{"GT",Country::GT},{"GN",Country::GN},
+        {"GW",Country::GW},{"GY",Country::GY},{"HT",Country::HT},{"HN",Country::HN},
+        {"HU",Country::HU},{"IS",Country::IS},{"IN",Country::IN},{"ID",Country::ID},
+        {"IR",Country::IR},{"IQ",Country::IQ},{"IE",Country::IE},{"IL",Country::IL},
+        {"IT",Country::IT},{"JM",Country::JM},{"JP",Country::JP},{"JO",Country::JO},
+        {"KZ",Country::KZ},{"KE",Country::KE},{"KI",Country::KI},{"KP",Country::KP},
+        {"KR",Country::KR},{"KW",Country::KW},{"KG",Country::KG},{"LA",Country::LA},
+        {"LV",Country::LV},{"LB",Country::LB},{"LS",Country::LS},{"LR",Country::LR},
+        {"LY",Country::LY},{"LI",Country::LI},{"LT",Country::LT},{"LU",Country::LU},
+        {"MG",Country::MG},{"MW",Country::MW},{"MY",Country::MY},{"MV",Country::MV},
+        {"ML",Country::ML},{"MT",Country::MT},{"MH",Country::MH},{"MR",Country::MR},
+        {"MU",Country::MU},{"MX",Country::MX},{"FM",Country::FM},{"MD",Country::MD},
+        {"MC",Country::MC},{"MN",Country::MN},{"ME",Country::ME},{"MA",Country::MA},
+        {"MZ",Country::MZ},{"MM",Country::MM},{"NA",Country::NA},{"NR",Country::NR},
+        {"NP",Country::NP},{"NL",Country::NL},{"NZ",Country::NZ},{"NI",Country::NI},
+        {"NE",Country::NE},{"NG",Country::NG},{"NO",Country::NO},{"OM",Country::OM},
+        {"PK",Country::PK},{"PW",Country::PW},{"PA",Country::PA},{"PG",Country::PG},
+        {"PY",Country::PY},{"PE",Country::PE},{"PH",Country::PH},{"PL",Country::PL},
+        {"PT",Country::PT},{"QA",Country::QA},{"RO",Country::RO},{"RU",Country::RU},
+        {"RW",Country::RW},{"KN",Country::KN},{"LC",Country::LC},{"VC",Country::VC},
+        {"WS",Country::WS},{"SM",Country::SM},{"ST",Country::ST},{"SA",Country::SA},
+        {"SN",Country::SN},{"RS",Country::RS},{"SC",Country::SC},{"SL",Country::SL},
+        {"SG",Country::SG},{"SK",Country::SK},{"SI",Country::SI},{"SB",Country::SB},
+        {"SO",Country::SO},{"ZA",Country::ZA},{"SS",Country::SS},{"ES",Country::ES},
+        {"LK",Country::LK},{"SD",Country::SD},{"SR",Country::SR},{"SE",Country::SE},
+        {"CH",Country::CH},{"SY",Country::SY},{"TW",Country::TW},{"TJ",Country::TJ},
+        {"TZ",Country::TZ},{"TH",Country::TH},{"TL",Country::TL},{"TG",Country::TG},
+        {"TO",Country::TO},{"TT",Country::TT},{"TN",Country::TN},{"TR",Country::TR},
+        {"TM",Country::TM},{"TV",Country::TV},{"UG",Country::UG},{"UA",Country::UA},
+        {"AE",Country::AE},{"GB",Country::GB},{"US",Country::US},{"UY",Country::UY},
+        {"UZ",Country::UZ},{"VU",Country::VU},{"VE",Country::VE},{"VN",Country::VN},
+        {"YE",Country::YE},{"ZM",Country::ZM},{"ZW",Country::ZW},
+    };
+    auto it = table.find(name);
+    if (it == table.end()) throw IidmException("Unknown country code: " + name);
+    return it->second;
 }
 
 } // namespace iidm

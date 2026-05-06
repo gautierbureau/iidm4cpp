@@ -1,15 +1,13 @@
 cmake_minimum_required(VERSION 3.14.5)
 project(iidm-bridge-cpp VERSION 1.0.0 LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-option(IIDM_BRIDGE_ENABLE_GRAALVM "Build the GraalVM backend" ON)
-option(IIDM_BRIDGE_ENABLE_JNI     "Build the JNI backend" ON)
-option(IIDM_BRIDGE_BUILD_TESTS    "Build unit tests" OFF)
-option(IIDM_BRIDGE_BUILD_EXAMPLES "Build examples" ON)
-option(IIDM_BRIDGE_BUILD_JAVA     "Build the Java fat-JAR via Maven" ON)
-option(IIDM_BRIDGE_BUILD_NATIVE   "Build the GraalVM native shared image via native-image" ON)
+option(IIDM_BRIDGE_ENABLE_GRAALVM  "Build the GraalVM backend" ON)
+option(IIDM_BRIDGE_ENABLE_JNI      "Build the JNI backend" ON)
+option(IIDM_BRIDGE_BUILD_TESTS     "Build unit tests" OFF)
+option(IIDM_BRIDGE_BUILD_EXAMPLES  "Build examples" ON)
+option(IIDM_BRIDGE_BUILD_JAVA      "Build the Java fat-JAR via Maven" ON)
+option(IIDM_BRIDGE_BUILD_NATIVE    "Build the GraalVM native shared image via native-image" ON)
+option(IIDM_BRIDGE_ENABLE_COVERAGE "Instrument library and tests for gcov/lcov coverage (GCC/Clang only)" OFF)
 
 # ── JNI ──────────────────────────────────────────────────────────────────────
 if(IIDM_BRIDGE_ENABLE_JNI)
@@ -33,6 +31,13 @@ if(IIDM_BRIDGE_ENABLE_GRAALVM)
         endif()
     endif()
 endif()
+
+# ── Boost (optional; required only for C++11/14 builds) ──────────────────────
+# When the consuming project (e.g. Dynawo via ExternalProject) compiles without
+# C++17, iidm::optional<T> maps to boost::optional<T>.  Detect Boost at
+# configure time so we can expose the dependency; the library itself will build
+# fine without Boost on C++17+ toolchains.
+find_package(Boost QUIET)
 
 # ── Library sources ──────────────────────────────────────────────────────────
 set(IIDM_BRIDGE_SOURCES
@@ -107,6 +112,12 @@ target_link_libraries(iidmbridge
         $<$<BOOL:${IIDM_BRIDGE_ENABLE_JNI}>:${JNI_LIBRARIES}>
         ${CMAKE_DL_LIBS}
 )
+if(Boost_FOUND)
+    # Expose Boost headers to consumers building in C++11/14 mode so that
+    # iidm::optional<T> (which aliases boost::optional<T> below C++17) is
+    # resolvable without any extra include-path setup on their side.
+    target_link_libraries(iidmbridge PUBLIC Boost::boost)
+endif()
 
 target_compile_definitions(iidmbridge PRIVATE
     $<$<BOOL:${IIDM_BRIDGE_ENABLE_GRAALVM}>:IIDM_BRIDGE_GRAALVM_ENABLED>

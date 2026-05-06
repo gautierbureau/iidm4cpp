@@ -51,9 +51,9 @@ double DanglingLine::getB() const {
     return backend_->getDouble(handle_, prop::DL_B);
 }
 
-std::optional<CurrentLimits> DanglingLine::getCurrentLimits() const {
+iidm::optional<CurrentLimits> DanglingLine::getCurrentLimits() const {
     ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS1);
-    if (h == INVALID_HANDLE) return std::nullopt;
+    if (h == INVALID_HANDLE) return {};
     return CurrentLimits(h, backend_);
 }
 

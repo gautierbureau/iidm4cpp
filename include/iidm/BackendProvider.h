@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iidm/ObjectHandle.h>
-#include <optional>
+#include <iidm/stdcxx/optional.hpp>
 #include <string>
 #include <vector>
 
@@ -27,7 +27,7 @@ public:
     virtual void setString(ObjectHandle h, int property, const std::string& value) = 0;
 
     // ── Optional scalars (returns std::nullopt when undefined/NaN) ───────
-    virtual std::optional<double> getOptDouble(ObjectHandle h, int property) const = 0;
+    virtual iidm::optional<double> getOptDouble(ObjectHandle h, int property) const = 0;
 
     // ── Navigation (children, terminals, etc.) ───────────────────────────
     virtual std::vector<ObjectHandle> getChildren(ObjectHandle h, int childType) const = 0;
