@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iidm/stdcxx/optional.hpp>
+#include <iosfwd>
 #include <string>
 
 namespace iidm {
@@ -27,7 +28,8 @@ enum class SwitchKind { BREAKER, DISCONNECTOR, LOAD_BREAK_SWITCH };
 enum class PhaseTapChangerRegulationMode { CURRENT_LIMITER, ACTIVE_POWER_CONTROL, FIXED_TAP };
 enum class HvdcOperatorActivePowerRangeSide { SIDE1, SIDE2 };
 
-std::string          getCountryName(Country country);
+std::string             getCountryName(Country country);
 iidm::optional<Country> countryFromName(const std::string& name);
+std::ostream&           operator<<(std::ostream& os, Country c);
 
 } // namespace iidm

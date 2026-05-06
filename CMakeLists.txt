@@ -1,6 +1,15 @@
 cmake_minimum_required(VERSION 3.14.5)
 project(iidm-bridge-cpp VERSION 1.0.0 LANGUAGES CXX)
 
+# Default to C++17.  Override with -DCMAKE_CXX_STANDARD=14 (or 11) when
+# building for a consumer that cannot use C++17 (e.g. Dynawo via
+# ExternalProject).  When overriding below C++17 Boost must be available —
+# iidm::optional<T> maps to boost::optional<T> in that mode.
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 17)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
+
 option(IIDM_BRIDGE_ENABLE_GRAALVM  "Build the GraalVM backend" ON)
 option(IIDM_BRIDGE_ENABLE_JNI      "Build the JNI backend" ON)
 option(IIDM_BRIDGE_BUILD_TESTS     "Build unit tests" OFF)
@@ -32,12 +41,15 @@ if(IIDM_BRIDGE_ENABLE_GRAALVM)
     endif()
 endif()
 
-# ── Boost (optional; required only for C++11/14 builds) ──────────────────────
-# When the consuming project (e.g. Dynawo via ExternalProject) compiles without
-# C++17, iidm::optional<T> maps to boost::optional<T>.  Detect Boost at
-# configure time so we can expose the dependency; the library itself will build
-# fine without Boost on C++17+ toolchains.
-find_package(Boost QUIET)
+# ── Boost ────────────────────────────────────────────────────────────────────
+# iidm::optional<T> resolves to std::optional (C++17) or boost::optional
+# (C++11/14).  Boost is required when building below C++17; silently optional
+# otherwise so that C++17 builds work without Boost installed.
+if(CMAKE_CXX_STANDARD LESS 17)
+    find_package(Boost REQUIRED)
+else()
+    find_package(Boost QUIET)
+endif()
 
 # ── Library sources ──────────────────────────────────────────────────────────
 set(IIDM_BRIDGE_SOURCES

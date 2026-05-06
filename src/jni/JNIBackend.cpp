@@ -3,6 +3,7 @@
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
 #include <cmath>
+#include <limits>
 #include <string>
 
 namespace iidm {
@@ -1742,9 +1743,9 @@ void JNIBackend::setString(ObjectHandle h, int property, const std::string& valu
     checkJNIException(env_);
 }
 
-std::optional<double> JNIBackend::getOptDouble(ObjectHandle h, int property) const {
+iidm::optional<double> JNIBackend::getOptDouble(ObjectHandle h, int property) const {
     double val = getDouble(h, property);
-    if (std::isnan(val)) return std::nullopt;
+    if (std::isnan(val)) return {};
     return val;
 }
 

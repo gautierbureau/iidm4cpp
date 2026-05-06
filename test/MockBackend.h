@@ -5,7 +5,12 @@
 #include <iidm/PropertyCodes.h>
 #include <cmath>
 #include <map>
-#include <optional>
+#include <iidm/stdcxx/optional.hpp>
+// When building without C++17, iidm::optional<T> is boost::optional<T>.
+// Include the Boost I/O header so GTest can print optional values on failure.
+#ifdef BOOST_OPTIONAL_FLC_19NOV2002_HPP
+#  include <boost/optional/optional_io.hpp>
+#endif
 #include <string>
 #include <vector>
 
@@ -59,9 +64,9 @@ public:
     void setBool  (ObjectHandle h, int p, bool v)   override { bools[{h, p}] = v; }
     void setString(ObjectHandle h, int p, const std::string& v) override { strings[{h, p}] = v; }
 
-    std::optional<double> getOptDouble(ObjectHandle h, int p) const override {
+    iidm::optional<double> getOptDouble(ObjectHandle h, int p) const override {
         double v = getDouble(h, p);
-        if (std::isnan(v)) return std::nullopt;
+        if (std::isnan(v)) return {};
         return v;
     }
 

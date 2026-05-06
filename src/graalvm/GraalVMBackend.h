@@ -2,7 +2,7 @@
 
 #include <iidm/BackendProvider.h>
 #include <iidm/IidmException.h>
-#include <optional>
+#include <iidm/stdcxx/optional.hpp>
 #include <string>
 #include <vector>
 
@@ -30,7 +30,7 @@ public:
     void setBool  (ObjectHandle h, int property, bool value) override;
     void setString(ObjectHandle h, int property, const std::string& value) override;
 
-    std::optional<double> getOptDouble(ObjectHandle h, int property) const override;
+    iidm::optional<double> getOptDouble(ObjectHandle h, int property) const override;
 
     std::vector<ObjectHandle> getChildren(ObjectHandle h, int childType) const override;
     ObjectHandle              getRelated(ObjectHandle h, int relation) const override;

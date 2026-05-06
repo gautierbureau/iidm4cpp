@@ -1,6 +1,6 @@
 #include <iidm/Enums.h>
 #include <iidm/IidmException.h>
-#include <iidm/stdcxx/optional.hpp>
+#include <ostream>
 #include <string>
 #include <unordered_map>
 
@@ -258,6 +258,10 @@ iidm::optional<Country> countryFromName(const std::string& name) {
     auto it = table.find(name);
     if (it == table.end()) throw IidmException("Unknown country code: " + name);
     return it->second;
+}
+
+std::ostream& operator<<(std::ostream& os, Country c) {
+    return os << getCountryName(c);
 }
 
 } // namespace iidm
