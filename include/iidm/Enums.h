@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <string>
 
 namespace iidm {
@@ -26,6 +27,7 @@ enum class SwitchKind { BREAKER, DISCONNECTOR, LOAD_BREAK_SWITCH };
 enum class PhaseTapChangerRegulationMode { CURRENT_LIMITER, ACTIVE_POWER_CONTROL, FIXED_TAP };
 enum class HvdcOperatorActivePowerRangeSide { SIDE1, SIDE2 };
 
-std::string getCountryName(Country country);
+std::string          getCountryName(Country country);
+std::optional<Country> countryFromName(const std::string& name);
 
 } // namespace iidm
