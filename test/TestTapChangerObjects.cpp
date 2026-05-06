@@ -253,6 +253,39 @@ TEST(TapChangerObjectTest, RtcHasLoadTapChangingCapabilitiesFalse) {
     EXPECT_FALSE(rtc->hasLoadTapChangingCapabilities());
 }
 
+// ── RatioTapChanger: setRegulating ────────────────────────────────────────────
+
+TEST(TapChangerObjectTest, RtcSetRegulating) {
+    auto b = makeTwtBackend();
+    TwoWindingsTransformer twt(TWT_HANDLE, &b);
+    auto rtc = twt.getRatioTapChanger();
+    ASSERT_TRUE(rtc.has_value());
+    EXPECT_TRUE(rtc->isRegulating());
+    rtc->setRegulating(false);
+    EXPECT_FALSE((b.bools[{TWT_HANDLE, prop::TWO_WT_RTC_REGULATING}]));
+}
+
+// ── PhaseTapChanger: setRegulating / setRegulationValue ───────────────────────
+
+TEST(TapChangerObjectTest, PtcSetRegulating) {
+    auto b = makeTwtBackend();
+    TwoWindingsTransformer twt(TWT_HANDLE, &b);
+    auto ptc = twt.getPhaseTapChanger();
+    ASSERT_TRUE(ptc.has_value());
+    EXPECT_FALSE(ptc->isRegulating());
+    ptc->setRegulating(true);
+    EXPECT_TRUE((b.bools[{TWT_HANDLE, prop::TWO_WT_PTC_REGULATING}]));
+}
+
+TEST(TapChangerObjectTest, PtcSetRegulationValue) {
+    auto b = makeTwtBackend();
+    TwoWindingsTransformer twt(TWT_HANDLE, &b);
+    auto ptc = twt.getPhaseTapChanger();
+    ASSERT_TRUE(ptc.has_value());
+    ptc->setRegulationValue(5.5);
+    EXPECT_DOUBLE_EQ((b.doubles[{TWT_HANDLE, prop::TWO_WT_PTC_REG_VALUE}]), 5.5);
+}
+
 // ── RatioTapChangerStep standalone constructor ────────────────────────────────
 
 TEST(TapChangerObjectTest, RtcStandaloneStepConstructor) {
