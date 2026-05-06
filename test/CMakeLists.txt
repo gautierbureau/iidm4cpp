@@ -36,6 +36,7 @@ set(TEST_SOURCES
     TestSubstation.cpp
     TestCurrentLimits.cpp
     TestEnums.cpp
+    TestNetworkFactory.cpp
 )
 
 add_executable(iidmbridge_tests ${TEST_SOURCES})
