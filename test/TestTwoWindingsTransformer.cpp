@@ -83,6 +83,62 @@ TEST_F(TwoWindingsTransformerTest, GetCurrentLimitsPresent) {
     EXPECT_DOUBLE_EQ(twt.getCurrentLimits2()->getPermanentLimit(), 600.0);
 }
 
+TEST_F(TwoWindingsTransformerTest, GetName) {
+    TwoWindingsTransformer twt(TWT_H, &backend);
+    EXPECT_EQ(twt.getName(), "Two Windings T1");
+}
+
+TEST_F(TwoWindingsTransformerTest, GetOperationalLimitsGroupsEmpty) {
+    TwoWindingsTransformer twt(TWT_H, &backend);
+    EXPECT_EQ(twt.getOperationalLimitsGroups1().size(), 0u);
+    EXPECT_EQ(twt.getOperationalLimitsGroups2().size(), 0u);
+    EXPECT_FALSE(twt.getSelectedOperationalLimitsGroup1().has_value());
+    EXPECT_FALSE(twt.getSelectedOperationalLimitsGroup2().has_value());
+}
+
+TEST_F(TwoWindingsTransformerTest, GetOperationalLimitsGroups) {
+    static constexpr ObjectHandle OLG1_H = 40;
+    static constexpr ObjectHandle OLG2_H = 41;
+    backend.children[{TWT_H, prop::OLG_SIDE1}] = {OLG1_H};
+    backend.children[{TWT_H, prop::OLG_SIDE2}] = {OLG2_H};
+    backend.strings [{OLG1_H, prop::OLG_ID}]   = "DEFAULT";
+    backend.strings [{OLG2_H, prop::OLG_ID}]   = "DEFAULT";
+    TwoWindingsTransformer twt(TWT_H, &backend);
+    ASSERT_EQ(twt.getOperationalLimitsGroups1().size(), 1u);
+    ASSERT_EQ(twt.getOperationalLimitsGroups2().size(), 1u);
+    EXPECT_EQ(twt.getOperationalLimitsGroups1()[0].getId(), "DEFAULT");
+    EXPECT_EQ(twt.getOperationalLimitsGroups2()[0].getId(), "DEFAULT");
+}
+
+TEST_F(TwoWindingsTransformerTest, GetSelectedOperationalLimitsGroups) {
+    static constexpr ObjectHandle OLG1_H = 40;
+    static constexpr ObjectHandle OLG2_H = 41;
+    backend.related[{TWT_H, prop::REL_SELECTED_OLG1}] = OLG1_H;
+    backend.related[{TWT_H, prop::REL_SELECTED_OLG2}] = OLG2_H;
+    backend.strings[{OLG1_H, prop::OLG_ID}] = "GRP1";
+    backend.strings[{OLG2_H, prop::OLG_ID}] = "GRP2";
+    TwoWindingsTransformer twt(TWT_H, &backend);
+    auto olg1 = twt.getSelectedOperationalLimitsGroup1();
+    auto olg2 = twt.getSelectedOperationalLimitsGroup2();
+    ASSERT_TRUE(olg1.has_value());
+    ASSERT_TRUE(olg2.has_value());
+    EXPECT_EQ(olg1->getId(), "GRP1");
+    EXPECT_EQ(olg2->getId(), "GRP2");
+}
+
+TEST_F(TwoWindingsTransformerTest, ConnectDisconnect) {
+    backend.bools[{T1_H, prop::TERMINAL_CONNECTED}] = true;
+    backend.bools[{T2_H, prop::TERMINAL_CONNECTED}] = true;
+    TwoWindingsTransformer twt(TWT_H, &backend);
+    EXPECT_TRUE(twt.isConnected());
+    twt.disconnect();
+    EXPECT_FALSE((backend.bools[{T1_H, prop::TERMINAL_CONNECTED}]));
+    EXPECT_FALSE((backend.bools[{T2_H, prop::TERMINAL_CONNECTED}]));
+    twt.connect();
+    EXPECT_TRUE((backend.bools[{T1_H, prop::TERMINAL_CONNECTED}]));
+    EXPECT_TRUE((backend.bools[{T2_H, prop::TERMINAL_CONNECTED}]));
+}
+
 TEST_F(TwoWindingsTransformerTest, IsValid) {
     TwoWindingsTransformer valid(TWT_H, &backend);
     TwoWindingsTransformer invalid;

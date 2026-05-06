@@ -68,3 +68,36 @@ TEST_F(HvdcLineTest, LccGetHvdcLine) {
     EXPECT_TRUE(line.isValid());
     EXPECT_EQ(line.getId(), "HVDC1");
 }
+
+TEST_F(HvdcLineTest, GetName) {
+    HvdcLine hvdc(HVDC_HANDLE, &backend);
+    EXPECT_EQ(hvdc.getName(), "HVDC Line 1");
+}
+
+TEST_F(HvdcLineTest, GetRNominalVMaxP) {
+    HvdcLine hvdc(HVDC_HANDLE, &backend);
+    EXPECT_DOUBLE_EQ(hvdc.getR(), 1.0);
+    EXPECT_DOUBLE_EQ(hvdc.getNominalV(), 320.0);
+    EXPECT_DOUBLE_EQ(hvdc.getMaxP(), 800.0);
+}
+
+TEST_F(HvdcLineTest, GetSetActivePowerSetpoint) {
+    HvdcLine hvdc(HVDC_HANDLE, &backend);
+    EXPECT_DOUBLE_EQ(hvdc.getActivePowerSetpoint(), 500.0);
+    hvdc.setActivePowerSetpoint(600.0);
+    EXPECT_DOUBLE_EQ((backend.doubles[{HVDC_HANDLE, prop::HVDC_ACTIVE_POWER_SETPOINT}]), 600.0);
+}
+
+TEST_F(HvdcLineTest, GetSetConvertersMode) {
+    HvdcLine hvdc(HVDC_HANDLE, &backend);
+    EXPECT_EQ(hvdc.getConvertersMode(), HvdcConverterStationMode::RECTIFIER);
+    hvdc.setConvertersMode(HvdcConverterStationMode::INVERTER);
+    EXPECT_EQ((backend.ints[{HVDC_HANDLE, prop::HVDC_CONVERTERS_MODE}]), 1);
+}
+
+TEST_F(HvdcLineTest, IsValid) {
+    HvdcLine valid(HVDC_HANDLE, &backend);
+    HvdcLine invalid;
+    EXPECT_TRUE(valid.isValid());
+    EXPECT_FALSE(invalid.isValid());
+}

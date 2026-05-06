@@ -221,3 +221,39 @@ TEST_F(ThreeWindingsTransformerLegTest, Leg1RtcHasLoadTapChangingCapabilities) {
     EXPECT_TRUE(rtc.isValid());
     EXPECT_TRUE(rtc.hasLoadTapChangingCapabilities());
 }
+
+// ── Leg::hasPhaseTapChanger / getPhaseTapChanger ──────────────────────────────
+
+TEST_F(ThreeWindingsTransformerLegTest, Leg1HasNoPhaseTapChangerByDefault) {
+    ThreeWindingsTransformer twt(TWT_HANDLE, &backend);
+    // Leg1 PTC exists flag not set → defaults to false via MockBackend
+    backend.bools[{TWT_HANDLE, prop::THREE_WT_LEG1_BASE + prop::THREE_WT_LEG_PTC_EXISTS_OFF}] = false;
+    EXPECT_FALSE(twt.getLeg1().hasPhaseTapChanger());
+}
+
+TEST_F(ThreeWindingsTransformerLegTest, Leg1PhaseTapChanger) {
+    backend.bools[{TWT_HANDLE, prop::THREE_WT_LEG1_BASE + prop::THREE_WT_LEG_PTC_EXISTS_OFF}]     = true;
+    backend.ints [{TWT_HANDLE, prop::THREE_WT_LEG1_BASE + prop::THREE_WT_LEG_PTC_TAP_POS_OFF}]    = 0;
+    backend.ints [{TWT_HANDLE, prop::THREE_WT_LEG1_BASE + prop::THREE_WT_LEG_PTC_LOW_TAP_OFF}]    = -1;
+    backend.ints [{TWT_HANDLE, prop::THREE_WT_LEG1_BASE + prop::THREE_WT_LEG_PTC_HIGH_TAP_OFF}]   = 1;
+    backend.bools[{TWT_HANDLE, prop::THREE_WT_LEG1_BASE + prop::THREE_WT_LEG_PTC_REGULATING_OFF}] = false;
+    backend.ints [{TWT_HANDLE, prop::THREE_WT_LEG1_BASE + prop::THREE_WT_LEG_PTC_REG_MODE_OFF}]   = 2; // FIXED_TAP
+    backend.doubles[{TWT_HANDLE, prop::THREE_WT_LEG1_BASE + prop::THREE_WT_LEG_PTC_REG_VALUE_OFF}] = 0.0;
+    static constexpr ObjectHandle PS0 = 200, PS1 = 201;
+    backend.children[{TWT_HANDLE, prop::THREE_WT_LEG1_PTC_STEP}] = {PS0, PS1};
+    backend.doubles[{PS0, prop::PTC_STEP_ALPHA}] = -3.0;
+    backend.doubles[{PS0, prop::PTC_STEP_RHO}]   = 1.0;
+    backend.doubles[{PS1, prop::PTC_STEP_ALPHA}] =  0.0;
+    backend.doubles[{PS1, prop::PTC_STEP_RHO}]   = 1.0;
+    ThreeWindingsTransformer twt(TWT_HANDLE, &backend);
+    EXPECT_TRUE(twt.getLeg1().hasPhaseTapChanger());
+    PhaseTapChanger ptc = twt.getLeg1().getPhaseTapChanger();
+    EXPECT_TRUE(ptc.isValid());
+    EXPECT_EQ(ptc.getTapPosition(),    0);
+    EXPECT_EQ(ptc.getLowTapPosition(), -1);
+    EXPECT_EQ(ptc.getHighTapPosition(), 1);
+    EXPECT_EQ(ptc.getRegulationMode(), PhaseTapChangerRegulationMode::FIXED_TAP);
+    auto steps = ptc.getAllSteps();
+    ASSERT_EQ(steps.size(), 2u);
+    EXPECT_DOUBLE_EQ(steps[0].getAlpha(), -3.0);
+}
