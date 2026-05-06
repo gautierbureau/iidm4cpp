@@ -170,10 +170,10 @@ void GraalVMBackend::setString(ObjectHandle h, int property, const std::string& 
     fnSetString_(thread_, h, property, value.c_str());
 }
 
-std::optional<double> GraalVMBackend::getOptDouble(ObjectHandle h, int property) const {
+iidm::optional<double> GraalVMBackend::getOptDouble(ObjectHandle h, int property) const {
     double val = fnGetDouble_(thread_, h, property);
     // NaN signals "undefined"
-    if (val != val) return std::nullopt;  // NaN check
+    if (val != val) return {};  // NaN check
     return val;
 }
 

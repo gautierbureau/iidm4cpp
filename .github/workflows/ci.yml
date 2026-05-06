@@ -38,12 +38,25 @@ jobs:
   # GTest is fetched automatically via FetchContent when not found locally,
   # so no separate GTest installation step is required on any platform.
   cpp:
-    name: C++ unit tests (${{ matrix.os }})
+    name: C++ unit tests (${{ matrix.label }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-22.04, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-22.04
+            cxx_standard: 17
+            label: ubuntu-22.04
+          - os: macos-latest
+            cxx_standard: 17
+            label: macos-latest
+          - os: windows-latest
+            cxx_standard: 17
+            label: windows-latest
+          - os: macos-latest
+            cxx_standard: 14
+            install_boost: true
+            label: macos-latest-cxx14-boost
 
     steps:
       - name: Checkout
@@ -67,6 +80,11 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install cmake ninja
 
+      # macOS C++14 entry: install Boost so boost::optional is available
+      - name: Install Boost (macOS C++14 build)
+        if: matrix.install_boost
+        run: brew install boost
+
       # Windows: jvm.dll lives in JAVA_HOME/bin/server which actions/setup-java
       # does not add to PATH.  iidmbridge.dll (built with JNI=ON) lists jvm.dll
       # as a dependency, so it must be findable when the test exe runs.
@@ -87,6 +105,7 @@ jobs:
           cmake -S . -B build \
             -G Ninja \
             -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_STANDARD=${{ matrix.cxx_standard }} \
             -DIIDM_BRIDGE_ENABLE_GRAALVM=OFF \
             -DIIDM_BRIDGE_ENABLE_JNI=ON \
             -DIIDM_BRIDGE_BUILD_TESTS=ON \
@@ -104,7 +123,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: cpp-test-results-${{ matrix.os }}
+          name: cpp-test-results-${{ matrix.label }}
           path: build/Testing/
           if-no-files-found: ignore
 
