@@ -517,9 +517,21 @@ public final class PropertyDispatcher {
             }
             case LINE        -> ((Network) obj).getLineStream();
             case SUBSTATION  -> ((Network) obj).getSubstationStream();
-            case VOLTAGE_LEVEL -> ((Network) obj).getVoltageLevelStream();
-            case TWO_WINDINGS_TRANSFORMER   -> ((Network) obj).getTwoWindingsTransformerStream();
-            case THREE_WINDINGS_TRANSFORMER -> ((Network) obj).getThreeWindingsTransformerStream();
+            case VOLTAGE_LEVEL -> {
+                if (obj instanceof Substation sub)
+                    yield StreamSupport.stream(sub.getVoltageLevels().spliterator(), false);
+                yield ((Network) obj).getVoltageLevelStream();
+            }
+            case TWO_WINDINGS_TRANSFORMER -> {
+                if (obj instanceof Substation sub)
+                    yield StreamSupport.stream(sub.getTwoWindingsTransformers().spliterator(), false);
+                yield ((Network) obj).getTwoWindingsTransformerStream();
+            }
+            case THREE_WINDINGS_TRANSFORMER -> {
+                if (obj instanceof Substation sub)
+                    yield StreamSupport.stream(sub.getThreeWindingsTransformers().spliterator(), false);
+                yield ((Network) obj).getThreeWindingsTransformerStream();
+            }
             case HVDC_LINE           -> ((Network) obj).getHvdcLineStream();
             case SWITCH -> {
                 VoltageLevel vl = (VoltageLevel) obj;
