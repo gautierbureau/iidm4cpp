@@ -463,6 +463,7 @@ public final class PropertyDispatcher {
                 yield rt != null ? rt.getConnectable().getId() : "";
             }
             case OLG_ID -> ((OperationalLimitsGroup) obj).getId();
+            case COUNTRY -> ((Substation) obj).getCountry().map(Country::name).orElse("");
             default -> throw new IllegalArgumentException("Unknown string property: " + property);
         };
     }
