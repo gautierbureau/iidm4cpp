@@ -93,6 +93,13 @@ set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 add_library(iidmbridge SHARED ${IIDM_BRIDGE_SOURCES})
 
+# Propagate the C++17 requirement to consumers: any target that links against
+# iidmbridge via CMake will automatically receive /std:c++17 (MSVC) or
+# -std=c++17 (GCC/Clang) for its own translation units.  This is what prevents
+# MSVC consumers from compiling our headers in C++14 mode (where <optional>
+# exists on disk but std::optional is not defined).
+target_compile_features(iidmbridge PUBLIC cxx_std_17)
+
 target_include_directories(iidmbridge
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
