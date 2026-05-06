@@ -97,16 +97,22 @@ target_include_directories(iidmbridge
         $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
     PRIVATE
-        $<$<BOOL:${IIDM_BRIDGE_ENABLE_JNI}>:${JNI_INCLUDE_DIRS}>
         ${CMAKE_SOURCE_DIR}/src
-        $<$<BOOL:${IIDM_BRIDGE_ENABLE_GRAALVM}>:${GRAALVM_INCLUDE_DIRS}>
 )
+if(IIDM_BRIDGE_ENABLE_JNI)
+    target_include_directories(iidmbridge PRIVATE ${JNI_INCLUDE_DIRS})
+endif()
+if(IIDM_BRIDGE_ENABLE_GRAALVM)
+    target_include_directories(iidmbridge PRIVATE ${GRAALVM_INCLUDE_DIRS})
+endif()
 
 target_link_libraries(iidmbridge
     PRIVATE
-        $<$<BOOL:${IIDM_BRIDGE_ENABLE_JNI}>:${JNI_LIBRARIES}>
         ${CMAKE_DL_LIBS}
 )
+if(IIDM_BRIDGE_ENABLE_JNI)
+    target_link_libraries(iidmbridge PUBLIC ${JNI_LIBRARIES})
+endif()
 
 target_compile_definitions(iidmbridge PRIVATE
     $<$<BOOL:${IIDM_BRIDGE_ENABLE_GRAALVM}>:IIDM_BRIDGE_GRAALVM_ENABLED>
