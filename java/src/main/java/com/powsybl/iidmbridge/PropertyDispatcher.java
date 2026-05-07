@@ -69,8 +69,8 @@ public final class PropertyDispatcher {
             case DL_X  -> ((DanglingLine) obj).getX();
             case DL_G  -> ((DanglingLine) obj).getG();
             case DL_B  -> ((DanglingLine) obj).getB();
-            case SHUNT_B_PER_SECTION -> ((ShuntCompensator) obj).getB();
-            case SHUNT_G_PER_SECTION -> ((ShuntCompensator) obj).getG();
+            case SHUNT_B_PER_SECTION -> ((ShuntCompensator) obj).getModel(ShuntCompensatorLinearModel.class).getBPerSection();
+            case SHUNT_G_PER_SECTION -> ((ShuntCompensator) obj).getModel(ShuntCompensatorLinearModel.class).getGPerSection();
             case SVC_B_MIN                   -> ((StaticVarCompensator) obj).getBmin();
             case SVC_B_MAX                   -> ((StaticVarCompensator) obj).getBmax();
             case SVC_VOLTAGE_SETPOINT        -> ((StaticVarCompensator) obj).getVoltageSetpoint();

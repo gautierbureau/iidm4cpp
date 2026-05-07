@@ -240,13 +240,17 @@ class PropertyDispatcherGetDoubleTest {
         Bus b = addBus(vl);
         ShuntCompensator sc = vl.newShuntCompensator().setId("SC")
                 .setBus(b.getId()).setConnectableBus(b.getId())
-                .setSectionCount(1)
-                .newLinearModel().setBPerSection(1e-4).setMaximumSectionCount(3).add()
+                .setSectionCount(2)
+                .newLinearModel().setBPerSection(12.0).setGPerSection(0.5)
+                                  .setMaximumSectionCount(3).add()
                 .add();
-        // SHUNT_B_PER_SECTION and SHUNT_G_PER_SECTION delegate to ShuntCompensator.getB()/getG()
-        // which returns B for the current section count (not per-section value directly)
-        assertDoesNotThrow(() -> PropertyDispatcher.getDouble(reg(sc), SHUNT_B_PER_SECTION));
-        assertDoesNotThrow(() -> PropertyDispatcher.getDouble(reg(sc), SHUNT_B));
+        // SHUNT_B_PER_SECTION must return the per-section value from the linear
+        // model (12.0), not the total B at the current section count (24.0).
+        long h = reg(sc);
+        assertEquals(12.0, PropertyDispatcher.getDouble(h, SHUNT_B_PER_SECTION));
+        assertEquals(0.5,  PropertyDispatcher.getDouble(h, SHUNT_G_PER_SECTION));
+        // SHUNT_B is the total B at the current section count (sectionCount * bPerSection).
+        assertEquals(24.0, PropertyDispatcher.getDouble(h, SHUNT_B));
     }
 
     // ── TwoWindingsTransformer ────────────────────────────────────────────────

@@ -346,6 +346,12 @@ struct JNIMethodCache {
     jmethodID shuntSection_getB          = nullptr;
     jmethodID shuntSection_getG          = nullptr;
 
+    // ── ShuntCompensator linear model ─────────────────────────────────────────
+    jclass    shuntLinearModelClass      = nullptr;
+    jmethodID shunt_getModel             = nullptr; // getModel() -> ShuntCompensatorModel
+    jmethodID shuntLM_getBPerSection     = nullptr;
+    jmethodID shuntLM_getGPerSection     = nullptr;
+
     // ── VoltageLevel BusBreakerView.getBuses() / getBus1/getBus2 ─────────────
     jmethodID bbView_getBuses            = nullptr;
     jmethodID bbView_getBus1             = nullptr; // getBus1(String switchId)

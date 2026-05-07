@@ -456,6 +456,21 @@ void JNIBackend::cacheMethodIds() {
         "getAllSections", "()Ljava/util/List;");
     cache_.shuntSection_getB = env_->GetMethodID(cache_.shuntSectionClass, "getB", "()D");
     cache_.shuntSection_getG = env_->GetMethodID(cache_.shuntSectionClass, "getG", "()D");
+
+    // ShuntCompensator linear model
+    cacheClass(cache_.shuntLinearModelClass,
+        "com/powsybl/iidm/network/ShuntCompensatorLinearModel");
+    {
+        jclass shuntCls = env_->FindClass("com/powsybl/iidm/network/ShuntCompensator");
+        cache_.shunt_getModel = env_->GetMethodID(shuntCls, "getModel",
+            "()Lcom/powsybl/iidm/network/ShuntCompensatorModel;");
+        env_->DeleteLocalRef(shuntCls);
+    }
+    cache_.shuntLM_getBPerSection = env_->GetMethodID(cache_.shuntLinearModelClass,
+        "getBPerSection", "()D");
+    cache_.shuntLM_getGPerSection = env_->GetMethodID(cache_.shuntLinearModelClass,
+        "getGPerSection", "()D");
+    checkJNIException(env_);
     {
         jclass shuntCls = env_->FindClass("com/powsybl/iidm/network/ShuntCompensator");
         cache_.shunt_getB                 = env_->GetMethodID(shuntCls, "getB", "()D");
@@ -873,6 +888,18 @@ double JNIBackend::getDouble(ObjectHandle h, int property) const {
         case prop::SHUNT_SECTION_G: result = env_->CallDoubleMethod(obj, cache_.shuntSection_getG); break;
         case prop::SHUNT_TARGET_V:  result = env_->CallDoubleMethod(obj, cache_.shunt_getTargetV);  break;
         case prop::SHUNT_B:         result = env_->CallDoubleMethod(obj, cache_.shunt_getB);        break;
+        case prop::SHUNT_B_PER_SECTION: {
+            jobject lm = env_->CallObjectMethod(obj, cache_.shunt_getModel);
+            if (!lm) throw PropertyNotFoundException("ShuntCompensator has no linear model");
+            result = env_->CallDoubleMethod(lm, cache_.shuntLM_getBPerSection);
+            env_->DeleteLocalRef(lm); break;
+        }
+        case prop::SHUNT_G_PER_SECTION: {
+            jobject lm = env_->CallObjectMethod(obj, cache_.shunt_getModel);
+            if (!lm) throw PropertyNotFoundException("ShuntCompensator has no linear model");
+            result = env_->CallDoubleMethod(lm, cache_.shuntLM_getGPerSection);
+            env_->DeleteLocalRef(lm); break;
+        }
         case prop::EXT_BAT_APC_DROOP: {
             jobject apc = fetchExtension(obj, "activePowerControl");
             if (!apc) throw PropertyNotFoundException("ActivePowerControl extension not present on Battery");
