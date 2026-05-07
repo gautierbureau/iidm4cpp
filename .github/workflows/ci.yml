@@ -364,7 +364,7 @@ jobs:
           echo "JAVA_HOME=/opt/graalvm" >> "$GITHUB_ENV"
           echo "/opt/graalvm/bin" >> "$GITHUB_PATH"
 
-      - name: Configure CMake (full build: JAR + GraalVM native image + JNI backend)
+      - name: "Configure CMake (full build: JAR + GraalVM native image + JNI backend)"
         run: |
           cmake -S . -B build \
             -G "Unix Makefiles" \
