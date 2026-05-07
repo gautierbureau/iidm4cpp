@@ -1,6 +1,6 @@
 #pragma once
 
-namespace iidm::prop {
+namespace iidm { namespace prop {
 
 // ── Object types (used in getChildren / findById) ───────────────────────────
 constexpr int SUBSTATION                  = 1;
@@ -331,4 +331,4 @@ constexpr int REL_VL_BBV_BUS2            = 2024; // VL (keyed by switchId) → B
 // ── Child types (new) ────────────────────────────────────────────────────────
 constexpr int CONNECTABLE_TERMINALS       = 37; // all terminals of the Connectable owning a Terminal
 
-} // namespace iidm::prop
+} } // namespace iidm::prop
