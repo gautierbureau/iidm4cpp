@@ -408,7 +408,9 @@ jobs:
 
       - name: Run embedded example with IEEE14.xiidm
         env:
-          LD_LIBRARY_PATH: ${{ github.workspace }}/build:${{ github.workspace }}/build/examples/embedded
+          # $JAVA_HOME/lib/server contains libjvm.so; libiidmbridge.so links
+          # against it and GraalVM is not in ldconfig's cache on this container.
+          LD_LIBRARY_PATH: ${{ github.workspace }}/build:${{ github.workspace }}/build/examples/embedded:${{ env.JAVA_HOME }}/lib/server
         run: |
           java \
             -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar:build/java-classes" \
@@ -417,7 +419,7 @@ jobs:
 
       - name: Run embedded example with extensions_test.xiidm
         env:
-          LD_LIBRARY_PATH: ${{ github.workspace }}/build:${{ github.workspace }}/build/examples/embedded
+          LD_LIBRARY_PATH: ${{ github.workspace }}/build:${{ github.workspace }}/build/examples/embedded:${{ env.JAVA_HOME }}/lib/server
         run: |
           java \
             -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar:build/java-classes" \
