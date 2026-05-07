@@ -26,7 +26,7 @@ std::unique_ptr<BackendProvider> selectBackend(const NetworkLoadOptions& opts) {
 
 #ifdef IIDM_BRIDGE_JNI_ENABLED
     if (effectiveMode == BackendMode::JNI) {
-        return std::make_unique<JNIBackend>(opts.jniNetworkId);
+        return std::unique_ptr<BackendProvider>(new JNIBackend(opts.jniNetworkId));
     }
 #else
     if (effectiveMode == BackendMode::JNI) {
@@ -37,7 +37,7 @@ std::unique_ptr<BackendProvider> selectBackend(const NetworkLoadOptions& opts) {
 
 #ifdef IIDM_BRIDGE_GRAALVM_ENABLED
     if (effectiveMode == BackendMode::GRAALVM) {
-        return std::make_unique<GraalVMBackend>(opts.graalvmLibPath);
+        return std::unique_ptr<BackendProvider>(new GraalVMBackend(opts.graalvmLibPath));
     }
 #else
     if (effectiveMode == BackendMode::GRAALVM) {
@@ -52,13 +52,13 @@ std::unique_ptr<BackendProvider> selectBackend(const NetworkLoadOptions& opts) {
         JavaVM* jvms[1];
         jsize   count = 0;
         if (JNI_GetCreatedJavaVMs(jvms, 1, &count) == JNI_OK && count > 0) {
-            return std::make_unique<JNIBackend>(opts.jniNetworkId);
+            return std::unique_ptr<BackendProvider>(new JNIBackend(opts.jniNetworkId));
         }
     }
 #endif
 
 #ifdef IIDM_BRIDGE_GRAALVM_ENABLED
-    return std::make_unique<GraalVMBackend>(opts.graalvmLibPath);
+    return std::unique_ptr<BackendProvider>(new GraalVMBackend(opts.graalvmLibPath));
 #else
     throw BackendNotAvailableException(
         "No backend available. Rebuild with IIDM_BRIDGE_ENABLE_GRAALVM=ON or IIDM_BRIDGE_ENABLE_JNI=ON");
