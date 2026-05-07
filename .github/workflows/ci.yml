@@ -203,11 +203,12 @@ jobs:
       - name: Build
         run: cmake --build build-graalvm --parallel
 
-      - name: Run unit tests
+      - name: Run unit and integration tests
         shell: bash
         run: |
           export ${{ matrix.lib_path_env }}="${{ github.workspace }}/build-graalvm/graalvm-native"
           IIDM_BRIDGE_GRAALVM_LIB="${{ github.workspace }}/build-graalvm/graalvm-native/${{ matrix.native_lib }}" \
+          IIDM_IEEE14_NETWORK_PATH="${{ github.workspace }}/examples/IEEE14.xiidm" \
           ctest --test-dir build-graalvm --output-on-failure --parallel 4
 
       - name: Upload native image artifacts (Linux only, for integration job)
