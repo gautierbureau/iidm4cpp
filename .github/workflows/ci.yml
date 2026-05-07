@@ -406,24 +406,37 @@ jobs:
             examples/embedded/JavaLauncher.java \
             -d build/java-classes
 
+      - name: Locate JNI library
+        run: |
+          lib=$(find "$GITHUB_WORKSPACE/build" -name 'libexample_embedded.so' | head -1)
+          if [ -z "$lib" ]; then
+            echo "ERROR: libexample_embedded.so not found anywhere under build/" >&2
+            echo "All .so files found:" >&2
+            find "$GITHUB_WORKSPACE/build" -name "*.so" | sort >&2
+            exit 1
+          fi
+          echo "Found JNI library: $lib"
+          echo "JNI_LIB_DIR=$(dirname "$lib")" >> "$GITHUB_ENV"
+
       - name: Run embedded example with IEEE14.xiidm
         env:
-          # $JAVA_HOME/lib/server contains libjvm.so; libiidmbridge.so links
-          # against it and GraalVM is not in ldconfig's cache on this container.
-          LD_LIBRARY_PATH: ${{ github.workspace }}/build:${{ github.workspace }}/build/examples/embedded:${{ env.JAVA_HOME }}/lib/server
+          # libiidmbridge.so links against libjvm.so; GraalVM installed to
+          # /opt/graalvm is not in ldconfig's cache so its lib/server dir
+          # must be on LD_LIBRARY_PATH explicitly.
+          LD_LIBRARY_PATH: ${{ github.workspace }}/build:${{ env.JNI_LIB_DIR }}:${{ env.JAVA_HOME }}/lib/server
         run: |
           java \
             -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar:build/java-classes" \
-            -Djava.library.path=${{ github.workspace }}/build/examples/embedded \
+            -Djava.library.path="${{ env.JNI_LIB_DIR }}" \
             JavaLauncher examples/IEEE14.xiidm
 
       - name: Run embedded example with extensions_test.xiidm
         env:
-          LD_LIBRARY_PATH: ${{ github.workspace }}/build:${{ github.workspace }}/build/examples/embedded:${{ env.JAVA_HOME }}/lib/server
+          LD_LIBRARY_PATH: ${{ github.workspace }}/build:${{ env.JNI_LIB_DIR }}:${{ env.JAVA_HOME }}/lib/server
         run: |
           java \
             -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar:build/java-classes" \
-            -Djava.library.path=${{ github.workspace }}/build/examples/embedded \
+            -Djava.library.path="${{ env.JNI_LIB_DIR }}" \
             JavaLauncher examples/extensions_test.xiidm
 
       - name: Upload test results
