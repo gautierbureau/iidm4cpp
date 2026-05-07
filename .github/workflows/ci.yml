@@ -328,6 +328,104 @@ jobs:
           path: build/Testing/
           if-no-files-found: ignore
 
+  # ── Dynawo environment: GraalVM backend + full end-to-end tests ─────────────
+  #
+  # Validates that the library builds and all tests pass inside the exact
+  # container used by Dynawo CI (dynawo/dynawo-ci:latest).  The GraalVM native
+  # image is not rebuilt here; instead the .so + headers produced by the
+  # `graalvm` (ubuntu-22.04) leg are downloaded and used directly, matching
+  # how Dynawo itself consumes the library.
+  dynawo:
+    name: Dynawo environment (GraalVM + full tests)
+    runs-on: ubuntu-latest
+    container: dynawo/dynawo-ci:latest
+    needs: [ graalvm, java ]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download native image artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: iidm-bridge-native
+          path: native-artifacts
+
+      - name: Download Java JAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: iidm-bridge-java
+          path: java/target
+
+      - name: Configure CMake (GraalVM ON, reuse pre-built native image)
+        run: |
+          cmake -S . -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DIIDM_BRIDGE_ENABLE_GRAALVM=ON \
+            -DIIDM_BRIDGE_ENABLE_JNI=ON \
+            -DIIDM_BRIDGE_BUILD_TESTS=ON \
+            -DIIDM_BRIDGE_BUILD_EXAMPLES=ON \
+            -DIIDM_BRIDGE_BUILD_JAVA=OFF \
+            -DIIDM_BRIDGE_BUILD_NATIVE=OFF \
+            -DGRAALVM_INCLUDE_DIRS="${GITHUB_WORKSPACE}/native-artifacts"
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Run unit and integration tests
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/native-artifacts
+          IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/native-artifacts/libpowsybl-iidm-native.so
+          IIDM_IEEE14_NETWORK_PATH: ${{ github.workspace }}/examples/IEEE14.xiidm
+        run: ctest --test-dir build --output-on-failure --parallel 4
+
+      - name: Run example_standalone with IEEE14.xiidm
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/native-artifacts
+          IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/native-artifacts/libpowsybl-iidm-native.so
+        run: ./build/examples/standalone/example_standalone examples/IEEE14.xiidm
+
+      - name: Run example_standalone with extensions_test.xiidm
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/native-artifacts
+          IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/native-artifacts/libpowsybl-iidm-native.so
+        run: ./build/examples/standalone/example_standalone examples/extensions_test.xiidm
+
+      - name: Compile JavaLauncher
+        run: |
+          mkdir -p build/java-classes
+          javac \
+            -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar" \
+            examples/embedded/JavaLauncher.java \
+            -d build/java-classes
+
+      - name: Run embedded example with IEEE14.xiidm
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/build:${{ github.workspace }}/build/examples/embedded
+        run: |
+          java \
+            -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar:build/java-classes" \
+            -Djava.library.path=${{ github.workspace }}/build/examples/embedded \
+            JavaLauncher examples/IEEE14.xiidm
+
+      - name: Run embedded example with extensions_test.xiidm
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/build:${{ github.workspace }}/build/examples/embedded
+        run: |
+          java \
+            -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar:build/java-classes" \
+            -Djava.library.path=${{ github.workspace }}/build/examples/embedded \
+            JavaLauncher examples/extensions_test.xiidm
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dynawo-test-results
+          path: build/Testing/
+          if-no-files-found: ignore
+
   # ── Matrix: additional CMake flag combinations (Linux only) ──────────────────
   cpp-matrix:
     name: C++ (${{ matrix.name }})
