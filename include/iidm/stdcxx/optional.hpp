@@ -23,9 +23,9 @@
 // the in-memory layout will disagree, causing linker errors or crashes.
 #  if !(__cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L))
 #    error "iidmbridge was compiled with C++17 (std::optional ABI) but your " \
-           "consumer is in C++14 mode. Rebuild iidmbridge with " \
-           "-DCMAKE_CXX_STANDARD=14 (and Boost available) so the library " \
-           "exports boost::optional symbols that match your consumer."
+           "consumer is in C++11/14 mode. Rebuild iidmbridge with " \
+           "-DCMAKE_CXX_STANDARD=11 (or =14) and Boost available so the " \
+           "library exports boost::optional symbols that match your consumer."
 #  endif
 #  include <optional>
 namespace iidm {
