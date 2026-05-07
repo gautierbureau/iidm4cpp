@@ -550,13 +550,10 @@ void JNIBackend::cacheMethodIds() {
     cache_.termNBView_getNode = env_->GetMethodID(cache_.termNBViewClass, "getNode", "()I");
     checkJNIException(env_);
 
-    // VSC reactive limits (vscClass is already in the cache struct at slot vscClass)
-    {
-        jclass vscCls = env_->FindClass("com/powsybl/iidm/network/VscConverterStation");
-        cache_.vsc_getReactiveLimits = env_->GetMethodID(vscCls,
-            "getReactiveLimits", "()Lcom/powsybl/iidm/network/ReactiveLimits;");
-        env_->DeleteLocalRef(vscCls);
-    }
+    // VscConverterStation
+    cacheClass(cache_.vscClass, "com/powsybl/iidm/network/VscConverterStation");
+    cache_.vsc_getReactiveLimits = env_->GetMethodID(cache_.vscClass,
+        "getReactiveLimits", "()Lcom/powsybl/iidm/network/ReactiveLimits;");
     checkJNIException(env_);
 
     // CurrentLimits / LoadingLimits
@@ -1827,9 +1824,13 @@ std::vector<ObjectHandle> JNIBackend::getChildren(ObjectHandle h, int childType)
             collection = env_->CallObjectMethod(obj, cache_.vl_getVscConverterStations);
             break;
         case prop::REACTIVE_CURVE_POINT: {
-            // obj is a Generator; get its reactive capability curve points
-            jobject rl = env_->CallObjectMethod(obj, cache_.gen_getReactiveLimits);
-            if (!rl) throw PropertyNotFoundException("No reactive limits on generator");
+            // obj is any ReactiveLimitsHolder (Generator, VscConverterStation, Battery)
+            jmethodID getRL;
+            if (env_->IsInstanceOf(obj, cache_.vscClass))          getRL = cache_.vsc_getReactiveLimits;
+            else if (env_->IsInstanceOf(obj, cache_.batteryClass)) getRL = cache_.bat_getReactiveLimits;
+            else                                                   getRL = cache_.gen_getReactiveLimits;
+            jobject rl = env_->CallObjectMethod(obj, getRL);
+            if (!rl) throw PropertyNotFoundException("No reactive limits on holder");
             collection = env_->CallObjectMethod(rl, cache_.rcCurve_getPoints);
             env_->DeleteLocalRef(rl);
             break;

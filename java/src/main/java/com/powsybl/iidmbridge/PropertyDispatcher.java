@@ -554,9 +554,9 @@ public final class PropertyDispatcher {
             case BUS -> StreamSupport.stream(
                 ((VoltageLevel) obj).getBusBreakerView().getBuses().spliterator(), false);
             case REACTIVE_CURVE_POINT -> {
-                Generator gen = (Generator) obj;
+                ReactiveLimitsHolder holder = (ReactiveLimitsHolder) obj;
                 Collection<ReactiveCapabilityCurve.Point> pts =
-                    gen.getReactiveLimits(ReactiveCapabilityCurve.class).getPoints();
+                    holder.getReactiveLimits(ReactiveCapabilityCurve.class).getPoints();
                 yield pts.stream();
             }
             case TWO_WT_RTC_STEP -> {
