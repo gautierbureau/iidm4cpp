@@ -287,7 +287,7 @@ ctest --test-dir build --output-on-failure
 | `cpp` | CMake Release build matrix (Ubuntu, macOS, Windows; C++11/14/17), JNI backend, unit tests |
 | `graalvm` | Builds GraalVM native image (`libpowsybl-iidm-native.so`) and runs unit tests; Linux leg uploads artifacts |
 | `integration` | Downloads native artifacts, runs examples and integration tests against IEEE-14 network |
-| `dynawo` | Builds GraalVM backend + runs full unit and end-to-end tests inside `dynawo/dynawo-ci:latest` |
+| `dynawo` | Self-contained full build (installs GraalVM CE 21 + Maven via dnf, builds JAR + native image + C++ library) and runs unit and end-to-end tests inside `dynawo/dynawo-ci:latest` |
 | `cpp-matrix` | Tests various backend combinations (JNI-only, no backends) on Linux |
 
 ---
