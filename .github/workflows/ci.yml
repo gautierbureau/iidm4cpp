@@ -367,7 +367,7 @@ jobs:
       - name: Configure CMake (full build: JAR + GraalVM native image + JNI backend)
         run: |
           cmake -S . -B build \
-            -G Ninja \
+            -G "Unix Makefiles" \
             -DCMAKE_BUILD_TYPE=Release \
             -DIIDM_BRIDGE_ENABLE_GRAALVM=ON \
             -DIIDM_BRIDGE_ENABLE_JNI=ON \
