@@ -328,36 +328,43 @@ jobs:
           path: build/Testing/
           if-no-files-found: ignore
 
-  # ── Dynawo environment: GraalVM backend + full end-to-end tests ─────────────
+  # ── Dynawo environment: full build pipeline + end-to-end tests ───────────────
   #
-  # Validates that the library builds and all tests pass inside the exact
-  # container used by Dynawo CI (dynawo/dynawo-ci:latest).  The GraalVM native
-  # image is not rebuilt here; instead the .so + headers produced by the
-  # `graalvm` (ubuntu-22.04) leg are downloaded and used directly, matching
-  # how Dynawo itself consumes the library.
+  # Validates the complete build pipeline (JAR, GraalVM native image, C++
+  # library, tests and examples) inside the exact container used by Dynawo CI.
+  # The dynawo-ci image is Fedora-29 based and ships neither a JDK nor Maven;
+  # both are installed in the first step along with GraalVM CE 21 which
+  # provides jni.h and the native-image toolchain.
+  # The job is intentionally self-contained: no upstream artifact downloads.
   dynawo:
-    name: Dynawo environment (GraalVM + full tests)
+    name: Dynawo environment (full build pipeline + tests)
     runs-on: ubuntu-latest
     container: dynawo/dynawo-ci:latest
-    needs: [ graalvm, java ]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download native image artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: iidm-bridge-native
-          path: native-artifacts
+      - name: Install Java/JNI and GraalVM native-image for iidm-bridge
+        run: |
+          # iidm-bridge (the powsybl-iidm4cpp replacement) is built with
+          # IIDM_BRIDGE_ENABLE_JNI / IIDM_BRIDGE_BUILD_JAVA / IIDM_BRIDGE_BUILD_NATIVE
+          # which require: a JDK (jni.h + libjvm.so), Maven, and a native-image
+          # toolchain. The dynawo-ci image is fedora:29 based and ships none of
+          # them; install them here until they are baked into the image.
+          dnf install -y --setopt=tsflags=nodocs maven
+          # GraalVM Community JDK 21 — the iidm-bridge java module targets
+          # Java 21 (see java/pom.xml maven.compiler.source/target), and
+          # native-image is bundled, no separate 'gu install' needed.
+          curl -L -o /tmp/graalvm.tar.gz https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.2/graalvm-community-jdk-21.0.2_linux-x64_bin.tar.gz
+          mkdir -p /opt/graalvm
+          tar xzf /tmp/graalvm.tar.gz -C /opt/graalvm --strip-components=1
+          rm /tmp/graalvm.tar.gz
+          echo "GRAALVM_HOME=/opt/graalvm" >> "$GITHUB_ENV"
+          echo "JAVA_HOME=/opt/graalvm" >> "$GITHUB_ENV"
+          echo "/opt/graalvm/bin" >> "$GITHUB_PATH"
 
-      - name: Download Java JAR artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: iidm-bridge-java
-          path: java/target
-
-      - name: Configure CMake (GraalVM ON, reuse pre-built native image)
+      - name: Configure CMake (full build: JAR + GraalVM native image + JNI backend)
         run: |
           cmake -S . -B build \
             -G Ninja \
@@ -366,30 +373,29 @@ jobs:
             -DIIDM_BRIDGE_ENABLE_JNI=ON \
             -DIIDM_BRIDGE_BUILD_TESTS=ON \
             -DIIDM_BRIDGE_BUILD_EXAMPLES=ON \
-            -DIIDM_BRIDGE_BUILD_JAVA=OFF \
-            -DIIDM_BRIDGE_BUILD_NATIVE=OFF \
-            -DGRAALVM_INCLUDE_DIRS="${GITHUB_WORKSPACE}/native-artifacts"
+            -DIIDM_BRIDGE_BUILD_JAVA=ON \
+            -DIIDM_BRIDGE_BUILD_NATIVE=ON
 
       - name: Build
         run: cmake --build build --parallel
 
       - name: Run unit and integration tests
         env:
-          LD_LIBRARY_PATH: ${{ github.workspace }}/native-artifacts
-          IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/native-artifacts/libpowsybl-iidm-native.so
+          LD_LIBRARY_PATH: ${{ github.workspace }}/build/graalvm-native
+          IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/build/graalvm-native/libpowsybl-iidm-native.so
           IIDM_IEEE14_NETWORK_PATH: ${{ github.workspace }}/examples/IEEE14.xiidm
         run: ctest --test-dir build --output-on-failure --parallel 4
 
       - name: Run example_standalone with IEEE14.xiidm
         env:
-          LD_LIBRARY_PATH: ${{ github.workspace }}/native-artifacts
-          IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/native-artifacts/libpowsybl-iidm-native.so
+          LD_LIBRARY_PATH: ${{ github.workspace }}/build/graalvm-native
+          IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/build/graalvm-native/libpowsybl-iidm-native.so
         run: ./build/examples/standalone/example_standalone examples/IEEE14.xiidm
 
       - name: Run example_standalone with extensions_test.xiidm
         env:
-          LD_LIBRARY_PATH: ${{ github.workspace }}/native-artifacts
-          IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/native-artifacts/libpowsybl-iidm-native.so
+          LD_LIBRARY_PATH: ${{ github.workspace }}/build/graalvm-native
+          IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/build/graalvm-native/libpowsybl-iidm-native.so
         run: ./build/examples/standalone/example_standalone examples/extensions_test.xiidm
 
       - name: Compile JavaLauncher
