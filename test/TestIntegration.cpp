@@ -2,6 +2,7 @@
 #include <iidm/NetworkFactory.h>
 #include <iidm/IidmException.h>
 #include <iidm/iidm.h>
+#include <cmath>
 #include <cstdlib>
 #include <string>
 #include <vector>
@@ -227,6 +228,78 @@ std::vector<Itf> buildInterfaces(const std::vector<Src>& src) {
     return interfaces;
 }
 
+// Minimal replica of Dynawo's BusInterfaceIIDM.
+//
+// This is the most critical test: it reproduces the EXACT constructor and
+// method logic from DYNBusInterfaceIIDM.cpp, but stores busIIDM_ BY VALUE
+// instead of by reference.  The reference-member pattern used in Dynawo
+// (powsybl::iidm::Bus& busIIDM_) is safe with the old C++ IIDM tree (stable
+// addresses) but becomes dangling with iidm4cpp (getBusBreakerView().getBuses()
+// returns a fresh temporary vector).
+//
+// Correspondences to the real Dynawo code:
+//   bus_    ↔  busIIDM_
+//   vl_     ↔  busIIDM_.getVoltageLevel() (called on each access in Dynawo;
+//              stored separately here to prove stored handle stays valid)
+//   U0_     ↔  U0_     (boost::optional<double>, set if !isnan(bus.getV()))
+//   angle0_ ↔  angle0_ (same)
+struct BusInterfaceIIDM {
+    iidm::Bus          bus_;
+    iidm::VoltageLevel vl_;
+    iidm::optional<double> U0_;
+    iidm::optional<double> angle0_;
+
+    static constexpr double kUMaxPu = 1.5;
+    static constexpr double kUMinPu = 0.5;
+
+    explicit BusInterfaceIIDM(const iidm::Bus& bus)
+        : bus_(bus)
+        , vl_(bus.getVoltageLevel())
+    {
+        // Exact replica of DYNBusInterfaceIIDM constructor body:
+        //   if (!std::isnan(busIIDM_.getV()))     { ...; U0_     = busIIDM_.getV(); }
+        //   if (!std::isnan(busIIDM_.getAngle())) { ...; angle0_ = busIIDM_.getAngle(); }
+        const double v = bus_.getV();
+        const double a = bus_.getAngle();
+        if (!std::isnan(v)) U0_     = v;
+        if (!std::isnan(a)) angle0_ = a;
+    }
+
+    // DYNBusInterfaceIIDM::getV0() / getAngle0()
+    double getV0()     const { return U0_     ? *U0_     : 0.0; }
+    double getAngle0() const { return angle0_ ? *angle0_ : 0.0; }
+
+    // DYNBusInterfaceIIDM::getVNom()
+    //   return busIIDM_.getVoltageLevel().getNominalV();
+    double getVNom() const { return vl_.getNominalV(); }
+
+    // DYNBusInterfaceIIDM::getVMax()
+    //   if (std::isnan(busIIDM_.getVoltageLevel().getHighVoltageLimit()))
+    //     return uMaxPu * getVNom();
+    //   return busIIDM_.getVoltageLevel().getHighVoltageLimit();
+    double getVMax() const {
+        auto limit = vl_.getHighVoltageLimit();
+        if (!limit || std::isnan(*limit)) return kUMaxPu * getVNom();
+        return *limit;
+    }
+
+    // DYNBusInterfaceIIDM::getVMin()
+    double getVMin() const {
+        auto limit = vl_.getLowVoltageLimit();
+        if (!limit || std::isnan(*limit)) return kUMinPu * getVNom();
+        return *limit;
+    }
+
+    // DYNBusInterfaceIIDM::exportStateVariablesUnitComponent()
+    //   busIIDM_.setV(getStateVarV()); busIIDM_.setAngle(getStateVarAngle());
+    void exportStateVariables(double v, double angle) {
+        bus_.setV(v);
+        bus_.setAngle(angle);
+    }
+
+    std::string getId() const { return bus_.getId(); }
+};
+
 } // anonymous namespace
 
 // ── DynawoPattern: GeneratorInterface ────────────────────────────────────────
@@ -449,6 +522,85 @@ TEST_F(IntegrationTest, DynawoPattern_VscLossFactor) {
         EXPECT_NO_THROW(itf.getLossFactor());
         EXPECT_GE(itf.getLossFactor(), 0.0f);
     }
+}
+
+// ── DynawoPattern: BusInterfaceIIDM ─────────────────────────────────────────
+//
+// Replicates the exact usage pattern from DYNBusInterfaceIIDM.cpp:
+//   1. Traverse all voltage levels → collect all buses via getBusBreakerView()
+//   2. Build BusInterfaceIIDM (stores bus BY VALUE) inside the traversal scope
+//   3. Let the source vectors go out of scope
+//   4. Read getVNom / getVMax / getVMin / getV0 / getAngle0 through stored handles
+//   5. Call exportStateVariables (write-back) and verify the value was stored
+
+TEST_F(IntegrationTest, DynawoPattern_BusInterfaceIIDM) {
+    if (!available()) GTEST_SKIP() << "GraalVM env vars not set";
+
+    Network net = loadNetwork();
+
+    // Build all bus interfaces across all voltage levels — then let the source
+    // vectors (vls and the inner buses vector) go out of scope.
+    std::vector<BusInterfaceIIDM> interfaces;
+    {
+        auto vls = net.getVoltageLevels();
+        for (const auto& vl : vls) {
+            auto buses = vl.getBusBreakerView().getBuses();
+            for (const auto& bus : buses)
+                interfaces.emplace_back(bus);
+        }
+        // vls and buses destroyed here
+    }
+
+    ASSERT_FALSE(interfaces.empty());
+
+    // Every stored handle must remain valid and all virtual navigation must work
+    for (const auto& itf : interfaces) {
+        EXPECT_TRUE(itf.bus_.isValid());
+        EXPECT_TRUE(itf.vl_.isValid());
+        EXPECT_FALSE(itf.getId().empty());
+
+        // getVNom() navigates through the stored VoltageLevel handle
+        EXPECT_GT(itf.getVNom(), 0.0);
+
+        // getVMax() / getVMin() use voltage-limit properties from the VL
+        EXPECT_GT(itf.getVMax(), 0.0);
+        EXPECT_GT(itf.getVMin(), 0.0);
+        EXPECT_GE(itf.getVMax(), itf.getVMin());
+
+        // getV0() / getAngle0() are set from values read in the constructor
+        // (may be 0.0 if the network had no initial voltage/angle)
+        EXPECT_NO_THROW(itf.getV0());
+        EXPECT_NO_THROW(itf.getAngle0());
+    }
+
+    // ── Spot-check bus 1 of IEEE14 ────────────────────────────────────────────
+    // Bus _BUS____1_TN: nominalV = 69 kV, initial V ≈ 73.14 kV, angle = 0.0
+    const BusInterfaceIIDM* bus1 = nullptr;
+    for (const auto& itf : interfaces) {
+        if (itf.getId() == "_BUS____1_TN") { bus1 = &itf; break; }
+    }
+    ASSERT_NE(bus1, nullptr) << "_BUS____1_TN not found in IEEE14 bus list";
+
+    EXPECT_NEAR(bus1->getVNom(), 69.0, 1e-3);
+    EXPECT_NEAR(bus1->getV0(),   73.14, 0.1);   // initial load-flow voltage
+    EXPECT_NEAR(bus1->getAngle0(), 0.0, 1e-6);  // slack bus: angle = 0
+
+    // ── exportStateVariables write-back ───────────────────────────────────────
+    // Simulate Dynawo's end-of-step export: write new V/angle, then read back
+    // to verify the mutation reached the JVM object via the stored handle.
+    BusInterfaceIIDM* bus1mut = nullptr;
+    for (auto& itf : interfaces) {
+        if (itf.getId() == "_BUS____1_TN") { bus1mut = &itf; break; }
+    }
+    ASSERT_NE(bus1mut, nullptr);
+
+    const double newV     = 74.0;
+    const double newAngle = 0.5;
+    bus1mut->exportStateVariables(newV, newAngle);
+
+    // Read the live value back through bus_ (same GraalVM object)
+    EXPECT_NEAR(bus1mut->bus_.getV(),     newV,     1e-6);
+    EXPECT_NEAR(bus1mut->bus_.getAngle(), newAngle, 1e-6);
 }
 
 #endif // IIDM_BRIDGE_GRAALVM_ENABLED
