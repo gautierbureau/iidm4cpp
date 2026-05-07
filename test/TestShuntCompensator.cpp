@@ -57,6 +57,22 @@ TEST_F(ShuntCompensatorTest, LinearModelGetters) {
     EXPECT_DOUBLE_EQ(sc.getB(), 0.02);
 }
 
+// Regression: getBPerSection() and getGPerSection() must return the
+// per-section value of the linear model, NOT the total B/G at the current
+// section count. Dynawo's getB(int section) wrapper computes
+// "bPerSection * section"; if getBPerSection() returned total B
+// (sectionCount * bPerSection) the result would scale incorrectly.
+TEST_F(ShuntCompensatorTest, LinearPerSectionIsNotTotal) {
+    backend.ints   [{SC_H, prop::SHUNT_SECTION_COUNT}] = 2;
+    backend.doubles[{SC_H, prop::SHUNT_B_PER_SECTION}] = 12.0;
+    backend.doubles[{SC_H, prop::SHUNT_G_PER_SECTION}] = 0.5;
+    backend.doubles[{SC_H, prop::SHUNT_B}]             = 24.0;
+    ShuntCompensator sc(SC_H, &backend);
+    EXPECT_DOUBLE_EQ(sc.getBPerSection(), 12.0);
+    EXPECT_DOUBLE_EQ(sc.getGPerSection(), 0.5);
+    EXPECT_DOUBLE_EQ(sc.getB(),           24.0);
+}
+
 TEST_F(ShuntCompensatorTest, VoltageRegulator) {
     ShuntCompensator sc(SC_H, &backend);
     EXPECT_TRUE(sc.isVoltageRegulatorOn());
