@@ -5,6 +5,7 @@
 #include <iidm/PropertyCodes.h>
 #include <cmath>
 #include <map>
+#include <memory>
 #include <iidm/stdcxx/optional.hpp>
 // When building without C++17, iidm::optional<T> is boost::optional<T>.
 // Include the Boost I/O header so GTest can print optional values on failure.
@@ -13,6 +14,16 @@
 #endif
 #include <string>
 #include <vector>
+
+// std::make_unique is C++14; provide a minimal polyfill for C++11 builds.
+#if __cplusplus < 201402L && !(defined(_MSVC_LANG) && _MSVC_LANG >= 201402L)
+namespace std {
+template <typename T, typename... Args>
+unique_ptr<T> make_unique(Args&&... args) {
+    return unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+}
+#endif
 
 namespace iidm::test {
 
