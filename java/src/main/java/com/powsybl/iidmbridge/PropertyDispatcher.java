@@ -75,8 +75,11 @@ public final class PropertyDispatcher {
             case SVC_B_MAX                   -> ((StaticVarCompensator) obj).getBmax();
             case SVC_VOLTAGE_SETPOINT        -> ((StaticVarCompensator) obj).getVoltageSetpoint();
             case SVC_REACTIVE_POWER_SETPOINT -> ((StaticVarCompensator) obj).getReactivePowerSetpoint();
+            case VSC_LOSS_FACTOR             -> ((VscConverterStation) obj).getLossFactor();
             case VSC_VOLTAGE_SETPOINT        -> ((VscConverterStation) obj).getVoltageSetpoint();
             case VSC_REACTIVE_POWER_SETPOINT -> ((VscConverterStation) obj).getReactivePowerSetpoint();
+            case LCC_LOSS_FACTOR  -> ((LccConverterStation) obj).getLossFactor();
+            case LCC_POWER_FACTOR -> ((LccConverterStation) obj).getPowerFactor();
             case EXT_APC_DROOP -> ((Generator) obj).getExtension(ActivePowerControl.class).getDroop();
             case EXT_CRC_Q_PERCENT -> ((Generator) obj).getExtension(CoordinatedReactiveControl.class).getQPercent();
             case EXT_HADAPC_DROOP -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).getDroop();
