@@ -471,6 +471,22 @@ void JNIBackend::cacheMethodIds() {
     cache_.shuntLM_getGPerSection = env_->GetMethodID(cache_.shuntLinearModelClass,
         "getGPerSection", "()D");
     checkJNIException(env_);
+
+    // StaticVarCompensator: regulation mode + isRegulating
+    cacheClass(cache_.svcClass,
+        "com/powsybl/iidm/network/StaticVarCompensator");
+    cacheClass(cache_.svcRegulationModeClass,
+        "com/powsybl/iidm/network/StaticVarCompensator$RegulationMode");
+    cache_.svc_getRegulationMode = env_->GetMethodID(cache_.svcClass,
+        "getRegulationMode",
+        "()Lcom/powsybl/iidm/network/StaticVarCompensator$RegulationMode;");
+    cache_.svc_setRegulationMode = env_->GetMethodID(cache_.svcClass,
+        "setRegulationMode",
+        "(Lcom/powsybl/iidm/network/StaticVarCompensator$RegulationMode;)Lcom/powsybl/iidm/network/StaticVarCompensator;");
+    cache_.svc_isRegulating  = env_->GetMethodID(cache_.svcClass, "isRegulating",  "()Z");
+    cache_.svc_setRegulating = env_->GetMethodID(cache_.svcClass, "setRegulating",
+        "(Z)Lcom/powsybl/iidm/network/StaticVarCompensator;");
+    checkJNIException(env_);
     {
         jclass shuntCls = env_->FindClass("com/powsybl/iidm/network/ShuntCompensator");
         cache_.shunt_getB                 = env_->GetMethodID(shuntCls, "getB", "()D");
@@ -1108,6 +1124,20 @@ int JNIBackend::getInt(ObjectHandle h, int property) const {
             checkJNIException(env_);
             return ord;
         }
+        case prop::SVC_REGULATION_MODE: {
+            // powsybl-core's RegulationMode enum has only VOLTAGE (0) and REACTIVE_POWER (1).
+            // The "off" state lives on isRegulating(); map it to OFF (= 2) so iidm4cpp's
+            // StaticVarCompensatorRegulationMode {VOLTAGE, REACTIVE_POWER, OFF} is faithful.
+            if (!env_->CallBooleanMethod(obj, cache_.svc_isRegulating)) {
+                checkJNIException(env_);
+                return 2;
+            }
+            jobject mode = env_->CallObjectMethod(obj, cache_.svc_getRegulationMode);
+            int ord = env_->CallIntMethod(mode, cache_.enum_ordinal);
+            env_->DeleteLocalRef(mode);
+            checkJNIException(env_);
+            return ord;
+        }
         case prop::TWO_WT_RTC_TAP_POSITION: {
             jobject rtc = env_->CallObjectMethod(obj, cache_.twt_getRatioTapChanger);
             if (!rtc) throw PropertyNotFoundException("RatioTapChanger not present");
@@ -1341,6 +1371,24 @@ void JNIBackend::setInt(ObjectHandle h, int property, int value) {
             env_->DeleteLocalRef(mode);
             env_->DeleteLocalRef(modeArr);
             env_->DeleteLocalRef(ptc);
+            break;
+        }
+        case prop::SVC_REGULATION_MODE: {
+            // 0=VOLTAGE, 1=REACTIVE_POWER, 2=OFF (iidm4cpp enum). powsybl-core's enum has no
+            // OFF entry; route OFF through setRegulating(false) instead.
+            if (value == 2) {
+                env_->CallObjectMethod(obj, cache_.svc_setRegulating, JNI_FALSE);
+            } else {
+                jobject modeArr = env_->CallStaticObjectMethod(cache_.svcRegulationModeClass,
+                    env_->GetStaticMethodID(cache_.svcRegulationModeClass, "values",
+                        "()[Lcom/powsybl/iidm/network/StaticVarCompensator$RegulationMode;"));
+                jobject mode = env_->GetObjectArrayElement(
+                    static_cast<jobjectArray>(modeArr), value);
+                env_->CallObjectMethod(obj, cache_.svc_setRegulationMode, mode);
+                env_->CallObjectMethod(obj, cache_.svc_setRegulating, JNI_TRUE);
+                env_->DeleteLocalRef(mode);
+                env_->DeleteLocalRef(modeArr);
+            }
             break;
         }
         default:

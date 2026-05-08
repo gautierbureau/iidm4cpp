@@ -223,7 +223,14 @@ public final class PropertyDispatcher {
             case LOAD_TYPE          -> ((Load) obj).getLoadType().ordinal();
             case VL_TOPOLOGY_KIND   -> ((VoltageLevel) obj).getTopologyKind().ordinal();
             case HVDC_CONVERTERS_MODE -> ((HvdcLine) obj).getConvertersMode().ordinal();
-            case SVC_REGULATION_MODE  -> ((StaticVarCompensator) obj).getRegulationMode().ordinal();
+            case SVC_REGULATION_MODE  -> {
+                // powsybl-core's RegulationMode enum has only VOLTAGE (0) and REACTIVE_POWER (1).
+                // The "off" state is carried by isRegulating(); map it to OFF (= 2) so that
+                // iidm4cpp's StaticVarCompensatorRegulationMode {VOLTAGE, REACTIVE_POWER, OFF}
+                // can faithfully report it.
+                StaticVarCompensator svc = (StaticVarCompensator) obj;
+                yield svc.isRegulating() ? svc.getRegulationMode().ordinal() : 2;
+            }
             case SHUNT_SECTION_COUNT     -> ((ShuntCompensator) obj).getSectionCount();
             case SHUNT_MAX_SECTION_COUNT -> ((ShuntCompensator) obj).getMaximumSectionCount();
             case SW_KIND  -> ((Switch) obj).getKind().ordinal();
@@ -297,9 +304,17 @@ public final class PropertyDispatcher {
         switch (property) {
             case HVDC_CONVERTERS_MODE ->
                 ((HvdcLine) obj).setConvertersMode(HvdcLine.ConvertersMode.values()[value]);
-            case SVC_REGULATION_MODE ->
-                ((StaticVarCompensator) obj).setRegulationMode(
-                    StaticVarCompensator.RegulationMode.values()[value]);
+            case SVC_REGULATION_MODE -> {
+                // 0=VOLTAGE, 1=REACTIVE_POWER, 2=OFF (iidm4cpp enum). powsybl-core no longer
+                // has OFF in its enum; map it through isRegulating() instead.
+                StaticVarCompensator svc = (StaticVarCompensator) obj;
+                if (value == 2) {
+                    svc.setRegulating(false);
+                } else {
+                    svc.setRegulationMode(StaticVarCompensator.RegulationMode.values()[value]);
+                    svc.setRegulating(true);
+                }
+            }
             case SHUNT_SECTION_COUNT ->
                 ((ShuntCompensator) obj).setSectionCount(value);
             case TWO_WT_RTC_TAP_POSITION ->
