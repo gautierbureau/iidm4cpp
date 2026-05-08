@@ -352,6 +352,13 @@ struct JNIMethodCache {
     jmethodID shuntLM_getBPerSection     = nullptr;
     jmethodID shuntLM_getGPerSection     = nullptr;
 
+    // ── StaticVarCompensator regulation mode + isRegulating ──────────────────
+    jclass    svcRegulationModeClass     = nullptr; // StaticVarCompensator$RegulationMode
+    jmethodID svc_getRegulationMode      = nullptr;
+    jmethodID svc_setRegulationMode      = nullptr;
+    jmethodID svc_isRegulating           = nullptr;
+    jmethodID svc_setRegulating          = nullptr;
+
     // ── VoltageLevel BusBreakerView.getBuses() / getBus1/getBus2 ─────────────
     jmethodID bbView_getBuses            = nullptr;
     jmethodID bbView_getBus1             = nullptr; // getBus1(String switchId)

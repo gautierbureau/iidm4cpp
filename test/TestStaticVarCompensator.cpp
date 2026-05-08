@@ -58,6 +58,17 @@ TEST_F(StaticVarCompensatorTest, GetSetRegulationMode) {
     EXPECT_EQ((backend.ints[{SVC_H, prop::SVC_REGULATION_MODE}]), 1);
 }
 
+// Regression: SVC_REGULATION_MODE must round-trip OFF (= 2). powsybl-core 7.x dropped
+// OFF from its enum and represents it via isRegulating(); the dispatcher (Java) and
+// JNI backend translate, so at the C++ wrapper layer OFF is just integer 2.
+TEST_F(StaticVarCompensatorTest, RegulationModeOffRoundTrip) {
+    backend.ints[{SVC_H, prop::SVC_REGULATION_MODE}] = 2; // OFF
+    StaticVarCompensator svc(SVC_H, &backend);
+    EXPECT_EQ(svc.getRegulationMode(), StaticVarCompensatorRegulationMode::OFF);
+    svc.setRegulationMode(StaticVarCompensatorRegulationMode::OFF);
+    EXPECT_EQ((backend.ints[{SVC_H, prop::SVC_REGULATION_MODE}]), 2);
+}
+
 TEST_F(StaticVarCompensatorTest, GetTerminal) {
     backend.doubles[{TERM_H, prop::TERMINAL_P}] = 10.0;
     StaticVarCompensator svc(SVC_H, &backend);

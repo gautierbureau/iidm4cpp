@@ -216,6 +216,42 @@ class PropertyDispatcherGetDoubleTest {
         assertEquals(400.0, PropertyDispatcher.getDouble(reg(svc), SVC_VOLTAGE_SETPOINT));
     }
 
+    // SVC_REGULATION_MODE must report OFF (= 2) when the SVC is not regulating —
+    // powsybl-core's RegulationMode enum no longer carries an OFF value, so we route it
+    // through isRegulating() to keep iidm4cpp's
+    // StaticVarCompensatorRegulationMode {VOLTAGE=0, REACTIVE_POWER=1, OFF=2} faithful.
+    @Test void svc_regulationMode_offWhenNotRegulating() {
+        Substation s = addSubstation();
+        VoltageLevel vl = addVoltageLevel(s, 400);
+        Bus b = addBus(vl);
+        Load refLoad = vl.newLoad().setId("LSVC2").setBus(b.getId()).setConnectableBus(b.getId())
+                .setP0(0).setQ0(0).add();
+        StaticVarCompensator svc = vl.newStaticVarCompensator().setId("SVC2")
+                .setBus(b.getId()).setConnectableBus(b.getId())
+                .setBmin(-1e-4).setBmax(1e-4)
+                .setVoltageSetpoint(400).setReactivePowerSetpoint(0)
+                .setRegulationMode(StaticVarCompensator.RegulationMode.REACTIVE_POWER)
+                .setRegulatingTerminal(refLoad.getTerminal())
+                .setRegulating(false)
+                .add();
+        long h = reg(svc);
+        // Even though the underlying mode is REACTIVE_POWER, isRegulating()=false → OFF.
+        assertEquals(2, PropertyDispatcher.getInt(h, SVC_REGULATION_MODE));
+
+        // Flipping back to regulating exposes the real mode.
+        svc.setRegulating(true);
+        assertEquals(1, PropertyDispatcher.getInt(h, SVC_REGULATION_MODE));
+        svc.setRegulationMode(StaticVarCompensator.RegulationMode.VOLTAGE);
+        assertEquals(0, PropertyDispatcher.getInt(h, SVC_REGULATION_MODE));
+
+        // Setter: writing 2 (OFF) must turn isRegulating() off; writing 0/1 must turn it on.
+        PropertyDispatcher.setInt(h, SVC_REGULATION_MODE, 2);
+        assertFalse(svc.isRegulating());
+        PropertyDispatcher.setInt(h, SVC_REGULATION_MODE, 1);
+        assertTrue(svc.isRegulating());
+        assertEquals(StaticVarCompensator.RegulationMode.REACTIVE_POWER, svc.getRegulationMode());
+    }
+
     // ── DanglingLine ─────────────────────────────────────────────────────────
 
     @Test void danglingLine_params() {
