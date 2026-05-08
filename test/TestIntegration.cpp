@@ -479,8 +479,8 @@ TEST_F(IntegrationTest, DynawoPattern_LccLossFactor) {
         explicit LccInterface(const iidm::LccConverterStation& s)
             : lcc(s), terminal(s.getTerminal())
             , voltageLevel(s.getTerminal().getVoltageLevel()) {}
-        float getLossFactor()  const { return lcc.getLossFactor(); }
-        float getPowerFactor() const { return lcc.getPowerFactor(); }
+        double getLossFactor()  const { return lcc.getLossFactor(); }
+        double getPowerFactor() const { return lcc.getPowerFactor(); }
     };
 
     std::vector<LccInterface> interfaces;
@@ -491,8 +491,8 @@ TEST_F(IntegrationTest, DynawoPattern_LccLossFactor) {
         EXPECT_TRUE(itf.lcc.isValid());
         EXPECT_NO_THROW(itf.getLossFactor());
         EXPECT_NO_THROW(itf.getPowerFactor());
-        EXPECT_GE(itf.getLossFactor(), 0.0f);
-        EXPECT_GE(itf.getPowerFactor(), 0.0f);
+        EXPECT_GE(itf.getLossFactor(), 0.0);
+        EXPECT_GE(itf.getPowerFactor(), 0.0);
     }
 }
 
@@ -510,7 +510,7 @@ TEST_F(IntegrationTest, DynawoPattern_VscLossFactor) {
         explicit VscInterface(const iidm::VscConverterStation& s)
             : vsc(s), terminal(s.getTerminal())
             , voltageLevel(s.getTerminal().getVoltageLevel()) {}
-        float getLossFactor() const { return vsc.getLossFactor(); }
+        double getLossFactor() const { return vsc.getLossFactor(); }
     };
 
     std::vector<VscInterface> interfaces;
@@ -520,7 +520,7 @@ TEST_F(IntegrationTest, DynawoPattern_VscLossFactor) {
     for (const auto& itf : interfaces) {
         EXPECT_TRUE(itf.vsc.isValid());
         EXPECT_NO_THROW(itf.getLossFactor());
-        EXPECT_GE(itf.getLossFactor(), 0.0f);
+        EXPECT_GE(itf.getLossFactor(), 0.0);
     }
 }
 

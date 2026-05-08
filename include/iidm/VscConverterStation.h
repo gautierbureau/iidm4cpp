@@ -19,7 +19,7 @@ public:
     std::string getId() const;
     std::string getName() const;
 
-    float getLossFactor() const;
+    double getLossFactor() const;
 
     bool isVoltageRegulatorOn() const;
     VscConverterStation& setVoltageRegulatorOn(bool on);

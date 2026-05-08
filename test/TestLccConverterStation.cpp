@@ -32,8 +32,10 @@ TEST_F(LccConverterStationTest, GetId) {
 
 TEST_F(LccConverterStationTest, GetLossAndPowerFactor) {
     LccConverterStation lcc(LCC_H, &backend);
-    EXPECT_FLOAT_EQ(lcc.getLossFactor(),  0.02f);
-    EXPECT_FLOAT_EQ(lcc.getPowerFactor(), 0.95f);
+    // The underlying powsybl-iidm-api stores loss/power factor as float, so the
+    // value carries float precision even though the C++ API exposes double.
+    EXPECT_FLOAT_EQ(static_cast<float>(lcc.getLossFactor()),  0.02f);
+    EXPECT_FLOAT_EQ(static_cast<float>(lcc.getPowerFactor()), 0.95f);
 }
 
 TEST_F(LccConverterStationTest, GetTerminal) {
