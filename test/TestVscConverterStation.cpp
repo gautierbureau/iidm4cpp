@@ -38,7 +38,9 @@ TEST_F(VscConverterStationTest, GetId) {
 
 TEST_F(VscConverterStationTest, GetLossFactor) {
     VscConverterStation vsc(VSC_H, &backend);
-    EXPECT_FLOAT_EQ(vsc.getLossFactor(), 0.011f);
+    // powsybl-iidm-api stores loss factor as float; preserve the float-precision
+    // comparison even though the C++ API now exposes double.
+    EXPECT_FLOAT_EQ(static_cast<float>(vsc.getLossFactor()), 0.011f);
 }
 
 TEST_F(VscConverterStationTest, VoltageRegulator) {

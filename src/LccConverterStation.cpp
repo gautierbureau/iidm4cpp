@@ -17,12 +17,12 @@ std::string LccConverterStation::getName() const {
     return backend_->getString(handle_, prop::NAME);
 }
 
-float LccConverterStation::getLossFactor() const {
-    return static_cast<float>(backend_->getDouble(handle_, prop::LCC_LOSS_FACTOR));
+double LccConverterStation::getLossFactor() const {
+    return backend_->getDouble(handle_, prop::LCC_LOSS_FACTOR);
 }
 
-float LccConverterStation::getPowerFactor() const {
-    return static_cast<float>(backend_->getDouble(handle_, prop::LCC_POWER_FACTOR));
+double LccConverterStation::getPowerFactor() const {
+    return backend_->getDouble(handle_, prop::LCC_POWER_FACTOR);
 }
 
 Terminal LccConverterStation::getTerminal() const {

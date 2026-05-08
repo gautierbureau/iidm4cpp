@@ -19,8 +19,8 @@ std::string VscConverterStation::getName() const {
     return backend_->getString(handle_, prop::NAME);
 }
 
-float VscConverterStation::getLossFactor() const {
-    return static_cast<float>(backend_->getDouble(handle_, prop::VSC_LOSS_FACTOR));
+double VscConverterStation::getLossFactor() const {
+    return backend_->getDouble(handle_, prop::VSC_LOSS_FACTOR);
 }
 
 bool VscConverterStation::isVoltageRegulatorOn() const {

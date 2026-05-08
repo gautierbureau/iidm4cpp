@@ -17,8 +17,8 @@ public:
     std::string getId() const;
     std::string getName() const;
 
-    float getLossFactor() const;
-    float getPowerFactor() const;
+    double getLossFactor() const;
+    double getPowerFactor() const;
 
     Terminal getTerminal() const;
     HvdcLine getHvdcLine() const;
