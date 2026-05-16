@@ -28,7 +28,10 @@ public final class IidmEntryPoints {
     public static long loadNetwork(IsolateThread thread, CCharPointer filePath) {
         try {
             String path = CTypeConversion.toJavaString(filePath);
-            Network network = Network.read(Path.of(path));
+            // NetworkSerDe.read parses XIIDM directly, regardless of file extension.
+            // Network.read picks an importer by extension and rejects names like
+            // Dynawo's fic.IIDM (uppercase extension not recognised).
+            Network network = NetworkSerDe.read(Path.of(path));
             return NetworkRegistry.register(network);
         } catch (Exception e) {
             return 0L; // INVALID_HANDLE

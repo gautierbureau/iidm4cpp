@@ -36,7 +36,7 @@ public final class JavaLauncher {
         String networkId = args.length >= 2 ? args[1] : "default";
 
         System.out.println("Loading network from: " + networkFile.toAbsolutePath());
-        Network network = Network.read(networkFile);
+        Network network = NetworkSerDe.read(networkFile);
 
         System.out.println("Network loaded: " + network.getNameOrId());
         System.out.printf("  Substations : %d%n", network.getSubstationCount());
