@@ -86,6 +86,9 @@ void GraalVMBackend::resolveSymbols() {
     fnTearDownIsolate_ = resolveSymbol<FnTearDownIsolate>(libHandle_, "graal_tear_down_isolate");
     fnLoadNetwork_     = resolveSymbol<FnLoadNetwork>    (libHandle_, "iidm_load_network");
     fnSaveNetwork_     = resolveSymbol<FnSaveNetwork>    (libHandle_, "iidm_save_network");
+    fnLoadNetworkBytes_ = resolveSymbol<FnLoadNetworkBytes>(libHandle_, "iidm_load_network_bytes");
+    fnSaveNetworkBytes_ = resolveSymbol<FnSaveNetworkBytes>(libHandle_, "iidm_save_network_bytes");
+    fnFreeBytes_        = resolveSymbol<FnFreeBytes>      (libHandle_, "iidm_free_bytes");
     fnGetDouble_       = resolveSymbol<FnGetDouble>      (libHandle_, "iidm_get_double");
     fnSetDouble_       = resolveSymbol<FnSetDouble>      (libHandle_, "iidm_set_double");
     fnGetInt_          = resolveSymbol<FnGetInt>         (libHandle_, "iidm_get_int");
@@ -115,6 +118,30 @@ void GraalVMBackend::saveNetwork(const std::string& filePath) {
     if (rc != 0) {
         throw IidmException("Failed to save network to: " + filePath);
     }
+}
+
+void GraalVMBackend::loadNetworkBytes(const char* data, std::size_t length,
+                                      const std::string& filenameHint) {
+    networkHandle_ = fnLoadNetworkBytes_(thread_, data, static_cast<int>(length),
+                                         filenameHint.c_str());
+    if (networkHandle_ == INVALID_HANDLE) {
+        throw IidmException("Failed to load network from bytes (hint: " + filenameHint + ")");
+    }
+}
+
+std::string GraalVMBackend::saveNetworkBytes(const std::string& filenameHint) const {
+    char* outData = nullptr;
+    int   outLen  = 0;
+    int rc = fnSaveNetworkBytes_(thread_, networkHandle_, filenameHint.c_str(),
+                                 &outData, &outLen);
+    if (rc != 0) {
+        throw IidmException("Failed to save network to bytes (hint: " + filenameHint + ")");
+    }
+    std::string result(outData ? outData : "", static_cast<std::size_t>(outLen));
+    if (outData) {
+        fnFreeBytes_(thread_, outData);
+    }
+    return result;
 }
 
 void GraalVMBackend::close() {

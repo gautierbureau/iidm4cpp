@@ -119,9 +119,11 @@ struct JNIMethodCache {
     jmethodID line_getTerminal2 = nullptr;
 
     // ── IidmBridgeRegistry ───────────────────────────────────────────────
-    jmethodID registry_get     = nullptr;
-    jmethodID registry_save    = nullptr;
-    jmethodID registry_listIds = nullptr;
+    jmethodID registry_get          = nullptr;
+    jmethodID registry_save         = nullptr;
+    jmethodID registry_listIds      = nullptr;
+    jmethodID registry_loadFromBytes = nullptr;
+    jmethodID registry_saveToBytes   = nullptr;
 
     // ── List ─────────────────────────────────────────────────────────────
     jmethodID list_size       = nullptr;

@@ -3,6 +3,8 @@ package com.powsybl.iidmbridge.jni;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.serde.NetworkSerDe;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -98,5 +100,41 @@ public final class IidmBridgeRegistry {
     public static void save(String id, String filePath) {
         Network network = get(id);
         NetworkSerDe.write(network, Path.of(filePath));
+    }
+
+    /**
+     * Called from JNI to load a network from an in-memory byte buffer and
+     * register it under the given id.
+     *
+     * @param id            network identifier to register under
+     * @param data          serialized network bytes
+     * @param filenameHint  filename hint (e.g. "network.xiidm") used by
+     *                      PowSyBl to select the importer
+     */
+    public static void loadFromBytes(String id, byte[] data, String filenameHint) {
+        try (ByteArrayInputStream in = new ByteArrayInputStream(data)) {
+            // NetworkSerDe.read(InputStream) handles the XIIDM format; the
+            // filenameHint is reserved for future multi-format support.
+            Network network = NetworkSerDe.read(in);
+            register(id, network);
+        } catch (java.io.IOException e) {
+            throw new IllegalStateException("Failed to read network bytes", e);
+        }
+    }
+
+    /**
+     * Called from JNI to serialize a registered network to an in-memory byte
+     * buffer.
+     *
+     * @param id           network identifier
+     * @param filenameHint format hint (reserved for future multi-format
+     *                     support; currently always XIIDM)
+     * @return serialized network bytes
+     */
+    public static byte[] saveToBytes(String id, String filenameHint) {
+        Network network = get(id);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        NetworkSerDe.write(network, out);
+        return out.toByteArray();
     }
 }

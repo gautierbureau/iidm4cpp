@@ -17,6 +17,7 @@
 #include <iidm/LccConverterStation.h>
 #include <iidm/BusbarSection.h>
 #include <iidm/Switch.h>
+#include <iosfwd>
 #include <memory>
 #include <iidm/stdcxx/optional.hpp>
 #include <string>
@@ -41,6 +42,14 @@ public:
 
     // Save the network to an XIIDM file.
     void save(const std::string& filePath) const;
+
+    // Save the network into a std::ostream. `filenameHint` selects the
+    // exporter (default "network.xiidm").
+    void save(std::ostream& out,
+              const std::string& filenameHint = "network.xiidm") const;
+
+    // Serialize the network into a byte buffer (XIIDM by default).
+    std::string saveToBytes(const std::string& filenameHint = "network.xiidm") const;
 
     // ── Iteration helpers ────────────────────────────────────────────────
     std::vector<Substation>              getSubstations() const;

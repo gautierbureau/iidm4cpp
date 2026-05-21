@@ -2,6 +2,7 @@
 
 #include <iidm/ObjectHandle.h>
 #include <iidm/stdcxx/optional.hpp>
+#include <cstddef>
 #include <string>
 #include <vector>
 
@@ -45,6 +46,16 @@ public:
     // ── Lifecycle ────────────────────────────────────────────────────────
     virtual void loadNetwork(const std::string& filePath) = 0;
     virtual void saveNetwork(const std::string& filePath) = 0;
+
+    // ── In-memory load/save ──────────────────────────────────────────────
+    // Load a network from an in-memory byte buffer. `filenameHint` lets
+    // PowSyBl pick the right importer (e.g. "network.xiidm").
+    virtual void loadNetworkBytes(const char* data, std::size_t length,
+                                  const std::string& filenameHint) = 0;
+    // Serialize the current network into an in-memory byte buffer.
+    // `filenameHint` selects the export format (only "*.xiidm" is supported today).
+    virtual std::string saveNetworkBytes(const std::string& filenameHint) const = 0;
+
     virtual void close() = 0;
 };
 

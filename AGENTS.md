@@ -95,6 +95,13 @@ gen.setTargetP(100.0).setTargetQ(0.0);
 **Move-only components** — copy constructors are deleted; move constructors are
 provided.  Do not attempt to copy component objects.
 
+**Stream / byte-buffer I/O** — `NetworkFactory::load(std::istream&)` and
+`NetworkFactory::loadFromBytes(...)` parse a network from an in-memory buffer
+instead of a file path; `Network::save(std::ostream&)` and
+`Network::saveToBytes()` go the other way. Both routes are wired through new
+backend methods `loadNetworkBytes` / `saveNetworkBytes`; `NetworkLoadOptions::filenameHint`
+selects the format (default `"network.xiidm"`).
+
 ### File layout
 
 ```

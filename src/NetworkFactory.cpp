@@ -2,12 +2,35 @@
 #include <iidm/IidmException.h>
 #include "BackendSelector.h"
 
+#include <istream>
+#include <iterator>
+#include <sstream>
+
 namespace iidm {
 
 Network NetworkFactory::load(const std::string& filePath, const NetworkLoadOptions& options) {
     auto backend = selectBackend(options);
     backend->loadNetwork(filePath);
     return Network(std::move(backend));
+}
+
+Network NetworkFactory::load(std::istream& in, const NetworkLoadOptions& options) {
+    std::ostringstream buffer;
+    buffer << in.rdbuf();
+    const std::string bytes = buffer.str();
+    return loadFromBytes(bytes.data(), bytes.size(), options);
+}
+
+Network NetworkFactory::loadFromBytes(const char* data, std::size_t length,
+                                      const NetworkLoadOptions& options) {
+    auto backend = selectBackend(options);
+    backend->loadNetworkBytes(data, length, options.filenameHint);
+    return Network(std::move(backend));
+}
+
+Network NetworkFactory::loadFromBytes(const std::string& bytes,
+                                      const NetworkLoadOptions& options) {
+    return loadFromBytes(bytes.data(), bytes.size(), options);
 }
 
 Network NetworkFactory::wrap(const std::string& networkId, const NetworkLoadOptions& options) {

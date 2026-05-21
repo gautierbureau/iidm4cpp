@@ -39,6 +39,9 @@ public:
 
     void loadNetwork(const std::string& filePath) override;
     void saveNetwork(const std::string& filePath) override;
+    void loadNetworkBytes(const char* data, std::size_t length,
+                          const std::string& filenameHint) override;
+    std::string saveNetworkBytes(const std::string& filenameHint) const override;
     void close() override;
 
 private:
