@@ -43,6 +43,9 @@ public:
 
     void loadNetwork(const std::string& filePath) override;
     void saveNetwork(const std::string& filePath) override;
+    void loadNetworkBytes(const char* data, std::size_t length,
+                          const std::string& filenameHint) override;
+    std::string saveNetworkBytes(const std::string& filenameHint) const override;
     void close() override;
 
 private:
@@ -61,6 +64,9 @@ private:
     using FnTearDownIsolate = int(*)(graal_isolatethread_t*);
     using FnLoadNetwork     = ObjectHandle(*)(graal_isolatethread_t*, const char*);
     using FnSaveNetwork     = int(*)(graal_isolatethread_t*, ObjectHandle, const char*);
+    using FnLoadNetworkBytes = ObjectHandle(*)(graal_isolatethread_t*, const char*, int, const char*);
+    using FnSaveNetworkBytes = int(*)(graal_isolatethread_t*, ObjectHandle, const char*, char**, int*);
+    using FnFreeBytes        = void(*)(graal_isolatethread_t*, const char*);
     using FnGetDouble       = double(*)(graal_isolatethread_t*, ObjectHandle, int);
     using FnSetDouble       = void(*)(graal_isolatethread_t*, ObjectHandle, int, double);
     using FnGetInt          = int(*)(graal_isolatethread_t*, ObjectHandle, int);
@@ -82,6 +88,9 @@ private:
     FnTearDownIsolate fnTearDownIsolate_ = nullptr;
     FnLoadNetwork     fnLoadNetwork_     = nullptr;
     FnSaveNetwork     fnSaveNetwork_     = nullptr;
+    FnLoadNetworkBytes fnLoadNetworkBytes_ = nullptr;
+    FnSaveNetworkBytes fnSaveNetworkBytes_ = nullptr;
+    FnFreeBytes        fnFreeBytes_        = nullptr;
     FnGetDouble       fnGetDouble_       = nullptr;
     FnSetDouble       fnSetDouble_       = nullptr;
     FnGetInt          fnGetInt_          = nullptr;

@@ -3,6 +3,8 @@
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
 
+#include <ostream>
+
 namespace iidm {
 
 Network::Network(std::unique_ptr<BackendProvider> backend)
@@ -31,6 +33,17 @@ BackendProvider& Network::getBackend() {
 
 void Network::save(const std::string& filePath) const {
     backend_->saveNetwork(filePath);
+}
+
+void Network::save(std::ostream& out, const std::string& filenameHint) const {
+    const std::string bytes = backend_->saveNetworkBytes(filenameHint);
+    if (!bytes.empty()) {
+        out.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
+    }
+}
+
+std::string Network::saveToBytes(const std::string& filenameHint) const {
+    return backend_->saveNetworkBytes(filenameHint);
 }
 
 // ── Helper: build vector of component objects from handles ────────────────────

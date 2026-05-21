@@ -8,10 +8,14 @@ import org.graalvm.nativeimage.UnmanagedMemory;
 import org.graalvm.nativeimage.c.CContext;
 import org.graalvm.nativeimage.c.function.CEntryPoint;
 import org.graalvm.nativeimage.c.type.CCharPointer;
+import org.graalvm.nativeimage.c.type.CCharPointerPointer;
 import org.graalvm.nativeimage.c.type.CLongPointer;
 import org.graalvm.nativeimage.c.type.CIntPointer;
 import org.graalvm.nativeimage.c.type.CTypeConversion;
+import org.graalvm.word.WordFactory;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 
@@ -44,6 +48,70 @@ public final class IidmEntryPoints {
             return 0;
         } catch (Exception e) {
             return 1;
+        }
+    }
+
+    /**
+     * Load a network from an in-memory byte buffer.
+     *
+     * @return a positive handle on success, 0 on failure.
+     */
+    @CEntryPoint(name = "iidm_load_network_bytes")
+    public static long loadNetworkBytes(IsolateThread thread,
+                                        CCharPointer data, int length,
+                                        CCharPointer filenameHint) {
+        try {
+            byte[] bytes = new byte[length];
+            for (int i = 0; i < length; i++) {
+                bytes[i] = data.read(i);
+            }
+            // filenameHint is reserved for future multi-format support;
+            // NetworkSerDe currently only handles XIIDM via InputStream.
+            try (ByteArrayInputStream in = new ByteArrayInputStream(bytes)) {
+                Network network = NetworkSerDe.read(in);
+                return NetworkRegistry.register(network);
+            }
+        } catch (Exception e) {
+            return 0L;
+        }
+    }
+
+    /**
+     * Serialize a network into a freshly allocated unmanaged byte buffer.
+     * The caller is responsible for releasing it via {@code iidm_free_bytes}.
+     *
+     * <p>On success returns 0 and writes the buffer pointer and length into
+     * {@code outData}/{@code outLen}. On failure returns a non-zero code and
+     * leaves {@code outData}/{@code outLen} undefined.</p>
+     */
+    @CEntryPoint(name = "iidm_save_network_bytes")
+    public static int saveNetworkBytes(IsolateThread thread, long handle,
+                                       CCharPointer filenameHint,
+                                       CCharPointerPointer outData,
+                                       CIntPointer outLen) {
+        try {
+            Network network = (Network) NetworkRegistry.lookup(handle);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            NetworkSerDe.write(network, baos);
+            byte[] bytes = baos.toByteArray();
+            CCharPointer ptr = UnmanagedMemory.malloc(bytes.length);
+            for (int i = 0; i < bytes.length; i++) {
+                ptr.write(i, bytes[i]);
+            }
+            outData.write(ptr);
+            outLen.write(bytes.length);
+            return 0;
+        } catch (Exception e) {
+            outData.write(WordFactory.nullPointer());
+            outLen.write(0);
+            return 1;
+        }
+    }
+
+    @CEntryPoint(name = "iidm_free_bytes")
+    public static void freeBytes(IsolateThread thread, CCharPointer ptr) {
+        if (ptr.isNonNull()) {
+            UnmanagedMemory.free(ptr);
         }
     }
 

@@ -73,6 +73,10 @@ void JNIBackend::cacheMethodIds() {
         "get", "(Ljava/lang/String;)Lcom/powsybl/iidm/network/Network;");
     cache_.registry_save = env_->GetStaticMethodID(cache_.iidmRegistryClass,
         "save", "(Ljava/lang/String;Ljava/lang/String;)V");
+    cache_.registry_loadFromBytes = env_->GetStaticMethodID(cache_.iidmRegistryClass,
+        "loadFromBytes", "(Ljava/lang/String;[BLjava/lang/String;)V");
+    cache_.registry_saveToBytes = env_->GetStaticMethodID(cache_.iidmRegistryClass,
+        "saveToBytes", "(Ljava/lang/String;Ljava/lang/String;)[B");
     checkJNIException(env_);
 
     // Network
@@ -660,6 +664,68 @@ void JNIBackend::saveNetwork(const std::string& filePath) {
     env_->DeleteLocalRef(jId);
     env_->DeleteLocalRef(jPath);
     checkJNIException(env_);
+}
+
+void JNIBackend::loadNetworkBytes(const char* data, std::size_t length,
+                                  const std::string& filenameHint) {
+    // Build a Java byte[] from the buffer.
+    jbyteArray arr = env_->NewByteArray(static_cast<jsize>(length));
+    if (!arr) {
+        checkJNIException(env_);
+        throw IidmException("Failed to allocate Java byte[] for network load");
+    }
+    if (length > 0) {
+        env_->SetByteArrayRegion(arr, 0, static_cast<jsize>(length),
+                                 reinterpret_cast<const jbyte*>(data));
+    }
+    jstring jId   = env_->NewStringUTF(networkId_.c_str());
+    jstring jHint = env_->NewStringUTF(filenameHint.c_str());
+    env_->CallStaticVoidMethod(cache_.iidmRegistryClass,
+                               cache_.registry_loadFromBytes, jId, arr, jHint);
+    env_->DeleteLocalRef(jHint);
+    env_->DeleteLocalRef(jId);
+    env_->DeleteLocalRef(arr);
+    checkJNIException(env_);
+
+    // The newly registered network replaces any previous reference held here.
+    if (networkRef_) {
+        env_->DeleteGlobalRef(networkRef_);
+        networkRef_ = nullptr;
+    }
+    jstring jIdLookup = env_->NewStringUTF(networkId_.c_str());
+    jobject netObj = env_->CallStaticObjectMethod(cache_.iidmRegistryClass,
+                                                  cache_.registry_get, jIdLookup);
+    env_->DeleteLocalRef(jIdLookup);
+    checkJNIException(env_);
+    if (!netObj) {
+        throw NetworkNotFoundException("Network missing after loadFromBytes: " + networkId_);
+    }
+    networkRef_ = env_->NewGlobalRef(netObj);
+    env_->DeleteLocalRef(netObj);
+}
+
+std::string JNIBackend::saveNetworkBytes(const std::string& filenameHint) const {
+    jstring jId   = env_->NewStringUTF(networkId_.c_str());
+    jstring jHint = env_->NewStringUTF(filenameHint.c_str());
+    jobject result = env_->CallStaticObjectMethod(cache_.iidmRegistryClass,
+                                                  cache_.registry_saveToBytes,
+                                                  jId, jHint);
+    env_->DeleteLocalRef(jHint);
+    env_->DeleteLocalRef(jId);
+    checkJNIException(env_);
+    if (!result) {
+        throw IidmException("Java returned null bytes for network save");
+    }
+    jbyteArray arr = static_cast<jbyteArray>(result);
+    jsize n = env_->GetArrayLength(arr);
+    std::string out;
+    out.resize(static_cast<std::size_t>(n));
+    if (n > 0) {
+        env_->GetByteArrayRegion(arr, 0, n, reinterpret_cast<jbyte*>(&out[0]));
+    }
+    env_->DeleteLocalRef(arr);
+    checkJNIException(env_);
+    return out;
 }
 
 void JNIBackend::close() {

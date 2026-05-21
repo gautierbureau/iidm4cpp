@@ -44,6 +44,11 @@ public:
     ObjectHandle networkHandle = 1;
     bool closed = false;
     std::string lastSavedPath;
+    // Stream-API hooks
+    std::string lastLoadedBytes;
+    std::string lastLoadedFilenameHint;
+    mutable std::string lastSavedFilenameHint;
+    std::string bytesToReturnOnSave;
 
     // ── BackendProvider interface ─────────────────────────────────────────
     double getDouble(ObjectHandle h, int p) const override {
@@ -120,6 +125,15 @@ public:
     ObjectHandle getNetworkHandle() const override { return networkHandle; }
     void loadNetwork(const std::string&) override {}
     void saveNetwork(const std::string& path) override { lastSavedPath = path; }
+    void loadNetworkBytes(const char* data, std::size_t length,
+                          const std::string& filenameHint) override {
+        lastLoadedBytes.assign(data, length);
+        lastLoadedFilenameHint = filenameHint;
+    }
+    std::string saveNetworkBytes(const std::string& filenameHint) const override {
+        lastSavedFilenameHint = filenameHint;
+        return bytesToReturnOnSave;
+    }
     void close() override { closed = true; }
 };
 
