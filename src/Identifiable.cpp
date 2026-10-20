@@ -1,5 +1,6 @@
 #include <iidm/Identifiable.h>
 #include <iidm/BackendProvider.h>
+#include "Extensions.h"
 
 namespace iidm {
 
@@ -64,11 +65,19 @@ Identifiable& Identifiable::removeAlias(const std::string& alias) {
 // ── Extensions ───────────────────────────────────────────────────────────────
 
 bool Identifiable::hasDiscreteMeasurements() const {
-    return backend_->getBool(handle_, prop::EXT_DMEAS_EXISTS);
+    return detail::hasExtension<DiscreteMeasurements>(backend_, handle_);
 }
 
 DiscreteMeasurements Identifiable::getDiscreteMeasurements() const {
-    return DiscreteMeasurements(handle_, backend_);
+    return detail::getExtension<DiscreteMeasurements>(backend_, handle_, "DiscreteMeasurements");
+}
+
+DiscreteMeasurementsAdder Identifiable::newDiscreteMeasurements() {
+    return detail::newExtension<DiscreteMeasurements, DiscreteMeasurementsAdder>(backend_, handle_);
+}
+
+void Identifiable::removeDiscreteMeasurements() {
+    detail::removeExtension<DiscreteMeasurements>(backend_, handle_);
 }
 
 } // namespace iidm

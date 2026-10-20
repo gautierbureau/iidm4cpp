@@ -16,6 +16,7 @@
 #include <iidm/DanglingLine.h>
 #include <iidm/LccConverterStation.h>
 #include <iidm/VscConverterStation.h>
+#include "Extensions.h"
 #include "Wrap.h"
 
 namespace iidm {
@@ -123,14 +124,6 @@ iidm::optional<double> VoltageLevel::getHighVoltageLimit() const {
 
 TopologyKind VoltageLevel::getTopologyKind() const {
     return static_cast<TopologyKind>(backend_->getInt(handle_, prop::VL_TOPOLOGY_KIND));
-}
-
-bool VoltageLevel::hasSlackTerminal() const {
-    return backend_->getBool(handle_, prop::EXT_ST_EXISTS);
-}
-
-SlackTerminal VoltageLevel::getSlackTerminal() const {
-    return SlackTerminal(handle_, backend_);
 }
 
 std::vector<Connectable> VoltageLevel::getConnectables() const {
@@ -243,12 +236,32 @@ VoltageLevel::BusBreakerView VoltageLevel::getBusBreakerView() const {
 
 // ── Extensions ───────────────────────────────────────────────────────────────
 
+bool VoltageLevel::hasSlackTerminal() const {
+    return detail::hasExtension<SlackTerminal>(backend_, handle_);
+}
+
+SlackTerminal VoltageLevel::getSlackTerminal() const {
+    return detail::getExtension<SlackTerminal>(backend_, handle_, "SlackTerminal");
+}
+
+SlackTerminalAdder VoltageLevel::newSlackTerminal() {
+    return detail::newExtension<SlackTerminal, SlackTerminalAdder>(backend_, handle_);
+}
+
+void VoltageLevel::removeSlackTerminal() {
+    detail::removeExtension<SlackTerminal>(backend_, handle_);
+}
+
 bool VoltageLevel::hasObservabilityArea() const {
-    return backend_->getBool(handle_, prop::EXT_OBS_AREA_EXISTS);
+    return detail::hasExtension<ObservabilityArea>(backend_, handle_);
 }
 
 ObservabilityArea VoltageLevel::getObservabilityArea() const {
-    return ObservabilityArea(handle_, backend_);
+    return detail::getExtension<ObservabilityArea>(backend_, handle_, "ObservabilityArea");
+}
+
+void VoltageLevel::removeObservabilityArea() {
+    detail::removeExtension<ObservabilityArea>(backend_, handle_);
 }
 
 } // namespace iidm

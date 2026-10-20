@@ -4,6 +4,7 @@
 #include <iidm/Enums.h>
 #include <iidm/ObjectRef.h>
 #include <iidm/ObjectHandle.h>
+#include <iidm/PropertyCodes.h>
 #include <iidm/Terminal.h>
 #include <iidm/stdcxx/optional.hpp>
 #include <string>
@@ -13,13 +14,17 @@ namespace iidm {
 
 class BackendProvider;
 
-// Typed wrapper for the PowSyBl ObservabilityArea extension attached to a VoltageLevel
-// (read-only: areas are produced by a state estimator).
+// The ObservabilityArea extension of a voltage level: an object of its own, from
+// VoltageLevel::getObservabilityArea() (read-only: its areas come from a state estimator).
 class ObservabilityArea : public detail::ObjectRef {
 public:
+    static constexpr int TYPE = prop::OBSERVABILITY_AREA;
+
     // One observability area of the voltage level.
     class AreaCharacteristics : public detail::ObjectRef {
     public:
+        static constexpr int TYPE = prop::AREA_CHARACTERISTICS;
+
         AreaCharacteristics() = default;
         explicit AreaCharacteristics(ObjectHandle handle, BackendProvider* backend);
 
@@ -39,6 +44,7 @@ public:
 
     bool isConsistentWithTopology() const;
 
+    // By area number
     std::vector<AreaCharacteristics> getObservabilityAreas() const;
 
     // Area containing a node (node-breaker voltage level only).

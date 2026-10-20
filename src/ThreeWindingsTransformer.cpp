@@ -2,6 +2,7 @@
 #include <iidm/BackendProvider.h>
 #include <iidm/PropertyCodes.h>
 #include <iidm/Substation.h>
+#include "Extensions.h"
 #include "Wrap.h"
 
 namespace iidm {
@@ -115,11 +116,19 @@ Terminal ThreeWindingsTransformer::getTerminal(const std::string& voltageLevelId
 // ── Extensions ───────────────────────────────────────────────────────────────
 
 bool ThreeWindingsTransformer::hasThreeWindingsTransformerToBeEstimated() const {
-    return backend_->getBool(handle_, prop::EXT_THREE_WT_TBE_EXISTS);
+    return detail::hasExtension<ThreeWindingsTransformerToBeEstimated>(backend_, handle_);
 }
 
 ThreeWindingsTransformerToBeEstimated ThreeWindingsTransformer::getThreeWindingsTransformerToBeEstimated() const {
-    return ThreeWindingsTransformerToBeEstimated(handle_, backend_);
+    return detail::getExtension<ThreeWindingsTransformerToBeEstimated>(backend_, handle_, "ThreeWindingsTransformerToBeEstimated");
+}
+
+ThreeWindingsTransformerToBeEstimatedAdder ThreeWindingsTransformer::newThreeWindingsTransformerToBeEstimated() {
+    return detail::newExtension<ThreeWindingsTransformerToBeEstimated, ThreeWindingsTransformerToBeEstimatedAdder>(backend_, handle_);
+}
+
+void ThreeWindingsTransformer::removeThreeWindingsTransformerToBeEstimated() {
+    detail::removeExtension<ThreeWindingsTransformerToBeEstimated>(backend_, handle_);
 }
 
 } // namespace iidm

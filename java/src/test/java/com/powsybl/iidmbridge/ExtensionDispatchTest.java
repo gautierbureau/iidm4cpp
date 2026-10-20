@@ -11,8 +11,8 @@ import static com.powsybl.iidmbridge.PropertyCodes.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * ActivePowerControl (all fields, Generator and Battery) and SlackTerminal (get / set) through
- * {@link PropertyDispatcher}.
+ * ActivePowerControl (all fields, Generator and Battery), SlackTerminal and
+ * CoordinatedReactiveControl through {@link PropertyDispatcher}: extensions are objects of their own.
  */
 class ExtensionDispatchTest {
 
@@ -102,30 +102,74 @@ class ExtensionDispatchTest {
     // ── SlackTerminal ─────────────────────────────────────────────────────
 
     @Test void slackTerminalSetThroughHandles() {
-        long vl = reg(vl1);
-        assertEquals(0, PropertyDispatcher.getBool(vl, EXT_ST_EMPTY));
-        long term = PropertyDispatcher.getRelated(vl, REL_SLACK_TERMINAL);
+        long st = PropertyDispatcher.getRelated(reg(vl1), SLACK_TERMINAL);
+        assertSame(vl1.getExtension(SlackTerminal.class), NetworkRegistry.lookup(st));
+        assertEquals(0, PropertyDispatcher.getBool(st, EXT_ST_EMPTY));
+        long term = PropertyDispatcher.getRelated(st, REL_TERMINAL);
         assertSame(gen.getTerminal(), NetworkRegistry.lookup(term));
 
-        PropertyDispatcher.setRelated(vl, REL_SLACK_TERMINAL, reg(load.getTerminal()));
+        PropertyDispatcher.setRelated(st, REL_TERMINAL, reg(load.getTerminal()));
         assertSame(load.getTerminal(), vl1.getExtension(SlackTerminal.class).getTerminal());
 
         // 0 (INVALID_HANDLE) unsets it
-        PropertyDispatcher.setRelated(vl, REL_SLACK_TERMINAL, 0L);
+        PropertyDispatcher.setRelated(st, REL_TERMINAL, 0L);
         assertNull(vl1.getExtension(SlackTerminal.class).getTerminal());
-        assertEquals(0L, PropertyDispatcher.getRelated(vl, REL_SLACK_TERMINAL));
-        assertEquals(1, PropertyDispatcher.getBool(vl, EXT_ST_EMPTY));
+        assertEquals(0L, PropertyDispatcher.getRelated(st, REL_TERMINAL));
+        assertEquals(1, PropertyDispatcher.getBool(st, EXT_ST_EMPTY));
+
+        // Without a slack terminal in any variant, cleaning removes the extension
+        PropertyDispatcher.invoke(st, ACT_CLEAN_IF_EMPTY);
+        assertNull(vl1.getExtension(SlackTerminal.class));
+        assertEquals(0L, PropertyDispatcher.getRelated(reg(vl1), SLACK_TERMINAL));
     }
 
     @Test void slackTerminalSetThroughObjects() {
-        PropertyDispatcher.setRelatedObject(vl1, REL_SLACK_TERMINAL, bat.getTerminal());
+        Object st = PropertyDispatcher.getRelatedObject(vl1, SLACK_TERMINAL);
+        PropertyDispatcher.setRelatedObject(st, REL_TERMINAL, bat.getTerminal());
         assertSame(bat.getTerminal(), vl1.getExtension(SlackTerminal.class).getTerminal());
+        // Cleaning keeps an extension that has a slack terminal
+        PropertyDispatcher.invokeObject(st, ACT_CLEAN_IF_EMPTY);
+        assertSame(st, vl1.getExtension(SlackTerminal.class));
     }
 
     @Test void slackTerminalFromAnotherVoltageLevelThrows() {
+        Object st = PropertyDispatcher.getRelatedObject(vl1, SLACK_TERMINAL);
         Terminal other = network.getLoad("L2").getTerminal();
-        assertThrows(PowsyblException.class,
-            () -> PropertyDispatcher.setRelatedObject(vl1, REL_SLACK_TERMINAL, other));
+        assertThrows(PowsyblException.class, () -> PropertyDispatcher.setRelatedObject(st, REL_TERMINAL, other));
+    }
+
+    @Test void slackTerminalCreatedAndRemoved() {
+        long vl = reg(vl2);
+        assertEquals(0L, PropertyDispatcher.getRelated(vl, SLACK_TERMINAL));
+        long adder = PropertyDispatcher.invoke(vl, SLACK_TERMINAL);
+        PropertyDispatcher.setRelated(adder, REL_TERMINAL, reg(network.getLoad("L2").getTerminal()));
+        long st = PropertyDispatcher.invoke(adder, ACT_ADD);
+        assertSame(vl2.getExtension(SlackTerminal.class), NetworkRegistry.lookup(st));
+        assertSame(network.getLoad("L2").getTerminal(), vl2.getExtension(SlackTerminal.class).getTerminal());
+
+        PropertyDispatcher.setRelated(vl, SLACK_TERMINAL, 0L);
+        assertNull(vl2.getExtension(SlackTerminal.class));
+    }
+
+    // ── CoordinatedReactiveControl ────────────────────────────────────────
+
+    @Test void coordinatedReactiveControlCreatedReadAndRemoved() {
+        long g = reg(gen);
+        assertEquals(0L, PropertyDispatcher.getRelated(g, COORDINATED_REACTIVE_CONTROL));
+        long adder = PropertyDispatcher.invoke(g, COORDINATED_REACTIVE_CONTROL);
+        PropertyDispatcher.setDouble(adder, EXT_CRC_Q_PERCENT, 40);
+        long crc = PropertyDispatcher.invoke(adder, ACT_ADD);
+        assertEquals(1, PropertyDispatcher.getBool(crc, COORDINATED_REACTIVE_CONTROL));
+        assertEquals(0, PropertyDispatcher.getBool(crc, ACTIVE_POWER_CONTROL));
+
+        long again = PropertyDispatcher.getRelated(g, COORDINATED_REACTIVE_CONTROL);
+        assertEquals(1, PropertyDispatcher.isSameObject(crc, again));
+        assertEquals(40.0, PropertyDispatcher.getDouble(again, EXT_CRC_Q_PERCENT));
+        PropertyDispatcher.setDouble(again, EXT_CRC_Q_PERCENT, 60);
+        assertEquals(60.0, gen.getExtension(CoordinatedReactiveControl.class).getQPercent());
+
+        PropertyDispatcher.setRelated(g, COORDINATED_REACTIVE_CONTROL, 0L);
+        assertNull(gen.getExtension(CoordinatedReactiveControl.class));
     }
 
     @Test void unknownRelationForSetThrows() {

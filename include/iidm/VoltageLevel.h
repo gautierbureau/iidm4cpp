@@ -8,6 +8,7 @@
 #include <iidm/GeneratorAdder.h>
 #include <iidm/LoadAdder.h>
 #include <iidm/SlackTerminal.h>
+#include <iidm/SlackTerminalAdder.h>
 #include <iidm/BusbarSection.h>
 #include <iidm/Switch.h>
 #include <iidm/InternalConnection.h>
@@ -76,9 +77,6 @@ public:
 
     TopologyKind getTopologyKind() const;
 
-    bool hasSlackTerminal() const;
-    SlackTerminal getSlackTerminal() const;
-
     std::vector<Switch>        getSwitches() const;
     std::vector<BusbarSection> getBusbarSections() const;
 
@@ -106,8 +104,15 @@ public:
     void remove();
 
     // ── Extensions ───────────────────────────────────────────────────────
+    // An extension's getter throws ExtensionNotFoundException when it is absent
+    bool hasSlackTerminal() const;
+    SlackTerminal getSlackTerminal() const;
+    SlackTerminalAdder newSlackTerminal();
+    void removeSlackTerminal();
+
     bool hasObservabilityArea() const;
     ObservabilityArea getObservabilityArea() const;
+    void removeObservabilityArea();
 };
 
 } // namespace iidm

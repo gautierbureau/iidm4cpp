@@ -6,6 +6,7 @@
 #include <iidm/TapChangerHolder.h>
 #include <iidm/Terminal.h>
 #include <iidm/ThreeWindingsTransformerToBeEstimated.h>
+#include <iidm/ThreeWindingsTransformerToBeEstimatedAdder.h>
 #include <iidm/stdcxx/optional.hpp>
 #include <string>
 #include <vector>
@@ -69,8 +70,11 @@ public:
     Terminal getTerminal(const std::string& voltageLevelId) const;
 
     // ── Extensions ───────────────────────────────────────────────────────
+    // An extension's getter throws ExtensionNotFoundException when it is absent
     bool hasThreeWindingsTransformerToBeEstimated() const;
     ThreeWindingsTransformerToBeEstimated getThreeWindingsTransformerToBeEstimated() const;
+    ThreeWindingsTransformerToBeEstimatedAdder newThreeWindingsTransformerToBeEstimated();
+    void removeThreeWindingsTransformerToBeEstimated();
 };
 
 } // namespace iidm

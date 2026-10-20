@@ -37,11 +37,12 @@ void checkBackendErrors(BackendProvider& b) {
     ASSERT_NE(vl1, INVALID_HANDLE);
     auto l2 = Load(b.findById(prop::LOAD, "L2"), &b);
 
-    // Absent extension: hand-wired JNI path (droop) and dispatcher path (participation factor)
+    // Absent extension: the C++ getter throws; the extension's codes do not apply to its host
     Generator gen2(g2, &b);
-    EXPECT_THROW(gen2.getActivePowerControl().getDroop(), ExtensionNotFoundException);
-    EXPECT_THROW(gen2.getActivePowerControl().getParticipationFactor(), ExtensionNotFoundException);
-    EXPECT_THROW(l2.getInjectionObservability().isObservable(), ExtensionNotFoundException);
+    EXPECT_FALSE(gen2.hasActivePowerControl());
+    EXPECT_THROW(gen2.getActivePowerControl(), ExtensionNotFoundException);
+    EXPECT_THROW(l2.getInjectionObservability(), ExtensionNotFoundException);
+    EXPECT_THROW(b.getDouble(g2, prop::EXT_APC_DROOP), PropertyNotFoundException);
 
     // Rejected values leave the network unchanged
     Generator gen(g, &b);
@@ -51,14 +52,14 @@ void checkBackendErrors(BackendProvider& b) {
 
     SlackTerminal slack = VoltageLevel(vl1, &b).getSlackTerminal();
     EXPECT_THROW(slack.setTerminal(l2.getTerminal()), ValidationException);
-    EXPECT_EQ(slack.getTerminal().getConnectable().getId(), "G");
+    EXPECT_EQ(slack.getTerminal()->getConnectable().getId(), "G");
 
     // Unknown codes, codes on the wrong type of object, invalid handles
     EXPECT_THROW(b.getDouble(g, 999999), PropertyNotFoundException);
     EXPECT_THROW(b.getDouble(g, prop::MEAS_VALUE), PropertyNotFoundException);
     EXPECT_THROW(b.getChildren(g, 999999), PropertyNotFoundException);
     EXPECT_THROW(b.getDouble(INVALID_HANDLE, prop::GEN_TARGET_P), InvalidHandleException);
-    EXPECT_THROW(b.setRelated(INVALID_HANDLE, prop::REL_SLACK_TERMINAL, INVALID_HANDLE), InvalidHandleException);
+    EXPECT_THROW(b.setRelated(INVALID_HANDLE, prop::REL_TERMINAL, INVALID_HANDLE), InvalidHandleException);
 
     // Messages come from Java
     try {
@@ -89,7 +90,7 @@ void checkHandlesAreReleased(BackendProvider& b) {
     for (int i = 0; i < 20000; ++i) {
         sum += gen.getTerminal().getP();                       // new terminal handle each time
         sum += static_cast<double>(vl.getGenerators().size()); // new generator handles
-        sum += gen.getActivePowerControl().getDroop();         // shares the generator handle
+        sum += gen.getActivePowerControl().getDroop();         // new extension handle
     }
     EXPECT_EQ(b.liveHandleCount(), baseline);
     (void)sum;

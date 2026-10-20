@@ -2,14 +2,18 @@
 
 #include <iidm/ObjectRef.h>
 #include <iidm/ObjectHandle.h>
+#include <iidm/PropertyCodes.h>
 
 namespace iidm {
 
 class BackendProvider;
 
-// Typed wrapper for the PowSyBl HvdcAngleDroopActivePowerControl extension attached to an HvdcLine.
+// The HvdcAngleDroopActivePowerControl extension of an HVDC line: an object of its own, from
+// HvdcLine::getHvdcAngleDroopActivePowerControl(). Its values are floats in powsybl.
 class HvdcAngleDroopActivePowerControl : public detail::ObjectRef {
 public:
+    static constexpr int TYPE = prop::HVDC_ANGLE_DROOP_ACTIVE_POWER_CONTROL;
+
     HvdcAngleDroopActivePowerControl() = default;
     explicit HvdcAngleDroopActivePowerControl(ObjectHandle handle, BackendProvider* backend);
 

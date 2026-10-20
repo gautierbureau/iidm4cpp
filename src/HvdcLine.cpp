@@ -4,6 +4,7 @@
 #include <iidm/BackendProvider.h>
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
+#include "Extensions.h"
 
 namespace iidm {
 
@@ -49,20 +50,38 @@ void HvdcLine::remove() {
     backend_->invoke(handle_, prop::ACT_REMOVE);
 }
 
+// ── Extensions ───────────────────────────────────────────────────────────────
+
 bool HvdcLine::hasHvdcAngleDroopActivePowerControl() const {
-    return backend_->getBool(handle_, prop::EXT_HADAPC_EXISTS);
+    return detail::hasExtension<HvdcAngleDroopActivePowerControl>(backend_, handle_);
 }
 
 HvdcAngleDroopActivePowerControl HvdcLine::getHvdcAngleDroopActivePowerControl() const {
-    return HvdcAngleDroopActivePowerControl(handle_, backend_);
+    return detail::getExtension<HvdcAngleDroopActivePowerControl>(backend_, handle_, "HvdcAngleDroopActivePowerControl");
+}
+
+HvdcAngleDroopActivePowerControlAdder HvdcLine::newHvdcAngleDroopActivePowerControl() {
+    return detail::newExtension<HvdcAngleDroopActivePowerControl, HvdcAngleDroopActivePowerControlAdder>(backend_, handle_);
+}
+
+void HvdcLine::removeHvdcAngleDroopActivePowerControl() {
+    detail::removeExtension<HvdcAngleDroopActivePowerControl>(backend_, handle_);
 }
 
 bool HvdcLine::hasHvdcOperatorActivePowerRange() const {
-    return backend_->getBool(handle_, prop::EXT_HOAR_EXISTS);
+    return detail::hasExtension<HvdcOperatorActivePowerRange>(backend_, handle_);
 }
 
 HvdcOperatorActivePowerRange HvdcLine::getHvdcOperatorActivePowerRange() const {
-    return HvdcOperatorActivePowerRange(handle_, backend_);
+    return detail::getExtension<HvdcOperatorActivePowerRange>(backend_, handle_, "HvdcOperatorActivePowerRange");
+}
+
+HvdcOperatorActivePowerRangeAdder HvdcLine::newHvdcOperatorActivePowerRange() {
+    return detail::newExtension<HvdcOperatorActivePowerRange, HvdcOperatorActivePowerRangeAdder>(backend_, handle_);
+}
+
+void HvdcLine::removeHvdcOperatorActivePowerRange() {
+    detail::removeExtension<HvdcOperatorActivePowerRange>(backend_, handle_);
 }
 
 } // namespace iidm

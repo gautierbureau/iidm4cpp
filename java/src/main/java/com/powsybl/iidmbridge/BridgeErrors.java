@@ -15,9 +15,8 @@ public final class BridgeErrors {
     public static final int GENERIC            = 1; // iidm::IidmException
     public static final int INVALID_HANDLE     = 2; // iidm::InvalidHandleException
     public static final int PROPERTY_NOT_FOUND = 3; // iidm::PropertyNotFoundException
-    public static final int EXTENSION_NOT_FOUND = 4; // iidm::ExtensionNotFoundException
-    public static final int VALIDATION         = 5; // iidm::ValidationException
-    public static final int NETWORK_NOT_FOUND  = 6; // iidm::NetworkNotFoundException
+    public static final int VALIDATION         = 4; // iidm::ValidationException
+    public static final int NETWORK_NOT_FOUND  = 5; // iidm::NetworkNotFoundException
 
     private BridgeErrors() {}
 
@@ -31,13 +30,6 @@ public final class BridgeErrors {
     /** A property, child type or relation code that is unknown for the object it is used on. */
     public static class PropertyNotFoundException extends IllegalArgumentException {
         public PropertyNotFoundException(String message) {
-            super(message);
-        }
-    }
-
-    /** The extension a property belongs to is not attached to the object. */
-    public static class ExtensionNotFoundException extends IllegalStateException {
-        public ExtensionNotFoundException(String message) {
             super(message);
         }
     }
@@ -59,9 +51,6 @@ public final class BridgeErrors {
             // NullPointerException: an optional part of the object is absent (reactive limits
             // model, extension...).
             return PROPERTY_NOT_FOUND;
-        }
-        if (t instanceof ExtensionNotFoundException) {
-            return EXTENSION_NOT_FOUND;
         }
         if (t instanceof NetworkNotFoundException) {
             return NETWORK_NOT_FOUND;

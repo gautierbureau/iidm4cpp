@@ -162,9 +162,10 @@ static void printNetwork(iidm::Network& network) {
     for (const auto& vl : voltageLevels) {
         std::cout << "  " << vl.getId()
                   << "  nominalV=" << vl.getNominalV() << " kV";
-        if (vl.hasSlackTerminal())
-            std::cout << "  slackTerminal.busId="
-                      << vl.getSlackTerminal().getTerminal().getBusId();
+        if (vl.hasSlackTerminal()) {
+            iidm::optional<iidm::Terminal> slack = vl.getSlackTerminal().getTerminal();
+            std::cout << "  slackTerminal.busId=" << (slack ? slack->getBusId() : "-");
+        }
         std::cout << "\n";
         // Report buses (bus-breaker view)
         auto buses = vl.getBusBreakerView().getBuses();

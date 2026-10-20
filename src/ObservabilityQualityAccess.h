@@ -2,31 +2,26 @@
 
 #include <iidm/BackendProvider.h>
 #include <iidm/ObservabilityQuality.h>
-#include <iidm/PropertyCodes.h>
+#include "Wrap.h"
 
 namespace iidm { namespace detail {
 
-// Reads / writes the observability quality block starting at `base` (see OBS_QUALITY_*_OFF).
+// The qualities of an observability extension: `code` is the quantity's (OBS_QUALITY_P...).
 
-inline iidm::optional<ObservabilityQuality> readQuality(const BackendProvider* backend, ObjectHandle h, int base) {
-    if (!backend->getBool(h, base + prop::OBS_QUALITY_EXISTS_OFF)) return {};
-    ObservabilityQuality quality;
-    quality.standardDeviation = backend->getDouble(h, base + prop::OBS_QUALITY_STD_DEV_OFF);
-    int redundant = backend->getInt(h, base + prop::OBS_QUALITY_REDUNDANT_OFF);
-    if (redundant >= 0) quality.redundant = (redundant != 0);
-    return quality;
+inline iidm::optional<ObservabilityQuality> getQuality(BackendProvider* backend, ObjectHandle extension, int code) {
+    return wrapOptional<ObservabilityQuality>(backend->getRelated(extension, code), backend);
 }
 
 // Sets the standard deviation, creating the quality if needed; an existing redundancy is kept.
-inline void writeQuality(BackendProvider* backend, ObjectHandle h, int base, double standardDeviation) {
-    backend->setDouble(h, base + prop::OBS_QUALITY_STD_DEV_OFF, standardDeviation);
+inline void setQuality(BackendProvider* backend, ObjectHandle extension, int code, double standardDeviation) {
+    backend->setDouble(extension, code, standardDeviation);
 }
 
 // Sets both the standard deviation and the redundancy (empty = undefined).
-inline void writeQuality(BackendProvider* backend, ObjectHandle h, int base, double standardDeviation,
-                         const iidm::optional<bool>& redundant) {
-    writeQuality(backend, h, base, standardDeviation);
-    backend->setInt(h, base + prop::OBS_QUALITY_REDUNDANT_OFF, redundant ? (*redundant ? 1 : 0) : -1);
+inline void setQuality(BackendProvider* backend, ObjectHandle extension, int code, double standardDeviation,
+                       const iidm::optional<bool>& redundant) {
+    setQuality(backend, extension, code, standardDeviation);
+    ObservabilityQuality(backend->getRelated(extension, code), backend).setRedundant(redundant);
 }
 
 } } // namespace iidm::detail

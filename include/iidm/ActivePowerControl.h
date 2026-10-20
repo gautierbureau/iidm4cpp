@@ -2,6 +2,7 @@
 
 #include <iidm/ObjectRef.h>
 #include <iidm/ObjectHandle.h>
+#include <iidm/PropertyCodes.h>
 #include <iidm/stdcxx/optional.hpp>
 
 namespace iidm {
@@ -12,6 +13,8 @@ class BackendProvider;
 // from Injection::getActivePowerControl().
 class ActivePowerControl : public detail::ObjectRef {
 public:
+    static constexpr int TYPE = prop::ACTIVE_POWER_CONTROL;
+
     ActivePowerControl() = default;
     explicit ActivePowerControl(ObjectHandle handle, BackendProvider* backend);
 

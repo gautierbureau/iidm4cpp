@@ -1,5 +1,6 @@
 #include <iidm/Injection.h>
 #include <iidm/BackendProvider.h>
+#include "Extensions.h"
 
 namespace iidm {
 
@@ -10,32 +11,35 @@ Terminal Injection::getTerminal() const {
 // ── Extensions ───────────────────────────────────────────────────────────────
 
 bool Injection::hasActivePowerControl() const {
-    HandleRef extension(backend_->getRelated(handle_, prop::ACTIVE_POWER_CONTROL), backend_);
-    return extension != INVALID_HANDLE;
+    return detail::hasExtension<ActivePowerControl>(backend_, handle_);
 }
 
 ActivePowerControl Injection::getActivePowerControl() const {
-    ActivePowerControl extension(backend_->getRelated(handle_, prop::ACTIVE_POWER_CONTROL), backend_);
-    if (!extension.isValid()) {
-        throw ExtensionNotFoundException("ActivePowerControl extension not present on " + getId());
-    }
-    return extension;
+    return detail::getExtension<ActivePowerControl>(backend_, handle_, "ActivePowerControl");
 }
 
 ActivePowerControlAdder Injection::newActivePowerControl() {
-    return ActivePowerControlAdder(backend_->invoke(handle_, prop::ACTIVE_POWER_CONTROL), backend_);
+    return detail::newExtension<ActivePowerControl, ActivePowerControlAdder>(backend_, handle_);
 }
 
 void Injection::removeActivePowerControl() {
-    backend_->setRelated(handle_, prop::ACTIVE_POWER_CONTROL, INVALID_HANDLE);
+    detail::removeExtension<ActivePowerControl>(backend_, handle_);
 }
 
 bool Injection::hasInjectionObservability() const {
-    return backend_->getBool(handle_, prop::EXT_INJ_OBS_EXISTS);
+    return detail::hasExtension<InjectionObservability>(backend_, handle_);
 }
 
 InjectionObservability Injection::getInjectionObservability() const {
-    return InjectionObservability(handle_, backend_);
+    return detail::getExtension<InjectionObservability>(backend_, handle_, "InjectionObservability");
+}
+
+InjectionObservabilityAdder Injection::newInjectionObservability() {
+    return detail::newExtension<InjectionObservability, InjectionObservabilityAdder>(backend_, handle_);
+}
+
+void Injection::removeInjectionObservability() {
+    detail::removeExtension<InjectionObservability>(backend_, handle_);
 }
 
 } // namespace iidm

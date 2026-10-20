@@ -3,8 +3,7 @@ package com.powsybl.iidmbridge;
 import com.powsybl.commons.extensions.Extendable;
 import com.powsybl.commons.extensions.ExtensionAdder;
 import com.powsybl.iidm.network.*;
-import com.powsybl.iidm.network.extensions.ActivePowerControl;
-import com.powsybl.iidm.network.extensions.ActivePowerControlAdder;
+import com.powsybl.iidm.network.extensions.*;
 import com.powsybl.iidm.network.regulation.RegulationMode;
 import com.powsybl.iidm.network.regulation.VoltageRegulation;
 import com.powsybl.iidm.network.regulation.VoltageRegulationAdder;
@@ -80,6 +79,18 @@ public final class Creation {
                 ? holderAdder.newVoltageRegulation()
                 : ((VoltageRegulationHolder<?>) owner).newVoltageRegulation();
             case ACTIVE_POWER_CONTROL -> newExtension(owner, ActivePowerControlAdder.class);
+            case COORDINATED_REACTIVE_CONTROL -> newExtension(owner, CoordinatedReactiveControlAdder.class);
+            case HVDC_ANGLE_DROOP_ACTIVE_POWER_CONTROL -> newExtension(owner, HvdcAngleDroopActivePowerControlAdder.class);
+            case HVDC_OPERATOR_ACTIVE_POWER_RANGE -> newExtension(owner, HvdcOperatorActivePowerRangeAdder.class);
+            case SLACK_TERMINAL -> newExtension(owner, SlackTerminalAdder.class);
+            case TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED -> newExtension(owner, TwoWindingsTransformerToBeEstimatedAdder.class);
+            case THREE_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED -> newExtension(owner, ThreeWindingsTransformerToBeEstimatedAdder.class);
+            case INJECTION_OBSERVABILITY -> newExtension(owner, InjectionObservabilityAdder.class);
+            case BRANCH_OBSERVABILITY -> newExtension(owner, BranchObservabilityAdder.class);
+            case MEASUREMENTS -> newExtension(owner, MeasurementsAdder.class);
+            case DISCRETE_MEASUREMENTS -> newExtension(owner, DiscreteMeasurementsAdder.class);
+            case MEASUREMENT -> ((Measurements<?>) owner).newMeasurement();
+            case DISCRETE_MEASUREMENT -> ((DiscreteMeasurements<?>) owner).newDiscreteMeasurement();
             case REL_TERMINAL -> new TerminalChange((VoltageRegulation) owner);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown type to create: " + type);
         };
@@ -94,6 +105,8 @@ public final class Creation {
         return switch (pending.adder()) {
             case IdentifiableAdder<?, ?> adder -> adder.add();
             case ExtensionAdder<?, ?> adder -> adder.add();
+            case MeasurementAdder adder -> adder.add();
+            case DiscreteMeasurementAdder adder -> adder.add();
             case VoltageRegulationBuilder builder -> builder.build();
             case VoltageRegulationAdder<?> adder -> {
                 adder.add();
@@ -107,11 +120,13 @@ public final class Creation {
         };
     }
 
-    /** Removes an identifiable from its network, or a tap changer from its transformer. */
+    /** Removes an identifiable from its network, a tap changer from its transformer, a measurement. */
     static void remove(Object obj) {
         switch (obj) {
             case Connectable<?> connectable -> connectable.remove();
             case TapChanger<?, ?, ?, ?> tapChanger -> tapChanger.remove();
+            case Measurement measurement -> measurement.remove();
+            case DiscreteMeasurement measurement -> measurement.remove();
             case VoltageLevel voltageLevel -> voltageLevel.remove();
             case Substation substation -> substation.remove();
             case HvdcLine hvdcLine -> hvdcLine.remove();
@@ -129,6 +144,17 @@ public final class Creation {
         switch (code) {
             case VOLTAGE_REGULATION -> ((VoltageRegulationHolder<?>) host).removeVoltageRegulation();
             case ACTIVE_POWER_CONTROL -> removeExtension(host, ActivePowerControl.class);
+            case COORDINATED_REACTIVE_CONTROL -> removeExtension(host, CoordinatedReactiveControl.class);
+            case HVDC_ANGLE_DROOP_ACTIVE_POWER_CONTROL -> removeExtension(host, HvdcAngleDroopActivePowerControl.class);
+            case HVDC_OPERATOR_ACTIVE_POWER_RANGE -> removeExtension(host, HvdcOperatorActivePowerRange.class);
+            case SLACK_TERMINAL -> removeExtension(host, SlackTerminal.class);
+            case TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED -> removeExtension(host, TwoWindingsTransformerToBeEstimated.class);
+            case THREE_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED -> removeExtension(host, ThreeWindingsTransformerToBeEstimated.class);
+            case INJECTION_OBSERVABILITY -> removeExtension(host, InjectionObservability.class);
+            case BRANCH_OBSERVABILITY -> removeExtension(host, BranchObservability.class);
+            case MEASUREMENTS -> removeExtension(host, Measurements.class);
+            case DISCRETE_MEASUREMENTS -> removeExtension(host, DiscreteMeasurements.class);
+            case OBSERVABILITY_AREA -> removeExtension(host, ObservabilityArea.class);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown code to clear: " + code);
         }
     }
@@ -162,6 +188,20 @@ public final class Creation {
             case EXT_APC_PARTICIPATION_FACTOR -> ((ActivePowerControlAdder<?>) a).withParticipationFactor(value);
             case EXT_APC_MIN_TARGET_P -> ((ActivePowerControlAdder<?>) a).withMinTargetP(value);
             case EXT_APC_MAX_TARGET_P -> ((ActivePowerControlAdder<?>) a).withMaxTargetP(value);
+            case EXT_CRC_Q_PERCENT -> ((CoordinatedReactiveControlAdder) a).withQPercent(value);
+            case EXT_HADAPC_DROOP -> ((HvdcAngleDroopActivePowerControlAdder) a).withDroop((float) value);
+            case EXT_HADAPC_P0 -> ((HvdcAngleDroopActivePowerControlAdder) a).withP0((float) value);
+            case EXT_HOAR_OPR_CS1_TO_CS2 -> ((HvdcOperatorActivePowerRangeAdder) a).withOprFromCS1toCS2((float) value);
+            case EXT_HOAR_OPR_CS2_TO_CS1 -> ((HvdcOperatorActivePowerRangeAdder) a).withOprFromCS2toCS1((float) value);
+            case OBS_QUALITY_P  -> ((InjectionObservabilityAdder<?>) a).withStandardDeviationP(value);
+            case OBS_QUALITY_Q  -> ((InjectionObservabilityAdder<?>) a).withStandardDeviationQ(value);
+            case OBS_QUALITY_V  -> ((InjectionObservabilityAdder<?>) a).withStandardDeviationV(value);
+            case OBS_QUALITY_P1 -> ((BranchObservabilityAdder<?>) a).withStandardDeviationP1(value);
+            case OBS_QUALITY_P2 -> ((BranchObservabilityAdder<?>) a).withStandardDeviationP2(value);
+            case OBS_QUALITY_Q1 -> ((BranchObservabilityAdder<?>) a).withStandardDeviationQ1(value);
+            case OBS_QUALITY_Q2 -> ((BranchObservabilityAdder<?>) a).withStandardDeviationQ2(value);
+            case MEAS_VALUE -> ((MeasurementAdder) a).setValue(value);
+            case MEAS_STD_DEV -> ((MeasurementAdder) a).setStandardDeviation(value);
             default -> throw unknownField("double", property);
         }
     }
@@ -174,6 +214,19 @@ public final class Creation {
             case GEN_ENERGY_SOURCE -> ((GeneratorAdder) a).setEnergySource(enumValue(EnergySource.class, value));
             case LOAD_TYPE -> ((LoadAdder) a).setLoadType(enumValue(LoadType.class, value));
             case VR_MODE -> ((VoltageRegulationAdderOrBuilder<?>) a).withMode(value < 0 ? null : enumValue(RegulationMode.class, value));
+            case OBS_QUALITY_P  -> ((InjectionObservabilityAdder<?>) a).withRedundantP(redundant(value));
+            case OBS_QUALITY_Q  -> ((InjectionObservabilityAdder<?>) a).withRedundantQ(redundant(value));
+            case OBS_QUALITY_V  -> ((InjectionObservabilityAdder<?>) a).withRedundantV(redundant(value));
+            case OBS_QUALITY_P1 -> ((BranchObservabilityAdder<?>) a).withRedundantP1(redundant(value));
+            case OBS_QUALITY_P2 -> ((BranchObservabilityAdder<?>) a).withRedundantP2(redundant(value));
+            case OBS_QUALITY_Q1 -> ((BranchObservabilityAdder<?>) a).withRedundantQ1(redundant(value));
+            case OBS_QUALITY_Q2 -> ((BranchObservabilityAdder<?>) a).withRedundantQ2(redundant(value));
+            case MEAS_TYPE -> ((MeasurementAdder) a).setType(enumValue(Measurement.Type.class, value));
+            case MEAS_SIDE -> ((MeasurementAdder) a).setSide(value < 0 ? null : enumValue(ThreeSides.class, value));
+            case DMEAS_TYPE -> ((DiscreteMeasurementAdder) a).setType(enumValue(DiscreteMeasurement.Type.class, value));
+            case DMEAS_TAP_CHANGER -> ((DiscreteMeasurementAdder) a)
+                .setTapChanger(value < 0 ? null : enumValue(DiscreteMeasurement.TapChanger.class, value));
+            case DMEAS_VALUE_INT -> ((DiscreteMeasurementAdder) a).setValue(value);
             default -> throw unknownField("int", property);
         }
     }
@@ -182,11 +235,33 @@ public final class Creation {
         Object a = pending.adder();
         switch (property) {
             case FICTITIOUS -> ((IdentifiableAdder<?, ?>) a).setFictitious(value);
-            case ENSURE_ID_UNICITY -> ((IdentifiableAdder<?, ?>) a).setEnsureIdUnicity(value);
+            case ENSURE_ID_UNICITY -> {
+                switch (a) {
+                    case MeasurementAdder m -> m.setEnsureIdUnicity(value);
+                    case DiscreteMeasurementAdder m -> m.setEnsureIdUnicity(value);
+                    default -> ((IdentifiableAdder<?, ?>) a).setEnsureIdUnicity(value);
+                }
+            }
             case EQUIVALENT -> ((ConnectableAdder<?, ?>) a).setEquivalent(value);
             case GEN_CONDENSER -> ((GeneratorAdder) a).setCondenser(value);
             case VR_REGULATING -> ((VoltageRegulationAdderOrBuilder<?>) a).withRegulating(value);
             case EXT_APC_PARTICIPATE -> ((ActivePowerControlAdder<?>) a).withParticipate(value);
+            case EXT_HADAPC_ENABLED -> ((HvdcAngleDroopActivePowerControlAdder) a).withEnabled(value);
+            case EXT_TWO_WT_TBE_RTC -> ((TwoWindingsTransformerToBeEstimatedAdder) a).withRatioTapChangerStatus(value);
+            case EXT_TWO_WT_TBE_PTC -> ((TwoWindingsTransformerToBeEstimatedAdder) a).withPhaseTapChangerStatus(value);
+            case EXT_THREE_WT_TBE_RTC1 -> ((ThreeWindingsTransformerToBeEstimatedAdder) a).withRatioTapChanger1Status(value);
+            case EXT_THREE_WT_TBE_RTC2 -> ((ThreeWindingsTransformerToBeEstimatedAdder) a).withRatioTapChanger2Status(value);
+            case EXT_THREE_WT_TBE_RTC3 -> ((ThreeWindingsTransformerToBeEstimatedAdder) a).withRatioTapChanger3Status(value);
+            case EXT_THREE_WT_TBE_PTC1 -> ((ThreeWindingsTransformerToBeEstimatedAdder) a).withPhaseTapChanger1Status(value);
+            case EXT_THREE_WT_TBE_PTC2 -> ((ThreeWindingsTransformerToBeEstimatedAdder) a).withPhaseTapChanger2Status(value);
+            case EXT_THREE_WT_TBE_PTC3 -> ((ThreeWindingsTransformerToBeEstimatedAdder) a).withPhaseTapChanger3Status(value);
+            case EXT_OBS_OBSERVABLE -> {
+                if (a instanceof BranchObservabilityAdder<?> branch) branch.withObservable(value);
+                else ((InjectionObservabilityAdder<?>) a).withObservable(value);
+            }
+            case MEAS_VALID -> ((MeasurementAdder) a).setValid(value);
+            case DMEAS_VALID -> ((DiscreteMeasurementAdder) a).setValid(value);
+            case DMEAS_VALUE_BOOL -> ((DiscreteMeasurementAdder) a).setValue(value);
             default -> throw unknownField("bool", property);
         }
     }
@@ -200,6 +275,9 @@ public final class Creation {
             case SUBSTATION_TSO -> ((SubstationAdder) a).setTso(value);
             case TERMINAL_BUS_BREAKER_BUS_ID -> ((InjectionAdder<?, ?>) a).setBus(value);
             case TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID -> ((InjectionAdder<?, ?>) a).setConnectableBus(value);
+            case MEAS_ID -> ((MeasurementAdder) a).setId(value);
+            case DMEAS_ID -> ((DiscreteMeasurementAdder) a).setId(value);
+            case DMEAS_VALUE_STRING -> ((DiscreteMeasurementAdder) a).setValue(value);
             default -> throw unknownField("string", property);
         }
     }
@@ -208,7 +286,14 @@ public final class Creation {
     static void setKeyedString(PendingAdd pending, int property, String key, String value) {
         Object a = pending.adder();
         switch (property) {
-            case PROPERTY -> ((BasePropertiesHolder) a).setProperty(key, Objects.requireNonNull(value, "property value"));
+            case PROPERTY -> {
+                Objects.requireNonNull(value, "property value");
+                switch (a) {
+                    case MeasurementAdder m -> m.putProperty(key, value);
+                    case DiscreteMeasurementAdder m -> m.putProperty(key, value);
+                    default -> ((BasePropertiesHolder) a).setProperty(key, value);
+                }
+            }
             default -> throw unknownField("keyed string", property);
         }
     }
@@ -217,14 +302,19 @@ public final class Creation {
         Object a = pending.adder();
         switch (relation) {
             case REL_TERMINAL -> {
-                if (a instanceof TerminalChange change) {
-                    change.terminal = (Terminal) value;
-                } else {
-                    ((VoltageRegulationAdderOrBuilder<?>) a).withTerminal((Terminal) value);
+                switch (a) {
+                    case TerminalChange change -> change.terminal = (Terminal) value;
+                    case SlackTerminalAdder adder -> adder.withTerminal((Terminal) value);
+                    default -> ((VoltageRegulationAdderOrBuilder<?>) a).withTerminal((Terminal) value);
                 }
             }
             default -> throw unknownField("related object", relation);
         }
+    }
+
+    /** An optional boolean: -1 = undefined. */
+    private static Boolean redundant(int value) {
+        return value < 0 ? null : value != 0;
     }
 
     /** The constant of an enum from its ordinal (the C++ enums follow the Java declaration order). */

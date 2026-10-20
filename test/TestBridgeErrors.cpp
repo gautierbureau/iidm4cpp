@@ -15,11 +15,6 @@ TEST(BridgeErrorsTest, PropertyNotFound) {
     EXPECT_THROW(throwBridgeError(BRIDGE_PROPERTY_NOT_FOUND, "p"), PropertyNotFoundException);
 }
 
-TEST(BridgeErrorsTest, ExtensionNotFoundIsAPropertyNotFound) {
-    EXPECT_THROW(throwBridgeError(BRIDGE_EXTENSION_NOT_FOUND, "e"), ExtensionNotFoundException);
-    EXPECT_THROW(throwBridgeError(BRIDGE_EXTENSION_NOT_FOUND, "e"), PropertyNotFoundException);
-}
-
 TEST(BridgeErrorsTest, Validation) {
     EXPECT_THROW(throwBridgeError(BRIDGE_VALIDATION, "v"), ValidationException);
 }

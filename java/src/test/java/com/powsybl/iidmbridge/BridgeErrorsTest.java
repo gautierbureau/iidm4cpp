@@ -88,13 +88,14 @@ class BridgeErrorsTest {
 
     @Test void absentExtension() {
         long g2 = reg(network.getGenerator("G2"));
-        // Extension objects: absent is null; their codes do not apply to the host
+        // Extensions are objects: absent is null; their codes do not apply to the host
         assertEquals(0L, PropertyDispatcher.getRelated(g2, ACTIVE_POWER_CONTROL));
         assertEquals(BridgeErrors.PROPERTY_NOT_FOUND, kindOfFailure(() -> PropertyDispatcher.getDouble(g2, EXT_APC_DROOP)));
-        // Extensions read through their host
-        assertEquals(BridgeErrors.EXTENSION_NOT_FOUND, kindOfFailure(() -> PropertyDispatcher.getDouble(g2, EXT_CRC_Q_PERCENT)));
+        assertEquals(0L, PropertyDispatcher.getRelated(g2, COORDINATED_REACTIVE_CONTROL));
+        assertEquals(BridgeErrors.PROPERTY_NOT_FOUND, kindOfFailure(() -> PropertyDispatcher.getDouble(g2, EXT_CRC_Q_PERCENT)));
         long vl2 = reg(network.getVoltageLevel("VL2"));
-        assertEquals(BridgeErrors.EXTENSION_NOT_FOUND, kindOfFailure(() -> PropertyDispatcher.getRelated(vl2, REL_SLACK_TERMINAL)));
+        assertEquals(0L, PropertyDispatcher.getRelated(vl2, SLACK_TERMINAL));
+        assertEquals(BridgeErrors.PROPERTY_NOT_FOUND, kindOfFailure(() -> PropertyDispatcher.getBool(vl2, EXT_ST_EMPTY)));
     }
 
     @Test void absentOptionalPartIsPropertyNotFound() {
@@ -105,9 +106,9 @@ class BridgeErrorsTest {
     @Test void rejectedValues() {
         long apc = PropertyDispatcher.getRelated(reg(network.getGenerator("G")), ACTIVE_POWER_CONTROL);
         assertEquals(BridgeErrors.VALIDATION, kindOfFailure(() -> PropertyDispatcher.setDouble(apc, EXT_APC_MAX_TARGET_P, 500)));
-        long vl1 = reg(network.getVoltageLevel("VL1"));
+        long slackTerminal = PropertyDispatcher.getRelated(reg(network.getVoltageLevel("VL1")), SLACK_TERMINAL);
         long l2Terminal = reg(network.getLoad("L2").getTerminal());
-        assertEquals(BridgeErrors.VALIDATION, kindOfFailure(() -> PropertyDispatcher.setRelated(vl1, REL_SLACK_TERMINAL, l2Terminal)));
+        assertEquals(BridgeErrors.VALIDATION, kindOfFailure(() -> PropertyDispatcher.setRelated(slackTerminal, REL_TERMINAL, l2Terminal)));
     }
 
     @Test void networkNotFound() {

@@ -1,5 +1,6 @@
 package com.powsybl.iidmbridge;
 
+import com.powsybl.commons.PowsyblException;
 import com.powsybl.iidm.network.*;
 import com.powsybl.iidm.network.extensions.*;
 import com.powsybl.iidm.network.regulation.RegulationMode;
@@ -13,8 +14,9 @@ import static com.powsybl.iidmbridge.PropertyCodes.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * State estimation extensions through {@link PropertyDispatcher}: the handle-based API (GraalVM
- * backend) and the object-based API (JNI backend fallback).
+ * State estimation extensions through {@link PropertyDispatcher}: each extension is an object of
+ * its own, reached from its host with its type code. The handle-based API (GraalVM backend) and the
+ * object-based API (JNI backend).
  */
 class StateEstimationDispatchTest {
 
@@ -155,24 +157,31 @@ class StateEstimationDispatchTest {
         return n;
     }
 
+    /** The extension of the given type of a host: present. */
+    private static long extension(Object host, int type) {
+        long h = PropertyDispatcher.getRelated(reg(host), type);
+        assertNotEquals(0L, h);
+        assertEquals(1, PropertyDispatcher.getBool(h, type));
+        return h;
+    }
+
     // ── ToBeEstimated ─────────────────────────────────────────────────────
 
     @Test void twoWindingsTransformerToBeEstimated() {
-        long h = reg(network.getTwoWindingsTransformer("T2"));
-        assertEquals(1, PropertyDispatcher.getBool(h, EXT_TWO_WT_TBE_EXISTS));
+        TwoWindingsTransformer t2 = network.getTwoWindingsTransformer("T2");
+        long h = extension(t2, TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED);
         assertEquals(1, PropertyDispatcher.getBool(h, EXT_TWO_WT_TBE_RTC));
         assertEquals(0, PropertyDispatcher.getBool(h, EXT_TWO_WT_TBE_PTC));
         PropertyDispatcher.setBool(h, EXT_TWO_WT_TBE_PTC, 1);
-        assertTrue(network.getTwoWindingsTransformer("T2")
-            .getExtension(TwoWindingsTransformerToBeEstimated.class).shouldEstimatePhaseTapChanger());
-        // No extension on a line-less 2WT is reported as absent, not as an error
-        assertEquals(0, PropertyDispatcher.getBool(reg(network.getThreeWindingsTransformer("T3")), EXT_TWO_WT_TBE_EXISTS));
+        assertTrue(t2.getExtension(TwoWindingsTransformerToBeEstimated.class).shouldEstimatePhaseTapChanger());
+        // Absent: no extension object
+        long t3 = reg(network.getThreeWindingsTransformer("T3"));
+        assertEquals(0L, PropertyDispatcher.getRelated(t3, TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED));
     }
 
     @Test void threeWindingsTransformerToBeEstimated() {
         ThreeWindingsTransformer t3 = network.getThreeWindingsTransformer("T3");
-        long h = reg(t3);
-        assertEquals(1, PropertyDispatcher.getBool(h, EXT_THREE_WT_TBE_EXISTS));
+        long h = extension(t3, THREE_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED);
         assertEquals(1, PropertyDispatcher.getBool(h, EXT_THREE_WT_TBE_RTC1));
         assertEquals(0, PropertyDispatcher.getBool(h, EXT_THREE_WT_TBE_RTC2));
         assertEquals(0, PropertyDispatcher.getBool(h, EXT_THREE_WT_TBE_PTC1));
@@ -184,88 +193,129 @@ class StateEstimationDispatchTest {
         assertFalse(ext.shouldEstimatePhaseTapChanger3());
     }
 
-    @Test void toBeEstimatedAbsentThrows() {
-        long h = reg(network.getTwoWindingsTransformer("T2"));
-        network.getTwoWindingsTransformer("T2").removeExtension(TwoWindingsTransformerToBeEstimated.class);
-        assertEquals(0, PropertyDispatcher.getBool(h, EXT_TWO_WT_TBE_EXISTS));
-        assertThrows(IllegalStateException.class, () -> PropertyDispatcher.getBool(h, EXT_TWO_WT_TBE_RTC));
+    @Test void toBeEstimatedRemovedAndCreated() {
+        TwoWindingsTransformer t2 = network.getTwoWindingsTransformer("T2");
+        long host = reg(t2);
+        PropertyDispatcher.setRelated(host, TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED, 0L);
+        assertNull(t2.getExtension(TwoWindingsTransformerToBeEstimated.class));
+        assertEquals(0L, PropertyDispatcher.getRelated(host, TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED));
+
+        long adder = PropertyDispatcher.invoke(host, TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED);
+        PropertyDispatcher.setBool(adder, EXT_TWO_WT_TBE_PTC, 1);
+        long h = PropertyDispatcher.invoke(adder, ACT_ADD);
+        assertSame(t2.getExtension(TwoWindingsTransformerToBeEstimated.class), NetworkRegistry.lookup(h));
+        assertEquals(0, PropertyDispatcher.getBool(h, EXT_TWO_WT_TBE_RTC));
+        assertEquals(1, PropertyDispatcher.getBool(h, EXT_TWO_WT_TBE_PTC));
+
+        ThreeWindingsTransformer t3 = network.getThreeWindingsTransformer("T3");
+        long host3 = reg(t3);
+        PropertyDispatcher.setRelated(host3, THREE_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED, 0L);
+        long adder3 = PropertyDispatcher.invoke(host3, THREE_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED);
+        PropertyDispatcher.setBool(adder3, EXT_THREE_WT_TBE_PTC2, 1);
+        PropertyDispatcher.invoke(adder3, ACT_ADD);
+        ThreeWindingsTransformerToBeEstimated ext3 = t3.getExtension(ThreeWindingsTransformerToBeEstimated.class);
+        assertTrue(ext3.shouldEstimatePhaseTapChanger2());
+        assertFalse(ext3.shouldEstimateRatioTapChanger1());
     }
 
     // ── Observability ─────────────────────────────────────────────────────
 
     @Test void injectionObservability() {
         Generator g1 = network.getGenerator("G1");
-        long h = reg(g1);
-        assertEquals(1, PropertyDispatcher.getBool(h, EXT_INJ_OBS_EXISTS));
-        assertEquals(1, PropertyDispatcher.getBool(h, EXT_INJ_OBS_OBSERVABLE));
-        assertEquals(1, PropertyDispatcher.getBool(h, EXT_INJ_OBS_QUALITY_P + OBS_QUALITY_EXISTS_OFF));
-        assertEquals(1.5, PropertyDispatcher.getDouble(h, EXT_INJ_OBS_QUALITY_P + OBS_QUALITY_STD_DEV_OFF));
-        assertEquals(1, PropertyDispatcher.getInt(h, EXT_INJ_OBS_QUALITY_P + OBS_QUALITY_REDUNDANT_OFF));
-        assertEquals(1, PropertyDispatcher.getBool(h, EXT_INJ_OBS_QUALITY_Q + OBS_QUALITY_EXISTS_OFF));
-        assertEquals(-1, PropertyDispatcher.getInt(h, EXT_INJ_OBS_QUALITY_Q + OBS_QUALITY_REDUNDANT_OFF));
-        assertEquals(0, PropertyDispatcher.getBool(h, EXT_INJ_OBS_QUALITY_V + OBS_QUALITY_EXISTS_OFF));
+        long h = extension(g1, INJECTION_OBSERVABILITY);
+        assertEquals(1, PropertyDispatcher.getBool(h, EXT_OBS_OBSERVABLE));
+        long p = PropertyDispatcher.getRelated(h, OBS_QUALITY_P);
+        assertEquals(1.5, PropertyDispatcher.getDouble(p, OBS_QUALITY_STANDARD_DEVIATION));
+        assertEquals(1, PropertyDispatcher.getInt(p, OBS_QUALITY_REDUNDANT));
+        assertEquals(-1, PropertyDispatcher.getInt(PropertyDispatcher.getRelated(h, OBS_QUALITY_Q), OBS_QUALITY_REDUNDANT));
+        assertEquals(0L, PropertyDispatcher.getRelated(h, OBS_QUALITY_V));
 
         // Setting the standard deviation of an undefined quality creates it
-        PropertyDispatcher.setDouble(h, EXT_INJ_OBS_QUALITY_V + OBS_QUALITY_STD_DEV_OFF, 3.0);
+        PropertyDispatcher.setDouble(h, OBS_QUALITY_V, 3.0);
         InjectionObservability<Generator> ext = g1.getExtension(InjectionObservability.class);
         assertEquals(3.0, ext.getNullableQualityV().getStandardDeviation());
         assertTrue(ext.getNullableQualityV().isRedundant().isEmpty());
         // ... and keeps the redundancy of an existing one
-        PropertyDispatcher.setDouble(h, EXT_INJ_OBS_QUALITY_P + OBS_QUALITY_STD_DEV_OFF, 4.0);
+        PropertyDispatcher.setDouble(h, OBS_QUALITY_P, 4.0);
         assertEquals(4.0, ext.getNullableQualityP().getStandardDeviation());
         assertEquals(Boolean.TRUE, ext.getNullableQualityP().isRedundant().orElseThrow());
 
-        PropertyDispatcher.setInt(h, EXT_INJ_OBS_QUALITY_P + OBS_QUALITY_REDUNDANT_OFF, 0);
+        // A quality is an object of its own
+        assertSame(ext.getNullableQualityP(), NetworkRegistry.lookup(p));
+        PropertyDispatcher.setDouble(p, OBS_QUALITY_STANDARD_DEVIATION, 5.0);
+        assertEquals(5.0, ext.getNullableQualityP().getStandardDeviation());
+        PropertyDispatcher.setInt(p, OBS_QUALITY_REDUNDANT, 0);
         assertEquals(Boolean.FALSE, ext.getNullableQualityP().isRedundant().orElseThrow());
-        PropertyDispatcher.setInt(h, EXT_INJ_OBS_QUALITY_P + OBS_QUALITY_REDUNDANT_OFF, -1);
+        PropertyDispatcher.setInt(p, OBS_QUALITY_REDUNDANT, -1);
         assertTrue(ext.getNullableQualityP().isRedundant().isEmpty());
 
-        PropertyDispatcher.setBool(h, EXT_INJ_OBS_OBSERVABLE, 0);
+        PropertyDispatcher.setBool(h, EXT_OBS_OBSERVABLE, 0);
         assertFalse(ext.isObservable());
 
         // Busbar sections are injections too
-        long bbs = reg(network.getBusbarSection("BBS1"));
-        assertEquals(0.8, PropertyDispatcher.getDouble(bbs, EXT_INJ_OBS_QUALITY_V + OBS_QUALITY_STD_DEV_OFF));
-        assertEquals(0, PropertyDispatcher.getInt(bbs, EXT_INJ_OBS_QUALITY_V + OBS_QUALITY_REDUNDANT_OFF));
+        long bbs = extension(network.getBusbarSection("BBS1"), INJECTION_OBSERVABILITY);
+        long v = PropertyDispatcher.getRelated(bbs, OBS_QUALITY_V);
+        assertEquals(0.8, PropertyDispatcher.getDouble(v, OBS_QUALITY_STANDARD_DEVIATION));
+        assertEquals(0, PropertyDispatcher.getInt(v, OBS_QUALITY_REDUNDANT));
     }
 
-    @Test void injectionObservabilityUndefinedQualityThrows() {
-        long h = reg(network.getGenerator("G1"));
-        assertThrows(BridgeErrors.PropertyNotFoundException.class,
-            () -> PropertyDispatcher.getDouble(h, EXT_INJ_OBS_QUALITY_V + OBS_QUALITY_STD_DEV_OFF));
+    @Test void injectionObservabilityAbsent() {
         long load = reg(network.getLoad("L2"));
-        assertEquals(0, PropertyDispatcher.getBool(load, EXT_INJ_OBS_EXISTS));
-        assertThrows(BridgeErrors.ExtensionNotFoundException.class, () -> PropertyDispatcher.getBool(load, EXT_INJ_OBS_OBSERVABLE));
+        assertEquals(0L, PropertyDispatcher.getRelated(load, INJECTION_OBSERVABILITY));
+        // The extension's codes apply to the extension object only
+        assertThrows(ClassCastException.class, () -> PropertyDispatcher.getBool(load, EXT_OBS_OBSERVABLE));
+    }
+
+    @Test void injectionObservabilityCreatedAndRemoved() {
+        Load l2 = network.getLoad("L2");
+        long host = reg(l2);
+        long adder = PropertyDispatcher.invoke(host, INJECTION_OBSERVABILITY);
+        PropertyDispatcher.setBool(adder, EXT_OBS_OBSERVABLE, 1);
+        PropertyDispatcher.setDouble(adder, OBS_QUALITY_Q, 0.4);
+        PropertyDispatcher.setInt(adder, OBS_QUALITY_Q, 1);
+        long h = PropertyDispatcher.invoke(adder, ACT_ADD);
+        InjectionObservability<Load> ext = l2.getExtension(InjectionObservability.class);
+        assertSame(ext, NetworkRegistry.lookup(h));
+        assertTrue(ext.isObservable());
+        assertEquals(0.4, ext.getNullableQualityQ().getStandardDeviation());
+        assertEquals(Boolean.TRUE, ext.getNullableQualityQ().isRedundant().orElseThrow());
+        assertNull(ext.getNullableQualityP());
+
+        PropertyDispatcher.setRelated(host, INJECTION_OBSERVABILITY, 0L);
+        assertNull(l2.getExtension(InjectionObservability.class));
     }
 
     @Test void branchObservability() {
         Line line1 = network.getLine("LINE1");
-        long h = reg(line1);
-        assertEquals(1, PropertyDispatcher.getBool(h, EXT_BRANCH_OBS_EXISTS));
-        assertEquals(1, PropertyDispatcher.getBool(h, EXT_BRANCH_OBS_OBSERVABLE));
-        assertEquals(0.1, PropertyDispatcher.getDouble(h, EXT_BRANCH_OBS_QUALITY_P1 + OBS_QUALITY_STD_DEV_OFF));
-        assertEquals(0, PropertyDispatcher.getInt(h, EXT_BRANCH_OBS_QUALITY_P1 + OBS_QUALITY_REDUNDANT_OFF));
-        assertEquals(0, PropertyDispatcher.getBool(h, EXT_BRANCH_OBS_QUALITY_P2 + OBS_QUALITY_EXISTS_OFF));
-        assertEquals(0, PropertyDispatcher.getBool(h, EXT_BRANCH_OBS_QUALITY_Q1 + OBS_QUALITY_EXISTS_OFF));
-        assertEquals(0.2, PropertyDispatcher.getDouble(h, EXT_BRANCH_OBS_QUALITY_Q2 + OBS_QUALITY_STD_DEV_OFF));
+        long h = extension(line1, BRANCH_OBSERVABILITY);
+        assertEquals(0, PropertyDispatcher.getBool(h, INJECTION_OBSERVABILITY));
+        assertEquals(1, PropertyDispatcher.getBool(h, EXT_OBS_OBSERVABLE));
+        long p1 = PropertyDispatcher.getRelated(h, OBS_QUALITY_P1);
+        assertEquals(0.1, PropertyDispatcher.getDouble(p1, OBS_QUALITY_STANDARD_DEVIATION));
+        assertEquals(0, PropertyDispatcher.getInt(p1, OBS_QUALITY_REDUNDANT));
+        assertEquals(0L, PropertyDispatcher.getRelated(h, OBS_QUALITY_P2));
+        assertEquals(0L, PropertyDispatcher.getRelated(h, OBS_QUALITY_Q1));
+        assertEquals(0.2, PropertyDispatcher.getDouble(PropertyDispatcher.getRelated(h, OBS_QUALITY_Q2), OBS_QUALITY_STANDARD_DEVIATION));
 
-        PropertyDispatcher.setDouble(h, EXT_BRANCH_OBS_QUALITY_Q1 + OBS_QUALITY_STD_DEV_OFF, 0.7);
-        PropertyDispatcher.setInt(h, EXT_BRANCH_OBS_QUALITY_Q1 + OBS_QUALITY_REDUNDANT_OFF, 1);
+        PropertyDispatcher.setDouble(h, OBS_QUALITY_Q1, 0.7);
+        PropertyDispatcher.setInt(PropertyDispatcher.getRelated(h, OBS_QUALITY_Q1), OBS_QUALITY_REDUNDANT, 1);
         BranchObservability<Line> ext = line1.getExtension(BranchObservability.class);
         assertEquals(0.7, ext.getNullableQualityQ1().getStandardDeviation());
         assertEquals(Boolean.TRUE, ext.getNullableQualityQ1().isRedundant().orElseThrow());
+        // The qualities of an injection are not those of a branch
+        assertThrows(ClassCastException.class, () -> PropertyDispatcher.getRelated(h, OBS_QUALITY_P));
     }
 
     // ── Measurements ──────────────────────────────────────────────────────
 
     @Test void measurements() {
-        long g1 = reg(network.getGenerator("G1"));
-        assertEquals(1, PropertyDispatcher.getBool(g1, EXT_MEAS_EXISTS));
-        long[] meas = PropertyDispatcher.getChildren(g1, MEASUREMENT);
+        long ext = extension(network.getGenerator("G1"), MEASUREMENTS);
+        long[] meas = PropertyDispatcher.getChildren(ext, MEASUREMENT);
         assertEquals(2, meas.length);
 
-        long p = PropertyDispatcher.getRelatedByString(g1, REL_MEASUREMENT_BY_ID, "G1_P");
+        long p = PropertyDispatcher.getRelatedByString(ext, MEASUREMENT, "G1_P");
         assertNotEquals(0L, p);
+        assertEquals(1, PropertyDispatcher.getBool(p, MEASUREMENT));
         assertEquals("G1_P", PropertyDispatcher.getString(p, MEAS_ID));
         assertEquals(Measurement.Type.ACTIVE_POWER.ordinal(), PropertyDispatcher.getInt(p, MEAS_TYPE));
         assertEquals(101.5, PropertyDispatcher.getDouble(p, MEAS_VALUE));
@@ -281,28 +331,80 @@ class StateEstimationDispatchTest {
         assertEquals(2.5, m.getStandardDeviation());
         assertFalse(m.isValid());
 
-        assertEquals(0L, PropertyDispatcher.getRelatedByString(g1, REL_MEASUREMENT_BY_ID, "UNKNOWN"));
+        assertEquals(0L, PropertyDispatcher.getRelatedByString(ext, MEASUREMENT, "UNKNOWN"));
 
-        long line = reg(network.getLine("LINE1"));
-        long i2 = PropertyDispatcher.getRelatedByString(line, REL_MEASUREMENT_BY_ID, "LINE1_I2");
+        long line = extension(network.getLine("LINE1"), MEASUREMENTS);
+        long i2 = PropertyDispatcher.getRelatedByString(line, MEASUREMENT, "LINE1_I2");
         assertEquals(Measurement.Type.CURRENT.ordinal(), PropertyDispatcher.getInt(i2, MEAS_TYPE));
         assertEquals(ThreeSides.TWO.ordinal(), PropertyDispatcher.getInt(i2, MEAS_SIDE));
 
-        // Connectable without the extension: no measurements, no error
-        long load = reg(network.getLoad("L2"));
-        assertEquals(0, PropertyDispatcher.getBool(load, EXT_MEAS_EXISTS));
-        assertEquals(0, PropertyDispatcher.getChildren(load, MEASUREMENT).length);
-        assertEquals(0L, PropertyDispatcher.getRelatedByString(load, REL_MEASUREMENT_BY_ID, "G1_P"));
+        // Connectable without the extension
+        assertEquals(0L, PropertyDispatcher.getRelated(reg(network.getLoad("L2")), MEASUREMENTS));
+    }
+
+    @Test void measurementsCreatedAndRemoved() {
+        Load l2 = network.getLoad("L2");
+        long ext = PropertyDispatcher.invoke(PropertyDispatcher.invoke(reg(l2), MEASUREMENTS), ACT_ADD);
+        assertSame(l2.getExtension(Measurements.class), NetworkRegistry.lookup(ext));
+
+        long adder = PropertyDispatcher.invoke(ext, MEASUREMENT);
+        PropertyDispatcher.setString(adder, MEAS_ID, "L2_P");
+        PropertyDispatcher.setInt(adder, MEAS_TYPE, Measurement.Type.ACTIVE_POWER.ordinal());
+        PropertyDispatcher.setDouble(adder, MEAS_VALUE, 80.5);
+        PropertyDispatcher.setDouble(adder, MEAS_STD_DEV, 0.5);
+        PropertyDispatcher.setBool(adder, MEAS_VALID, 1);
+        PropertyDispatcher.setKeyedString(adder, PROPERTY, "source", "scada");
+        long m = PropertyDispatcher.invoke(adder, ACT_ADD);
+        Measurement created = ((Measurements<?>) l2.getExtension(Measurements.class)).getMeasurement("L2_P");
+        assertSame(created, NetworkRegistry.lookup(m));
+        assertEquals(80.5, created.getValue());
+        assertEquals("scada", created.getProperty("source"));
+
+        // Its properties
+        PropertyDispatcher.setKeyedString(m, PROPERTY, "quality", "good");
+        assertArrayEquals(new String[] {"quality", "source"}, PropertyDispatcher.getStringList(m, PROPERTY_NAMES));
+        assertEquals("good", PropertyDispatcher.getKeyedString(m, PROPERTY, "quality"));
+        PropertyDispatcher.setKeyedString(m, PROPERTY, "quality", null);
+        assertNull(created.getProperty("quality"));
+
+        // The same id again is refused, unless a free one is derived from it
+        long again = PropertyDispatcher.invoke(ext, MEASUREMENT);
+        PropertyDispatcher.setString(again, MEAS_ID, "L2_P");
+        PropertyDispatcher.setInt(again, MEAS_TYPE, Measurement.Type.REACTIVE_POWER.ordinal());
+        PropertyDispatcher.setDouble(again, MEAS_VALUE, 5);
+        assertThrows(PowsyblException.class, () -> PropertyDispatcher.invoke(again, ACT_ADD));
+        PropertyDispatcher.setBool(again, ENSURE_ID_UNICITY, 1);
+        long other = PropertyDispatcher.invoke(again, ACT_ADD);
+        assertNotEquals("L2_P", PropertyDispatcher.getString(other, MEAS_ID));
+
+        // A measurement may have no id: only an optional read gives it
+        long anonymousAdder = PropertyDispatcher.invoke(ext, MEASUREMENT);
+        PropertyDispatcher.setInt(anonymousAdder, MEAS_TYPE, Measurement.Type.VOLTAGE.ordinal());
+        PropertyDispatcher.setDouble(anonymousAdder, MEAS_VALUE, 226);
+        long anonymous = PropertyDispatcher.invoke(anonymousAdder, ACT_ADD);
+        assertNull(PropertyDispatcher.getOptString(anonymous, MEAS_ID));
+        assertThrows(BridgeErrors.PropertyNotFoundException.class, () -> PropertyDispatcher.getString(anonymous, MEAS_ID));
+        assertEquals(3, PropertyDispatcher.getChildren(ext, MEASUREMENT).length);
+
+        PropertyDispatcher.invoke(m, ACT_REMOVE);
+        assertNull(((Measurements<?>) l2.getExtension(Measurements.class)).getMeasurement("L2_P"));
+        // Cleaning keeps an extension that still has measurements, and removes an empty one
+        PropertyDispatcher.invoke(ext, ACT_CLEAN_IF_EMPTY);
+        assertNotNull(l2.getExtension(Measurements.class));
+        PropertyDispatcher.invoke(other, ACT_REMOVE);
+        PropertyDispatcher.invoke(anonymous, ACT_REMOVE);
+        PropertyDispatcher.invoke(ext, ACT_CLEAN_IF_EMPTY);
+        assertNull(l2.getExtension(Measurements.class));
     }
 
     // ── DiscreteMeasurements ──────────────────────────────────────────────
 
     @Test void discreteMeasurements() {
-        long t2 = reg(network.getTwoWindingsTransformer("T2"));
-        assertEquals(1, PropertyDispatcher.getBool(t2, EXT_DMEAS_EXISTS));
+        long t2 = extension(network.getTwoWindingsTransformer("T2"), DISCRETE_MEASUREMENTS);
         long[] dms = PropertyDispatcher.getChildren(t2, DISCRETE_MEASUREMENT);
         assertEquals(1, dms.length);
         long tap = dms[0];
+        assertEquals(1, PropertyDispatcher.getBool(tap, DISCRETE_MEASUREMENT));
         assertEquals("T2_TAP", PropertyDispatcher.getString(tap, DMEAS_ID));
         assertEquals(DiscreteMeasurement.Type.TAP_POSITION.ordinal(), PropertyDispatcher.getInt(tap, DMEAS_TYPE));
         assertEquals(DiscreteMeasurement.TapChanger.RATIO_TAP_CHANGER.ordinal(), PropertyDispatcher.getInt(tap, DMEAS_TAP_CHANGER));
@@ -311,15 +413,15 @@ class StateEstimationDispatchTest {
         PropertyDispatcher.setInt(tap, DMEAS_VALUE_INT, 2);
         assertEquals(2, PropertyDispatcher.getInt(tap, DMEAS_VALUE_INT));
 
-        long sw = reg(network.getSwitch("SW1"));
-        long pos = PropertyDispatcher.getRelatedByString(sw, REL_DISCRETE_MEASUREMENT_BY_ID, "SW1_POS");
+        long sw = extension(network.getSwitch("SW1"), DISCRETE_MEASUREMENTS);
+        long pos = PropertyDispatcher.getRelatedByString(sw, DISCRETE_MEASUREMENT, "SW1_POS");
         assertEquals(-1, PropertyDispatcher.getInt(pos, DMEAS_TAP_CHANGER));
         assertEquals(DiscreteMeasurement.ValueType.BOOLEAN.ordinal(), PropertyDispatcher.getInt(pos, DMEAS_VALUE_TYPE));
         assertEquals(1, PropertyDispatcher.getBool(pos, DMEAS_VALUE_BOOL));
         PropertyDispatcher.setBool(pos, DMEAS_VALUE_BOOL, 0);
         assertEquals(0, PropertyDispatcher.getBool(pos, DMEAS_VALUE_BOOL));
 
-        long state = PropertyDispatcher.getRelatedByString(sw, REL_DISCRETE_MEASUREMENT_BY_ID, "SW1_STATE");
+        long state = PropertyDispatcher.getRelatedByString(sw, DISCRETE_MEASUREMENT, "SW1_STATE");
         assertEquals("CLOSED", PropertyDispatcher.getString(state, DMEAS_VALUE_STRING));
         assertEquals(0, PropertyDispatcher.getBool(state, DMEAS_VALID));
         PropertyDispatcher.setString(state, DMEAS_VALUE_STRING, "OPEN");
@@ -328,17 +430,41 @@ class StateEstimationDispatchTest {
         assertEquals(1, PropertyDispatcher.getBool(state, DMEAS_VALID));
     }
 
+    @Test void discreteMeasurementCreatedAndRemoved() {
+        long sw = extension(network.getSwitch("SW1"), DISCRETE_MEASUREMENTS);
+        long adder = PropertyDispatcher.invoke(sw, DISCRETE_MEASUREMENT);
+        PropertyDispatcher.setString(adder, DMEAS_ID, "SW1_COUNT");
+        PropertyDispatcher.setInt(adder, DMEAS_TYPE, DiscreteMeasurement.Type.OTHER.ordinal());
+        PropertyDispatcher.setInt(adder, DMEAS_VALUE_INT, 12);
+        PropertyDispatcher.setBool(adder, DMEAS_VALID, 1);
+        PropertyDispatcher.setKeyedString(adder, PROPERTY, "unit", "operations");
+        long m = PropertyDispatcher.invoke(adder, ACT_ADD);
+        assertEquals(DiscreteMeasurement.ValueType.INT.ordinal(), PropertyDispatcher.getInt(m, DMEAS_VALUE_TYPE));
+        assertEquals(12, PropertyDispatcher.getInt(m, DMEAS_VALUE_INT));
+        assertEquals("operations", PropertyDispatcher.getKeyedString(m, PROPERTY, "unit"));
+        assertEquals(3, PropertyDispatcher.getChildren(sw, DISCRETE_MEASUREMENT).length);
+
+        PropertyDispatcher.invoke(m, ACT_REMOVE);
+        assertEquals(2, PropertyDispatcher.getChildren(sw, DISCRETE_MEASUREMENT).length);
+        // Not empty: kept
+        PropertyDispatcher.invoke(sw, ACT_CLEAN_IF_EMPTY);
+        assertNotNull(network.getSwitch("SW1").getExtension(DiscreteMeasurements.class));
+        PropertyDispatcher.setRelated(reg(network.getSwitch("SW1")), DISCRETE_MEASUREMENTS, 0L);
+        assertNull(network.getSwitch("SW1").getExtension(DiscreteMeasurements.class));
+    }
+
     // ── ObservabilityArea ─────────────────────────────────────────────────
 
     @Test void observabilityAreaBusBreaker() {
-        long vl1 = reg(network.getVoltageLevel("VL1"));
-        assertEquals(1, PropertyDispatcher.getBool(vl1, EXT_OBS_AREA_EXISTS));
+        long ext = extension(network.getVoltageLevel("VL1"), OBSERVABILITY_AREA);
         // SW1 is closed: B1 and B2 form a single bus view bus but belong to different areas
-        assertEquals(0, PropertyDispatcher.getBool(vl1, EXT_OBS_AREA_CONSISTENT));
-        long[] areas = PropertyDispatcher.getChildren(vl1, OBSERVABILITY_AREA);
+        assertEquals(0, PropertyDispatcher.getBool(ext, EXT_OBS_AREA_CONSISTENT));
+        long[] areas = PropertyDispatcher.getChildren(ext, AREA_CHARACTERISTICS);
         assertEquals(2, areas.length);
+        assertEquals(1, PropertyDispatcher.getBool(areas[0], AREA_CHARACTERISTICS));
+        assertEquals(1, PropertyDispatcher.getInt(areas[0], OBS_AREA_NUMBER)); // by area number
 
-        long border = PropertyDispatcher.getRelatedByString(vl1, REL_OBS_AREA_BY_BBV_BUS, "B2");
+        long border = PropertyDispatcher.getRelatedByString(ext, REL_OBS_AREA_BY_BBV_BUS, "B2");
         assertEquals(2, PropertyDispatcher.getInt(border, OBS_AREA_NUMBER));
         assertEquals(ObservabilityArea.ObservabilityStatus.BORDER.ordinal(), PropertyDispatcher.getInt(border, OBS_AREA_STATUS));
         assertEquals(0, PropertyDispatcher.getIntList(border, OBS_AREA_NODES).length);
@@ -348,22 +474,20 @@ class StateEstimationDispatchTest {
         long[] terminals = PropertyDispatcher.getChildren(border, OBS_AREA_TERMINALS);
         assertEquals(1, terminals.length); // T3 leg 1
         assertEquals("T3", connectableId(terminals[0]));
-        assertEquals(0L, PropertyDispatcher.getRelatedByString(vl1, REL_OBS_AREA_BY_BBV_BUS, "UNKNOWN"));
+        assertEquals(0L, PropertyDispatcher.getRelatedByString(ext, REL_OBS_AREA_BY_BBV_BUS, "UNKNOWN"));
 
         // Sorted by connectable id, so the same on every run (powsybl gives them as a HashSet)
-        long observable = PropertyDispatcher.getRelatedByString(vl1, REL_OBS_AREA_BY_BBV_BUS, "B1");
+        long observable = PropertyDispatcher.getRelatedByString(ext, REL_OBS_AREA_BY_BBV_BUS, "B1");
         assertEquals(java.util.List.of("G1", "LINE1", "T2"), Arrays.stream(PropertyDispatcher.getChildren(observable, OBS_AREA_TERMINALS))
             .mapToObj(StateEstimationDispatchTest::connectableId).toList());
 
-        long vl2 = reg(network.getVoltageLevel("VL2"));
-        assertEquals(0, PropertyDispatcher.getBool(vl2, EXT_OBS_AREA_EXISTS));
-        assertEquals(0, PropertyDispatcher.getChildren(vl2, OBSERVABILITY_AREA).length);
+        assertEquals(0L, PropertyDispatcher.getRelated(reg(network.getVoltageLevel("VL2")), OBSERVABILITY_AREA));
     }
 
     @Test void observabilityAreaNodeBreaker() {
-        long vl4 = reg(network.getVoltageLevel("VL4"));
-        assertEquals(1, PropertyDispatcher.getBool(vl4, EXT_OBS_AREA_CONSISTENT));
-        long area = PropertyDispatcher.getRelatedByIndex(vl4, REL_OBS_AREA_BY_NODE, 1);
+        long ext = extension(network.getVoltageLevel("VL4"), OBSERVABILITY_AREA);
+        assertEquals(1, PropertyDispatcher.getBool(ext, EXT_OBS_AREA_CONSISTENT));
+        long area = PropertyDispatcher.getRelatedByIndex(ext, REL_OBS_AREA_BY_NODE, 1);
         assertNotEquals(0L, area);
         assertEquals(7, PropertyDispatcher.getInt(area, OBS_AREA_NUMBER));
         assertEquals(ObservabilityArea.ObservabilityStatus.NON_OBSERVABLE.ordinal(), PropertyDispatcher.getInt(area, OBS_AREA_STATUS));
@@ -372,6 +496,9 @@ class StateEstimationDispatchTest {
         assertEquals(Set.of("BBS1", "L4", "LINE1"), Arrays.stream(terminals)
             .mapToObj(StateEstimationDispatchTest::connectableId)
             .collect(java.util.stream.Collectors.toSet()));
+
+        PropertyDispatcher.setRelated(reg(network.getVoltageLevel("VL4")), OBSERVABILITY_AREA, 0L);
+        assertNull(network.getVoltageLevel("VL4").getExtension(ObservabilityArea.class));
     }
 
     private static String connectableId(long terminal) {
@@ -382,15 +509,17 @@ class StateEstimationDispatchTest {
 
     @Test void objectApiMatchesHandleApi() {
         Generator g1 = network.getGenerator("G1");
-        assertTrue(PropertyDispatcher.getBool(g1, EXT_INJ_OBS_EXISTS));
-        assertEquals(1.5, PropertyDispatcher.getDouble(g1, EXT_INJ_OBS_QUALITY_P + OBS_QUALITY_STD_DEV_OFF));
-        Object[] meas = PropertyDispatcher.getChildObjects(g1, MEASUREMENT);
-        assertEquals(2, meas.length);
-        Object p = PropertyDispatcher.getRelatedObjectByString(g1, REL_MEASUREMENT_BY_ID, "G1_P");
+        Object observability = PropertyDispatcher.getRelatedObject(g1, INJECTION_OBSERVABILITY);
+        Object qualityP = PropertyDispatcher.getRelatedObject(observability, OBS_QUALITY_P);
+        assertEquals(1.5, PropertyDispatcher.getDouble(qualityP, OBS_QUALITY_STANDARD_DEVIATION));
+        Object measurements = PropertyDispatcher.getRelatedObject(g1, MEASUREMENTS);
+        assertEquals(2, PropertyDispatcher.getChildObjects(measurements, MEASUREMENT).length);
+        Object p = PropertyDispatcher.getRelatedObjectByString(measurements, MEASUREMENT, "G1_P");
         assertEquals(101.5, PropertyDispatcher.getDouble(p, MEAS_VALUE));
         PropertyDispatcher.setBool(p, MEAS_VALID, false);
         assertFalse(PropertyDispatcher.getBool(p, MEAS_VALID));
-        Object area = PropertyDispatcher.getRelatedObjectByIndex(network.getVoltageLevel("VL4"), REL_OBS_AREA_BY_NODE, 0);
+        Object areas = PropertyDispatcher.getRelatedObject(network.getVoltageLevel("VL4"), OBSERVABILITY_AREA);
+        Object area = PropertyDispatcher.getRelatedObjectByIndex(areas, REL_OBS_AREA_BY_NODE, 0);
         assertArrayEquals(new int[] {0, 1, 2}, PropertyDispatcher.getIntList(area, OBS_AREA_NODES));
     }
 }
