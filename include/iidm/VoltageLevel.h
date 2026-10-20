@@ -45,7 +45,7 @@ public:
 
     private:
         ObjectHandle     handle_  = INVALID_HANDLE;
-        BackendProvider* backend_ = nullptr;
+        BackendProvider* backend_ = detail::nullBackend();
     };
 
     // ── BusBreakerView ───────────────────────────────────────────────────────
@@ -64,7 +64,7 @@ public:
 
     private:
         ObjectHandle     handle_  = INVALID_HANDLE;
-        BackendProvider* backend_ = nullptr;
+        BackendProvider* backend_ = detail::nullBackend();
     };
 
     // ── VoltageLevel ─────────────────────────────────────────────────────────
@@ -110,7 +110,7 @@ public:
 
 private:
     ObjectHandle    handle_  = INVALID_HANDLE;
-    BackendProvider* backend_ = nullptr;
+    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

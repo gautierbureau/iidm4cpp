@@ -89,6 +89,7 @@ public:
 private:
     friend class NetworkFactory;
     explicit Network(std::unique_ptr<BackendProvider> backend);
+    BackendProvider* backend() const;
     std::unique_ptr<BackendProvider> backend_;
 };
 

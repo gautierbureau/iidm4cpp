@@ -27,7 +27,7 @@ private:
     bool             standalone_ = false;
     double           rho_ = 0.0, r_ = 0.0, x_ = 0.0, g_ = 0.0, b_ = 0.0;
     ObjectHandle     handle_  = INVALID_HANDLE;
-    BackendProvider* backend_ = nullptr;
+    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm
