@@ -44,6 +44,7 @@ set(TEST_SOURCES
     TestNetworkStream.cpp
     TestBridgeErrors.cpp
     TestBackendErrors.cpp
+    TestBackendConformance.cpp
     TestNullBackend.cpp
     TestHandleRef.cpp
 )

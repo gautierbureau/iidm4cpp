@@ -165,7 +165,9 @@ extension code**. The supported extensions are listed in README §5.4.
    ```
 
 5. **Unit tests** — `test/TestFooExtension.cpp` using `MockBackend`, plus a
-   Java test of the dispatcher cases (see `StateEstimationDispatchTest`).
+   Java test of the dispatcher cases (see `StateEstimationDispatchTest`). Put the
+   extension in a test network (`examples/*.xiidm`): `TestBackendConformance` then
+   compares every new code on both backends without any change to the test.
 
 Larger extensions can keep their Java logic in a helper class called from the
 dispatcher cases (e.g. `StateEstimationDispatch.java`). Child objects of an
@@ -240,9 +242,15 @@ Set these environment variables before `ctest`:
 
 ```bash
 export IIDM_IEEE14_NETWORK_PATH=/path/to/examples/IEEE14.xiidm
-export IIDM_BRIDGE_GRAALVM_LIB=/path/to/libpowsybl-iidm-native.so  # GraalVM only
+export IIDM_BRIDGE_GRAALVM_LIB=/path/to/libpowsybl-iidm-native.so  # GraalVM backend tests
+export IIDM_BRIDGE_JAR=/path/to/java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar  # JNI backend tests (in-process JVM)
 ctest --test-dir build --output-on-failure
 ```
+
+With both `IIDM_BRIDGE_GRAALVM_LIB` and `IIDM_BRIDGE_JAR` set, `TestBackendConformance`
+walks every object of the test networks on both backends in lockstep and fails on any
+difference (value, children, related objects, exception type, setter behaviour, saved XIIDM).
+A backend change is not done until it passes.
 
 ### CI pipeline summary (`.github/workflows/ci.yml`)
 
