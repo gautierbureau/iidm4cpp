@@ -44,7 +44,7 @@ public:
 
 private:
     ObjectHandle     handle_  = INVALID_HANDLE;
-    BackendProvider* backend_ = nullptr;
+    BackendProvider* backend_ = detail::nullBackend();
 };
 
 // Typed wrapper for the PowSyBl Measurements extension attached to a connectable.
@@ -64,7 +64,7 @@ public:
 
 private:
     ObjectHandle     handle_  = INVALID_HANDLE;
-    BackendProvider* backend_ = nullptr;
+    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

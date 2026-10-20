@@ -1208,6 +1208,12 @@ The classification lives in one place, `BridgeErrors.java`
   `BridgeErrors` methods and throws via `detail::throwBridgeError`. A null receiver
   (handle 0) is rejected in C++ before any JNI call.
 
+Objects that are not bound to a network — default-constructed wrappers
+(`iidm::Generator g; g.getTargetP();`) or a moved-from `Network` — throw
+`InvalidHandleException` too: their backend is a shared null object
+(`detail::nullBackend()`) whose every operation throws, so no call dereferences a null
+pointer. `isValid()` and `operator==` never throw.
+
 `test/TestBackendErrors.cpp` runs the same failure scenarios against the real GraalVM
 library (`IIDM_BRIDGE_GRAALVM_LIB`) and against a JVM created in-process
 (`IIDM_BRIDGE_JAR`).

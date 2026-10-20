@@ -8,7 +8,7 @@ namespace iidm {
 // ── DiscreteMeasurement ───────────────────────────────────────────────────────
 
 DiscreteMeasurement::DiscreteMeasurement(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(backend) {}
+    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
 
 std::string DiscreteMeasurement::getId() const {
     return backend_->getString(handle_, prop::DMEAS_ID);
@@ -79,7 +79,7 @@ bool DiscreteMeasurement::operator!=(const DiscreteMeasurement& other) const {
 // ── DiscreteMeasurements ──────────────────────────────────────────────────────
 
 DiscreteMeasurements::DiscreteMeasurements(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(backend) {}
+    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
 
 std::vector<DiscreteMeasurement> DiscreteMeasurements::getDiscreteMeasurements() const {
     auto handles = backend_->getChildren(handle_, prop::DISCRETE_MEASUREMENT);

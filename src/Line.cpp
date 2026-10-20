@@ -7,7 +7,7 @@
 namespace iidm {
 
 Line::Line(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(backend) {}
+    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
 
 std::string Line::getId() const {
     return backend_->getString(handle_, prop::ID);

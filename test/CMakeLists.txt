@@ -44,6 +44,7 @@ set(TEST_SOURCES
     TestNetworkStream.cpp
     TestBridgeErrors.cpp
     TestBackendErrors.cpp
+    TestNullBackend.cpp
 )
 
 add_executable(iidmbridge_tests ${TEST_SOURCES})

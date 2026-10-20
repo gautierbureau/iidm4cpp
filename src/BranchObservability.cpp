@@ -6,7 +6,7 @@
 namespace iidm {
 
 BranchObservability::BranchObservability(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(backend) {}
+    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
 
 bool BranchObservability::isObservable() const {
     return backend_->getBool(handle_, prop::EXT_BRANCH_OBS_OBSERVABLE);

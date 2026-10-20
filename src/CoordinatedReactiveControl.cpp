@@ -5,7 +5,7 @@
 namespace iidm {
 
 CoordinatedReactiveControl::CoordinatedReactiveControl(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(backend) {}
+    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
 
 double CoordinatedReactiveControl::getQPercent() const {
     return backend_->getDouble(handle_, prop::EXT_CRC_Q_PERCENT);

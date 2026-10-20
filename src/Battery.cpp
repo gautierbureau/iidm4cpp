@@ -8,7 +8,7 @@
 namespace iidm {
 
 Battery::Battery(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(backend) {}
+    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
 
 std::string Battery::getId() const {
     return backend_->getString(handle_, prop::ID);

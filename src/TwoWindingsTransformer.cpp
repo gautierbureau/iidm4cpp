@@ -9,7 +9,7 @@
 namespace iidm {
 
 TwoWindingsTransformer::TwoWindingsTransformer(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(backend) {}
+    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
 
 std::string TwoWindingsTransformer::getId() const {
     return backend_->getString(handle_, prop::ID);
