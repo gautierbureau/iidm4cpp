@@ -39,7 +39,7 @@ LoadType Load::getLoadType() const {
 }
 
 bool Load::isFictitious() const {
-    return backend_->getBool(handle_, prop::LOAD_FICTITIOUS);
+    return backend_->getBool(handle_, prop::FICTITIOUS);
 }
 
 Terminal Load::getTerminal() const {
@@ -57,6 +57,10 @@ void Load::disconnect() {
 
 bool Load::isConnected() const {
     return getTerminal().isConnected();
+}
+
+void Load::remove() {
+    backend_->invoke(handle_, prop::ACT_REMOVE);
 }
 
 bool Load::operator==(const Load& other) const {

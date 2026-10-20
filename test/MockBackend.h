@@ -139,6 +139,28 @@ public:
         return bytesToReturnOnSave;
     }
     void close() override { closed = true; }
+
+    // ── Creation and removal ──────────────────────────────────────────────
+    // Every invoke is recorded. invoke(parent, type) returns a new adder handle (lastAdder);
+    // invoke(adder, ACT_ADD) returns addResults[adder] (INVALID_HANDLE by default).
+    std::vector<std::pair<ObjectHandle,int>> invocations;
+    std::map<ObjectHandle, ObjectHandle> addResults;
+    ObjectHandle nextAdder = 100000;
+    ObjectHandle lastAdder = INVALID_HANDLE;
+    std::string createdNetworkId;
+
+    ObjectHandle invoke(ObjectHandle h, int code) override {
+        invocations.push_back(std::make_pair(h, code));
+        if (code == prop::ACT_REMOVE) return INVALID_HANDLE;
+        if (code == prop::ACT_ADD) {
+            auto it = addResults.find(h);
+            return it == addResults.end() ? INVALID_HANDLE : it->second;
+        }
+        lastAdder = nextAdder++;
+        return lastAdder;
+    }
+
+    void createNetwork(const std::string& id) override { createdNetworkId = id; }
 };
 
 } // namespace iidm::test

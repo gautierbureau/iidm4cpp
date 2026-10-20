@@ -8,15 +8,12 @@ namespace iidm {
 
 class BackendProvider;
 
-// Typed wrapper for the PowSyBl ActivePowerControl extension.
-// Serves both Generator (EXT_APC_*) and Battery (EXT_BAT_APC_*): both code blocks share
-// the same layout, so the wrapper only needs the block's EXISTS code as base.
+// The ActivePowerControl extension of a generator or a battery: an object of its own, from
+// Generator::getActivePowerControl() / Battery::getActivePowerControl().
 class ActivePowerControl {
 public:
     ActivePowerControl() = default;
-    explicit ActivePowerControl(ObjectHandle handle, BackendProvider* backend, int codeBase);
-    // Former signature, kept for compatibility: the code block is derived from droopCode.
-    ActivePowerControl(ObjectHandle handle, BackendProvider* backend, int droopCode, int participateCode);
+    explicit ActivePowerControl(ObjectHandle handle, BackendProvider* backend);
 
     bool isParticipate() const;
     ActivePowerControl& setParticipate(bool participate);
@@ -43,11 +40,8 @@ public:
     bool operator!=(const ActivePowerControl& other) const;
 
 private:
-    int code(int generatorCode) const;
-
-    HandleRef  handle_;
-    BackendProvider* backend_  = detail::nullBackend();
-    int              codeBase_ = 0;
+    HandleRef handle_;
+    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

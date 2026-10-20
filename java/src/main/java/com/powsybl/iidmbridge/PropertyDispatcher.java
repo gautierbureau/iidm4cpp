@@ -13,8 +13,10 @@ import com.powsybl.iidm.network.extensions.DiscreteMeasurements;
 import com.powsybl.iidm.network.extensions.Measurement;
 import com.powsybl.iidm.network.extensions.Measurements;
 import com.powsybl.iidm.network.extensions.ObservabilityArea;
+import com.powsybl.commons.extensions.Extendable;
 import com.powsybl.iidm.network.regulation.RegulationMode;
 import com.powsybl.iidm.network.regulation.VoltageRegulation;
+import com.powsybl.iidm.network.regulation.VoltageRegulationHolder;
 import com.powsybl.iidmbridge.graalvm.NetworkRegistry;
 import java.util.Collection;
 
@@ -49,10 +51,16 @@ public final class PropertyDispatcher {
         if (isThreeWtLegCode(property)) return threeWtLegDouble(obj, property);
         return switch (property) {
             case GEN_TARGET_P  -> ((Generator) obj).getTargetP();
-            case GEN_TARGET_Q  -> ((Generator) obj).getTargetQ();
-            case GEN_TARGET_V  -> ((Generator) obj).getTargetV();
             case GEN_MIN_P     -> ((Generator) obj).getMinP();
             case GEN_MAX_P     -> ((Generator) obj).getMaxP();
+            case GEN_RATED_S   -> ((Generator) obj).getRatedS();
+            case LOCAL_TARGET_V      -> ((VoltageRegulationHolder<?>) obj).getLocalTargetV();
+            case LOCAL_TARGET_Q      -> ((VoltageRegulationHolder<?>) obj).getLocalTargetQ();
+            case REGULATING_TARGET_V -> ((VoltageRegulationHolder<?>) obj).getRegulatingTargetV();
+            case REGULATING_TARGET_Q -> ((VoltageRegulationHolder<?>) obj).getRegulatingTargetQ();
+            case VR_TARGET_VALUE    -> ((VoltageRegulation) obj).getTargetValue();
+            case VR_TARGET_DEADBAND -> ((VoltageRegulation) obj).getTargetDeadband();
+            case VR_SLOPE           -> ((VoltageRegulation) obj).getSlope();
             case LOAD_P0       -> ((Load) obj).getP0();
             case LOAD_Q0       -> ((Load) obj).getQ0();
             case TERMINAL_P    -> ((Terminal) obj).getP();
@@ -96,10 +104,10 @@ public final class PropertyDispatcher {
             case VSC_REACTIVE_POWER_SETPOINT -> ((VscConverterStation) obj).getReactivePowerSetpoint();
             case LCC_LOSS_FACTOR  -> ((LccConverterStation) obj).getLossFactor();
             case LCC_POWER_FACTOR -> ((LccConverterStation) obj).getPowerFactor();
-            case EXT_APC_DROOP -> ext(obj, ActivePowerControl.class).getDroop();
-            case EXT_APC_PARTICIPATION_FACTOR, EXT_BAT_APC_PARTICIPATION_FACTOR -> activePowerControl(obj).getParticipationFactor();
-            case EXT_APC_MIN_TARGET_P, EXT_BAT_APC_MIN_TARGET_P -> activePowerControl(obj).getMinTargetP().orElse(Double.NaN);
-            case EXT_APC_MAX_TARGET_P, EXT_BAT_APC_MAX_TARGET_P -> activePowerControl(obj).getMaxTargetP().orElse(Double.NaN);
+            case EXT_APC_DROOP -> activePowerControl(obj).getDroop();
+            case EXT_APC_PARTICIPATION_FACTOR -> activePowerControl(obj).getParticipationFactor();
+            case EXT_APC_MIN_TARGET_P -> activePowerControl(obj).getMinTargetP().orElse(Double.NaN);
+            case EXT_APC_MAX_TARGET_P -> activePowerControl(obj).getMaxTargetP().orElse(Double.NaN);
             case EXT_CRC_Q_PERCENT -> ext(obj, CoordinatedReactiveControl.class).getQPercent();
             case EXT_HADAPC_DROOP -> ext(obj, HvdcAngleDroopActivePowerControl.class).getDroop();
             case EXT_HADAPC_P0 -> ext(obj, HvdcAngleDroopActivePowerControl.class).getP0();
@@ -119,7 +127,6 @@ public final class PropertyDispatcher {
             case BAT_MAX_P    -> ((Battery) obj).getMaxP();
             case BAT_MIN_Q    -> ((Battery) obj).getReactiveLimits(MinMaxReactiveLimits.class).getMinQ();
             case BAT_MAX_Q    -> ((Battery) obj).getReactiveLimits(MinMaxReactiveLimits.class).getMaxQ();
-            case EXT_BAT_APC_DROOP -> ext(obj, ActivePowerControl.class).getDroop();
             // ShuntCompensator total B for current section count
             case SHUNT_B -> ((ShuntCompensator) obj).getB();
             // Generator reactive limits (min-max kind)
@@ -183,14 +190,24 @@ public final class PropertyDispatcher {
     }
 
     public static void setDouble(Object obj, int property, double value) {
+        if (obj instanceof Creation.PendingAdd adder) {
+            Creation.setDouble(adder, property, value);
+            return;
+        }
         if (isThreeWtLegCode(property)) {
             setThreeWtLegDouble(obj, property, value);
             return;
         }
         switch (property) {
             case GEN_TARGET_P  -> ((Generator) obj).setTargetP(value);
-            case GEN_TARGET_Q  -> ((Generator) obj).setTargetQ(value);
-            case GEN_TARGET_V  -> ((Generator) obj).setTargetV(value);
+            case GEN_MIN_P     -> ((Generator) obj).setMinP(value);
+            case GEN_MAX_P     -> ((Generator) obj).setMaxP(value);
+            case GEN_RATED_S   -> ((Generator) obj).setRatedS(value);
+            case LOCAL_TARGET_V -> ((VoltageRegulationHolder<?>) obj).setLocalTargetV(value);
+            case LOCAL_TARGET_Q -> ((VoltageRegulationHolder<?>) obj).setLocalTargetQ(value);
+            case VR_TARGET_VALUE    -> ((VoltageRegulation) obj).setTargetValue(value);
+            case VR_TARGET_DEADBAND -> ((VoltageRegulation) obj).setTargetDeadband(value);
+            case VR_SLOPE           -> ((VoltageRegulation) obj).setSlope(value);
             case LOAD_P0       -> ((Load) obj).setP0(value);
             case LOAD_Q0       -> ((Load) obj).setQ0(value);
             case TERMINAL_P    -> ((Terminal) obj).setP(value);
@@ -204,10 +221,10 @@ public final class PropertyDispatcher {
             case SVC_REACTIVE_POWER_SETPOINT -> ((StaticVarCompensator) obj).setReactivePowerSetpoint(value);
             case VSC_VOLTAGE_SETPOINT        -> ((VscConverterStation) obj).setVoltageSetpoint(value);
             case VSC_REACTIVE_POWER_SETPOINT -> ((VscConverterStation) obj).setReactivePowerSetpoint(value);
-            case EXT_APC_DROOP -> ext(obj, ActivePowerControl.class).setDroop(value);
-            case EXT_APC_PARTICIPATION_FACTOR, EXT_BAT_APC_PARTICIPATION_FACTOR -> activePowerControl(obj).setParticipationFactor(value);
-            case EXT_APC_MIN_TARGET_P, EXT_BAT_APC_MIN_TARGET_P -> activePowerControl(obj).setMinTargetP(value);
-            case EXT_APC_MAX_TARGET_P, EXT_BAT_APC_MAX_TARGET_P -> activePowerControl(obj).setMaxTargetP(value);
+            case EXT_APC_DROOP -> activePowerControl(obj).setDroop(value);
+            case EXT_APC_PARTICIPATION_FACTOR -> activePowerControl(obj).setParticipationFactor(value);
+            case EXT_APC_MIN_TARGET_P -> activePowerControl(obj).setMinTargetP(value);
+            case EXT_APC_MAX_TARGET_P -> activePowerControl(obj).setMaxTargetP(value);
             case EXT_CRC_Q_PERCENT -> ext(obj, CoordinatedReactiveControl.class).setQPercent(value);
             case EXT_HADAPC_DROOP -> ext(obj, HvdcAngleDroopActivePowerControl.class).setDroop((float) value);
             case EXT_HADAPC_P0 -> ext(obj, HvdcAngleDroopActivePowerControl.class).setP0((float) value);
@@ -218,7 +235,6 @@ public final class PropertyDispatcher {
             case TWO_WT_PTC_REG_VALUE -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().setRegulationValue(value);
             case BAT_TARGET_P -> ((Battery) obj).setTargetP(value);
             case BAT_TARGET_Q -> ((Battery) obj).setTargetQ(value);
-            case EXT_BAT_APC_DROOP -> ext(obj, ActivePowerControl.class).setDroop(value);
             case EXT_INJ_OBS_QUALITY_P + OBS_QUALITY_STD_DEV_OFF,
                  EXT_INJ_OBS_QUALITY_Q + OBS_QUALITY_STD_DEV_OFF,
                  EXT_INJ_OBS_QUALITY_V + OBS_QUALITY_STD_DEV_OFF,
@@ -243,6 +259,11 @@ public final class PropertyDispatcher {
         if (isThreeWtLegCode(property)) return threeWtLegInt(obj, property);
         return switch (property) {
             case GEN_ENERGY_SOURCE  -> ((Generator) obj).getEnergySource().ordinal();
+            case NETWORK_FORECAST_DISTANCE -> ((Network) obj).getForecastDistance();
+            case VR_MODE -> {
+                RegulationMode mode = ((VoltageRegulation) obj).getMode();
+                yield mode == null ? -1 : mode.ordinal();
+            }
             case LOAD_TYPE          -> ((Load) obj).getLoadType().ordinal();
             case VL_TOPOLOGY_KIND   -> ((VoltageLevel) obj).getTopologyKind().ordinal();
             case HVDC_CONVERTERS_MODE -> ((HvdcLine) obj).getConvertersMode().ordinal();
@@ -315,11 +336,18 @@ public final class PropertyDispatcher {
     }
 
     public static void setInt(Object obj, int property, int value) {
+        if (obj instanceof Creation.PendingAdd adder) {
+            Creation.setInt(adder, property, value);
+            return;
+        }
         if (isThreeWtLegCode(property)) {
             setThreeWtLegInt(obj, property, value);
             return;
         }
         switch (property) {
+            case GEN_ENERGY_SOURCE -> ((Generator) obj).setEnergySource(Creation.enumValue(EnergySource.class, value));
+            case NETWORK_FORECAST_DISTANCE -> ((Network) obj).setForecastDistance(value);
+            case VR_MODE -> ((VoltageRegulation) obj).setMode(value < 0 ? null : Creation.enumValue(RegulationMode.class, value));
             case HVDC_CONVERTERS_MODE ->
                 ((HvdcLine) obj).setConvertersMode(HvdcLine.ConvertersMode.values()[value]);
             case SVC_REGULATION_MODE -> setSvcRegulationModeFromCode((StaticVarCompensator) obj, value);
@@ -354,7 +382,11 @@ public final class PropertyDispatcher {
     public static boolean getBool(Object obj, int property) {
         if (isThreeWtLegCode(property)) return threeWtLegBool(obj, property);
         return switch (property) {
-            case GEN_VOLTAGE_REGULATOR_ON   -> ((Generator) obj).isVoltageRegulatorOn();
+            case FICTITIOUS                 -> ((Identifiable<?>) obj).isFictitious();
+            case GEN_CONDENSER              -> ((Generator) obj).isCondenser();
+            case REGULATING                 -> ((VoltageRegulationHolder<?>) obj).isRegulating();
+            case VR_REGULATING              -> ((VoltageRegulation) obj).isRegulating();
+            case VR_WITH_TERMINAL           -> ((VoltageRegulation) obj).isWithTerminal();
             case TERMINAL_CONNECTED         -> ((Terminal) obj).isConnected();
             case VSC_VOLTAGE_REGULATOR_ON   -> ((VscConverterStation) obj).isVoltageRegulatorOn();
             case SHUNT_VOLTAGE_REGULATOR_ON -> ((ShuntCompensator) obj).isVoltageRegulatorOn();
@@ -365,10 +397,7 @@ public final class PropertyDispatcher {
             case TWO_WT_RTC_REGULATING -> ((TwoWindingsTransformer) obj).getRatioTapChanger().isRegulating();
             case TWO_WT_PTC_EXISTS     -> ((TwoWindingsTransformer) obj).getPhaseTapChanger() != null;
             case TWO_WT_PTC_REGULATING -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().isRegulating();
-            case EXT_APC_EXISTS      -> ((Generator) obj).getExtension(ActivePowerControl.class) != null;
-            case EXT_APC_PARTICIPATE -> ext(obj, ActivePowerControl.class).isParticipate();
-            case EXT_BAT_APC_EXISTS      -> ((Battery) obj).getExtension(ActivePowerControl.class) != null;
-            case EXT_BAT_APC_PARTICIPATE -> ext(obj, ActivePowerControl.class).isParticipate();
+            case EXT_APC_PARTICIPATE -> activePowerControl(obj).isParticipate();
             case EXT_CRC_EXISTS      -> ((Generator) obj).getExtension(CoordinatedReactiveControl.class) != null;
             case EXT_HADAPC_EXISTS   -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class) != null;
             case EXT_HADAPC_ENABLED  -> ext(obj, HvdcAngleDroopActivePowerControl.class).isEnabled();
@@ -377,7 +406,6 @@ public final class PropertyDispatcher {
             case EXT_ST_EXISTS       -> ((VoltageLevel) obj).getExtension(SlackTerminal.class) != null;
             case EXT_ST_EMPTY        -> slackTerminal(obj).isEmpty();
             case OLG_EMPTY -> ((OperationalLimitsGroup) obj).isEmpty();
-            case LOAD_FICTITIOUS -> ((Load) obj).isFictitious();
             case TWO_WT_RTC_LOAD_TAP_CAP -> ((TwoWindingsTransformer) obj).getRatioTapChanger().hasLoadTapChangingCapabilities();
             // State estimation extensions
             case EXT_TWO_WT_TBE_EXISTS, EXT_TWO_WT_TBE_RTC, EXT_TWO_WT_TBE_PTC,
@@ -413,12 +441,17 @@ public final class PropertyDispatcher {
     }
 
     public static void setBool(Object obj, int property, boolean bval) {
+        if (obj instanceof Creation.PendingAdd adder) {
+            Creation.setBool(adder, property, bval);
+            return;
+        }
         if (isThreeWtLegCode(property)) {
             setThreeWtLegBool(obj, property, bval);
             return;
         }
         switch (property) {
-            case GEN_VOLTAGE_REGULATOR_ON -> ((Generator) obj).setVoltageRegulatorOn(bval);
+            case FICTITIOUS -> ((Identifiable<?>) obj).setFictitious(bval);
+            case VR_REGULATING -> ((VoltageRegulation) obj).setRegulating(bval);
             case TERMINAL_CONNECTED -> {
                 if (bval) ((Terminal) obj).connect();
                 else      ((Terminal) obj).disconnect();
@@ -428,8 +461,7 @@ public final class PropertyDispatcher {
             case SW_RETAINED -> ((Switch) obj).setRetained(bval);
             case TWO_WT_RTC_REGULATING -> ((TwoWindingsTransformer) obj).getRatioTapChanger().setRegulating(bval);
             case TWO_WT_PTC_REGULATING -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().setRegulating(bval);
-            case EXT_APC_PARTICIPATE     -> ext(obj, ActivePowerControl.class).setParticipate(bval);
-            case EXT_BAT_APC_PARTICIPATE -> ext(obj, ActivePowerControl.class).setParticipate(bval);
+            case EXT_APC_PARTICIPATE     -> activePowerControl(obj).setParticipate(bval);
             case EXT_HADAPC_ENABLED  -> ext(obj, HvdcAngleDroopActivePowerControl.class).setEnabled(bval);
             case EXT_TWO_WT_TBE_RTC, EXT_TWO_WT_TBE_PTC,
                  EXT_THREE_WT_TBE_RTC1, EXT_THREE_WT_TBE_RTC2, EXT_THREE_WT_TBE_RTC3,
@@ -460,6 +492,20 @@ public final class PropertyDispatcher {
                 yield bus != null ? bus.getId() : "";
             }
             case TERMINAL_CONNECTABLE_ID -> ((Terminal) obj).getConnectable().getId();
+            case TERMINAL_BUS_BREAKER_BUS_ID -> {
+                Bus bus = ((Terminal) obj).getBusBreakerView().getBus();
+                yield bus != null ? bus.getId() : "";
+            }
+            case TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID -> {
+                Bus bus = ((Terminal) obj).getBusBreakerView().getConnectableBus();
+                yield bus != null ? bus.getId() : "";
+            }
+            case SUBSTATION_TSO -> {
+                String tso = ((Substation) obj).getTso();
+                yield tso != null ? tso : "";
+            }
+            case NETWORK_CASE_DATE -> ((Network) obj).getCaseDate().toString();
+            case NETWORK_SOURCE_FORMAT -> ((Network) obj).getSourceFormat();
             case SHUNT_REGULATING_TERMINAL_ID -> {
                 Terminal rt = ((ShuntCompensator) obj).getRegulatingTerminal();
                 yield rt != null ? rt.getConnectable().getId() : "";
@@ -514,9 +560,15 @@ public final class PropertyDispatcher {
     }
 
     public static void setString(Object obj, int property, String value) {
+        if (obj instanceof Creation.PendingAdd adder) {
+            Creation.setString(adder, property, value);
+            return;
+        }
         switch (property) {
             case NAME    -> ((Identifiable<?>) obj).setName(value);
             case COUNTRY -> ((Substation) obj).setCountry(Country.valueOf(value));
+            case SUBSTATION_TSO -> ((Substation) obj).setTso(value);
+            case NETWORK_CASE_DATE -> ((Network) obj).setCaseDate(java.time.ZonedDateTime.parse(value));
             case DMEAS_VALUE_STRING -> ((DiscreteMeasurement) obj).setValue(value);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown string property for set: " + property);
         }
@@ -669,6 +721,7 @@ public final class PropertyDispatcher {
         return switch (relation) {
             case REL_TERMINAL  -> {
                 if (obj instanceof Injection<?> inj) yield inj.getTerminal();
+                if (obj instanceof VoltageRegulation vr) yield vr.getTerminal();
                 throw new BridgeErrors.PropertyNotFoundException("Object does not have a single terminal: " + obj);
             }
             case REL_TERMINAL1 -> {
@@ -737,6 +790,8 @@ public final class PropertyDispatcher {
             case REL_SELECTED_OLG3 -> ((ThreeWindingsTransformer) obj).getLeg3().getSelectedOperationalLimitsGroup().orElse(null);
             case REL_OLG_CURRENT_LIMITS -> ((OperationalLimitsGroup) obj).getCurrentLimits().orElse(null);
             case REL_CONNECTABLE -> ((Terminal) obj).getConnectable();
+            case VOLTAGE_REGULATION -> ((VoltageRegulationHolder<?>) obj).getVoltageRegulation();
+            case ACTIVE_POWER_CONTROL -> ((Extendable<?>) obj).getExtension(ActivePowerControl.class);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown relation: " + relation);
         };
     }
@@ -750,10 +805,40 @@ public final class PropertyDispatcher {
     }
 
     public static void setRelatedObject(Object obj, int relation, Object value) {
+        if (obj instanceof Creation.PendingAdd adder) {
+            Creation.setRelated(adder, relation, value);
+            return;
+        }
         switch (relation) {
             case REL_SLACK_TERMINAL -> slackTerminal(obj).setTerminal((Terminal) value);
+            // Only clearing (INVALID_HANDLE): new ones are created with invoke
+            case VOLTAGE_REGULATION -> Creation.clear(obj, relation, value);
+            case ACTIVE_POWER_CONTROL -> Creation.clear(obj, relation, value);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown relation for set: " + relation);
         }
+    }
+
+    // ── Creation and removal ──────────────────────────────────────────────
+
+    public static long invoke(long handle, int code) {
+        return registerOrZero(invokeObject(NetworkRegistry.lookup(handle), code));
+    }
+
+    /**
+     * {@code code} is a type code: starts a new object of that type and returns its adder (the network
+     * does not change); {@link PropertyCodes#ACT_ADD} on an adder: adds the object and returns it;
+     * {@link PropertyCodes#ACT_REMOVE} on an identifiable: removes it (returns null). Also starts
+     * changes that take several values ({@code invoke(regulation, REL_TERMINAL)}). See {@link Creation}.
+     */
+    public static Object invokeObject(Object obj, int code) {
+        return switch (code) {
+            case ACT_ADD -> Creation.add(obj);
+            case ACT_REMOVE -> {
+                Creation.remove(obj);
+                yield null;
+            }
+            default -> Creation.newAdder(obj, code);
+        };
     }
 
     private static long registerOrZero(Object obj) {
@@ -934,9 +1019,9 @@ public final class PropertyDispatcher {
         return StateEstimationDispatch.extension(obj, type);
     }
 
-    /** ActivePowerControl of any injection (Generator, Battery...). */
+    /** The ActivePowerControl extension object (from getRelated(injection, ACTIVE_POWER_CONTROL)). */
     static ActivePowerControl<?> activePowerControl(Object obj) {
-        return StateEstimationDispatch.extension(obj, ActivePowerControl.class);
+        return (ActivePowerControl<?>) obj;
     }
 
     static SlackTerminal slackTerminal(Object obj) {

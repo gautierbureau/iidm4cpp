@@ -30,6 +30,23 @@ std::vector<VoltageLevel> Substation::getVoltageLevels() const {
     return result;
 }
 
+std::string Substation::getTso() const {
+    return backend_->getString(handle_, prop::SUBSTATION_TSO);
+}
+
+Substation& Substation::setTso(const std::string& tso) {
+    backend_->setString(handle_, prop::SUBSTATION_TSO, tso);
+    return *this;
+}
+
+VoltageLevelAdder Substation::newVoltageLevel() {
+    return VoltageLevelAdder(backend_->invoke(handle_, prop::VOLTAGE_LEVEL), backend_);
+}
+
+void Substation::remove() {
+    backend_->invoke(handle_, prop::ACT_REMOVE);
+}
+
 bool Substation::operator==(const Substation& other) const {
     return handle_ == other.handle_;
 }

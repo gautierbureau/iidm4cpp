@@ -67,8 +67,9 @@ public final class BridgeErrors {
             return NETWORK_NOT_FOUND;
         }
         if (t instanceof PowsyblException || t instanceof IllegalArgumentException
-                || t instanceof UnsupportedOperationException) {
-            // The network model rejected the operation (invalid value, wrong topology...)
+                || t instanceof IllegalStateException || t instanceof UnsupportedOperationException) {
+            // The network model rejected the operation (invalid value, wrong topology, removal of
+            // a voltage level that still has branches...)
             return VALIDATION;
         }
         return GENERIC;

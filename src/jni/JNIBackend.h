@@ -40,10 +40,13 @@ public:
     ObjectHandle              getRelatedByIndex(ObjectHandle h, int relation, int index) const override;
     ObjectHandle              getRelatedByString(ObjectHandle h, int relation, const std::string& key) const override;
 
+    ObjectHandle invoke(ObjectHandle h, int code) override;
+
     ObjectHandle findById(int objectType, const std::string& id) const override;
     ObjectHandle getNetworkHandle() const override;
 
     void loadNetwork(const std::string& filePath) override;
+    void createNetwork(const std::string& id) override;
     void saveNetwork(const std::string& filePath) override;
     void loadNetworkBytes(const char* data, std::size_t length,
                           const std::string& filenameHint) override;
@@ -57,6 +60,8 @@ private:
     void cacheMethodIds();
     void cacheClass(jclass& out, const char* name);
     void bindRegisteredNetwork();
+    // After a network was (re)registered under networkId_: drops the old reference, binds the new one.
+    void rebindNetwork(const char* operation);
 
     // Global reference for a local one (and deletes the local one)
     ObjectHandle toHandle(jobject local) const;

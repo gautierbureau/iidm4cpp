@@ -56,14 +56,21 @@ class PropertyDispatcherGetDoubleTest {
         assertEquals(100.0, PropertyDispatcher.getDouble(reg(g), GEN_TARGET_P));
     }
 
-    @Test void gen_targetQ() {
+    @Test void gen_localTargetQ() {
         Generator g = buildGenerator(100, 20, 50, 200);
-        assertEquals(20.0, PropertyDispatcher.getDouble(reg(g), GEN_TARGET_Q));
+        assertEquals(20.0, PropertyDispatcher.getDouble(reg(g), LOCAL_TARGET_Q));
     }
 
-    @Test void gen_targetV() {
+    @Test void gen_voltageRegulation() {
         Generator g = buildGenerator(100, 20, 50, 200);
-        assertEquals(400.0, PropertyDispatcher.getDouble(reg(g), GEN_TARGET_V));
+        long vr = PropertyDispatcher.getRelated(reg(g), VOLTAGE_REGULATION);
+        // Local regulation: the target is the generator's local target V
+        assertTrue(Double.isNaN(PropertyDispatcher.getDouble(vr, VR_TARGET_VALUE)));
+        assertEquals(400.0, PropertyDispatcher.getDouble(reg(g), LOCAL_TARGET_V));
+        assertEquals(400.0, PropertyDispatcher.getDouble(reg(g), REGULATING_TARGET_V));
+        assertEquals(RegulationMode.VOLTAGE.ordinal(), PropertyDispatcher.getInt(vr, VR_MODE));
+        assertEquals(1, PropertyDispatcher.getBool(vr, VR_REGULATING));
+        assertEquals(1, PropertyDispatcher.getBool(reg(g), REGULATING));
     }
 
     @Test void gen_minP() {
@@ -82,8 +89,9 @@ class PropertyDispatcherGetDoubleTest {
         Bus b = addBus(vl);
         return vl.newGenerator()
                 .setId("G").setBus(b.getId()).setConnectableBus(b.getId())
-                .setTargetP(targetP).setTargetQ(targetQ).setTargetV(400.0)
-                .setMinP(minP).setMaxP(maxP).setVoltageRegulatorOn(true)
+                .setTargetP(targetP).setLocalTargetQ(targetQ)
+                .setMinP(minP).setMaxP(maxP)
+                .setLocalTargetV(400).newVoltageRegulation().withMode(RegulationMode.VOLTAGE).withRegulating(true).add()
                 .add();
     }
 

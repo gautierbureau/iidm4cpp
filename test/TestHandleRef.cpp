@@ -37,13 +37,13 @@ TEST(HandleRefTest, ReleasedWhenLastWrapperIsDestroyed) {
 
 TEST(HandleRefTest, SubWrappersShareTheHandle) {
     RecordingBackend backend;
-    ActivePowerControl apc;
+    CoordinatedReactiveControl crc;
     {
         Generator g(10, &backend);
-        apc = g.getActivePowerControl();   // same handle as the generator
+        crc = g.getCoordinatedReactiveControl();   // same handle as the generator
     }
     EXPECT_EQ(backend.releases(10), 0) << "still used by the extension wrapper";
-    apc = ActivePowerControl();
+    crc = CoordinatedReactiveControl();
     EXPECT_EQ(backend.releases(10), 1);
 }
 

@@ -17,6 +17,8 @@ and architecture notes.
 - Property codes are defined once, in `include/iidm/PropertyCodes.def`
   (`IIDM_CODE(NAME, value)`); `PropertyCodes.h` and the generated Java
   `PropertyCodes` both come from it — never hand-write a code elsewhere.
+- Port only current powsybl APIs: nothing marked `@Deprecated`, no extension from
+  `extensions.removed` (the package is not released: no compatibility to keep).
 - Setters must return `*this` for fluent chaining.
 - Component objects are move-only; never add copy constructors.
 - All C++ code lives in `namespace iidm`.

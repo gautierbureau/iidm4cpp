@@ -31,7 +31,8 @@ static void printNetwork(iidm::Network& network) {
                   << "  targetP=" << gen.getTargetP() << " MW"
                   << "  minP=" << gen.getMinP() << " MW"
                   << "  maxP=" << gen.getMaxP() << " MW"
-                  << "  voltageRegulator=" << (gen.isVoltageRegulatorOn() ? "ON" : "OFF")
+                  << "  regulating=" << (gen.isRegulating() ? "yes" : "no")
+                  << "  regulatingTargetV=" << gen.getRegulatingTargetV() << " kV"
                   << "\n";
         if (gen.hasActivePowerControl())
             std::cout << "    activePowerControl.droop="

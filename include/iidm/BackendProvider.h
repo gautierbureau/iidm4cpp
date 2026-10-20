@@ -59,6 +59,19 @@ public:
         throw IidmException("setRelated not supported by this backend (relation " + std::to_string(relation) + ")");
     }
 
+    // ── Creation and removal ─────────────────────────────────────────────
+    // invoke(parent, <type code>): starts a new object of that type under parent and returns an
+    //   adder; its fields are set with the setters and the object's own property codes, and
+    //   nothing changes in the network until invoke(adder, prop::ACT_ADD), which adds the object
+    //   and returns it (INVALID_HANDLE for a nested adder, e.g. a generator's voltage regulation).
+    // invoke(object, prop::ACT_REMOVE): removes an identifiable from its network.
+    // A change that takes several values at once goes the same way: invoke(regulation,
+    // prop::REL_TERMINAL), set its terminal and target value, then invoke(change, prop::ACT_ADD).
+    // Not pure so that existing BackendProvider implementations keep compiling.
+    virtual ObjectHandle invoke(ObjectHandle /*h*/, int code) {
+        throw IidmException("invoke not supported by this backend (code " + std::to_string(code) + ")");
+    }
+
     // ── Lookup by ID ─────────────────────────────────────────────────────
     virtual ObjectHandle findById(int objectType, const std::string& id) const = 0;
 
@@ -67,6 +80,10 @@ public:
 
     // ── Lifecycle ────────────────────────────────────────────────────────
     virtual void loadNetwork(const std::string& filePath) = 0;
+    // A new, empty network with this id becomes the backend's network.
+    virtual void createNetwork(const std::string& id) {
+        throw IidmException("createNetwork not supported by this backend (network " + id + ")");
+    }
     virtual void saveNetwork(const std::string& filePath) = 0;
 
     // ── In-memory load/save ──────────────────────────────────────────────

@@ -94,6 +94,7 @@ set(IIDM_BRIDGE_SOURCES
     src/DiscreteMeasurement.cpp
     src/ObservabilityArea.cpp
     src/Generator.cpp
+    src/VoltageRegulation.cpp
     src/Load.cpp
     src/Terminal.cpp
     src/Bus.cpp

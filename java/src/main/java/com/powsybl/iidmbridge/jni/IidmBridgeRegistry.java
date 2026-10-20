@@ -3,6 +3,7 @@ package com.powsybl.iidmbridge.jni;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.serde.NetworkSerDe;
 import com.powsybl.iidmbridge.BridgeErrors;
+import com.powsybl.iidmbridge.Creation;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -121,6 +122,16 @@ public final class IidmBridgeRegistry {
         } catch (java.io.IOException e) {
             throw new IllegalStateException("Failed to read network bytes", e);
         }
+    }
+
+    /**
+     * Called from JNI to create an empty network and register it under the given id.
+     *
+     * @param id        identifier to register under
+     * @param networkId id of the new network
+     */
+    public static void createNetwork(String id, String networkId) {
+        register(id, Creation.createNetwork(networkId));
     }
 
     /**

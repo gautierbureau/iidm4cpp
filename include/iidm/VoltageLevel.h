@@ -4,6 +4,9 @@
 #include <iidm/ObjectHandle.h>
 #include <iidm/Enums.h>
 #include <iidm/Bus.h>
+#include <iidm/BusAdder.h>
+#include <iidm/GeneratorAdder.h>
+#include <iidm/LoadAdder.h>
 #include <iidm/SlackTerminal.h>
 #include <iidm/BusbarSection.h>
 #include <iidm/Switch.h>
@@ -61,6 +64,8 @@ public:
         Bus getBus1(const std::string& switchId) const;
         Bus getBus2(const std::string& switchId) const;
 
+        BusAdder newBus();
+
         bool isValid() const { return handle_ != INVALID_HANDLE; }
 
     private:
@@ -99,6 +104,13 @@ public:
 
     NodeBreakerView getNodeBreakerView() const;
     BusBreakerView  getBusBreakerView()  const;
+
+    // ── Creation and removal ─────────────────────────────────────────────────
+    GeneratorAdder newGenerator();
+    LoadAdder      newLoad();
+    // Removes the voltage level and its equipment; refused (ValidationException) while
+    // branches connect it to other voltage levels
+    void remove();
 
     // ── State estimation extensions ──────────────────────────────────────
     bool hasObservabilityArea() const;
