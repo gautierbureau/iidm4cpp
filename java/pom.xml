@@ -18,6 +18,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <powsybl.core.version>7.4.0</powsybl.core.version>
         <graalvm.version>23.1.0</graalvm.version>
+        <property.codes.def>${project.basedir}/../include/iidm/PropertyCodes.def</property.codes.def>
+        <property.codes.java>${project.build.directory}/generated-sources/property-codes/com/powsybl/iidmbridge/PropertyCodes.java</property.codes.java>
     </properties>
 
     <dependencies>
@@ -62,6 +64,66 @@
 
     <build>
         <plugins>
+            <!-- PropertyCodes.java is generated from ../include/iidm/PropertyCodes.def, the
+                 single definition of the property codes shared with the C++ library:
+                 each "IIDM_CODE(NAME, value) // comment" line becomes a public constant. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>generate-property-codes</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <concat destfile="${property.codes.java}" encoding="UTF-8" outputencoding="UTF-8" fixlastline="yes">
+                                    <header filtering="no">// Generated from include/iidm/PropertyCodes.def by java/pom.xml. Do not edit.
+package com.powsybl.iidmbridge;
+
+public final class PropertyCodes {
+
+    private PropertyCodes() {}
+
+</header>
+                                    <path path="${property.codes.def}"/>
+                                    <footer filtering="no">}
+</footer>
+                                    <filterchain>
+                                        <tokenfilter>
+                                            <replaceregex pattern="^(\s*)IIDM_CODE\((\w+),\s*(-?\d+)\)(.*)$"
+                                                          replace="    public static final int \2 = \3;\4"/>
+                                            <replaceregex pattern="^(\s*)(//.*)$" replace="    \2"/>
+                                        </tokenfilter>
+                                    </filterchain>
+                                </concat>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <id>add-generated-sources</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.build.directory}/generated-sources/property-codes</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
