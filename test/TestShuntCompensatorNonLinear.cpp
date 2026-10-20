@@ -66,33 +66,9 @@ TEST_F(ShuntNonLinearTest, EmptySectionsWhenNoneRegistered) {
     EXPECT_EQ(sections.size(), 0u);
 }
 
-// ── Voltage regulator properties ──────────────────────────────────────────────
+// ── Regulating terminal (the voltage regulation: see TestVoltageRegulationHolder) ──
 
 static constexpr ObjectHandle TERM_HANDLE2 = 60;
-
-TEST_F(ShuntNonLinearTest, IsVoltageRegulatorOn) {
-    backend.bools[{SHUNT_HANDLE, prop::SHUNT_VOLTAGE_REGULATOR_ON}] = true;
-    ShuntCompensator sc(SHUNT_HANDLE, &backend);
-    EXPECT_TRUE(sc.isVoltageRegulatorOn());
-}
-
-TEST_F(ShuntNonLinearTest, IsVoltageRegulatorOff) {
-    backend.bools[{SHUNT_HANDLE, prop::SHUNT_VOLTAGE_REGULATOR_ON}] = false;
-    ShuntCompensator sc(SHUNT_HANDLE, &backend);
-    EXPECT_FALSE(sc.isVoltageRegulatorOn());
-}
-
-TEST_F(ShuntNonLinearTest, GetTargetV) {
-    backend.doubles[{SHUNT_HANDLE, prop::SHUNT_TARGET_V}] = 400.0;
-    ShuntCompensator sc(SHUNT_HANDLE, &backend);
-    EXPECT_DOUBLE_EQ(sc.getTargetV(), 400.0);
-}
-
-TEST_F(ShuntNonLinearTest, GetRegulatingTerminalId) {
-    backend.strings[{SHUNT_HANDLE, prop::SHUNT_REGULATING_TERMINAL_ID}] = "BUS1";
-    ShuntCompensator sc(SHUNT_HANDLE, &backend);
-    EXPECT_EQ(sc.getRegulatingTerminalId(), "BUS1");
-}
 
 TEST_F(ShuntNonLinearTest, GetRegulatingTerminal) {
     backend.related[{SHUNT_HANDLE, prop::REL_REGULATING_TERMINAL}] = TERM_HANDLE2;

@@ -32,10 +32,8 @@ class IdentifiableDispatchTest {
             .newLinearModel().setBPerSection(1e-5).setMaximumSectionCount(2).add().add();
         network.newLine().setId("LINE").setVoltageLevel1("VL1").setBus1("B1").setVoltageLevel2("VL2").setBus2("B2")
             .setR(1).setX(10).add();
-        vl1.newVscConverterStation().setId("VSC1").setBus("B1").setLossFactor(0.01f).setVoltageRegulatorOn(false)
-            .setReactivePowerSetpoint(0).add();
-        vl2.newVscConverterStation().setId("VSC2").setBus("B2").setLossFactor(0.02f).setVoltageRegulatorOn(false)
-            .setReactivePowerSetpoint(0).add();
+        vl1.newVscConverterStation().setId("VSC1").setBus("B1").setLossFactor(0.01f).setLocalTargetQ(0).add();
+        vl2.newVscConverterStation().setId("VSC2").setBus("B2").setLossFactor(0.02f).setLocalTargetQ(0).add();
         network.newHvdcLine().setId("HVDC").setConverterStationId1("VSC1").setConverterStationId2("VSC2")
             .setR(1).setNominalV(400).setMaxP(100).setActivePowerSetpoint(50)
             .setConvertersMode(HvdcLine.ConvertersMode.SIDE_1_RECTIFIER_SIDE_2_INVERTER).add();

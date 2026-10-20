@@ -192,14 +192,12 @@ class PropertyDispatcherGetDoubleTest {
         assertEquals(HvdcConverterStation.HvdcType.VSC.ordinal(), PropertyDispatcher.getInt(reg(vsc), CONVERTER_STATION_HVDC_TYPE));
     }
 
-    @Test void vsc_voltageSetpoint() {
+    @Test void vsc_localTargets() {
         VscConverterStation vsc = buildVscConverterStation(0.011f);
-        assertEquals(400.0, PropertyDispatcher.getDouble(reg(vsc), VSC_VOLTAGE_SETPOINT));
-    }
-
-    @Test void vsc_reactivePowerSetpoint() {
-        VscConverterStation vsc = buildVscConverterStation(0.011f);
-        assertEquals(50.0, PropertyDispatcher.getDouble(reg(vsc), VSC_REACTIVE_POWER_SETPOINT));
+        assertEquals(400.0, PropertyDispatcher.getDouble(reg(vsc), LOCAL_TARGET_V));
+        assertEquals(50.0, PropertyDispatcher.getDouble(reg(vsc), LOCAL_TARGET_Q));
+        assertEquals(1, PropertyDispatcher.getBool(reg(vsc), REGULATING));
+        assertEquals(400.0, PropertyDispatcher.getDouble(reg(vsc), REGULATING_TARGET_V));
     }
 
     // ── StaticVarCompensator ─────────────────────────────────────────────────
@@ -208,88 +206,61 @@ class PropertyDispatcherGetDoubleTest {
         Substation s = addSubstation();
         VoltageLevel vl = addVoltageLevel(s, 400);
         Bus b = addBus(vl);
-        // SVC regulation requires a terminal — use a load on the same VL
-        Load refLoad = vl.newLoad().setId("LSVC").setBus(b.getId()).setConnectableBus(b.getId())
-                .setP0(0).setQ0(0).add();
         StaticVarCompensator svc = vl.newStaticVarCompensator().setId("SVC")
                 .setBus(b.getId()).setConnectableBus(b.getId())
                 .setBmin(-1e-4).setBmax(1e-4)
-                .setVoltageSetpoint(400).setReactivePowerSetpoint(0)
-                .setRegulationMode(RegulationMode.VOLTAGE)
-                .setRegulatingTerminal(refLoad.getTerminal())
-                .setRegulating(true)
+                .setLocalTargetV(400).setLocalTargetQ(0)
+                .newVoltageRegulation().withMode(RegulationMode.VOLTAGE).withRegulating(true).add()
                 .add();
-        assertEquals(-1e-4, PropertyDispatcher.getDouble(reg(svc), SVC_B_MIN), 1e-9);
-        assertEquals( 1e-4, PropertyDispatcher.getDouble(reg(svc), SVC_B_MAX), 1e-9);
-        assertEquals(400.0, PropertyDispatcher.getDouble(reg(svc), SVC_VOLTAGE_SETPOINT));
+        long h = reg(svc);
+        assertEquals(-1e-4, PropertyDispatcher.getDouble(h, SVC_B_MIN), 1e-9);
+        assertEquals( 1e-4, PropertyDispatcher.getDouble(h, SVC_B_MAX), 1e-9);
+        PropertyDispatcher.setDouble(h, SVC_B_MAX, 2e-4);
+        assertEquals(2e-4, svc.getBmax(), 1e-12);
+        assertEquals(400.0, PropertyDispatcher.getDouble(h, LOCAL_TARGET_V));
     }
 
-    // SVC_REGULATION_MODE must report OFF (= 2) when the SVC is not regulating —
-    // powsybl-core's RegulationMode enum no longer carries an OFF value, so we route it
-    // through isRegulating() to keep iidm4cpp's
-    // StaticVarCompensatorRegulationMode {VOLTAGE=0, REACTIVE_POWER=1, OFF=2} faithful.
-    @Test void svc_regulationMode_offWhenNotRegulating() {
+    // The former SVC regulation mode and VoltagePerReactivePowerControl slope are the core
+    // VoltageRegulation's: mode, regulating, slope, and the mode lists of the holder.
+    @Test void svc_voltageRegulation() {
         Substation s = addSubstation();
         VoltageLevel vl = addVoltageLevel(s, 400);
         Bus b = addBus(vl);
-        Load refLoad = vl.newLoad().setId("LSVC2").setBus(b.getId()).setConnectableBus(b.getId())
-                .setP0(0).setQ0(0).add();
         StaticVarCompensator svc = vl.newStaticVarCompensator().setId("SVC2")
                 .setBus(b.getId()).setConnectableBus(b.getId())
                 .setBmin(-1e-4).setBmax(1e-4)
-                .setVoltageSetpoint(400).setReactivePowerSetpoint(0)
-                .setRegulationMode(RegulationMode.REACTIVE_POWER)
-                .setRegulatingTerminal(refLoad.getTerminal())
-                .setRegulating(false)
+                .setLocalTargetV(400).setLocalTargetQ(0)
+                .newVoltageRegulation().withMode(RegulationMode.VOLTAGE_PER_REACTIVE_POWER).withSlope(0.02)
+                    .withRegulating(false).add()
                 .add();
         long h = reg(svc);
-        // Even though the underlying mode is REACTIVE_POWER, isRegulating()=false → OFF.
-        assertEquals(2, PropertyDispatcher.getInt(h, SVC_REGULATION_MODE));
+        assertArrayEquals(new int[0], PropertyDispatcher.getIntList(h, REGULATING_MODES));
+        assertArrayEquals(new int[] {RegulationMode.VOLTAGE_PER_REACTIVE_POWER.ordinal()}, PropertyDispatcher.getIntList(h, WITH_MODES));
+        long regulation = PropertyDispatcher.getRelated(h, VOLTAGE_REGULATION);
+        assertEquals(0.02, PropertyDispatcher.getDouble(regulation, VR_SLOPE), 1e-12);
+        PropertyDispatcher.setBool(regulation, VR_REGULATING, 1);
+        assertArrayEquals(new int[] {RegulationMode.VOLTAGE_PER_REACTIVE_POWER.ordinal()}, PropertyDispatcher.getIntList(h, REGULATING_MODES));
+        assertEquals(0, PropertyDispatcher.getBool(h, HAS_REGULATING_TERMINAL));
+        assertEquals(svc.getTerminal(), PropertyDispatcher.getRelatedObject(svc, REL_REGULATING_TERMINAL));
 
-        // Flipping back to regulating exposes the real mode.
-        svc.setRegulating(true);
-        assertEquals(1, PropertyDispatcher.getInt(h, SVC_REGULATION_MODE));
-        svc.setRegulationMode(RegulationMode.VOLTAGE);
-        assertEquals(0, PropertyDispatcher.getInt(h, SVC_REGULATION_MODE));
-
-        // Setter: writing 2 (OFF) must turn isRegulating() off; writing 0/1 must turn it on.
-        PropertyDispatcher.setInt(h, SVC_REGULATION_MODE, 2);
-        assertFalse(svc.isRegulating());
-        PropertyDispatcher.setInt(h, SVC_REGULATION_MODE, 1);
-        assertTrue(svc.isRegulating());
-        assertEquals(RegulationMode.REACTIVE_POWER, svc.getRegulationMode());
-
-        // VOLTAGE_PER_REACTIVE_POWER (powsybl-core >= 7.4) maps to code 3.
-        svc.getVoltageRegulation().setSlope(0.01);
-        PropertyDispatcher.setInt(h, SVC_REGULATION_MODE, 3);
-        assertEquals(RegulationMode.VOLTAGE_PER_REACTIVE_POWER, svc.getRegulationMode());
-        assertEquals(3, PropertyDispatcher.getInt(h, SVC_REGULATION_MODE));
+        // No regulation: counts as REACTIVE_POWER
+        svc.removeVoltageRegulation();
+        assertArrayEquals(new int[] {RegulationMode.REACTIVE_POWER.ordinal()}, PropertyDispatcher.getIntList(h, REGULATING_MODES));
+        assertArrayEquals(new int[] {RegulationMode.REACTIVE_POWER.ordinal()}, PropertyDispatcher.getIntList(h, WITH_MODES));
     }
 
-    // The VoltagePerReactivePowerControl extension was removed in powsybl-core 7.4; the bridge
-    // maps EXT_VPRC_* onto the core VoltageRegulation in VOLTAGE_PER_REACTIVE_POWER mode.
-    @Test void svc_voltagePerReactivePowerControl_mapsToVoltageRegulation() {
+    @Test void holder_targetsFromSolvedValues() {
         Substation s = addSubstation();
         VoltageLevel vl = addVoltageLevel(s, 400);
         Bus b = addBus(vl);
-        StaticVarCompensator svc = vl.newStaticVarCompensator().setId("SVC3")
-                .setBus(b.getId()).setConnectableBus(b.getId())
-                .setBmin(-1e-4).setBmax(1e-4)
-                .setVoltageSetpoint(400).setReactivePowerSetpoint(0)
-                .setRegulationMode(RegulationMode.VOLTAGE)
-                .setRegulating(true)
-                .add();
-        long h = reg(svc);
-        assertEquals(0, PropertyDispatcher.getBool(h, EXT_VPRC_EXISTS));
-        assertThrows(IllegalStateException.class, () -> PropertyDispatcher.getDouble(h, EXT_VPRC_SLOPE));
-
-        svc.getVoltageRegulation().setSlope(0.02);
-        svc.getVoltageRegulation().setMode(RegulationMode.VOLTAGE_PER_REACTIVE_POWER);
-        assertEquals(1, PropertyDispatcher.getBool(h, EXT_VPRC_EXISTS));
-        assertEquals(0.02, PropertyDispatcher.getDouble(h, EXT_VPRC_SLOPE), 1e-12);
-
-        PropertyDispatcher.setDouble(h, EXT_VPRC_SLOPE, 0.05);
-        assertEquals(0.05, svc.getVoltageRegulation().getSlope(), 1e-12);
+        Battery bat = vl.newBattery().setId("BATQ").setBus(b.getId()).setConnectableBus(b.getId())
+                .setTargetP(10).setMinP(0).setMaxP(50).setLocalTargetQ(0).add();
+        bat.getTerminal().setQ(-7);
+        assertNull(PropertyDispatcher.invokeObject(bat, ACT_SET_TARGET_Q_TO_Q));
+        assertEquals(7.0, bat.getLocalTargetQ());
+        b.setV(402);
+        assertNull(PropertyDispatcher.invokeObject(bat, ACT_SET_TARGET_V_TO_V));
+        assertEquals(402.0, bat.getLocalTargetV());
     }
 
     // ── DanglingLine (BoundaryLine in powsybl-core >= 7.4) ───────────────────────────────────────────────────────────────────────────
@@ -357,9 +328,9 @@ class PropertyDispatcherGetDoubleTest {
         Bus b = addBus(vl);
         Battery bat = vl.newBattery().setId("BAT")
                 .setBus(b.getId()).setConnectableBus(b.getId())
-                .setTargetP(30).setTargetQ(5).setMinP(0).setMaxP(50).add();
+                .setTargetP(30).setLocalTargetQ(5).setMinP(0).setMaxP(50).add();
         assertEquals(30.0, PropertyDispatcher.getDouble(reg(bat), BAT_TARGET_P));
-        assertEquals(5.0,  PropertyDispatcher.getDouble(reg(bat), BAT_TARGET_Q));
+        assertEquals(5.0,  PropertyDispatcher.getDouble(reg(bat), LOCAL_TARGET_Q));
         assertEquals(0.0,  PropertyDispatcher.getDouble(reg(bat), BAT_MIN_P));
         assertEquals(50.0, PropertyDispatcher.getDouble(reg(bat), BAT_MAX_P));
     }
@@ -407,7 +378,8 @@ class PropertyDispatcherGetDoubleTest {
                 .setVoltageLevel1(vl1.getId()).setBus1(b1.getId()).setConnectableBus1(b1.getId())
                 .setVoltageLevel2(vl2.getId()).setBus2(b2.getId()).setConnectableBus2(b2.getId())
                 .setR(1).setX(10).setG1(0).setB1(0).setG2(0).setB2(0).add();
-        line.newCurrentLimits1().setPermanentLimit(1000).add();
+        line.newOperationalLimitsGroup1("DEFAULT").newCurrentLimits().setPermanentLimit(1000).add();
+        line.setSelectedOperationalLimitsGroup1("DEFAULT");
         LoadingLimits cl = line.getCurrentLimits1().orElseThrow();
         assertEquals(1000.0, PropertyDispatcher.getDouble(reg(cl), CL_PERMANENT_LIMIT));
     }
@@ -483,9 +455,8 @@ class PropertyDispatcherGetDoubleTest {
         return vl.newVscConverterStation().setId("VSC" + lossFactor)
                 .setBus(b.getId()).setConnectableBus(b.getId())
                 .setLossFactor(lossFactor)
-                .setVoltageRegulatorOn(true)
-                .setVoltageSetpoint(400)
-                .setReactivePowerSetpoint(50)
+                .setLocalTargetV(400).setLocalTargetQ(50)
+                .newVoltageRegulation().withMode(RegulationMode.VOLTAGE).withRegulating(true).add()
                 .add();
     }
 

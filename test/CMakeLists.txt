@@ -13,7 +13,6 @@ set(TEST_SOURCES
     TestCoordinatedReactiveControl.cpp
     TestHvdcAngleDroopActivePowerControl.cpp
     TestHvdcOperatorActivePowerRange.cpp
-    TestVoltagePerReactivePowerControl.cpp
     TestSlackTerminal.cpp
     TestToBeEstimated.cpp
     TestObservability.cpp
@@ -29,6 +28,7 @@ set(TEST_SOURCES
     TestBusbarSection.cpp
     TestConnect.cpp
     TestIdentifiable.cpp
+    TestVoltageRegulationHolder.cpp
     TestBackendSelector.cpp
     TestIntegration.cpp
     TestShuntCompensator.cpp

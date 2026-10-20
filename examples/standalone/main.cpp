@@ -121,10 +121,10 @@ static void printNetwork(iidm::Network& network) {
     std::cout << "\n" << svcs.size() << " static var compensator(s):\n";
     for (const auto& svc : svcs) {
         std::cout << "  " << svc.getId()
-                  << "  voltageSetpoint=" << svc.getVoltageSetpoint() << " kV\n";
-        if (svc.hasVoltagePerReactivePowerControl())
+                  << "  voltageSetpoint=" << svc.getLocalTargetV() << " kV\n";
+        if (svc.isWithMode(iidm::RegulationMode::VOLTAGE_PER_REACTIVE_POWER))
             std::cout << "    voltagePerReactivePowerControl.slope="
-                      << svc.getVoltagePerReactivePowerControl().getSlope() << "\n";
+                      << svc.getVoltageRegulation()->getSlope() << "\n";
     }
 
     // Shunt compensators
@@ -150,7 +150,7 @@ static void printNetwork(iidm::Network& network) {
         for (const auto& bat : batteries) {
             std::cout << "  " << bat.getId()
                       << "  targetP=" << bat.getTargetP() << " MW"
-                      << "  targetQ=" << bat.getTargetQ() << " Mvar"
+                      << "  targetQ=" << bat.getLocalTargetQ() << " Mvar"
                       << "  minP=" << bat.getMinP() << " maxP=" << bat.getMaxP() << "\n";
         }
     }

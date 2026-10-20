@@ -18,6 +18,7 @@ import com.powsybl.iidm.network.regulation.RegulationMode;
 import com.powsybl.iidm.network.regulation.VoltageRegulation;
 import com.powsybl.iidm.network.regulation.VoltageRegulationHolder;
 import com.powsybl.iidmbridge.graalvm.NetworkRegistry;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.OptionalInt;
@@ -99,10 +100,6 @@ public final class PropertyDispatcher {
             case SHUNT_G_PER_SECTION -> ((ShuntCompensator) obj).getModel(ShuntCompensatorLinearModel.class).getGPerSection();
             case SVC_B_MIN                   -> ((StaticVarCompensator) obj).getBmin();
             case SVC_B_MAX                   -> ((StaticVarCompensator) obj).getBmax();
-            case SVC_VOLTAGE_SETPOINT        -> ((StaticVarCompensator) obj).getVoltageSetpoint();
-            case SVC_REACTIVE_POWER_SETPOINT -> ((StaticVarCompensator) obj).getReactivePowerSetpoint();
-            case VSC_VOLTAGE_SETPOINT        -> ((VscConverterStation) obj).getVoltageSetpoint();
-            case VSC_REACTIVE_POWER_SETPOINT -> ((VscConverterStation) obj).getReactivePowerSetpoint();
             case CONVERTER_STATION_LOSS_FACTOR -> ((HvdcConverterStation<?>) obj).getLossFactor();
             case LCC_POWER_FACTOR -> ((LccConverterStation) obj).getPowerFactor();
             case EXT_APC_DROOP -> activePowerControl(obj).getDroop();
@@ -114,7 +111,6 @@ public final class PropertyDispatcher {
             case EXT_HADAPC_P0 -> ext(obj, HvdcAngleDroopActivePowerControl.class).getP0();
             case EXT_HOAR_OPR_CS1_TO_CS2 -> ext(obj, HvdcOperatorActivePowerRange.class).getOprFromCS1toCS2();
             case EXT_HOAR_OPR_CS2_TO_CS1 -> ext(obj, HvdcOperatorActivePowerRange.class).getOprFromCS2toCS1();
-            case EXT_VPRC_SLOPE -> vprcRegulation(obj).getSlope();
             case TWO_WT_RTC_TARGET_V        -> ((TwoWindingsTransformer) obj).getRatioTapChanger().getTargetV();
             case TWO_WT_PTC_REG_VALUE       -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().getRegulationValue();
             case TWO_WT_RTC_TARGET_DEADBAND -> ((TwoWindingsTransformer) obj).getRatioTapChanger().getTargetDeadband();
@@ -123,7 +119,6 @@ public final class PropertyDispatcher {
             case BBS_ANGLE -> ((BusbarSection) obj).getAngle();
             // Battery
             case BAT_TARGET_P -> ((Battery) obj).getTargetP();
-            case BAT_TARGET_Q -> ((Battery) obj).getTargetQ();
             case BAT_MIN_P    -> ((Battery) obj).getMinP();
             case BAT_MAX_P    -> ((Battery) obj).getMaxP();
             case BAT_MIN_Q    -> ((Battery) obj).getReactiveLimits(MinMaxReactiveLimits.class).getMinQ();
@@ -159,7 +154,6 @@ public final class PropertyDispatcher {
             case PTC_STEP_X     -> ((PhaseTapChangerStep) obj).getX();
             case PTC_STEP_G     -> ((PhaseTapChangerStep) obj).getG();
             case PTC_STEP_B     -> ((PhaseTapChangerStep) obj).getB();
-            case SHUNT_TARGET_V  -> ((ShuntCompensator) obj).getTargetV();
             // ShuntCompensatorNonLinearModel.Section (non-linear model)
             case SHUNT_SECTION_B -> ((ShuntCompensatorNonLinearModel.Section) obj).getB();
             case SHUNT_SECTION_G -> ((ShuntCompensatorNonLinearModel.Section) obj).getG();
@@ -218,11 +212,9 @@ public final class PropertyDispatcher {
             case HVDC_ACTIVE_POWER_SETPOINT -> ((HvdcLine) obj).setActivePowerSetpoint(value);
             case DL_P0 -> ((BoundaryLine) obj).setP0(value);
             case DL_Q0 -> ((BoundaryLine) obj).setQ0(value);
-            case SVC_VOLTAGE_SETPOINT        -> ((StaticVarCompensator) obj).setVoltageSetpoint(value);
-            case SVC_REACTIVE_POWER_SETPOINT -> ((StaticVarCompensator) obj).setReactivePowerSetpoint(value);
-            case VSC_VOLTAGE_SETPOINT        -> ((VscConverterStation) obj).setVoltageSetpoint(value);
-            case VSC_REACTIVE_POWER_SETPOINT -> ((VscConverterStation) obj).setReactivePowerSetpoint(value);
             case CONVERTER_STATION_LOSS_FACTOR -> ((HvdcConverterStation<?>) obj).setLossFactor((float) value);
+            case SVC_B_MIN -> ((StaticVarCompensator) obj).setBmin(value);
+            case SVC_B_MAX -> ((StaticVarCompensator) obj).setBmax(value);
             case EXT_APC_DROOP -> activePowerControl(obj).setDroop(value);
             case EXT_APC_PARTICIPATION_FACTOR -> activePowerControl(obj).setParticipationFactor(value);
             case EXT_APC_MIN_TARGET_P -> activePowerControl(obj).setMinTargetP(value);
@@ -232,11 +224,9 @@ public final class PropertyDispatcher {
             case EXT_HADAPC_P0 -> ext(obj, HvdcAngleDroopActivePowerControl.class).setP0((float) value);
             case EXT_HOAR_OPR_CS1_TO_CS2 -> ext(obj, HvdcOperatorActivePowerRange.class).setOprFromCS1toCS2((float) value);
             case EXT_HOAR_OPR_CS2_TO_CS1 -> ext(obj, HvdcOperatorActivePowerRange.class).setOprFromCS2toCS1((float) value);
-            case EXT_VPRC_SLOPE -> vprcRegulation(obj).setSlope(value);
             case TWO_WT_RTC_TARGET_V  -> ((TwoWindingsTransformer) obj).getRatioTapChanger().setTargetV(value);
             case TWO_WT_PTC_REG_VALUE -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().setRegulationValue(value);
             case BAT_TARGET_P -> ((Battery) obj).setTargetP(value);
-            case BAT_TARGET_Q -> ((Battery) obj).setTargetQ(value);
             case EXT_INJ_OBS_QUALITY_P + OBS_QUALITY_STD_DEV_OFF,
                  EXT_INJ_OBS_QUALITY_Q + OBS_QUALITY_STD_DEV_OFF,
                  EXT_INJ_OBS_QUALITY_V + OBS_QUALITY_STD_DEV_OFF,
@@ -275,7 +265,6 @@ public final class PropertyDispatcher {
             case LOAD_TYPE          -> ((Load) obj).getLoadType().ordinal();
             case VL_TOPOLOGY_KIND   -> ((VoltageLevel) obj).getTopologyKind().ordinal();
             case HVDC_CONVERTERS_MODE -> ((HvdcLine) obj).getConvertersMode().ordinal();
-            case SVC_REGULATION_MODE  -> svcRegulationModeToCode((StaticVarCompensator) obj);
             case SHUNT_SECTION_COUNT     -> ((ShuntCompensator) obj).getSectionCount();
             case SHUNT_MAX_SECTION_COUNT -> ((ShuntCompensator) obj).getMaximumSectionCount();
             case SW_KIND  -> ((Switch) obj).getKind().ordinal();
@@ -358,7 +347,6 @@ public final class PropertyDispatcher {
             case VR_MODE -> ((VoltageRegulation) obj).setMode(value < 0 ? null : Creation.enumValue(RegulationMode.class, value));
             case HVDC_CONVERTERS_MODE ->
                 ((HvdcLine) obj).setConvertersMode(HvdcLine.ConvertersMode.values()[value]);
-            case SVC_REGULATION_MODE -> setSvcRegulationModeFromCode((StaticVarCompensator) obj, value);
             case SHUNT_SECTION_COUNT ->
                 ((ShuntCompensator) obj).setSectionCount(value);
             case SHUNT_SOLVED_SECTION_COUNT -> ((ShuntCompensator) obj).setSolvedSectionCount(value);
@@ -418,11 +406,10 @@ public final class PropertyDispatcher {
             case EQUIVALENT                 -> ((Connectable<?>) obj).isEquivalent();
             case GEN_CONDENSER              -> ((Generator) obj).isCondenser();
             case REGULATING                 -> ((VoltageRegulationHolder<?>) obj).isRegulating();
+            case HAS_REGULATING_TERMINAL    -> ((VoltageRegulationHolder<?>) obj).hasRegulatingTerminal();
             case VR_REGULATING              -> ((VoltageRegulation) obj).isRegulating();
             case VR_WITH_TERMINAL           -> ((VoltageRegulation) obj).isWithTerminal();
             case TERMINAL_CONNECTED         -> ((Terminal) obj).isConnected();
-            case VSC_VOLTAGE_REGULATOR_ON   -> ((VscConverterStation) obj).isVoltageRegulatorOn();
-            case SHUNT_VOLTAGE_REGULATOR_ON -> ((ShuntCompensator) obj).isVoltageRegulatorOn();
             case TL_FICTITIOUS -> ((TemporaryLimit) obj).isFictitious();
             case SW_OPEN     -> ((Switch) obj).isOpen();
             case SW_RETAINED -> ((Switch) obj).isRetained();
@@ -435,7 +422,6 @@ public final class PropertyDispatcher {
             case EXT_HADAPC_EXISTS   -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class) != null;
             case EXT_HADAPC_ENABLED  -> ext(obj, HvdcAngleDroopActivePowerControl.class).isEnabled();
             case EXT_HOAR_EXISTS     -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class) != null;
-            case EXT_VPRC_EXISTS     -> isVoltagePerReactivePowerControl(obj);
             case EXT_ST_EXISTS       -> ((VoltageLevel) obj).getExtension(SlackTerminal.class) != null;
             case EXT_ST_EMPTY        -> slackTerminal(obj).isEmpty();
             case OLG_EMPTY -> ((OperationalLimitsGroup) obj).isEmpty();
@@ -486,7 +472,6 @@ public final class PropertyDispatcher {
             case FICTITIOUS -> ((Identifiable<?>) obj).setFictitious(bval);
             case EQUIVALENT -> ((Connectable<?>) obj).setEquivalent(bval);
             case VR_REGULATING -> ((VoltageRegulation) obj).setRegulating(bval);
-            case VSC_VOLTAGE_REGULATOR_ON -> ((VscConverterStation) obj).setVoltageRegulatorOn(bval);
             case SW_OPEN     -> ((Switch) obj).setOpen(bval);
             case SW_RETAINED -> ((Switch) obj).setRetained(bval);
             case TWO_WT_RTC_REGULATING -> ((TwoWindingsTransformer) obj).getRatioTapChanger().setRegulating(bval);
@@ -535,10 +520,6 @@ public final class PropertyDispatcher {
             }
             case NETWORK_CASE_DATE -> ((Network) obj).getCaseDate().toString();
             case NETWORK_SOURCE_FORMAT -> ((Network) obj).getSourceFormat();
-            case SHUNT_REGULATING_TERMINAL_ID -> {
-                Terminal rt = ((ShuntCompensator) obj).getRegulatingTerminal();
-                yield rt != null ? rt.getConnectable().getId() : "";
-            }
             case TWO_WT_RTC_REG_TERMINAL_ID -> {
                 Terminal rt = ((TwoWindingsTransformer) obj).getRatioTapChanger().getRegulationTerminal();
                 yield rt != null ? rt.getConnectable().getId() : "";
@@ -896,13 +877,7 @@ public final class PropertyDispatcher {
                 yield st.getTerminal();
             }
             case REL_CONNECTABLE_BUS -> ((Terminal) obj).getBusBreakerView().getConnectableBus();
-            case REL_REGULATING_TERMINAL -> {
-                if (obj instanceof ShuntCompensator sc) yield sc.getRegulatingTerminal();
-                if (obj instanceof StaticVarCompensator svc) yield svc.getRegulatingTerminal();
-                if (obj instanceof Generator gen) yield gen.getRegulatingTerminal();
-                if (obj instanceof VscConverterStation vsc) yield vsc.getRegulatingTerminal();
-                throw new BridgeErrors.PropertyNotFoundException("Object does not have a regulating terminal: " + obj);
-            }
+            case REL_REGULATING_TERMINAL -> ((VoltageRegulationHolder<?>) obj).getRegulatingTerminal();
             case REL_CURRENT_LIMITS1 -> {
                 if (obj instanceof ThreeWindingsTransformer twt)
                     yield twt.getLeg1().getCurrentLimits().orElse(null);
@@ -975,6 +950,14 @@ public final class PropertyDispatcher {
         return switch (code) {
             case ACT_CONNECT -> (obj instanceof Terminal t ? t.connect() : ((Connectable<?>) obj).connect()) ? obj : null;
             case ACT_DISCONNECT -> (obj instanceof Terminal t ? t.disconnect() : ((Connectable<?>) obj).disconnect()) ? obj : null;
+            case ACT_SET_TARGET_Q_TO_Q -> {
+                ((VoltageRegulationHolder<?>) obj).setTargetQToQ();
+                yield null;
+            }
+            case ACT_SET_TARGET_V_TO_V -> {
+                ((VoltageRegulationHolder<?>) obj).setTargetVToV();
+                yield null;
+            }
             case ACT_ADD -> Creation.add(obj);
             case ACT_REMOVE -> {
                 Creation.remove(obj);
@@ -997,6 +980,8 @@ public final class PropertyDispatcher {
     public static int[] getIntList(Object obj, int listCode) {
         return switch (listCode) {
             case VL_NBV_NODES -> ((VoltageLevel) obj).getNodeBreakerView().getNodes();
+            case REGULATING_MODES -> modes(((VoltageRegulationHolder<?>) obj)::isRegulatingWithMode);
+            case WITH_MODES       -> modes(((VoltageRegulationHolder<?>) obj)::isWithMode);
             case OBS_AREA_NODES -> StateEstimationDispatch.observabilityAreaNodes(obj);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown int list code: " + listCode);
         };
@@ -1181,57 +1166,8 @@ public final class PropertyDispatcher {
         return StateEstimationDispatch.extension(obj, SlackTerminal.class);
     }
 
-    // ── StaticVarCompensator regulation helpers ───────────────────────────
-    //
-    // iidm4cpp's StaticVarCompensatorRegulationMode is
-    //   {VOLTAGE = 0, REACTIVE_POWER = 1, OFF = 2, VOLTAGE_PER_REACTIVE_POWER = 3}.
-    // powsybl-core (>= 7.4) carries the mode on the core VoltageRegulation object and
-    // the "off" state through isRegulating(); OFF is reported when there is no
-    // regulation or when it is not regulating.
-
-    static final int SVC_MODE_OFF = 2;
-    static final int SVC_MODE_VOLTAGE_PER_REACTIVE_POWER = 3;
-
-    static int svcRegulationModeToCode(StaticVarCompensator svc) {
-        VoltageRegulation vr = svc.getVoltageRegulation();
-        if (vr == null || !vr.isRegulating() || vr.getMode() == null) {
-            return SVC_MODE_OFF;
-        }
-        return switch (vr.getMode()) {
-            case VOLTAGE -> 0;
-            case REACTIVE_POWER -> 1;
-            case VOLTAGE_PER_REACTIVE_POWER -> SVC_MODE_VOLTAGE_PER_REACTIVE_POWER;
-        };
-    }
-
-    static void setSvcRegulationModeFromCode(StaticVarCompensator svc, int code) {
-        RegulationMode mode = switch (code) {
-            case 0 -> RegulationMode.VOLTAGE;
-            case 1 -> RegulationMode.REACTIVE_POWER;
-            case SVC_MODE_OFF -> null;
-            case SVC_MODE_VOLTAGE_PER_REACTIVE_POWER -> RegulationMode.VOLTAGE_PER_REACTIVE_POWER;
-            default -> throw new IllegalArgumentException("Unknown SVC regulation mode code: " + code);
-        };
-        if (mode == null) {
-            svc.setRegulating(false);
-        } else {
-            svc.setRegulationMode(mode);
-            svc.setRegulating(true);
-        }
-    }
-
-    // The VoltagePerReactivePowerControl extension was removed in powsybl-core 7.4: the slope now
-    // lives on the core VoltageRegulation, in VOLTAGE_PER_REACTIVE_POWER mode. iidm4cpp keeps its
-    // VoltagePerReactivePowerControl wrapper and maps it onto that regulation.
-    static boolean isVoltagePerReactivePowerControl(Object obj) {
-        VoltageRegulation vr = ((StaticVarCompensator) obj).getVoltageRegulation();
-        return vr != null && vr.getMode() == RegulationMode.VOLTAGE_PER_REACTIVE_POWER;
-    }
-
-    static VoltageRegulation vprcRegulation(Object obj) {
-        if (!isVoltagePerReactivePowerControl(obj)) {
-            throw new BridgeErrors.ExtensionNotFoundException("VoltagePerReactivePowerControl not present on " + ((StaticVarCompensator) obj).getId());
-        }
-        return ((StaticVarCompensator) obj).getVoltageRegulation();
+    /** The ordinals of the regulation modes that satisfy a test. */
+    private static int[] modes(java.util.function.Predicate<RegulationMode> test) {
+        return Arrays.stream(RegulationMode.values()).filter(test).mapToInt(Enum::ordinal).toArray();
     }
 }

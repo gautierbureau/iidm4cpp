@@ -22,7 +22,6 @@
 #include <iidm/CoordinatedReactiveControl.h>
 #include <iidm/HvdcAngleDroopActivePowerControl.h>
 #include <iidm/HvdcOperatorActivePowerRange.h>
-#include <iidm/VoltagePerReactivePowerControl.h>
 #include <iidm/SlackTerminal.h>
 #include <iidm/ObservabilityQuality.h>
 #include <iidm/InjectionObservability.h>
@@ -47,6 +46,7 @@
 #include <iidm/BusbarSection.h>
 #include <iidm/Switch.h>
 #include <iidm/VoltageRegulation.h>
+#include <iidm/VoltageRegulationHolder.h>
 #include <iidm/Adder.h>
 #include <iidm/SubstationAdder.h>
 #include <iidm/VoltageLevelAdder.h>

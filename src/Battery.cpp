@@ -17,15 +17,6 @@ Battery& Battery::setTargetP(double targetP) {
     return *this;
 }
 
-double Battery::getTargetQ() const {
-    return backend_->getDouble(handle_, prop::BAT_TARGET_Q);
-}
-
-Battery& Battery::setTargetQ(double targetQ) {
-    backend_->setDouble(handle_, prop::BAT_TARGET_Q, targetQ);
-    return *this;
-}
-
 double Battery::getMinP() const {
     return backend_->getDouble(handle_, prop::BAT_MIN_P);
 }

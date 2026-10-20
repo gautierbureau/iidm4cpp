@@ -241,12 +241,19 @@ The main types:
 ```
 Generator
 ├── getTargetP() / getMinP() / getMaxP() / getRatedS() → double   (+ setters)
+├── getEnergySource() → EnergySource                               (+ setter)
+├── isCondenser() → bool
+└── + the voltage regulation holder methods (below)
+
+Voltage regulation holders: Generator, Battery, StaticVarCompensator, ShuntCompensator,
+VscConverterStation (powsybl 7.4 VoltageRegulationHolder)
 ├── getLocalTargetV() / getLocalTargetQ() → double                (+ setters)
 ├── getVoltageRegulation() → optional<VoltageRegulation>
 ├── newVoltageRegulation() / removeVoltageRegulation()
-├── isRegulating() / getRegulatingTargetV() / getRegulatingTargetQ() / getRegulatingTerminal()
-├── getEnergySource() → EnergySource                               (+ setter)
-└── isCondenser() → bool
+├── isRegulating() / isRegulatingWithMode(mode) / isWithMode(mode) → bool
+├── getRegulatingTargetV() / getRegulatingTargetQ() → double
+├── getRegulatingTerminal() → Terminal / hasRegulatingTerminal() → bool
+└── setTargetQToQ() / setTargetVToV()
 
 VoltageRegulation (powsybl 7.4 core model)
 ├── getMode() → optional<RegulationMode>       setMode(RegulationMode)
@@ -414,7 +421,7 @@ enum class LoadType { UNDEFINED, AUXILIARY, FICTITIOUS };
 enum class TopologyKind { NODE_BREAKER, BUS_BREAKER };
 enum class Country { FR, DE, ES, IT, BE, NL, GB, /* … */ };
 enum class HvdcConverterStationMode { RECTIFIER, INVERTER };
-enum class StaticVarCompensatorRegulationMode { VOLTAGE, REACTIVE_POWER, OFF };
+enum class RegulationMode { VOLTAGE, REACTIVE_POWER, VOLTAGE_PER_REACTIVE_POWER };
 enum class SwitchKind { BREAKER, DISCONNECTOR, LOAD_BREAK_SWITCH };
 
 } // namespace iidm
@@ -798,11 +805,10 @@ powsybl-core.
 
 | Extension | Hosts | Codes |
 |---|---|---|
-| `ActivePowerControl` (object, with adder) | Generator, Battery | `ACTIVE_POWER_CONTROL`, `EXT_APC_*` |
+| `ActivePowerControl` (object, with adder) | all injections | `ACTIVE_POWER_CONTROL`, `EXT_APC_*` |
 | `CoordinatedReactiveControl` | Generator | `EXT_CRC_*` |
 | `HvdcAngleDroopActivePowerControl` | HvdcLine | `EXT_HADAPC_*` |
 | `HvdcOperatorActivePowerRange` | HvdcLine | `EXT_HOAR_*` |
-| `VoltagePerReactivePowerControl`¹ | StaticVarCompensator | `EXT_VPRC_*` |
 | `SlackTerminal` | VoltageLevel | `EXT_ST_*` |
 | `Measurements` | all connectables | `EXT_MEAS_*`, `MEAS_*` |
 | `DiscreteMeasurements` | Switch, ShuntCompensator, 2WT, 3WT | `EXT_DMEAS_*`, `DMEAS_*` |
@@ -812,8 +818,10 @@ powsybl-core.
 | `ThreeWindingsTransformerToBeEstimated` | 3WT | `EXT_THREE_WT_TBE_*` |
 | `ObservabilityArea` | VoltageLevel (read-only) | `EXT_OBS_AREA_*`, `OBS_AREA_*` |
 
-¹ Removed from powsybl-core 7.4: the wrapper now maps onto the SVC's core
-`VoltageRegulation` in `VOLTAGE_PER_REACTIVE_POWER` mode.
+The `VoltagePerReactivePowerControl`, `RemoteReactivePowerControl` and battery `VoltageRegulation`
+extensions were removed from powsybl-core 7.4 (`extensions.removed`): their data is the core
+`VoltageRegulation` of the holder (mode `VOLTAGE_PER_REACTIVE_POWER` and its slope, a remote
+`REACTIVE_POWER` regulation, the battery's regulation), so they are not ported.
 
 The state estimation extensions are exercised end to end by
 `examples/state_estimation_test.xiidm` (see `examples/StateEstimationReport.h`).
