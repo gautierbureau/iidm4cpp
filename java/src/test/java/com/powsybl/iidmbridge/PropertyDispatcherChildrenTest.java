@@ -39,9 +39,8 @@ class PropertyDispatcherChildrenTest {
         VscConverterStation vsc = vl.newVscConverterStation().setId("VSC")
                 .setBus(b.getId()).setConnectableBus(b.getId())
                 .setLossFactor(0.01f)
-                .setVoltageRegulatorOn(true)
-                .setVoltageSetpoint(400)
-                .setReactivePowerSetpoint(0)
+                .setLocalTargetV(400).setLocalTargetQ(0)
+                .newVoltageRegulation().withMode(RegulationMode.VOLTAGE).withRegulating(true).add()
                 .add();
         vsc.newReactiveCapabilityCurve()
                 .beginPoint().setP(-100).setMinQ(-50).setMaxQ(50).endPoint()
@@ -84,7 +83,7 @@ class PropertyDispatcherChildrenTest {
         Bus b = vl.getBusBreakerView().newBus().setId("BB").add();
         Battery bat = vl.newBattery().setId("BAT")
                 .setBus(b.getId()).setConnectableBus(b.getId())
-                .setTargetP(10).setTargetQ(0).setMinP(-50).setMaxP(50)
+                .setTargetP(10).setLocalTargetQ(0).setMinP(-50).setMaxP(50)
                 .add();
         bat.newReactiveCapabilityCurve()
                 .beginPoint().setP(-50).setMinQ(-25).setMaxQ(25).endPoint()

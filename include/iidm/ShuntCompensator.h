@@ -2,13 +2,13 @@
 
 #include <iidm/Injection.h>
 #include <iidm/ShuntCompensatorNonLinearModel.h>
-#include <iidm/Terminal.h>
+#include <iidm/VoltageRegulationHolder.h>
 #include <iidm/stdcxx/optional.hpp>
 #include <string>
 
 namespace iidm {
 
-class ShuntCompensator : public Injection {
+class ShuntCompensator : public Injection, public detail::VoltageRegulationHolderMethods<ShuntCompensator> {
 public:
     static constexpr int TYPE = prop::SHUNT_COMPENSATOR;
 
@@ -33,11 +33,6 @@ public:
 
     bool hasNonLinearModel() const;
     ShuntCompensatorNonLinearModel getNonLinearModel() const;
-
-    bool isVoltageRegulatorOn() const;
-    double getTargetV() const;
-    std::string getRegulatingTerminalId() const;
-    Terminal getRegulatingTerminal() const;
 };
 
 } // namespace iidm

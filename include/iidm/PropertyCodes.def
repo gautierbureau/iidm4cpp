@@ -244,23 +244,14 @@ IIDM_CODE(SHUNT_G_PER_SECTION,         1103)
 IIDM_CODE(SHUNT_MODEL_KIND,            1104) // 0=LINEAR 1=NON_LINEAR
 IIDM_CODE(SHUNT_SECTION_B,             1105) // on section handle
 IIDM_CODE(SHUNT_SECTION_G,             1106) // on section handle
-IIDM_CODE(SHUNT_VOLTAGE_REGULATOR_ON,  1107)
-IIDM_CODE(SHUNT_TARGET_V,              1108)
-IIDM_CODE(SHUNT_REGULATING_TERMINAL_ID, 1109)
 IIDM_CODE(SHUNT_B,                     1110) // total B for current section count
 IIDM_CODE(SHUNT_SOLVED_SECTION_COUNT,  1111) // optional int
 
 // ── StaticVarCompensator ─────────────────────────────────────────────────────
 IIDM_CODE(SVC_B_MIN,                   1200)
 IIDM_CODE(SVC_B_MAX,                   1201)
-IIDM_CODE(SVC_VOLTAGE_SETPOINT,        1202)
-IIDM_CODE(SVC_REACTIVE_POWER_SETPOINT, 1203)
-IIDM_CODE(SVC_REGULATION_MODE,         1204)
 
 // ── VscConverterStation ──────────────────────────────────────────────────────
-IIDM_CODE(VSC_VOLTAGE_REGULATOR_ON,    1301)
-IIDM_CODE(VSC_VOLTAGE_SETPOINT,        1302)
-IIDM_CODE(VSC_REACTIVE_POWER_SETPOINT, 1303)
 IIDM_CODE(VSC_REACTIVE_LIMITS_KIND,    1304) // 0=NONE 1=MIN_MAX 2=CURVE
 IIDM_CODE(VSC_MIN_Q,                   1305)
 IIDM_CODE(VSC_MAX_Q,                   1306)
@@ -276,7 +267,6 @@ IIDM_CODE(IC_NODE2,                    1611)
 
 // ── Battery ───────────────────────────────────────────────────────────────────
 IIDM_CODE(BAT_TARGET_P,                1700)
-IIDM_CODE(BAT_TARGET_Q,                1701)
 IIDM_CODE(BAT_MIN_P,                   1702)
 IIDM_CODE(BAT_MAX_P,                   1703)
 IIDM_CODE(BAT_REACTIVE_LIMITS_KIND,    1704) // 0=NONE 1=MIN_MAX 2=CURVE
@@ -322,10 +312,6 @@ IIDM_CODE(EXT_HOAR_EXISTS,          3300)
 IIDM_CODE(EXT_HOAR_OPR_CS1_TO_CS2, 3301)
 IIDM_CODE(EXT_HOAR_OPR_CS2_TO_CS1, 3302)
 
-// ── Extension: VoltagePerReactivePowerControl ─────────────────────────────────
-IIDM_CODE(EXT_VPRC_EXISTS, 3400)
-IIDM_CODE(EXT_VPRC_SLOPE,  3401)
-
 // ── Extension: SlackTerminal ──────────────────────────────────────────────────
 IIDM_CODE(EXT_ST_EXISTS, 3500)
 IIDM_CODE(EXT_ST_EMPTY,  3501) // bool: no terminal in any variant
@@ -352,7 +338,7 @@ IIDM_CODE(REL_VOLTAGE_LEVEL,           2004)
 IIDM_CODE(REL_SUBSTATION,              2005)
 IIDM_CODE(REL_SLACK_TERMINAL,          2006) // VL → slack terminal (also settable via setRelated)
 IIDM_CODE(REL_CONNECTABLE_BUS,         2007) // bus-breaker topology bus (may differ from bus view)
-IIDM_CODE(REL_REGULATING_TERMINAL,     2008)
+IIDM_CODE(REL_REGULATING_TERMINAL,     2008) // regulation holder → terminal of a remote regulation, else its own
 IIDM_CODE(REL_CURRENT_LIMITS1,         2009) // Branch side 1, or ThreeWT leg 1
 IIDM_CODE(REL_CURRENT_LIMITS2,         2010) // Branch side 2, or ThreeWT leg 2
 IIDM_CODE(REL_CURRENT_LIMITS3,         2011) // ThreeWT leg 3
@@ -378,7 +364,7 @@ IIDM_CODE(REL_VL_BBV_BUS2,            2024) // VL (keyed by switchId) → Bus on
 // VOLTAGE_REGULATION is the type code: getRelated(holder, VOLTAGE_REGULATION) gives the
 // holder's regulation (INVALID_HANDLE when it has none), on which the VR_* codes apply;
 // invoke(holder or holder adder, VOLTAGE_REGULATION) starts a new one; setRelated(holder,
-// VOLTAGE_REGULATION, INVALID_HANDLE) removes it. Holders: Generator (for now).
+// VOLTAGE_REGULATION, INVALID_HANDLE) removes it.
 IIDM_CODE(VOLTAGE_REGULATION,          2200)
 IIDM_CODE(VR_TARGET_VALUE,             2201) // double (reactive power: load sign convention)
 IIDM_CODE(VR_TARGET_DEADBAND,          2202) // double
@@ -394,6 +380,11 @@ IIDM_CODE(LOCAL_TARGET_Q,              2211) // double
 IIDM_CODE(REGULATING,                  2212) // bool, read-only: has a regulation, and it is regulating
 IIDM_CODE(REGULATING_TARGET_V,         2213) // double, read-only: regulation target if it regulates V remotely, else local target V
 IIDM_CODE(REGULATING_TARGET_Q,         2214) // double, read-only: same for Q
+IIDM_CODE(REGULATING_MODES,            2215) // int list: the modes m for which isRegulatingWithMode(m)
+IIDM_CODE(WITH_MODES,                  2216) // int list: the modes m for which isWithMode(m)
+IIDM_CODE(HAS_REGULATING_TERMINAL,     2217) // bool: the regulation has a terminal
+// Holders: Generator, Battery, StaticVarCompensator, ShuntCompensator, VscConverterStation; the
+// regulating terminal is REL_REGULATING_TERMINAL; actions ACT_SET_TARGET_Q_TO_Q, ACT_SET_TARGET_V_TO_V
 
 // ── Actions (invoke) ─────────────────────────────────────────────────────────
 // invoke(parent, <type code>) starts a new object: it returns an adder, on which the setters
@@ -406,6 +397,8 @@ IIDM_CODE(ACT_REMOVE,                  5001) // invoke(identifiable): removes it
 // not, or already was.
 IIDM_CODE(ACT_CONNECT,                 5002)
 IIDM_CODE(ACT_DISCONNECT,              5003)
+IIDM_CODE(ACT_SET_TARGET_Q_TO_Q,       5004) // invoke(regulation holder): targets Q from the solved Q
+IIDM_CODE(ACT_SET_TARGET_V_TO_V,       5005) // invoke(regulation holder): targets V from the solved V
 
 // ── Extension: TwoWindingsTransformerToBeEstimated (on TwoWT) ────────────────
 IIDM_CODE(EXT_TWO_WT_TBE_EXISTS,          3700) // bool

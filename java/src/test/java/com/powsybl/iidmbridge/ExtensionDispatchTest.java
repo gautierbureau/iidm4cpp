@@ -36,7 +36,7 @@ class ExtensionDispatchTest {
             .setMinP(0).setMaxP(200).setTargetP(100)
             .setLocalTargetV(400).newVoltageRegulation().withMode(RegulationMode.VOLTAGE).withRegulating(true).add().add();
         bat = vl1.newBattery().setId("BAT").setBus("B1").setConnectableBus("B1")
-            .setMinP(-50).setMaxP(50).setTargetP(0).setTargetQ(0).add();
+            .setMinP(-50).setMaxP(50).setTargetP(0).setLocalTargetQ(0).add();
         load = vl1.newLoad().setId("L").setBus("B1").setConnectableBus("B1").setP0(10).setQ0(0).add();
         vl2.newLoad().setId("L2").setBus("B2").setConnectableBus("B2").setP0(10).setQ0(0).add();
 

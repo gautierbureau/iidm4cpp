@@ -23,9 +23,6 @@ enum class Country {
     AE, GB, US, UY, UZ, VU, VE, VN, YE, ZM, ZW
 };
 enum class HvdcConverterStationMode { RECTIFIER, INVERTER };
-// OFF: not regulating. VOLTAGE_PER_REACTIVE_POWER: voltage regulation with a slope
-// (powsybl-core >= 7.4; replaces the former VoltagePerReactivePowerControl extension).
-enum class StaticVarCompensatorRegulationMode { VOLTAGE, REACTIVE_POWER, OFF, VOLTAGE_PER_REACTIVE_POWER };
 enum class SwitchKind { BREAKER, DISCONNECTOR, LOAD_BREAK_SWITCH };
 enum class PhaseTapChangerRegulationMode { CURRENT_LIMITER, ACTIVE_POWER_CONTROL, FIXED_TAP };
 enum class HvdcOperatorActivePowerRangeSide { SIDE1, SIDE2 };

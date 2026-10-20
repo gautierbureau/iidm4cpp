@@ -3,27 +3,16 @@
 #include <iidm/HvdcConverterStation.h>
 #include <iidm/MinMaxReactiveLimits.h>
 #include <iidm/ReactiveCapabilityCurve.h>
-#include <iidm/Terminal.h>
+#include <iidm/VoltageRegulationHolder.h>
 
 namespace iidm {
 
-class VscConverterStation : public HvdcConverterStation {
+class VscConverterStation : public HvdcConverterStation, public detail::VoltageRegulationHolderMethods<VscConverterStation> {
 public:
     static constexpr int TYPE = prop::VSC_CONVERTER_STATION;
 
     VscConverterStation() = default;
     explicit VscConverterStation(ObjectHandle handle, BackendProvider* backend) : HvdcConverterStation(handle, backend) {}
-
-    bool isVoltageRegulatorOn() const;
-    VscConverterStation& setVoltageRegulatorOn(bool on);
-
-    double getVoltageSetpoint() const;
-    VscConverterStation& setVoltageSetpoint(double value);
-
-    double getReactivePowerSetpoint() const;
-    VscConverterStation& setReactivePowerSetpoint(double value);
-
-    Terminal getRegulatingTerminal() const;
 
     // ── Reactive limits ──────────────────────────────────────────────────
     bool hasMinMaxReactiveLimits() const;

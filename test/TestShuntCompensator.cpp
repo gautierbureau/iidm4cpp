@@ -22,11 +22,7 @@ protected:
         backend.doubles[{SC_H, prop::SHUNT_B_PER_SECTION}]    = 0.01;
         backend.doubles[{SC_H, prop::SHUNT_G_PER_SECTION}]    = 0.0;
         backend.doubles[{SC_H, prop::SHUNT_B}]                = 0.02;
-        backend.bools  [{SC_H, prop::SHUNT_VOLTAGE_REGULATOR_ON}] = true;
-        backend.doubles[{SC_H, prop::SHUNT_TARGET_V}]         = 225.0;
-        backend.strings[{SC_H, prop::SHUNT_REGULATING_TERMINAL_ID}] = "GEN1";
         backend.related[{SC_H, prop::REL_TERMINAL}]           = TERM_H;
-        backend.bools  [{TERM_H, prop::TERMINAL_CONNECTED}]   = true;
         backend.related[{SC_H, prop::REL_REGULATING_TERMINAL}] = RT_H;
     }
 };
@@ -73,11 +69,9 @@ TEST_F(ShuntCompensatorTest, LinearPerSectionIsNotTotal) {
     EXPECT_DOUBLE_EQ(sc.getB(),           24.0);
 }
 
-TEST_F(ShuntCompensatorTest, VoltageRegulator) {
+TEST_F(ShuntCompensatorTest, RegulatingTerminal) {
     ShuntCompensator sc(SC_H, &backend);
-    EXPECT_TRUE(sc.isVoltageRegulatorOn());
-    EXPECT_DOUBLE_EQ(sc.getTargetV(), 225.0);
-    EXPECT_EQ(sc.getRegulatingTerminalId(), "GEN1");
+    EXPECT_EQ(sc.getRegulatingTerminal(), Terminal(RT_H, &backend));
 }
 
 TEST_F(ShuntCompensatorTest, GetTerminal) {

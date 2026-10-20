@@ -58,56 +58,6 @@ Generator& Generator::setEnergySource(EnergySource energySource) {
     return *this;
 }
 
-// ── Voltage regulation ───────────────────────────────────────────────────────
-
-double Generator::getLocalTargetV() const {
-    return backend_->getDouble(handle_, prop::LOCAL_TARGET_V);
-}
-
-Generator& Generator::setLocalTargetV(double localTargetV) {
-    backend_->setDouble(handle_, prop::LOCAL_TARGET_V, localTargetV);
-    return *this;
-}
-
-double Generator::getLocalTargetQ() const {
-    return backend_->getDouble(handle_, prop::LOCAL_TARGET_Q);
-}
-
-Generator& Generator::setLocalTargetQ(double localTargetQ) {
-    backend_->setDouble(handle_, prop::LOCAL_TARGET_Q, localTargetQ);
-    return *this;
-}
-
-iidm::optional<VoltageRegulation> Generator::getVoltageRegulation() const {
-    ObjectHandle regulation = backend_->getRelated(handle_, prop::VOLTAGE_REGULATION);
-    if (regulation == INVALID_HANDLE) return {};
-    return VoltageRegulation(regulation, backend_);
-}
-
-VoltageRegulationBuilder Generator::newVoltageRegulation() {
-    return VoltageRegulationBuilder(backend_->invoke(handle_, prop::VOLTAGE_REGULATION), backend_);
-}
-
-void Generator::removeVoltageRegulation() {
-    backend_->setRelated(handle_, prop::VOLTAGE_REGULATION, INVALID_HANDLE);
-}
-
-bool Generator::isRegulating() const {
-    return backend_->getBool(handle_, prop::REGULATING);
-}
-
-double Generator::getRegulatingTargetV() const {
-    return backend_->getDouble(handle_, prop::REGULATING_TARGET_V);
-}
-
-double Generator::getRegulatingTargetQ() const {
-    return backend_->getDouble(handle_, prop::REGULATING_TARGET_Q);
-}
-
-Terminal Generator::getRegulatingTerminal() const {
-    return Terminal(backend_->getRelated(handle_, prop::REL_REGULATING_TERMINAL), backend_);
-}
-
 // ── Extensions ───────────────────────────────────────────────────────────────
 
 bool Generator::hasCoordinatedReactiveControl() const {

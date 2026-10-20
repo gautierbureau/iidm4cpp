@@ -66,9 +66,9 @@ static std::string runEmbedded(const char* networkId) {
         // Static var compensators: report extensions
         for (const auto& svc : network.getStaticVarCompensators()) {
             std::cout << "[C++] StaticVarCompensator " << svc.getId() << "\n";
-            if (svc.hasVoltagePerReactivePowerControl())
+            if (svc.isWithMode(iidm::RegulationMode::VOLTAGE_PER_REACTIVE_POWER))
                 std::cout << "[C++]   voltagePerReactivePowerControl.slope="
-                          << svc.getVoltagePerReactivePowerControl().getSlope() << "\n";
+                          << svc.getVoltageRegulation()->getSlope() << "\n";
         }
 
         // Voltage levels: report SlackTerminal

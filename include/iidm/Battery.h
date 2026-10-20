@@ -3,10 +3,11 @@
 #include <iidm/Injection.h>
 #include <iidm/MinMaxReactiveLimits.h>
 #include <iidm/ReactiveCapabilityCurve.h>
+#include <iidm/VoltageRegulationHolder.h>
 
 namespace iidm {
 
-class Battery : public Injection {
+class Battery : public Injection, public detail::VoltageRegulationHolderMethods<Battery> {
 public:
     static constexpr int TYPE = prop::BATTERY;
 
@@ -15,9 +16,6 @@ public:
 
     double getTargetP() const;
     Battery& setTargetP(double targetP);
-
-    double getTargetQ() const;
-    Battery& setTargetQ(double targetQ);
 
     double getMinP() const;
     double getMaxP() const;

@@ -85,8 +85,11 @@ public:
   aliases, terminals, connect/disconnect, remove, the extensions of that host type...). Never
   re-declare a base-class method in a derived class.
 - A powsybl interface that unrelated types share (`Branch`: lines and transformers, but also tie
-  lines, which are not connectables) is a CRTP mixin `detail::XMethods<Self>`, plus a class `X`
-  for results of that type, which every implementing class converts to (see `Branch.h`).
+  lines, which are not connectables; `VoltageRegulationHolder`: generators, batteries, SVCs,
+  shunts, VSC stations, ratio tap changers) is a CRTP mixin `detail::XMethods<Self>`, defined in
+  `src/X.cpp` and explicitly instantiated there for each class that uses it; plus a class `X` for
+  results of that type when there are some, which every implementing class converts to (see
+  `Branch.h`).
 - Every identifiable class has `static constexpr int TYPE = prop::<ITS_TYPE_CODE>;`:
   `is<T>()` / `as<T>()` and the network lists use it.
 - `==` is the identity of the Java object (`isSameObject`), never a handle comparison.

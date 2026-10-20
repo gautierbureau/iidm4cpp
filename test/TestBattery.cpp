@@ -20,11 +20,10 @@ protected:
         backend.strings[{BAT_HANDLE, prop::ID}]    = "BAT1";
         backend.strings[{BAT_HANDLE, prop::NAME}]   = "Battery 1";
         backend.doubles[{BAT_HANDLE, prop::BAT_TARGET_P}] = 50.0;
-        backend.doubles[{BAT_HANDLE, prop::BAT_TARGET_Q}] = 10.0;
+        backend.doubles[{BAT_HANDLE, prop::LOCAL_TARGET_Q}] = 10.0;
         backend.doubles[{BAT_HANDLE, prop::BAT_MIN_P}]    = -100.0;
         backend.doubles[{BAT_HANDLE, prop::BAT_MAX_P}]    = 100.0;
         backend.related[{BAT_HANDLE, prop::REL_TERMINAL}] = TERM_HANDLE;
-        backend.bools  [{TERM_HANDLE, prop::TERMINAL_CONNECTED}] = true;
     }
 };
 
@@ -46,11 +45,11 @@ TEST_F(BatteryTest, TargetPGetSet) {
     EXPECT_DOUBLE_EQ(tp, 60.0);
 }
 
-TEST_F(BatteryTest, TargetQGetSet) {
+TEST_F(BatteryTest, LocalTargetQGetSet) {
     Battery bat(BAT_HANDLE, &backend);
-    EXPECT_DOUBLE_EQ(bat.getTargetQ(), 10.0);
-    bat.setTargetQ(15.0);
-    double tq = backend.doubles[{BAT_HANDLE, prop::BAT_TARGET_Q}];
+    EXPECT_DOUBLE_EQ(bat.getLocalTargetQ(), 10.0);
+    bat.setLocalTargetQ(15.0).setTargetP(1.0); // chains with Battery's own setters
+    double tq = backend.doubles[{BAT_HANDLE, prop::LOCAL_TARGET_Q}];
     EXPECT_DOUBLE_EQ(tq, 15.0);
 }
 

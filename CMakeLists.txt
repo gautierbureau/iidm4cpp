@@ -90,7 +90,6 @@ set(IIDM_BRIDGE_SOURCES
     src/CoordinatedReactiveControl.cpp
     src/HvdcAngleDroopActivePowerControl.cpp
     src/HvdcOperatorActivePowerRange.cpp
-    src/VoltagePerReactivePowerControl.cpp
     src/SlackTerminal.cpp
     src/TwoWindingsTransformerToBeEstimated.cpp
     src/ThreeWindingsTransformerToBeEstimated.cpp
@@ -101,6 +100,7 @@ set(IIDM_BRIDGE_SOURCES
     src/ObservabilityArea.cpp
     src/Generator.cpp
     src/VoltageRegulation.cpp
+    src/VoltageRegulationHolder.cpp
     src/Load.cpp
     src/Terminal.cpp
     src/Bus.cpp

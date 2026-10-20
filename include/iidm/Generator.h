@@ -6,13 +6,12 @@
 #include <iidm/MinMaxReactiveLimits.h>
 #include <iidm/ReactiveCapabilityCurve.h>
 #include <iidm/Terminal.h>
-#include <iidm/VoltageRegulation.h>
-#include <iidm/VoltageRegulationAdder.h>
+#include <iidm/VoltageRegulationHolder.h>
 #include <iidm/stdcxx/optional.hpp>
 
 namespace iidm {
 
-class Generator : public Injection {
+class Generator : public Injection, public detail::VoltageRegulationHolderMethods<Generator> {
 public:
     static constexpr int TYPE = prop::GENERATOR;
 
@@ -35,28 +34,6 @@ public:
 
     EnergySource getEnergySource() const;
     Generator& setEnergySource(EnergySource energySource);
-
-    // ── Voltage regulation ───────────────────────────────────────────────
-    // Local targets: the target V of a local voltage regulation; the target Q when not regulating
-    // or regulating Q locally (see VoltageRegulation)
-    double getLocalTargetV() const;
-    Generator& setLocalTargetV(double localTargetV);
-    double getLocalTargetQ() const;
-    Generator& setLocalTargetQ(double localTargetQ);
-
-    // Empty when the generator has no voltage regulation
-    iidm::optional<VoltageRegulation> getVoltageRegulation() const;
-    // A new voltage regulation, which replaces the current one at build()
-    VoltageRegulationBuilder newVoltageRegulation();
-    void removeVoltageRegulation();
-
-    // Has a voltage regulation, and it is regulating
-    bool isRegulating() const;
-    // Target of the regulation if it regulates V (or Q) remotely, else the local target
-    double getRegulatingTargetV() const;
-    double getRegulatingTargetQ() const;
-    // Terminal of a remote regulation, else the generator's own terminal
-    Terminal getRegulatingTerminal() const;
 
     // ── Reactive limits ──────────────────────────────────────────────────
     bool hasMinMaxReactiveLimits() const;

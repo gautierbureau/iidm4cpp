@@ -18,14 +18,10 @@ protected:
         backend.strings[{VSC_H, prop::ID}]                     = "VSC1";
         backend.strings[{VSC_H, prop::NAME}]                    = "VSC Station 1";
         backend.doubles[{VSC_H, prop::CONVERTER_STATION_LOSS_FACTOR}]         = 0.011f;
-        backend.bools  [{VSC_H, prop::VSC_VOLTAGE_REGULATOR_ON}] = true;
-        backend.doubles[{VSC_H, prop::VSC_VOLTAGE_SETPOINT}]    = 400.0;
-        backend.doubles[{VSC_H, prop::VSC_REACTIVE_POWER_SETPOINT}] = -50.0;
         backend.ints   [{VSC_H, prop::VSC_REACTIVE_LIMITS_KIND}] = 1; // MIN_MAX
         backend.doubles[{VSC_H, prop::VSC_MIN_Q}]               = -200.0;
         backend.doubles[{VSC_H, prop::VSC_MAX_Q}]               = 200.0;
         backend.related[{VSC_H, prop::REL_TERMINAL}]            = TERM_H;
-        backend.bools  [{TERM_H, prop::TERMINAL_CONNECTED}]     = true;
         backend.related[{VSC_H, prop::REL_HVDC_LINE}]           = HVDC_H;
         backend.related[{VSC_H, prop::REL_REGULATING_TERMINAL}] = TERM_H;
     }
@@ -41,27 +37,6 @@ TEST_F(VscConverterStationTest, GetLossFactor) {
     // powsybl-iidm-api stores loss factor as float; preserve the float-precision
     // comparison even though the C++ API now exposes double.
     EXPECT_FLOAT_EQ(static_cast<float>(vsc.getLossFactor()), 0.011f);
-}
-
-TEST_F(VscConverterStationTest, VoltageRegulator) {
-    VscConverterStation vsc(VSC_H, &backend);
-    EXPECT_TRUE(vsc.isVoltageRegulatorOn());
-    vsc.setVoltageRegulatorOn(false);
-    EXPECT_FALSE((backend.bools[{VSC_H, prop::VSC_VOLTAGE_REGULATOR_ON}]));
-}
-
-TEST_F(VscConverterStationTest, GetSetVoltageSetpoint) {
-    VscConverterStation vsc(VSC_H, &backend);
-    EXPECT_DOUBLE_EQ(vsc.getVoltageSetpoint(), 400.0);
-    vsc.setVoltageSetpoint(410.0);
-    EXPECT_DOUBLE_EQ((backend.doubles[{VSC_H, prop::VSC_VOLTAGE_SETPOINT}]), 410.0);
-}
-
-TEST_F(VscConverterStationTest, GetSetReactivePowerSetpoint) {
-    VscConverterStation vsc(VSC_H, &backend);
-    EXPECT_DOUBLE_EQ(vsc.getReactivePowerSetpoint(), -50.0);
-    vsc.setReactivePowerSetpoint(-60.0);
-    EXPECT_DOUBLE_EQ((backend.doubles[{VSC_H, prop::VSC_REACTIVE_POWER_SETPOINT}]), -60.0);
 }
 
 TEST_F(VscConverterStationTest, MinMaxReactiveLimits) {
