@@ -38,6 +38,7 @@ public:
     iidm::optional<std::string> getKeyedString(ObjectHandle h, int property, const std::string& key) const override;
     void setKeyedString(ObjectHandle h, int property, const std::string& key,
                         const iidm::optional<std::string>& value) override;
+    double evaluate(ObjectHandle h, int code, const std::vector<double>& args) const override;
     bool isSameObject(ObjectHandle h, ObjectHandle other) const override;
 
     std::vector<ObjectHandle> getChildren(ObjectHandle h, int childType) const override;

@@ -97,6 +97,7 @@ void JNIBackend::cacheMethodIds() {
     cache_.disp_setKeyedString = env_->GetStaticMethodID(d, "setKeyedString",
         "(Ljava/lang/Object;ILjava/lang/String;Ljava/lang/String;)V");
     cache_.disp_isSameObject = env_->GetStaticMethodID(d, "isSameObject", "(Ljava/lang/Object;Ljava/lang/Object;)Z");
+    cache_.disp_evaluate = env_->GetStaticMethodID(d, "evaluate", "(Ljava/lang/Object;I[D)D");
     checkJNIException(env_);
 }
 
@@ -446,6 +447,17 @@ std::vector<int> JNIBackend::getIntList(ObjectHandle h, int listCode) const {
     if (len > 0) env_->GetIntArrayRegion(arr, 0, len, reinterpret_cast<jint*>(values.data()));
     env_->DeleteLocalRef(arr);
     return values;
+}
+
+double JNIBackend::evaluate(ObjectHandle h, int code, const std::vector<double>& args) const {
+    jdoubleArray jArgs = env_->NewDoubleArray(static_cast<jsize>(args.size()));
+    checkJNIException(env_);
+    if (!args.empty()) env_->SetDoubleArrayRegion(jArgs, 0, static_cast<jsize>(args.size()), args.data());
+    jdouble result = env_->CallStaticDoubleMethod(cache_.dispatcherClass, cache_.disp_evaluate,
+                                                  toObject(h), static_cast<jint>(code), jArgs);
+    env_->DeleteLocalRef(jArgs);
+    checkJNIException(env_);
+    return result;
 }
 
 ObjectHandle JNIBackend::getRelatedByIndex(ObjectHandle h, int relation, int index) const {

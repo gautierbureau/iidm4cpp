@@ -40,16 +40,17 @@ static void printNetwork(iidm::Network& network) {
         if (gen.hasCoordinatedReactiveControl())
             std::cout << "    coordinatedReactiveControl.qPercent="
                       << gen.getCoordinatedReactiveControl().getQPercent() << "\n";
-        if (gen.hasMinMaxReactiveLimits()) {
-            auto rl = gen.getMinMaxReactiveLimits();
+        iidm::ReactiveLimits limits = gen.getReactiveLimits();
+        if (limits.is<iidm::MinMaxReactiveLimits>()) {
+            auto rl = limits.as<iidm::MinMaxReactiveLimits>();
             std::cout << "    minMaxReactiveLimits: minQ=" << rl.getMinQ()
                       << " maxQ=" << rl.getMaxQ() << "\n";
         }
-        if (gen.hasReactiveCapabilityCurve()) {
-            auto pts = gen.getReactiveCapabilityCurve().getPoints();
+        if (limits.getKind() == iidm::ReactiveLimitsKind::CURVE) {
+            auto pts = gen.getReactiveLimits<iidm::ReactiveCapabilityCurve>().getPoints();
             std::cout << "    reactiveCapabilityCurve: " << pts.size() << " point(s)\n";
             for (const auto& pt : pts)
-                std::cout << "      p=" << pt.p << " minQ=" << pt.minQ << " maxQ=" << pt.maxQ << "\n";
+                std::cout << "      p=" << pt.getP() << " minQ=" << pt.getMinQ() << " maxQ=" << pt.getMaxQ() << "\n";
         }
     }
 

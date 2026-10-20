@@ -436,6 +436,22 @@ public final class IidmEntryPoints {
         }
     }
 
+    /** args: count doubles (null when count is 0). */
+    @CEntryPoint(name = "iidm_evaluate")
+    public static int evaluate(IsolateThread thread, long handle, int code, CDoublePointer args, int count,
+                               CDoublePointer out) {
+        try {
+            double[] values = new double[count];
+            for (int i = 0; i < count; i++) {
+                values[i] = args.read(i);
+            }
+            out.write(PropertyDispatcher.evaluate(handle, code, values));
+            return BridgeErrors.OK;
+        } catch (Throwable t) {
+            return fail(t);
+        }
+    }
+
     @CEntryPoint(name = "iidm_get_related_by_index")
     public static int getRelatedByIndex(IsolateThread thread, long handle, int relation, int index,
                                         CLongPointer out) {

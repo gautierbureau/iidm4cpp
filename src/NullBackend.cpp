@@ -25,6 +25,7 @@ public:
     std::vector<std::string>    getStringList(ObjectHandle, int) const override { fail(); }
     iidm::optional<std::string> getKeyedString(ObjectHandle, int, const std::string&) const override { fail(); }
     void setKeyedString(ObjectHandle, int, const std::string&, const iidm::optional<std::string>&) override { fail(); }
+    double evaluate(ObjectHandle, int, const std::vector<double>&) const override { fail(); }
     bool isSameObject(ObjectHandle, ObjectHandle) const override { fail(); }
 
     std::vector<ObjectHandle> getChildren(ObjectHandle, int) const override { fail(); }

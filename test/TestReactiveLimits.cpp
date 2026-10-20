@@ -1,146 +1,111 @@
 #include <gtest/gtest.h>
 #include <iidm/Generator.h>
-#include <iidm/VscConverterStation.h>
-#include <iidm/MinMaxReactiveLimits.h>
-#include <iidm/ReactiveCapabilityCurve.h>
 #include <iidm/PropertyCodes.h>
+#include <iidm/VscConverterStation.h>
 #include "MockBackend.h"
 
 using namespace iidm;
 using namespace iidm::test;
 
+namespace {
+
+const ObjectHandle GEN = 40;
+const ObjectHandle VSC = 41;
+const ObjectHandle CURVE = 50;
+const ObjectHandle PT0 = 51, PT1 = 52;
+const ObjectHandle SHAPE = 60;
+const ObjectHandle PLANE = 61;
+
 class ReactiveLimitsTest : public ::testing::Test {
 protected:
     MockBackend backend;
-    static constexpr ObjectHandle GEN_HANDLE  = 40;
-    static constexpr ObjectHandle VSC_HANDLE  = 41;
-    static constexpr ObjectHandle PT0_HANDLE  = 50;
-    static constexpr ObjectHandle PT1_HANDLE  = 51;
-    static constexpr ObjectHandle PT2_HANDLE  = 52;
 
     void SetUp() override {
-        // Generator with MinMaxReactiveLimits
-        backend.strings[{GEN_HANDLE, prop::ID}]   = "GEN1";
-        backend.strings[{GEN_HANDLE, prop::NAME}]  = "Generator 1";
-        backend.doubles[{GEN_HANDLE, prop::GEN_TARGET_P}]          = 100.0;
-        backend.doubles[{GEN_HANDLE, prop::LOCAL_TARGET_Q}]        = 0.0;
-        backend.doubles[{GEN_HANDLE, prop::LOCAL_TARGET_V}]        = 225.0;
-        backend.doubles[{GEN_HANDLE, prop::GEN_MIN_P}]             = 0.0;
-        backend.doubles[{GEN_HANDLE, prop::GEN_MAX_P}]             = 200.0;
-        backend.ints   [{GEN_HANDLE, prop::GEN_ENERGY_SOURCE}]     = 0;
-        backend.ints   [{GEN_HANDLE, prop::GEN_REACTIVE_LIMITS_KIND}] = 1; // MIN_MAX
-        backend.doubles[{GEN_HANDLE, prop::GEN_MIN_Q}]             = -150.0;
-        backend.doubles[{GEN_HANDLE, prop::GEN_MAX_Q}]             = 150.0;
+        backend.related[{GEN, prop::REACTIVE_LIMITS}]           = CURVE;
+        backend.related[{GEN, prop::REACTIVE_CAPABILITY_CURVE}] = CURVE;
+        backend.ints   [{CURVE, prop::RL_KIND}] = static_cast<int>(ReactiveLimitsKind::CURVE);
+        backend.bools  [{CURVE, prop::REACTIVE_CAPABILITY_CURVE}] = true;
+        backend.children[{CURVE, prop::REACTIVE_CURVE_POINT}] = {PT0, PT1};
+        backend.ints   [{CURVE, prop::CURVE_POINT_COUNT}] = 2;
+        backend.doubles[{CURVE, prop::CURVE_MIN_P}] = 0.0;
+        backend.doubles[{CURVE, prop::CURVE_MAX_P}] = 100.0;
+        backend.doubles[{PT0, prop::POINT_P}]     = 0.0;
+        backend.doubles[{PT0, prop::POINT_MIN_Q}] = -10.0;
+        backend.doubles[{PT0, prop::POINT_MAX_Q}] = 10.0;
+        backend.doubles[{PT1, prop::POINT_P}]     = 100.0;
+        backend.doubles[{PT1, prop::POINT_MIN_Q}] = -30.0;
+        backend.doubles[{PT1, prop::POINT_MAX_Q}] = 30.0;
+        backend.evaluations[std::make_tuple(CURVE, prop::RL_MIN_Q, std::vector<double>{50.0})] = -20.0;
+        backend.evaluations[std::make_tuple(CURVE, prop::RL_MAX_Q, std::vector<double>{150.0, 1.0})] = 40.0;
 
-        // VSC with ReactiveCapabilityCurve
-        backend.strings[{VSC_HANDLE, prop::ID}]   = "VSC1";
-        backend.ints   [{VSC_HANDLE, prop::VSC_REACTIVE_LIMITS_KIND}] = 2; // CURVE
-        backend.children[{VSC_HANDLE, prop::REACTIVE_CURVE_POINT}] =
-            {PT0_HANDLE, PT1_HANDLE, PT2_HANDLE};
-        backend.doubles[{PT0_HANDLE, prop::POINT_P}]     = 0.0;
-        backend.doubles[{PT0_HANDLE, prop::POINT_MIN_Q}] = -50.0;
-        backend.doubles[{PT0_HANDLE, prop::POINT_MAX_Q}] =  50.0;
-        backend.doubles[{PT1_HANDLE, prop::POINT_P}]     = 100.0;
-        backend.doubles[{PT1_HANDLE, prop::POINT_MIN_Q}] = -80.0;
-        backend.doubles[{PT1_HANDLE, prop::POINT_MAX_Q}] =  80.0;
-        backend.doubles[{PT2_HANDLE, prop::POINT_P}]     = 200.0;
-        backend.doubles[{PT2_HANDLE, prop::POINT_MIN_Q}] = -30.0;
-        backend.doubles[{PT2_HANDLE, prop::POINT_MAX_Q}] =  30.0;
+        backend.related[{VSC, prop::REACTIVE_LIMITS}] = SHAPE;
+        backend.ints   [{SHAPE, prop::RL_KIND}] = static_cast<int>(ReactiveLimitsKind::SHAPE);
+        backend.bools  [{SHAPE, prop::REACTIVE_CAPABILITY_SHAPE}] = true;
+        backend.children[{SHAPE, prop::REACTIVE_CAPABILITY_SHAPE_PLANE}] = {PLANE};
+        backend.doubles[{PLANE, prop::PLANE_ALPHA}] = 0.0;
+        backend.doubles[{PLANE, prop::PLANE_BETA}]  = 0.5;
+        backend.doubles[{PLANE, prop::PLANE_GAMMA}] = 150.0;
+        backend.doubles[{PLANE, prop::PLANE_DELTA}] = 1.0;
+        backend.bools  [{PLANE, prop::PLANE_LESS_OR_EQUAL}] = true;
+        backend.evaluations[std::make_tuple(SHAPE, prop::RL_MAX_Q, std::vector<double>{200.0, 400.0})] = 50.0;
+        backend.evaluations[std::make_tuple(SHAPE, prop::SHAPE_IS_INSIDE, std::vector<double>{0.0, 0.0, 400.0})] = 1.0;
+        backend.evaluations[std::make_tuple(SHAPE, prop::SHAPE_IS_INSIDE, std::vector<double>{200.0, 90.0, 400.0})] = 0.0;
     }
 };
 
-// ── MinMaxReactiveLimits on Generator ─────────────────────────────────────────
+} // namespace
 
-TEST_F(ReactiveLimitsTest, GenHasMinMaxReactiveLimits) {
-    Generator gen(GEN_HANDLE, &backend);
-    EXPECT_TRUE(gen.hasMinMaxReactiveLimits());
-    EXPECT_FALSE(gen.hasReactiveCapabilityCurve());
+TEST_F(ReactiveLimitsTest, KindAndConversions) {
+    Generator gen(GEN, &backend);
+    ReactiveLimits limits = gen.getReactiveLimits();
+    EXPECT_EQ(limits.getKind(), ReactiveLimitsKind::CURVE);
+    EXPECT_TRUE(limits.is<ReactiveCapabilityCurve>());
+    EXPECT_FALSE(limits.is<MinMaxReactiveLimits>());
+    EXPECT_EQ(limits.as<ReactiveCapabilityCurve>(), gen.getReactiveLimits<ReactiveCapabilityCurve>());
+    EXPECT_THROW(limits.as<MinMaxReactiveLimits>(), PropertyNotFoundException);
 }
 
-TEST_F(ReactiveLimitsTest, GenMinMaxValues) {
-    Generator gen(GEN_HANDLE, &backend);
-    MinMaxReactiveLimits lim = gen.getMinMaxReactiveLimits();
-    EXPECT_TRUE(lim.isValid());
-    EXPECT_DOUBLE_EQ(lim.getMinQ(), -150.0);
-    EXPECT_DOUBLE_EQ(lim.getMaxQ(),  150.0);
+TEST_F(ReactiveLimitsTest, LimitsAtAnActivePower) {
+    ReactiveLimits limits = Generator(GEN, &backend).getReactiveLimits();
+    EXPECT_DOUBLE_EQ(limits.getMinQ(50.0), -20.0);
+    ReactiveCapabilityCurve curve = limits.as<ReactiveCapabilityCurve>();
+    EXPECT_DOUBLE_EQ(curve.getMinQ(50.0), -20.0);
+    EXPECT_DOUBLE_EQ(curve.getMaxQ(150.0, true), 40.0);
 }
 
-TEST_F(ReactiveLimitsTest, GenNoReactiveLimits) {
-    MockBackend b2;
-    b2.strings[{GEN_HANDLE, prop::ID}] = "GEN2";
-    b2.ints[{GEN_HANDLE, prop::GEN_REACTIVE_LIMITS_KIND}] = 0; // NONE
-    Generator gen(GEN_HANDLE, &b2);
-    EXPECT_FALSE(gen.hasMinMaxReactiveLimits());
-    EXPECT_FALSE(gen.hasReactiveCapabilityCurve());
+TEST_F(ReactiveLimitsTest, Curve) {
+    ReactiveCapabilityCurve curve = Generator(GEN, &backend).getReactiveLimits<ReactiveCapabilityCurve>();
+    EXPECT_EQ(curve.getPointCount(), 2);
+    EXPECT_DOUBLE_EQ(curve.getMinP(), 0.0);
+    EXPECT_DOUBLE_EQ(curve.getMaxP(), 100.0);
+    std::vector<ReactiveCapabilityCurve::Point> points = curve.getPoints();
+    ASSERT_EQ(points.size(), 2u);
+    EXPECT_DOUBLE_EQ(points[1].getP(), 100.0);
+    EXPECT_DOUBLE_EQ(points[1].getMinQ(), -30.0);
+    EXPECT_DOUBLE_EQ(points[1].getMaxQ(), 30.0);
+    points[0].setProperty("k", "v");
+    EXPECT_EQ(*points[0].getProperty("k"), "v");
 }
 
-// ── ReactiveCapabilityCurve on VscConverterStation ───────────────────────────
-
-TEST_F(ReactiveLimitsTest, VscHasReactiveCapabilityCurve) {
-    VscConverterStation vsc(VSC_HANDLE, &backend);
-    EXPECT_FALSE(vsc.hasMinMaxReactiveLimits());
-    EXPECT_TRUE(vsc.hasReactiveCapabilityCurve());
+TEST_F(ReactiveLimitsTest, Shape) {
+    VscConverterStation vsc(VSC, &backend);
+    ReactiveLimits limits = vsc.getReactiveLimits();
+    EXPECT_EQ(limits.getKind(), ReactiveLimitsKind::SHAPE);
+    ReactiveCapabilityShape shape = limits.as<ReactiveCapabilityShape>();
+    EXPECT_DOUBLE_EQ(shape.getMaxQ(200.0, 400.0), 50.0);
+    EXPECT_TRUE(shape.isInside(0.0, 0.0, 400.0));
+    EXPECT_FALSE(shape.isInside(200.0, 90.0, 400.0));
+    std::vector<ReactiveCapabilityShapePlane> planes = shape.getPlanes();
+    ASSERT_EQ(planes.size(), 1u);
+    EXPECT_DOUBLE_EQ(planes[0].getBeta(), 0.5);
+    EXPECT_DOUBLE_EQ(planes[0].getGamma(), 150.0);
+    EXPECT_DOUBLE_EQ(planes[0].getDelta(), 1.0);
+    EXPECT_TRUE(planes[0].isLessOrEqual());
+    EXPECT_FALSE(planes[0].isGreaterOrEqual());
 }
 
-TEST_F(ReactiveLimitsTest, VscCurvePoints) {
-    VscConverterStation vsc(VSC_HANDLE, &backend);
-    ReactiveCapabilityCurve curve = vsc.getReactiveCapabilityCurve();
-    EXPECT_TRUE(curve.isValid());
-
-    auto pts = curve.getPoints();
-    ASSERT_EQ(pts.size(), 3u);
-
-    EXPECT_DOUBLE_EQ(pts[0].p,      0.0);
-    EXPECT_DOUBLE_EQ(pts[0].minQ, -50.0);
-    EXPECT_DOUBLE_EQ(pts[0].maxQ,  50.0);
-
-    EXPECT_DOUBLE_EQ(pts[1].p,    100.0);
-    EXPECT_DOUBLE_EQ(pts[1].minQ, -80.0);
-    EXPECT_DOUBLE_EQ(pts[1].maxQ,  80.0);
-
-    EXPECT_DOUBLE_EQ(pts[2].p,    200.0);
-    EXPECT_DOUBLE_EQ(pts[2].minQ, -30.0);
-    EXPECT_DOUBLE_EQ(pts[2].maxQ,  30.0);
-}
-
-// ── Generator with ReactiveCapabilityCurve ────────────────────────────────────
-
-// ── MinMaxReactiveLimits equality ─────────────────────────────────────────────
-
-TEST_F(ReactiveLimitsTest, MinMaxEquality) {
-    Generator gen(GEN_HANDLE, &backend);
-    MinMaxReactiveLimits a = gen.getMinMaxReactiveLimits();
-    MinMaxReactiveLimits b = gen.getMinMaxReactiveLimits();
-
-    // Same handle + same minQProp → equal
-    EXPECT_TRUE(a == b);
-    EXPECT_FALSE(a != b);
-
-    // Different VSC limits use a different property code → not equal
-    VscConverterStation vsc(VSC_HANDLE, &backend);
-    backend.ints[{VSC_HANDLE, prop::VSC_REACTIVE_LIMITS_KIND}] = 1; // MIN_MAX
-    backend.doubles[{VSC_HANDLE, prop::VSC_MIN_Q}] = -100.0;
-    backend.doubles[{VSC_HANDLE, prop::VSC_MAX_Q}] =  100.0;
-    MinMaxReactiveLimits c = vsc.getMinMaxReactiveLimits();
-    EXPECT_FALSE(a == c);
-    EXPECT_TRUE(a != c);
-}
-
-TEST_F(ReactiveLimitsTest, GenWithCurve) {
-    MockBackend b2;
-    b2.strings[{GEN_HANDLE, prop::ID}] = "GEN3";
-    b2.ints[{GEN_HANDLE, prop::GEN_REACTIVE_LIMITS_KIND}] = 2; // CURVE
-    b2.children[{GEN_HANDLE, prop::REACTIVE_CURVE_POINT}] = {PT0_HANDLE};
-    b2.doubles[{PT0_HANDLE, prop::POINT_P}]     = 50.0;
-    b2.doubles[{PT0_HANDLE, prop::POINT_MIN_Q}] = -60.0;
-    b2.doubles[{PT0_HANDLE, prop::POINT_MAX_Q}] =  60.0;
-
-    Generator gen(GEN_HANDLE, &b2);
-    EXPECT_FALSE(gen.hasMinMaxReactiveLimits());
-    EXPECT_TRUE(gen.hasReactiveCapabilityCurve());
-    auto pts = gen.getReactiveCapabilityCurve().getPoints();
-    ASSERT_EQ(pts.size(), 1u);
-    EXPECT_DOUBLE_EQ(pts[0].p,     50.0);
-    EXPECT_DOUBLE_EQ(pts[0].minQ, -60.0);
-    EXPECT_DOUBLE_EQ(pts[0].maxQ,  60.0);
+TEST_F(ReactiveLimitsTest, Invalid) {
+    EXPECT_THROW(ReactiveLimits().getKind(), InvalidHandleException);
+    EXPECT_THROW(MinMaxReactiveLimits().getMinQ(0.0), InvalidHandleException);
+    EXPECT_THROW(Generator().getReactiveLimits(), InvalidHandleException);
 }

@@ -86,17 +86,19 @@ public:
   re-declare a base-class method in a derived class.
 - A powsybl interface that unrelated types share (`Branch`: lines and transformers, but also tie
   lines, which are not connectables; `VoltageRegulationHolder`: generators, batteries, SVCs,
-  shunts, VSC stations, ratio tap changers; `TapChanger`, `TapChangerStep`, the tap changer
-  holders, `FlowsLimitsHolder`: legs and dangling lines) is a CRTP mixin `detail::XMethods<Self>`,
-  defined in `src/X.cpp` and explicitly instantiated there for each class that uses it; plus a
-  class `X` for results of that type when there are some, which every implementing class converts
-  to (see `Branch.h`). Two mixins with the same method: a `using` picks one (`RatioTapChanger`).
+  shunts, VSC stations, ratio tap changers; `ReactiveLimitsHolder`; `TapChanger`, `TapChangerStep`,
+  the tap changer holders, `FlowsLimitsHolder`: legs and dangling lines) is a CRTP mixin
+  `detail::XMethods<Self>`, defined in `src/X.cpp` and explicitly instantiated there for each
+  class that uses it; plus a class `X` for results of that type when there are some, which every
+  implementing class converts to (see `Branch.h`). Two mixins with the same method: a `using`
+  picks one (`RatioTapChanger`).
 - Sub-objects are objects with their own handle, as in powsybl (a 3WT leg, a tap changer, a step),
   reached from their parent by a relation (`getRelated(holder, RATIO_TAP_CHANGER)`), children
   (`getChildren(transformer, THREE_WINDINGS_TRANSFORMER_LEG)`) or an indexed relation (a step by
   tap position, a leg by side). Never encode the parent's side or kind in property codes.
-- Every identifiable class has `static constexpr int TYPE = prop::<ITS_TYPE_CODE>;`:
-  `is<T>()` / `as<T>()` and the network lists use it.
+- Every class of a powsybl type has `static constexpr int TYPE = prop::<ITS_TYPE_CODE>;`:
+  `is<T>()` / `as<T>()` (on any wrapper, answered by Java `instanceof` in `getBool`) and the
+  network lists use it.
 - `==` is the identity of the Java object (`isSameObject`), never a handle comparison.
 
 **Property codes** — C++/Java communicate via integer keys defined **once** in
@@ -158,6 +160,11 @@ cmake/          CMake helper modules (FindGraalVM.cmake, etc.)
   for properties (`PROPERTY`) and aliases (`ALIAS_TYPE`).
 - An action: `invoke(object, ACT_...)`; it returns an object, or the object itself for a boolean
   result (`ACT_CONNECT`: when the terminal was connected by this call).
+- A method that takes numeric arguments: `evaluate(object, code, args)`, with the code of the
+  method's name (`evaluate(limits, RL_MIN_Q, {p})` is `getMinQ(p)`, `getDouble(limits, RL_MIN_Q)`
+  the `getMinQ()` without argument); ints, bools and enum ordinals go as doubles, a bool result
+  comes back as 1 / 0. In Java, check the number of arguments after the cast, so that a code of
+  another type fails with a ClassCastException.
 
 ### Adding a new extension
 

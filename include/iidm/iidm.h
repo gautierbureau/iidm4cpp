@@ -55,6 +55,11 @@
 #include <iidm/Switch.h>
 #include <iidm/VoltageRegulation.h>
 #include <iidm/VoltageRegulationHolder.h>
+#include <iidm/ReactiveLimits.h>
+#include <iidm/MinMaxReactiveLimits.h>
+#include <iidm/ReactiveCapabilityCurve.h>
+#include <iidm/ReactiveCapabilityShape.h>
+#include <iidm/ReactiveLimitsHolder.h>
 #include <iidm/Adder.h>
 #include <iidm/SubstationAdder.h>
 #include <iidm/VoltageLevelAdder.h>

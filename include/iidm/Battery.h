@@ -1,13 +1,14 @@
 #pragma once
 
 #include <iidm/Injection.h>
-#include <iidm/MinMaxReactiveLimits.h>
-#include <iidm/ReactiveCapabilityCurve.h>
+#include <iidm/ReactiveLimitsHolder.h>
 #include <iidm/VoltageRegulationHolder.h>
 
 namespace iidm {
 
-class Battery : public Injection, public detail::VoltageRegulationHolderMethods<Battery> {
+class Battery : public Injection,
+                public detail::VoltageRegulationHolderMethods<Battery>,
+                public detail::ReactiveLimitsHolderMethods<Battery> {
 public:
     static constexpr int TYPE = prop::BATTERY;
 
@@ -19,13 +20,6 @@ public:
 
     double getMinP() const;
     double getMaxP() const;
-
-    // ── Reactive limits ──────────────────────────────────────────────────
-    bool hasMinMaxReactiveLimits() const;
-    MinMaxReactiveLimits getMinMaxReactiveLimits() const;
-
-    bool hasReactiveCapabilityCurve() const;
-    ReactiveCapabilityCurve getReactiveCapabilityCurve() const;
 };
 
 } // namespace iidm

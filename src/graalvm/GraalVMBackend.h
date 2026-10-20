@@ -38,6 +38,7 @@ public:
     iidm::optional<std::string> getKeyedString(ObjectHandle h, int property, const std::string& key) const override;
     void setKeyedString(ObjectHandle h, int property, const std::string& key,
                         const iidm::optional<std::string>& value) override;
+    double evaluate(ObjectHandle h, int code, const std::vector<double>& args) const override;
     bool isSameObject(ObjectHandle h, ObjectHandle other) const override;
 
     std::vector<ObjectHandle> getChildren(ObjectHandle h, int childType) const override;
@@ -118,6 +119,7 @@ private:
     using FnGetKeyedString     = int(*)(graal_isolatethread_t*, ObjectHandle, int, const char*, char**);
     using FnSetKeyedString     = int(*)(graal_isolatethread_t*, ObjectHandle, int, const char*, const char*);
     using FnIsSameObject       = int(*)(graal_isolatethread_t*, ObjectHandle, ObjectHandle, int*);
+    using FnEvaluate           = int(*)(graal_isolatethread_t*, ObjectHandle, int, const double*, int, double*);
 
     FnCreateIsolate   fnCreateIsolate_   = nullptr;
     FnTearDownIsolate fnTearDownIsolate_ = nullptr;
@@ -152,6 +154,7 @@ private:
     FnGetKeyedString     fnGetKeyedString_     = nullptr;
     FnSetKeyedString     fnSetKeyedString_     = nullptr;
     FnIsSameObject       fnIsSameObject_       = nullptr;
+    FnEvaluate           fnEvaluate_           = nullptr;
 };
 
 } // namespace iidm

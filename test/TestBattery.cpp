@@ -1,8 +1,6 @@
 #include <gtest/gtest.h>
 #include <iidm/Battery.h>
 #include <iidm/ActivePowerControl.h>
-#include <iidm/MinMaxReactiveLimits.h>
-#include <iidm/ReactiveCapabilityCurve.h>
 #include <iidm/PropertyCodes.h>
 #include "MockBackend.h"
 
@@ -76,26 +74,17 @@ TEST_F(BatteryTest, Equality) {
 
 // ── Battery reactive limits ────────────────────────────────────────────────
 
-TEST_F(BatteryTest, HasMinMaxReactiveLimitsTrue) {
-    backend.ints[{BAT_HANDLE, prop::BAT_REACTIVE_LIMITS_KIND}] = 1;
+// Same reactive limits objects, and same codes, as on a generator
+TEST_F(BatteryTest, ReactiveLimits) {
+    const ObjectHandle limitsHandle = 33;
+    backend.related[{BAT_HANDLE, prop::REACTIVE_LIMITS}]         = limitsHandle;
+    backend.related[{BAT_HANDLE, prop::MIN_MAX_REACTIVE_LIMITS}] = limitsHandle;
+    backend.ints   [{limitsHandle, prop::RL_KIND}]  = static_cast<int>(ReactiveLimitsKind::MIN_MAX);
+    backend.doubles[{limitsHandle, prop::RL_MIN_Q}] = -80.0;
+    backend.doubles[{limitsHandle, prop::RL_MAX_Q}] =  80.0;
     Battery bat(BAT_HANDLE, &backend);
-    EXPECT_TRUE(bat.hasMinMaxReactiveLimits());
-    EXPECT_FALSE(bat.hasReactiveCapabilityCurve());
-}
-
-TEST_F(BatteryTest, HasReactiveCapabilityCurveTrue) {
-    backend.ints[{BAT_HANDLE, prop::BAT_REACTIVE_LIMITS_KIND}] = 2;
-    Battery bat(BAT_HANDLE, &backend);
-    EXPECT_TRUE(bat.hasReactiveCapabilityCurve());
-    EXPECT_FALSE(bat.hasMinMaxReactiveLimits());
-}
-
-TEST_F(BatteryTest, GetMinMaxReactiveLimits) {
-    backend.ints   [{BAT_HANDLE, prop::BAT_REACTIVE_LIMITS_KIND}] = 1;
-    backend.doubles[{BAT_HANDLE, prop::BAT_MIN_Q}]                = -80.0;
-    backend.doubles[{BAT_HANDLE, prop::BAT_MAX_Q}]                =  80.0;
-    Battery bat(BAT_HANDLE, &backend);
-    auto rl = bat.getMinMaxReactiveLimits();
+    EXPECT_EQ(bat.getReactiveLimits().getKind(), ReactiveLimitsKind::MIN_MAX);
+    MinMaxReactiveLimits rl = bat.getReactiveLimits<MinMaxReactiveLimits>();
     EXPECT_DOUBLE_EQ(rl.getMinQ(), -80.0);
     EXPECT_DOUBLE_EQ(rl.getMaxQ(),  80.0);
 }

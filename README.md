@@ -202,8 +202,8 @@ Identifiable              getId(), getNameOrId(), getOptionalName(), setName(), 
 Branch                    any Line or TwoWindingsTransformer: both convert to a Branch
 
 Objects that are not identifiables: ThreeWindingsTransformer::Leg, RatioTapChanger,
-PhaseTapChanger and their steps, Terminal, VoltageRegulation, OperationalLimitsGroup,
-CurrentLimits, the extensions...
+PhaseTapChanger and their steps, ReactiveLimits and their points or planes, Terminal,
+VoltageRegulation, OperationalLimitsGroup, CurrentLimits, the extensions...
 ```
 
 - **Base classes, as in powsybl.** A `Generator` is an `Injection`, a `Connectable` and an
@@ -222,8 +222,10 @@ CurrentLimits, the extensions...
 - **Extensions on their powsybl host type.** ActivePowerControl and InjectionObservability are on
   `Injection`, Measurements on `Connectable`, DiscreteMeasurements on `Identifiable`,
   BranchObservability on the branches.
-- **Sub-objects are objects.** A leg of a three windings transformer, a tap changer and its steps
-  are objects of their own, as in powsybl: `twt.getLeg2().getRatioTapChanger()->getStep(-1)`.
+- **Sub-objects are objects.** A leg of a three windings transformer, a tap changer and its steps,
+  reactive limits and their points are objects of their own, as in powsybl:
+  `twt.getLeg2().getRatioTapChanger()->getStep(-1)`, `gen.getReactiveLimits().getMaxQ(p)`.
+  `is<T>()` / `as<T>()` work on any of them (`limits.as<ReactiveCapabilityCurve>()`).
 - **Only current powsybl APIs** (powsybl 7.4): `getNameOrId()` / `getOptionalName()` rather than a
   `getName()`, `connect()` returning powsybl's result, the `VoltageRegulation` object of
   generators and of ratio tap changers.
@@ -250,7 +252,20 @@ Generator
 ├── getTargetP() / getMinP() / getMaxP() / getRatedS() → double   (+ setters)
 ├── getEnergySource() → EnergySource                               (+ setter)
 ├── isCondenser() → bool
-└── + the voltage regulation holder methods (below)
+└── + the voltage regulation holder and reactive limits holder methods (below)
+
+Reactive limits holders: Generator, Battery, VscConverterStation
+├── getReactiveLimits() → ReactiveLimits
+└── getReactiveLimits<L>() → L, for L = MinMaxReactiveLimits, ReactiveCapabilityCurve or
+    ReactiveCapabilityShape (ValidationException when they are of another kind)
+
+ReactiveLimits                  getKind() → ReactiveLimitsKind, getMinQ(p) / getMaxQ(p),
+│                               is<L>() / as<L>(), properties
+├── MinMaxReactiveLimits        getMinQ() / getMaxQ()
+├── ReactiveCapabilityCurve     getPoints() (by increasing p: getP(), getMinQ(), getMaxQ()),
+│                               getPointCount(), getMinP() / getMaxP(),
+│                               getMinQ(p, extrapolateReactiveLimitSlope) / getMaxQ(…)
+└── ReactiveCapabilityShape     getMinQ(p, v) / getMaxQ(p, v), isInside(p, q, v), getPlanes()
 
 Voltage regulation holders: Generator, Battery, StaticVarCompensator, ShuntCompensator,
 VscConverterStation, RatioTapChanger (powsybl 7.4 VoltageRegulationHolder)
@@ -453,6 +468,7 @@ enum class Country { FR, DE, ES, IT, BE, NL, GB, /* … */ };
 enum class HvdcConverterStationMode { RECTIFIER, INVERTER };
 enum class RegulationMode { VOLTAGE, REACTIVE_POWER, VOLTAGE_PER_REACTIVE_POWER };
 enum class PhaseTapChangerRegulationMode { CURRENT_LIMITER, ACTIVE_POWER_CONTROL };
+enum class ReactiveLimitsKind { MIN_MAX, CURVE, SHAPE };
 enum class SwitchKind { BREAKER, DISCONNECTOR, LOAD_BREAK_SWITCH };
 
 } // namespace iidm
@@ -540,6 +556,9 @@ public:
     virtual void setKeyedString(ObjectHandle h, int property, const std::string& key,
                                 const iidm::optional<std::string>& value);
 
+    // A method that takes numeric arguments (getMinQ(p) of reactive limits); bools come as 1 / 0
+    virtual double evaluate(ObjectHandle h, int code, const std::vector<double>& args) const;
+
     // ── Navigation ───────────────────────────────────────────────────────
     virtual std::vector<ObjectHandle> getChildren(ObjectHandle h, int childType) const = 0;
     virtual ObjectHandle getRelated(ObjectHandle h, int relation) const = 0;
@@ -593,7 +612,10 @@ primitive. A type code stands for its type: `getChildren(parent, TYPE)` lists th
 of that type, `findById(TYPE, id)` looks one up, `getBool(object, TYPE)` tells whether the object is
 one, `invoke(parent, TYPE)` starts a new one. For a property that may have no value,
 `getString`/`getInt` give a value or fail (`getString(NAME)` is the name, or else the id) while
-`getOptString`/`getOptInt` give it as it is (`getOptString(NAME)` is empty without a name).
+`getOptString`/`getOptInt` give it as it is (`getOptString(NAME)` is empty without a name). A
+method with arguments keeps the code of its name: `getDouble(limits, RL_MIN_Q)` is
+`MinMaxReactiveLimits.getMinQ()`, `evaluate(limits, RL_MIN_Q, {p})` is `ReactiveLimits.getMinQ(p)`;
+the number of arguments chooses between overloads.
 
 ### 5.2 GraalVM Native Image Backend
 
@@ -1533,8 +1555,8 @@ code of `PropertyCodes.def` and every accessor, both backends must return the sa
 same children / related objects (visited in turn) or the same C++ exception type. Keyed and
 indexed lookups and `findById` are tried with every id and node number met on the way, keyed
 strings with the object's property names and aliases (indexed lookups also with its int values,
-such as tap positions, and the sides); an identifiable looked up again by id must be the same
-object (`isSameObject`). Every value read is then written back through its
+such as tap positions, and the sides), `evaluate` with a fixed set of argument lists; an
+identifiable looked up again by id must be the same object (`isSameObject`). Every value read is then written back through its
 setter (same acceptance, same value read back), properties and aliases are removed and added
 back, terminals and connectables disconnected and connected, and both networks must save to the
 same XIIDM. One network is built through the C++ adders, with properties, aliases and names out

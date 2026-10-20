@@ -80,8 +80,8 @@ set(IIDM_BRIDGE_SOURCES
     src/NetworkFactory.cpp
     src/BackendSelector.cpp
     src/Battery.cpp
-    src/MinMaxReactiveLimits.cpp
-    src/ReactiveCapabilityCurve.cpp
+    src/ReactiveLimits.cpp
+    src/ReactiveLimitsHolder.cpp
     src/TapChangerStep.cpp
     src/PhaseTapChangerStep.cpp
     src/TapChanger.cpp
@@ -116,7 +116,6 @@ set(IIDM_BRIDGE_SOURCES
     src/ShuntCompensator.cpp
     src/ShuntCompensatorNonLinearModel.cpp
     src/StaticVarCompensator.cpp
-    src/VscConverterStation.cpp
     src/LccConverterStation.cpp
     src/Switch.cpp
     src/BusbarSection.cpp

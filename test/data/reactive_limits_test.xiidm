@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iidm:network xmlns:iidm="http://www.powsybl.org/schema/iidm/1_18" id="reactive_limits_test" caseDate="2026-01-31T12:00:00.000Z" forecastDistance="0" sourceFormat="test" minimumValidationLevel="STEADY_STATE_HYPOTHESIS">
+    <iidm:substation id="S" country="FR">
+        <iidm:voltageLevel id="VL" nominalV="400.0" topologyKind="BUS_BREAKER">
+            <iidm:busBreakerTopology>
+                <iidm:bus id="B"/>
+            </iidm:busBreakerTopology>
+            <iidm:generator id="G_CURVE" energySource="OTHER" minP="0.0" maxP="200.0" targetP="100.0" localTargetV="400.0" bus="B" connectableBus="B">
+                <iidm:reactiveCapabilityCurve>
+                    <iidm:property name="source" value="datasheet"/>
+                    <iidm:point p="0.0" minQ="-60.0" maxQ="60.0">
+                        <iidm:property name="note" value="p0"/>
+                    </iidm:point>
+                    <iidm:point p="100.0" minQ="-50.0" maxQ="80.0"/>
+                    <iidm:point p="200.0" minQ="-20.0" maxQ="40.0"/>
+                </iidm:reactiveCapabilityCurve>
+                <iidm:voltageRegulation mode="VOLTAGE" regulating="true"/>
+            </iidm:generator>
+            <iidm:generator id="G_MINMAX" energySource="OTHER" minP="0.0" maxP="100.0" targetP="50.0" localTargetQ="10.0" bus="B" connectableBus="B">
+                <iidm:minMaxReactiveLimits minQ="-30.0" maxQ="35.0"/>
+            </iidm:generator>
+            <iidm:battery id="BAT" targetP="10.0" localTargetQ="0.0" minP="-50.0" maxP="50.0" bus="B" connectableBus="B">
+                <iidm:reactiveCapabilityCurve>
+                    <iidm:point p="-50.0" minQ="-25.0" maxQ="25.0"/>
+                    <iidm:point p="50.0" minQ="-20.0" maxQ="30.0"/>
+                </iidm:reactiveCapabilityCurve>
+            </iidm:battery>
+            <iidm:load id="L" loadType="UNDEFINED" p0="300.0" q0="50.0" bus="B" connectableBus="B"/>
+            <iidm:vscConverterStation id="VSC" lossFactor="0.01" localTargetQ="0.0" bus="B" connectableBus="B">
+                <iidm:minMaxReactiveLimits minQ="-200.0" maxQ="150.0"/>
+            </iidm:vscConverterStation>
+        </iidm:voltageLevel>
+    </iidm:substation>
+</iidm:network>

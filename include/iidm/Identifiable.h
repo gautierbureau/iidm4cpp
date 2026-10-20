@@ -48,23 +48,9 @@ public:
                            bool ensureAliasUnicity = false);
     Identifiable& removeAlias(const std::string& alias);
 
-    // ── Type ─────────────────────────────────────────────────────────────
-    // Whether it is a T (Java instanceof): is<Generator>(), is<Injection>(), is<Branch>()...
-    template <class T> bool is() const { return backend_->getBool(handle_, T::TYPE); }
-    // This object as a T; PropertyNotFoundException when it is not one
-    template <class T> T as() const;
-
     // ── Extensions ───────────────────────────────────────────────────────
     bool hasDiscreteMeasurements() const;
     DiscreteMeasurements getDiscreteMeasurements() const;
 };
-
-template <class T>
-T Identifiable::as() const {
-    if (!is<T>()) {
-        throw PropertyNotFoundException(getId() + " is not of the requested type (code " + std::to_string(T::TYPE) + ")");
-    }
-    return T(handle_, backend_);
-}
 
 } // namespace iidm

@@ -131,17 +131,18 @@ public final class PropertyDispatcher {
             case BAT_TARGET_P -> ((Battery) obj).getTargetP();
             case BAT_MIN_P    -> ((Battery) obj).getMinP();
             case BAT_MAX_P    -> ((Battery) obj).getMaxP();
-            case BAT_MIN_Q    -> ((Battery) obj).getReactiveLimits(MinMaxReactiveLimits.class).getMinQ();
-            case BAT_MAX_Q    -> ((Battery) obj).getReactiveLimits(MinMaxReactiveLimits.class).getMaxQ();
             // ShuntCompensator total B for current section count
             case SHUNT_B -> ((ShuntCompensator) obj).getB();
             // Generator reactive limits (min-max kind)
-            case GEN_MIN_Q -> ((Generator) obj).getReactiveLimits(MinMaxReactiveLimits.class).getMinQ();
-            case GEN_MAX_Q -> ((Generator) obj).getReactiveLimits(MinMaxReactiveLimits.class).getMaxQ();
-            // VSC reactive limits
-            case VSC_MIN_Q -> ((VscConverterStation) obj).getReactiveLimits(MinMaxReactiveLimits.class).getMinQ();
-            case VSC_MAX_Q -> ((VscConverterStation) obj).getReactiveLimits(MinMaxReactiveLimits.class).getMaxQ();
-            // ReactiveCapabilityCurve.Point
+            // Reactive limits
+            case RL_MIN_Q    -> ((MinMaxReactiveLimits) obj).getMinQ();
+            case RL_MAX_Q    -> ((MinMaxReactiveLimits) obj).getMaxQ();
+            case CURVE_MIN_P -> ((ReactiveCapabilityCurve) obj).getMinP();
+            case CURVE_MAX_P -> ((ReactiveCapabilityCurve) obj).getMaxP();
+            case PLANE_ALPHA -> ((ReactiveCapabilityShapePlane) obj).getAlpha();
+            case PLANE_BETA  -> ((ReactiveCapabilityShapePlane) obj).getBeta();
+            case PLANE_GAMMA -> ((ReactiveCapabilityShapePlane) obj).getGamma();
+            case PLANE_DELTA -> ((ReactiveCapabilityShapePlane) obj).getDelta();
             case POINT_P     -> ((ReactiveCapabilityCurve.Point) obj).getP();
             case POINT_MIN_Q -> ((ReactiveCapabilityCurve.Point) obj).getMinQ();
             case POINT_MAX_Q -> ((ReactiveCapabilityCurve.Point) obj).getMaxQ();
@@ -277,27 +278,8 @@ public final class PropertyDispatcher {
             case TC_STEP_COUNT        -> tapChanger(obj).getStepCount();
             case PTC_REGULATION_MODE  -> ((PhaseTapChanger) obj).getRegulationMode().ordinal();
             case LEG_SIDE             -> ((ThreeWindingsTransformer.Leg) obj).getSide().ordinal();
-            // Generator reactive limits kind: 0=NONE, 1=MIN_MAX, 2=CURVE
-            case GEN_REACTIVE_LIMITS_KIND -> {
-                ReactiveLimits rl = ((Generator) obj).getReactiveLimits();
-                if (rl instanceof MinMaxReactiveLimits) yield 1;
-                if (rl instanceof ReactiveCapabilityCurve) yield 2;
-                yield 0;
-            }
-            // Battery reactive limits kind: 0=NONE, 1=MIN_MAX, 2=CURVE
-            case BAT_REACTIVE_LIMITS_KIND -> {
-                ReactiveLimits rl = ((Battery) obj).getReactiveLimits();
-                if (rl instanceof MinMaxReactiveLimits) yield 1;
-                if (rl instanceof ReactiveCapabilityCurve) yield 2;
-                yield 0;
-            }
-            // VSC reactive limits kind
-            case VSC_REACTIVE_LIMITS_KIND -> {
-                ReactiveLimits rl = ((VscConverterStation) obj).getReactiveLimits();
-                if (rl instanceof MinMaxReactiveLimits) yield 1;
-                if (rl instanceof ReactiveCapabilityCurve) yield 2;
-                yield 0;
-            }
+            case RL_KIND           -> ((ReactiveLimits) obj).getKind().ordinal();
+            case CURVE_POINT_COUNT -> ((ReactiveCapabilityCurve) obj).getPointCount();
             // Shunt model kind: 0=LINEAR, 1=NON_LINEAR
             case SHUNT_MODEL_KIND -> ((ShuntCompensator) obj).getModelType().ordinal();
             // Terminal node number (node-breaker topology)
@@ -392,6 +374,19 @@ public final class PropertyDispatcher {
             case SWITCH                     -> obj instanceof Switch;
             case BUSBAR_SECTION             -> obj instanceof BusbarSection;
             case BATTERY                    -> obj instanceof Battery;
+            case THREE_WINDINGS_TRANSFORMER_LEG -> obj instanceof ThreeWindingsTransformer.Leg;
+            case RATIO_TAP_CHANGER          -> obj instanceof RatioTapChanger;
+            case PHASE_TAP_CHANGER          -> obj instanceof PhaseTapChanger;
+            case RATIO_TAP_CHANGER_STEP     -> obj instanceof RatioTapChangerStep;
+            case PHASE_TAP_CHANGER_STEP     -> obj instanceof PhaseTapChangerStep;
+            case REACTIVE_LIMITS            -> obj instanceof ReactiveLimits;
+            case MIN_MAX_REACTIVE_LIMITS    -> obj instanceof MinMaxReactiveLimits;
+            case REACTIVE_CAPABILITY_CURVE  -> obj instanceof ReactiveCapabilityCurve;
+            case REACTIVE_CAPABILITY_SHAPE  -> obj instanceof ReactiveCapabilityShape;
+            case REACTIVE_CURVE_POINT       -> obj instanceof ReactiveCapabilityCurve.Point;
+            case REACTIVE_CAPABILITY_SHAPE_PLANE -> obj instanceof ReactiveCapabilityShapePlane;
+            case PLANE_LESS_OR_EQUAL        -> ((ReactiveCapabilityShapePlane) obj).isLessOrEqual();
+            case PLANE_GREATER_OR_EQUAL     -> ((ReactiveCapabilityShapePlane) obj).isGreaterOrEqual();
             case FICTITIOUS                 -> ((Identifiable<?>) obj).isFictitious();
             case EQUIVALENT                 -> ((Connectable<?>) obj).isEquivalent();
             case GEN_CONDENSER              -> ((Generator) obj).isCondenser();
@@ -628,6 +623,51 @@ public final class PropertyDispatcher {
         }
     }
 
+    // ── Methods that take arguments ───────────────────────────────────────
+
+    public static double evaluate(long handle, int code, double[] args) {
+        return evaluate(NetworkRegistry.lookup(handle), code, args);
+    }
+
+    /**
+     * The result of a method that takes numeric arguments (ints, bools and enum ordinals come as
+     * doubles); a boolean result is 1 or 0. The number of arguments chooses between overloads.
+     */
+    public static double evaluate(Object obj, int code, double[] args) {
+        return switch (code) {
+            case RL_MIN_Q -> {
+                ReactiveLimits limits = (ReactiveLimits) obj;
+                yield switch (args.length) {
+                    case 1 -> limits.getMinQ(args[0]);
+                    case 2 -> limits instanceof ReactiveCapabilityCurve curve
+                        ? curve.getMinQ(args[0], args[1] != 0)
+                        : ((ReactiveCapabilityShape) limits).getMinQ(args[0], args[1]);
+                    default -> throw wrongArgumentCount(code, args);
+                };
+            }
+            case RL_MAX_Q -> {
+                ReactiveLimits limits = (ReactiveLimits) obj;
+                yield switch (args.length) {
+                    case 1 -> limits.getMaxQ(args[0]);
+                    case 2 -> limits instanceof ReactiveCapabilityCurve curve
+                        ? curve.getMaxQ(args[0], args[1] != 0)
+                        : ((ReactiveCapabilityShape) limits).getMaxQ(args[0], args[1]);
+                    default -> throw wrongArgumentCount(code, args);
+                };
+            }
+            case SHAPE_IS_INSIDE -> {
+                ReactiveCapabilityShape shape = (ReactiveCapabilityShape) obj;
+                if (args.length != 3) throw wrongArgumentCount(code, args);
+                yield shape.isInside(args[0], args[1], args[2]) ? 1 : 0;
+            }
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown code to evaluate: " + code);
+        };
+    }
+
+    private static BridgeErrors.PropertyNotFoundException wrongArgumentCount(int code, double[] args) {
+        return new BridgeErrors.PropertyNotFoundException("Code " + code + " does not take " + args.length + " arguments");
+    }
+
     // ── Identity ──────────────────────────────────────────────────────────
 
     /** Whether two handles stand for the same object (handles are not unique: each lookup makes one). */
@@ -726,12 +766,8 @@ public final class PropertyDispatcher {
                 ((VoltageLevel) obj).getNodeBreakerView().getInternalConnections().spliterator(), false);
             case BUS -> StreamSupport.stream(
                 ((VoltageLevel) obj).getBusBreakerView().getBuses().spliterator(), false);
-            case REACTIVE_CURVE_POINT -> {
-                ReactiveLimitsHolder holder = (ReactiveLimitsHolder) obj;
-                Collection<ReactiveCapabilityCurve.Point> pts =
-                    holder.getReactiveLimits(ReactiveCapabilityCurve.class).getPoints();
-                yield pts.stream();
-            }
+            case REACTIVE_CURVE_POINT -> ((ReactiveCapabilityCurve) obj).getPoints().stream();
+            case REACTIVE_CAPABILITY_SHAPE_PLANE -> ((ReactiveCapabilityShape) obj).getPlanes().stream();
             case THREE_WINDINGS_TRANSFORMER_LEG -> ((ThreeWindingsTransformer) obj).getLegs().stream();
             case RATIO_TAP_CHANGER_STEP -> steps((RatioTapChanger) obj);
             case PHASE_TAP_CHANGER_STEP -> steps((PhaseTapChanger) obj);
@@ -817,6 +853,10 @@ public final class PropertyDispatcher {
             case REL_CONNECTABLE -> ((Terminal) obj).getConnectable();
             case VOLTAGE_REGULATION -> ((VoltageRegulationHolder<?>) obj).getVoltageRegulation();
             case ACTIVE_POWER_CONTROL -> ((Extendable<?>) obj).getExtension(ActivePowerControl.class);
+            case REACTIVE_LIMITS           -> ((ReactiveLimitsHolder) obj).getReactiveLimits();
+            case MIN_MAX_REACTIVE_LIMITS   -> ((ReactiveLimitsHolder) obj).getReactiveLimits(MinMaxReactiveLimits.class);
+            case REACTIVE_CAPABILITY_CURVE -> ((ReactiveLimitsHolder) obj).getReactiveLimits(ReactiveCapabilityCurve.class);
+            case REACTIVE_CAPABILITY_SHAPE -> ((ReactiveLimitsHolder) obj).getReactiveLimits(ReactiveCapabilityShape.class);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown relation: " + relation);
         };
     }

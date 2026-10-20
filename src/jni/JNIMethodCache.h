@@ -40,6 +40,7 @@ struct JNIMethodCache {
     jmethodID disp_getKeyedString           = nullptr;
     jmethodID disp_setKeyedString           = nullptr;
     jmethodID disp_isSameObject             = nullptr;
+    jmethodID disp_evaluate                 = nullptr;
 };
 
 } // namespace iidm
