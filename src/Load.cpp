@@ -67,4 +67,22 @@ bool Load::operator!=(const Load& other) const {
     return !(*this == other);
 }
 
+// ── State estimation extensions ──────────────────────────────────────────────
+
+bool Load::hasInjectionObservability() const {
+    return backend_->getBool(handle_, prop::EXT_INJ_OBS_EXISTS);
+}
+
+InjectionObservability Load::getInjectionObservability() const {
+    return InjectionObservability(handle_, backend_);
+}
+
+bool Load::hasMeasurements() const {
+    return backend_->getBool(handle_, prop::EXT_MEAS_EXISTS);
+}
+
+Measurements Load::getMeasurements() const {
+    return Measurements(handle_, backend_);
+}
+
 } // namespace iidm

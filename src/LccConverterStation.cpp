@@ -55,4 +55,22 @@ bool LccConverterStation::operator!=(const LccConverterStation& other) const {
     return !(*this == other);
 }
 
+// ── State estimation extensions ──────────────────────────────────────────────
+
+bool LccConverterStation::hasInjectionObservability() const {
+    return backend_->getBool(handle_, prop::EXT_INJ_OBS_EXISTS);
+}
+
+InjectionObservability LccConverterStation::getInjectionObservability() const {
+    return InjectionObservability(handle_, backend_);
+}
+
+bool LccConverterStation::hasMeasurements() const {
+    return backend_->getBool(handle_, prop::EXT_MEAS_EXISTS);
+}
+
+Measurements LccConverterStation::getMeasurements() const {
+    return Measurements(handle_, backend_);
+}
+
 } // namespace iidm

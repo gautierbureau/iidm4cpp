@@ -11,6 +11,7 @@
  * extensions_test.xiidm (no generators).
  */
 #include <iidm/iidm.h>
+#include "../StateEstimationReport.h"
 #include <jni.h>
 #include <iostream>
 #include <string>
@@ -76,6 +77,9 @@ static std::string runEmbedded(const char* networkId) {
                           << " slackTerminal.busId="
                           << vl.getSlackTerminal().getTerminal().getBusId() << "\n";
         }
+
+        // State estimation extensions (measurements, observability, toBeEstimated, areas)
+        example::reportStateEstimation(network, "[C++] ");
 
         std::cout << "[C++] Simulation complete.\n";
         return {};

@@ -29,6 +29,21 @@ enum class StaticVarCompensatorRegulationMode { VOLTAGE, REACTIVE_POWER, OFF, VO
 enum class SwitchKind { BREAKER, DISCONNECTOR, LOAD_BREAK_SWITCH };
 enum class PhaseTapChangerRegulationMode { CURRENT_LIMITER, ACTIVE_POWER_CONTROL, FIXED_TAP };
 enum class HvdcOperatorActivePowerRangeSide { SIDE1, SIDE2 };
+enum class ThreeSides { ONE, TWO, THREE };
+
+// ── State estimation extensions (same order as the powsybl-core enums) ──────
+enum class MeasurementType {
+    ANGLE, ACTIVE_POWER, APPARENT_POWER, REACTIVE_POWER, CURRENT, VOLTAGE, FREQUENCY, OTHER
+};
+enum class DiscreteMeasurementType { TAP_POSITION, SWITCH_POSITION, SHUNT_COMPENSATOR_SECTION, OTHER };
+enum class DiscreteMeasurementTapChanger {
+    RATIO_TAP_CHANGER, PHASE_TAP_CHANGER,
+    RATIO_TAP_CHANGER_1, PHASE_TAP_CHANGER_1,
+    RATIO_TAP_CHANGER_2, PHASE_TAP_CHANGER_2,
+    RATIO_TAP_CHANGER_3, PHASE_TAP_CHANGER_3
+};
+enum class DiscreteMeasurementValueType { BOOLEAN, INT, STRING };
+enum class ObservabilityStatus { OBSERVABLE, NON_OBSERVABLE, BORDER };
 
 std::string             getCountryName(Country country);
 iidm::optional<Country> countryFromName(const std::string& name);

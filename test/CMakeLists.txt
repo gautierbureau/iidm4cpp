@@ -15,6 +15,10 @@ set(TEST_SOURCES
     TestHvdcOperatorActivePowerRange.cpp
     TestVoltagePerReactivePowerControl.cpp
     TestSlackTerminal.cpp
+    TestToBeEstimated.cpp
+    TestObservability.cpp
+    TestMeasurements.cpp
+    TestObservabilityArea.cpp
     TestLoad.cpp
     TestTerminal.cpp
     TestBus.cpp

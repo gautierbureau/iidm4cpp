@@ -5,6 +5,8 @@
 #include <iidm/Terminal.h>
 #include <iidm/stdcxx/optional.hpp>
 #include <string>
+#include <iidm/InjectionObservability.h>
+#include <iidm/Measurement.h>
 
 namespace iidm {
 
@@ -36,6 +38,13 @@ public:
     void connect();
     void disconnect();
     bool isConnected() const;
+
+    // ── State estimation extensions ──────────────────────────────────────
+    bool hasInjectionObservability() const;
+    InjectionObservability getInjectionObservability() const;
+
+    bool hasMeasurements() const;
+    Measurements getMeasurements() const;
 
     bool isValid() const { return handle_ != INVALID_HANDLE; }
 

@@ -21,6 +21,9 @@ import com.powsybl.iidm.network.extensions.CoordinatedReactiveControlAdder;
 import com.powsybl.iidm.network.extensions.HvdcAngleDroopActivePowerControl;
 import com.powsybl.iidm.network.extensions.HvdcOperatorActivePowerRange;
 import com.powsybl.iidm.network.extensions.SlackTerminal;
+import com.powsybl.iidm.network.extensions.InjectionObservability;
+import com.powsybl.iidm.network.extensions.Measurements;
+import com.powsybl.iidm.network.extensions.TwoWindingsTransformerToBeEstimated;
 import com.powsybl.iidm.network.regulation.RegulationMode;
 import com.powsybl.iidm.network.regulation.VoltageRegulation;
 
@@ -111,6 +114,23 @@ public class JavaLauncher {
                                   vl.getId(), bus != null ? bus.getId() : "(unknown)");
             }
         }
+
+        // Read back the state estimation edits made by C++ (see StateEstimationReport.h)
+        Generator g1 = network.getGenerator("G1");
+        if (g1 != null) {
+            Measurements<Generator> meas = g1.getExtension(Measurements.class);
+            if (meas != null && meas.getMeasurement("G1_P") != null)
+                System.out.printf("[Java] G1_P measurement value=%.1f valid=%s%n",
+                                  meas.getMeasurement("G1_P").getValue(), meas.getMeasurement("G1_P").isValid());
+            InjectionObservability<Generator> obs = g1.getExtension(InjectionObservability.class);
+            if (obs != null && obs.getNullableQualityV() != null)
+                System.out.printf("[Java] G1 observability qualityV.sd=%.1f%n",
+                                  obs.getNullableQualityV().getStandardDeviation());
+        }
+        TwoWindingsTransformer t2 = network.getTwoWindingsTransformer("T2");
+        if (t2 != null && t2.getExtension(TwoWindingsTransformerToBeEstimated.class) != null)
+            System.out.println("[Java] T2 toBeEstimated.ptc="
+                + t2.getExtension(TwoWindingsTransformerToBeEstimated.class).shouldEstimatePhaseTapChanger());
 
         IidmBridgeRegistry.unregister(networkId);
     }

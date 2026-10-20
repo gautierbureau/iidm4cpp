@@ -96,4 +96,30 @@ bool ShuntCompensator::operator!=(const ShuntCompensator& other) const {
     return !(*this == other);
 }
 
+// ── State estimation extensions ──────────────────────────────────────────────
+
+bool ShuntCompensator::hasInjectionObservability() const {
+    return backend_->getBool(handle_, prop::EXT_INJ_OBS_EXISTS);
+}
+
+InjectionObservability ShuntCompensator::getInjectionObservability() const {
+    return InjectionObservability(handle_, backend_);
+}
+
+bool ShuntCompensator::hasMeasurements() const {
+    return backend_->getBool(handle_, prop::EXT_MEAS_EXISTS);
+}
+
+Measurements ShuntCompensator::getMeasurements() const {
+    return Measurements(handle_, backend_);
+}
+
+bool ShuntCompensator::hasDiscreteMeasurements() const {
+    return backend_->getBool(handle_, prop::EXT_DMEAS_EXISTS);
+}
+
+DiscreteMeasurements ShuntCompensator::getDiscreteMeasurements() const {
+    return DiscreteMeasurements(handle_, backend_);
+}
+
 } // namespace iidm

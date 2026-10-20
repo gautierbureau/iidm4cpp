@@ -82,4 +82,22 @@ bool DanglingLine::operator!=(const DanglingLine& other) const {
     return !(*this == other);
 }
 
+// ── State estimation extensions ──────────────────────────────────────────────
+
+bool DanglingLine::hasInjectionObservability() const {
+    return backend_->getBool(handle_, prop::EXT_INJ_OBS_EXISTS);
+}
+
+InjectionObservability DanglingLine::getInjectionObservability() const {
+    return InjectionObservability(handle_, backend_);
+}
+
+bool DanglingLine::hasMeasurements() const {
+    return backend_->getBool(handle_, prop::EXT_MEAS_EXISTS);
+}
+
+Measurements DanglingLine::getMeasurements() const {
+    return Measurements(handle_, backend_);
+}
+
 } // namespace iidm

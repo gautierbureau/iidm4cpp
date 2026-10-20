@@ -3,6 +3,8 @@
 #include <iidm/ObjectHandle.h>
 #include <iidm/Terminal.h>
 #include <string>
+#include <iidm/InjectionObservability.h>
+#include <iidm/Measurement.h>
 
 namespace iidm {
 
@@ -20,6 +22,13 @@ public:
     double getAngle() const;
 
     Terminal getTerminal() const;
+
+    // ── State estimation extensions ──────────────────────────────────────
+    bool hasInjectionObservability() const;
+    InjectionObservability getInjectionObservability() const;
+
+    bool hasMeasurements() const;
+    Measurements getMeasurements() const;
 
     bool isValid() const { return handle_ != INVALID_HANDLE; }
 

@@ -331,4 +331,79 @@ constexpr int REL_VL_BBV_BUS2            = 2024; // VL (keyed by switchId) → B
 // ── Child types (new) ────────────────────────────────────────────────────────
 constexpr int CONNECTABLE_TERMINALS       = 37; // all terminals of the Connectable owning a Terminal
 
+// ── Extension: TwoWindingsTransformerToBeEstimated (on TwoWT) ────────────────
+constexpr int EXT_TWO_WT_TBE_EXISTS          = 3700; // bool
+constexpr int EXT_TWO_WT_TBE_RTC             = 3701; // bool: shouldEstimateRatioTapChanger
+constexpr int EXT_TWO_WT_TBE_PTC             = 3702; // bool: shouldEstimatePhaseTapChanger
+
+// ── Extension: ThreeWindingsTransformerToBeEstimated (on ThreeWT) ────────────
+constexpr int EXT_THREE_WT_TBE_EXISTS        = 3800; // bool
+constexpr int EXT_THREE_WT_TBE_RTC1          = 3801; // bool: shouldEstimateRatioTapChanger1
+constexpr int EXT_THREE_WT_TBE_RTC2          = 3802; // bool
+constexpr int EXT_THREE_WT_TBE_RTC3          = 3803; // bool
+constexpr int EXT_THREE_WT_TBE_PTC1          = 3804; // bool: shouldEstimatePhaseTapChanger1
+constexpr int EXT_THREE_WT_TBE_PTC2          = 3805; // bool
+constexpr int EXT_THREE_WT_TBE_PTC3          = 3806; // bool
+
+// ── Extension observability quality blocks: qualityBase + offset below ───────
+constexpr int OBS_QUALITY_EXISTS_OFF         = 0; // bool: quality defined
+constexpr int OBS_QUALITY_STD_DEV_OFF        = 1; // double: standard deviation (setting it creates the quality)
+constexpr int OBS_QUALITY_REDUNDANT_OFF      = 2; // int: -1 = undefined, 0 = false, 1 = true
+
+// ── Extension: InjectionObservability (on any Injection) ─────────────────────
+constexpr int EXT_INJ_OBS_EXISTS             = 3900; // bool
+constexpr int EXT_INJ_OBS_OBSERVABLE         = 3901; // bool
+constexpr int EXT_INJ_OBS_QUALITY_P          = 3910; // quality block base
+constexpr int EXT_INJ_OBS_QUALITY_Q          = 3920; // quality block base
+constexpr int EXT_INJ_OBS_QUALITY_V          = 3930; // quality block base
+
+// ── Extension: BranchObservability (on Line / TwoWT) ─────────────────────────
+constexpr int EXT_BRANCH_OBS_EXISTS          = 4000; // bool
+constexpr int EXT_BRANCH_OBS_OBSERVABLE      = 4001; // bool
+constexpr int EXT_BRANCH_OBS_QUALITY_P1      = 4010; // quality block base
+constexpr int EXT_BRANCH_OBS_QUALITY_P2      = 4020; // quality block base
+constexpr int EXT_BRANCH_OBS_QUALITY_Q1      = 4030; // quality block base
+constexpr int EXT_BRANCH_OBS_QUALITY_Q2      = 4040; // quality block base
+
+// ── Extension: Measurements (on any Connectable) and Measurement handles ─────
+constexpr int EXT_MEAS_EXISTS                = 4100; // bool, on the host
+constexpr int MEAS_ID                        = 4101; // string
+constexpr int MEAS_TYPE                      = 4102; // int: MeasurementType ordinal
+constexpr int MEAS_VALUE                     = 4103; // double
+constexpr int MEAS_STD_DEV                   = 4104; // double
+constexpr int MEAS_VALID                     = 4105; // bool
+constexpr int MEAS_SIDE                      = 4106; // int: -1 = none, 0 = ONE, 1 = TWO, 2 = THREE
+
+// ── Extension: DiscreteMeasurements (on any Identifiable) and DiscreteMeasurement handles ───
+constexpr int EXT_DMEAS_EXISTS               = 4200; // bool, on the host
+constexpr int DMEAS_ID                       = 4201; // string
+constexpr int DMEAS_TYPE                     = 4202; // int: DiscreteMeasurementType ordinal
+constexpr int DMEAS_TAP_CHANGER              = 4203; // int: DiscreteMeasurementTapChanger ordinal, -1 = none
+constexpr int DMEAS_VALUE_TYPE               = 4204; // int: DiscreteMeasurementValueType ordinal
+constexpr int DMEAS_VALUE_STRING             = 4205; // string
+constexpr int DMEAS_VALUE_INT                = 4206; // int
+constexpr int DMEAS_VALUE_BOOL               = 4207; // bool
+constexpr int DMEAS_VALID                    = 4208; // bool
+
+// ── Extension: ObservabilityArea (on VoltageLevel) and area handles ──────────
+constexpr int EXT_OBS_AREA_EXISTS            = 4300; // bool, on the VoltageLevel
+constexpr int EXT_OBS_AREA_CONSISTENT        = 4301; // bool: isConsistentWithTopology, on the VoltageLevel
+constexpr int OBS_AREA_NUMBER                = 4302; // int
+constexpr int OBS_AREA_STATUS                = 4303; // int: ObservabilityStatus ordinal
+constexpr int OBS_AREA_NODES                 = 4304; // int list: node-breaker nodes (empty in bus-breaker topology)
+
+// ── Child types: state estimation extensions ─────────────────────────────────
+constexpr int MEASUREMENT                    = 38; // Measurement handles of a Connectable
+constexpr int DISCRETE_MEASUREMENT           = 39; // DiscreteMeasurement handles of an Identifiable
+constexpr int OBSERVABILITY_AREA             = 40; // observability areas of a VoltageLevel
+constexpr int OBS_AREA_TERMINALS             = 41; // Terminal handles of an observability area
+constexpr int OBS_AREA_BUSES                 = 42; // bus-breaker view Bus handles of an observability area
+
+// ── Relations: state estimation extensions ───────────────────────────────────
+constexpr int REL_MEASUREMENT_BY_ID          = 2025; // host (keyed by measurement id) → Measurement (getRelatedByString)
+constexpr int REL_DISCRETE_MEASUREMENT_BY_ID = 2026; // host (keyed by id) → DiscreteMeasurement (getRelatedByString)
+constexpr int REL_OBS_AREA_BY_NODE           = 2027; // VL (indexed by node) → observability area (getRelatedByIndex)
+constexpr int REL_OBS_AREA_BY_BUS            = 2028; // VL (keyed by bus view bus id) → observability area (getRelatedByString)
+constexpr int REL_OBS_AREA_BY_BBV_BUS        = 2029; // VL (keyed by bus-breaker bus id) → observability area (getRelatedByString)
+
 } } // namespace iidm::prop

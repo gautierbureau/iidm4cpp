@@ -17,6 +17,14 @@
 #include <iidm/HvdcOperatorActivePowerRange.h>
 #include <iidm/VoltagePerReactivePowerControl.h>
 #include <iidm/SlackTerminal.h>
+#include <iidm/ObservabilityQuality.h>
+#include <iidm/InjectionObservability.h>
+#include <iidm/BranchObservability.h>
+#include <iidm/TwoWindingsTransformerToBeEstimated.h>
+#include <iidm/ThreeWindingsTransformerToBeEstimated.h>
+#include <iidm/Measurement.h>
+#include <iidm/DiscreteMeasurement.h>
+#include <iidm/ObservabilityArea.h>
 #include <iidm/Generator.h>
 #include <iidm/Load.h>
 #include <iidm/Line.h>

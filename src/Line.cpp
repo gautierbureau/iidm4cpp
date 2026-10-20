@@ -113,4 +113,22 @@ bool Line::operator!=(const Line& other) const {
     return !(*this == other);
 }
 
+// ── State estimation extensions ──────────────────────────────────────────────
+
+bool Line::hasBranchObservability() const {
+    return backend_->getBool(handle_, prop::EXT_BRANCH_OBS_EXISTS);
+}
+
+BranchObservability Line::getBranchObservability() const {
+    return BranchObservability(handle_, backend_);
+}
+
+bool Line::hasMeasurements() const {
+    return backend_->getBool(handle_, prop::EXT_MEAS_EXISTS);
+}
+
+Measurements Line::getMeasurements() const {
+    return Measurements(handle_, backend_);
+}
+
 } // namespace iidm

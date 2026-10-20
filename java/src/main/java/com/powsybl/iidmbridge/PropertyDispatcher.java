@@ -8,6 +8,11 @@ import com.powsybl.iidm.network.extensions.CoordinatedReactiveControl;
 import com.powsybl.iidm.network.extensions.HvdcAngleDroopActivePowerControl;
 import com.powsybl.iidm.network.extensions.HvdcOperatorActivePowerRange;
 import com.powsybl.iidm.network.extensions.SlackTerminal;
+import com.powsybl.iidm.network.extensions.DiscreteMeasurement;
+import com.powsybl.iidm.network.extensions.DiscreteMeasurements;
+import com.powsybl.iidm.network.extensions.Measurement;
+import com.powsybl.iidm.network.extensions.Measurements;
+import com.powsybl.iidm.network.extensions.ObservabilityArea;
 import com.powsybl.iidm.network.regulation.RegulationMode;
 import com.powsybl.iidm.network.regulation.VoltageRegulation;
 import com.powsybl.iidmbridge.graalvm.NetworkRegistry;
@@ -177,6 +182,17 @@ public final class PropertyDispatcher {
             case THREE_WT_LEG3_PTC_REG_VALUE       -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().getRegulationValue();
             case THREE_WT_LEG3_RTC_TARGET_DEADBAND -> ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().getTargetDeadband();
             case THREE_WT_LEG3_PTC_TARGET_DEADBAND -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().getTargetDeadband();
+            // State estimation extensions
+            case EXT_INJ_OBS_QUALITY_P + OBS_QUALITY_STD_DEV_OFF,
+                 EXT_INJ_OBS_QUALITY_Q + OBS_QUALITY_STD_DEV_OFF,
+                 EXT_INJ_OBS_QUALITY_V + OBS_QUALITY_STD_DEV_OFF,
+                 EXT_BRANCH_OBS_QUALITY_P1 + OBS_QUALITY_STD_DEV_OFF,
+                 EXT_BRANCH_OBS_QUALITY_P2 + OBS_QUALITY_STD_DEV_OFF,
+                 EXT_BRANCH_OBS_QUALITY_Q1 + OBS_QUALITY_STD_DEV_OFF,
+                 EXT_BRANCH_OBS_QUALITY_Q2 + OBS_QUALITY_STD_DEV_OFF
+                -> StateEstimationDispatch.getQualityStandardDeviation(obj, property);
+            case MEAS_VALUE   -> ((Measurement) obj).getValue();
+            case MEAS_STD_DEV -> ((Measurement) obj).getStandardDeviation();
             default -> throw new IllegalArgumentException("Unknown double property: " + property);
         };
     }
@@ -223,6 +239,16 @@ public final class PropertyDispatcher {
             case THREE_WT_LEG2_PTC_REG_VALUE -> ((ThreeWindingsTransformer) obj).getLeg2().getPhaseTapChanger().setRegulationValue(value);
             case THREE_WT_LEG3_RTC_TARGET_V  -> ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().setTargetV(value);
             case THREE_WT_LEG3_PTC_REG_VALUE -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().setRegulationValue(value);
+            case EXT_INJ_OBS_QUALITY_P + OBS_QUALITY_STD_DEV_OFF,
+                 EXT_INJ_OBS_QUALITY_Q + OBS_QUALITY_STD_DEV_OFF,
+                 EXT_INJ_OBS_QUALITY_V + OBS_QUALITY_STD_DEV_OFF,
+                 EXT_BRANCH_OBS_QUALITY_P1 + OBS_QUALITY_STD_DEV_OFF,
+                 EXT_BRANCH_OBS_QUALITY_P2 + OBS_QUALITY_STD_DEV_OFF,
+                 EXT_BRANCH_OBS_QUALITY_Q1 + OBS_QUALITY_STD_DEV_OFF,
+                 EXT_BRANCH_OBS_QUALITY_Q2 + OBS_QUALITY_STD_DEV_OFF
+                -> StateEstimationDispatch.setQualityStandardDeviation(obj, property, value);
+            case MEAS_VALUE   -> ((Measurement) obj).setValue(value);
+            case MEAS_STD_DEV -> ((Measurement) obj).setStandardDeviation(value);
             default -> throw new IllegalArgumentException("Unknown double property for set: " + property);
         }
     }
@@ -302,6 +328,23 @@ public final class PropertyDispatcher {
             case THREE_WT_LEG3_PTC_LOW_TAP  -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().getLowTapPosition();
             case THREE_WT_LEG3_PTC_HIGH_TAP -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().getHighTapPosition();
             case THREE_WT_LEG3_PTC_REG_MODE -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().getRegulationMode().ordinal();
+            // State estimation extensions
+            case EXT_INJ_OBS_QUALITY_P + OBS_QUALITY_REDUNDANT_OFF,
+                 EXT_INJ_OBS_QUALITY_Q + OBS_QUALITY_REDUNDANT_OFF,
+                 EXT_INJ_OBS_QUALITY_V + OBS_QUALITY_REDUNDANT_OFF,
+                 EXT_BRANCH_OBS_QUALITY_P1 + OBS_QUALITY_REDUNDANT_OFF,
+                 EXT_BRANCH_OBS_QUALITY_P2 + OBS_QUALITY_REDUNDANT_OFF,
+                 EXT_BRANCH_OBS_QUALITY_Q1 + OBS_QUALITY_REDUNDANT_OFF,
+                 EXT_BRANCH_OBS_QUALITY_Q2 + OBS_QUALITY_REDUNDANT_OFF
+                -> StateEstimationDispatch.getQualityRedundant(obj, property);
+            case MEAS_TYPE          -> ((Measurement) obj).getType().ordinal();
+            case MEAS_SIDE          -> StateEstimationDispatch.measurementSide((Measurement) obj);
+            case DMEAS_TYPE         -> ((DiscreteMeasurement) obj).getType().ordinal();
+            case DMEAS_TAP_CHANGER  -> StateEstimationDispatch.discreteMeasurementTapChanger((DiscreteMeasurement) obj);
+            case DMEAS_VALUE_TYPE   -> ((DiscreteMeasurement) obj).getValueType().ordinal();
+            case DMEAS_VALUE_INT    -> ((DiscreteMeasurement) obj).getValueAsInt();
+            case OBS_AREA_NUMBER    -> ((StateEstimationDispatch.ObservabilityAreaRef) obj).area().getAreaNumber();
+            case OBS_AREA_STATUS    -> ((StateEstimationDispatch.ObservabilityAreaRef) obj).area().getStatus().ordinal();
             default -> throw new IllegalArgumentException("Unknown int property: " + property);
         };
     }
@@ -347,6 +390,15 @@ public final class PropertyDispatcher {
             case THREE_WT_LEG3_PTC_REG_MODE ->
                 ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().setRegulationMode(
                     PhaseTapChanger.RegulationMode.values()[value]);
+            case EXT_INJ_OBS_QUALITY_P + OBS_QUALITY_REDUNDANT_OFF,
+                 EXT_INJ_OBS_QUALITY_Q + OBS_QUALITY_REDUNDANT_OFF,
+                 EXT_INJ_OBS_QUALITY_V + OBS_QUALITY_REDUNDANT_OFF,
+                 EXT_BRANCH_OBS_QUALITY_P1 + OBS_QUALITY_REDUNDANT_OFF,
+                 EXT_BRANCH_OBS_QUALITY_P2 + OBS_QUALITY_REDUNDANT_OFF,
+                 EXT_BRANCH_OBS_QUALITY_Q1 + OBS_QUALITY_REDUNDANT_OFF,
+                 EXT_BRANCH_OBS_QUALITY_Q2 + OBS_QUALITY_REDUNDANT_OFF
+                -> StateEstimationDispatch.setQualityRedundant(obj, property, value);
+            case DMEAS_VALUE_INT -> ((DiscreteMeasurement) obj).setValue(value);
             default -> throw new IllegalArgumentException("Unknown int property for set: " + property);
         }
     }
@@ -399,6 +451,29 @@ public final class PropertyDispatcher {
             case THREE_WT_LEG1_RTC_LOAD_TAP_CAP -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().hasLoadTapChangingCapabilities();
             case THREE_WT_LEG2_RTC_LOAD_TAP_CAP -> ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger().hasLoadTapChangingCapabilities();
             case THREE_WT_LEG3_RTC_LOAD_TAP_CAP -> ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().hasLoadTapChangingCapabilities();
+            // State estimation extensions
+            case EXT_TWO_WT_TBE_EXISTS, EXT_TWO_WT_TBE_RTC, EXT_TWO_WT_TBE_PTC,
+                 EXT_THREE_WT_TBE_EXISTS, EXT_THREE_WT_TBE_RTC1, EXT_THREE_WT_TBE_RTC2, EXT_THREE_WT_TBE_RTC3,
+                 EXT_THREE_WT_TBE_PTC1, EXT_THREE_WT_TBE_PTC2, EXT_THREE_WT_TBE_PTC3
+                -> StateEstimationDispatch.getToBeEstimated(obj, property);
+            case EXT_INJ_OBS_EXISTS, EXT_INJ_OBS_OBSERVABLE, EXT_BRANCH_OBS_EXISTS, EXT_BRANCH_OBS_OBSERVABLE
+                -> StateEstimationDispatch.getObservabilityFlag(obj, property);
+            case EXT_INJ_OBS_QUALITY_P + OBS_QUALITY_EXISTS_OFF,
+                 EXT_INJ_OBS_QUALITY_Q + OBS_QUALITY_EXISTS_OFF,
+                 EXT_INJ_OBS_QUALITY_V + OBS_QUALITY_EXISTS_OFF,
+                 EXT_BRANCH_OBS_QUALITY_P1 + OBS_QUALITY_EXISTS_OFF,
+                 EXT_BRANCH_OBS_QUALITY_P2 + OBS_QUALITY_EXISTS_OFF,
+                 EXT_BRANCH_OBS_QUALITY_Q1 + OBS_QUALITY_EXISTS_OFF,
+                 EXT_BRANCH_OBS_QUALITY_Q2 + OBS_QUALITY_EXISTS_OFF
+                -> StateEstimationDispatch.qualityExists(obj, property);
+            case EXT_MEAS_EXISTS  -> StateEstimationDispatch.findExtension(obj, Measurements.class) != null;
+            case MEAS_VALID       -> ((Measurement) obj).isValid();
+            case EXT_DMEAS_EXISTS -> StateEstimationDispatch.findExtension(obj, DiscreteMeasurements.class) != null;
+            case DMEAS_VALUE_BOOL -> ((DiscreteMeasurement) obj).getValueAsBoolean();
+            case DMEAS_VALID      -> ((DiscreteMeasurement) obj).isValid();
+            case EXT_OBS_AREA_EXISTS     -> ((VoltageLevel) obj).getExtension(ObservabilityArea.class) != null;
+            case EXT_OBS_AREA_CONSISTENT -> StateEstimationDispatch.extension(obj, ObservabilityArea.class) instanceof ObservabilityArea oa
+                                            && oa.isConsistentWithTopology();
             default -> throw new IllegalArgumentException("Unknown bool property: " + property);
         };
     }
@@ -430,6 +505,14 @@ public final class PropertyDispatcher {
             case THREE_WT_LEG2_PTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg2().getPhaseTapChanger().setRegulating(bval);
             case THREE_WT_LEG3_RTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().setRegulating(bval);
             case THREE_WT_LEG3_PTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().setRegulating(bval);
+            case EXT_TWO_WT_TBE_RTC, EXT_TWO_WT_TBE_PTC,
+                 EXT_THREE_WT_TBE_RTC1, EXT_THREE_WT_TBE_RTC2, EXT_THREE_WT_TBE_RTC3,
+                 EXT_THREE_WT_TBE_PTC1, EXT_THREE_WT_TBE_PTC2, EXT_THREE_WT_TBE_PTC3
+                -> StateEstimationDispatch.setToBeEstimated(obj, property, bval);
+            case EXT_INJ_OBS_OBSERVABLE, EXT_BRANCH_OBS_OBSERVABLE -> StateEstimationDispatch.setObservable(obj, property, bval);
+            case MEAS_VALID       -> ((Measurement) obj).setValid(bval);
+            case DMEAS_VALUE_BOOL -> ((DiscreteMeasurement) obj).setValue(bval);
+            case DMEAS_VALID      -> ((DiscreteMeasurement) obj).setValid(bval);
             default -> throw new IllegalArgumentException("Unknown bool property for set: " + property);
         }
     }
@@ -491,6 +574,9 @@ public final class PropertyDispatcher {
             }
             case OLG_ID -> ((OperationalLimitsGroup) obj).getId();
             case COUNTRY -> ((Substation) obj).getCountry().map(Country::name).orElse("");
+            case MEAS_ID            -> ((Measurement) obj).getId();
+            case DMEAS_ID           -> ((DiscreteMeasurement) obj).getId();
+            case DMEAS_VALUE_STRING -> ((DiscreteMeasurement) obj).getValueAsString();
             default -> throw new IllegalArgumentException("Unknown string property: " + property);
         };
     }
@@ -505,6 +591,7 @@ public final class PropertyDispatcher {
         switch (property) {
             case NAME    -> ((Identifiable<?>) obj).setName(value);
             case COUNTRY -> ((Substation) obj).setCountry(Country.valueOf(value));
+            case DMEAS_VALUE_STRING -> ((DiscreteMeasurement) obj).setValue(value);
             default -> throw new IllegalArgumentException("Unknown string property for set: " + property);
         }
     }
@@ -637,6 +724,11 @@ public final class PropertyDispatcher {
             case OLG_LEG1  -> ((ThreeWindingsTransformer) obj).getLeg1().getOperationalLimitsGroups().stream();
             case OLG_LEG2  -> ((ThreeWindingsTransformer) obj).getLeg2().getOperationalLimitsGroups().stream();
             case OLG_LEG3  -> ((ThreeWindingsTransformer) obj).getLeg3().getOperationalLimitsGroups().stream();
+            case MEASUREMENT          -> StateEstimationDispatch.measurements(obj);
+            case DISCRETE_MEASUREMENT -> StateEstimationDispatch.discreteMeasurements(obj);
+            case OBSERVABILITY_AREA   -> StateEstimationDispatch.observabilityAreas(obj);
+            case OBS_AREA_TERMINALS   -> StateEstimationDispatch.observabilityAreaTerminals(obj);
+            case OBS_AREA_BUSES       -> StateEstimationDispatch.observabilityAreaBuses(obj);
             default -> throw new IllegalArgumentException("Unknown child type: " + childType);
         };
     }
@@ -736,6 +828,7 @@ public final class PropertyDispatcher {
     public static int[] getIntList(Object obj, int listCode) {
         return switch (listCode) {
             case VL_NBV_NODES -> ((VoltageLevel) obj).getNodeBreakerView().getNodes();
+            case OBS_AREA_NODES -> StateEstimationDispatch.observabilityAreaNodes(obj);
             default -> throw new IllegalArgumentException("Unknown int list code: " + listCode);
         };
     }
@@ -750,6 +843,9 @@ public final class PropertyDispatcher {
         return switch (relation) {
             case REL_VL_BBV_BUS1 -> ((VoltageLevel) obj).getBusBreakerView().getBus1(key);
             case REL_VL_BBV_BUS2 -> ((VoltageLevel) obj).getBusBreakerView().getBus2(key);
+            case REL_MEASUREMENT_BY_ID          -> StateEstimationDispatch.measurementById(obj, key);
+            case REL_DISCRETE_MEASUREMENT_BY_ID -> StateEstimationDispatch.discreteMeasurementById(obj, key);
+            case REL_OBS_AREA_BY_BUS, REL_OBS_AREA_BY_BBV_BUS -> StateEstimationDispatch.observabilityAreaByBus(obj, relation, key);
             default -> throw new IllegalArgumentException("Unknown keyed relation: " + relation);
         };
     }
@@ -763,6 +859,7 @@ public final class PropertyDispatcher {
     public static Object getRelatedObjectByIndex(Object obj, int relation, int index) {
         return switch (relation) {
             case REL_NBV_TERMINAL_AT_NODE -> ((VoltageLevel) obj).getNodeBreakerView().getTerminal(index);
+            case REL_OBS_AREA_BY_NODE -> StateEstimationDispatch.observabilityAreaByNode(obj, index);
             default -> throw new IllegalArgumentException("Unknown indexed relation: " + relation);
         };
     }

@@ -171,4 +171,30 @@ bool ThreeWindingsTransformer::operator!=(const ThreeWindingsTransformer& other)
     return !(*this == other);
 }
 
+// ── State estimation extensions ──────────────────────────────────────────────
+
+bool ThreeWindingsTransformer::hasThreeWindingsTransformerToBeEstimated() const {
+    return backend_->getBool(handle_, prop::EXT_THREE_WT_TBE_EXISTS);
+}
+
+ThreeWindingsTransformerToBeEstimated ThreeWindingsTransformer::getThreeWindingsTransformerToBeEstimated() const {
+    return ThreeWindingsTransformerToBeEstimated(handle_, backend_);
+}
+
+bool ThreeWindingsTransformer::hasMeasurements() const {
+    return backend_->getBool(handle_, prop::EXT_MEAS_EXISTS);
+}
+
+Measurements ThreeWindingsTransformer::getMeasurements() const {
+    return Measurements(handle_, backend_);
+}
+
+bool ThreeWindingsTransformer::hasDiscreteMeasurements() const {
+    return backend_->getBool(handle_, prop::EXT_DMEAS_EXISTS);
+}
+
+DiscreteMeasurements ThreeWindingsTransformer::getDiscreteMeasurements() const {
+    return DiscreteMeasurements(handle_, backend_);
+}
+
 } // namespace iidm

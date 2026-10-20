@@ -229,4 +229,14 @@ bool VoltageLevel::operator!=(const VoltageLevel& other) const {
     return !(*this == other);
 }
 
+// ── State estimation extensions ──────────────────────────────────────────────
+
+bool VoltageLevel::hasObservabilityArea() const {
+    return backend_->getBool(handle_, prop::EXT_OBS_AREA_EXISTS);
+}
+
+ObservabilityArea VoltageLevel::getObservabilityArea() const {
+    return ObservabilityArea(handle_, backend_);
+}
+
 } // namespace iidm
