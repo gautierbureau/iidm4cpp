@@ -25,7 +25,15 @@ inline void checkJNIException(JNIEnv* env) {
                                                      "(Ljava/lang/Throwable;)Ljava/lang/String;");
         if (kindOf && messageOf) {
             kind = env->CallStaticIntMethod(errorsClass, kindOf, exc);
+            if (env->ExceptionCheck()) {
+                env->ExceptionClear();
+                kind = detail::BRIDGE_GENERIC;
+            }
             jstring msg = static_cast<jstring>(env->CallStaticObjectMethod(errorsClass, messageOf, exc));
+            if (env->ExceptionCheck()) {
+                env->ExceptionClear();
+                msg = nullptr;
+            }
             if (msg) {
                 const char* chars = env->GetStringUTFChars(msg, nullptr);
                 if (chars) {

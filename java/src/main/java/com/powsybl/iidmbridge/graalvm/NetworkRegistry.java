@@ -37,6 +37,11 @@ public final class NetworkRegistry {
         registry.remove(handle);
     }
 
+    /** Number of registered objects (diagnostics, tests). */
+    public static int size() {
+        return registry.size();
+    }
+
     public static void releaseAll() {
         registry.clear();
     }

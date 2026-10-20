@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iidm/HandleRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/ObservabilityQuality.h>
 #include <iidm/stdcxx/optional.hpp>
@@ -40,7 +41,7 @@ public:
     bool operator!=(const InjectionObservability& other) const;
 
 private:
-    ObjectHandle     handle_  = INVALID_HANDLE;
+    HandleRef  handle_;
     BackendProvider* backend_ = detail::nullBackend();
 };
 

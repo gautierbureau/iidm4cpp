@@ -6,7 +6,7 @@
 namespace iidm {
 
 InjectionObservability::InjectionObservability(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
+    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
 
 bool InjectionObservability::isObservable() const {
     return backend_->getBool(handle_, prop::EXT_INJ_OBS_OBSERVABLE);

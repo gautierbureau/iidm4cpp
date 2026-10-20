@@ -10,7 +10,7 @@
 namespace iidm {
 
 Generator::Generator(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
+    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
 
 std::string Generator::getId() const {
     return backend_->getString(handle_, prop::ID);

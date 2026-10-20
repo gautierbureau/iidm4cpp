@@ -87,6 +87,8 @@ void GraalVMBackend::resolveSymbols() {
     fnTearDownIsolate_ = resolveSymbol<FnTearDownIsolate>(libHandle_, "graal_tear_down_isolate");
     fnTakeLastError_   = resolveSymbol<FnTakeLastError>  (libHandle_, "iidm_take_last_error");
     fnFree_            = resolveSymbol<FnFree>           (libHandle_, "iidm_free");
+    fnReleaseHandle_   = resolveSymbol<FnReleaseHandle>  (libHandle_, "iidm_release_handle");
+    fnHandleCount_     = resolveSymbol<FnHandleCount>    (libHandle_, "iidm_handle_count");
     fnLoadNetwork_     = resolveSymbol<FnLoadNetwork>    (libHandle_, "iidm_load_network");
     fnSaveNetwork_     = resolveSymbol<FnSaveNetwork>    (libHandle_, "iidm_save_network");
     fnLoadNetworkBytes_ = resolveSymbol<FnLoadNetworkBytes>(libHandle_, "iidm_load_network_bytes");
@@ -148,7 +150,22 @@ std::string GraalVMBackend::saveNetworkBytes(const std::string& filenameHint) co
     return result;
 }
 
+void GraalVMBackend::releaseHandle(ObjectHandle h) {
+    // The network handle lives as long as the backend
+    if (thread_ && h != INVALID_HANDLE && h != networkHandle_) {
+        fnReleaseHandle_(thread_, h);
+    }
+}
+
+int GraalVMBackend::javaHandleCount() const {
+    return fnHandleCount_(thread_);
+}
+
 void GraalVMBackend::close() {
+    if (thread_) {
+        // Wrappers still alive at this point release nothing later on
+        releaseAllHandles();
+    }
     if (thread_ && fnTearDownIsolate_) {
         fnTearDownIsolate_(thread_);
         thread_  = nullptr;

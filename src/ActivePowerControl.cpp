@@ -6,7 +6,7 @@
 namespace iidm {
 
 ActivePowerControl::ActivePowerControl(ObjectHandle handle, BackendProvider* backend, int codeBase)
-    : handle_(handle), backend_(detail::orNullBackend(backend)), codeBase_(codeBase) {}
+    : handle_(handle, backend), backend_(detail::orNullBackend(backend)), codeBase_(codeBase) {}
 
 ActivePowerControl::ActivePowerControl(ObjectHandle handle, BackendProvider* backend,
                                        int droopCode, int /*participateCode*/)

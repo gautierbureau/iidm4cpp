@@ -45,6 +45,7 @@ set(TEST_SOURCES
     TestBridgeErrors.cpp
     TestBackendErrors.cpp
     TestNullBackend.cpp
+    TestHandleRef.cpp
 )
 
 add_executable(iidmbridge_tests ${TEST_SOURCES})
