@@ -46,6 +46,7 @@ public final class PropertyDispatcher {
     }
 
     public static double getDouble(Object obj, int property) {
+        if (isThreeWtLegCode(property)) return threeWtLegDouble(obj, property);
         return switch (property) {
             case GEN_TARGET_P  -> ((Generator) obj).getTargetP();
             case GEN_TARGET_Q  -> ((Generator) obj).getTargetQ();
@@ -154,35 +155,10 @@ public final class PropertyDispatcher {
             // ShuntCompensatorNonLinearModel.Section (non-linear model)
             case SHUNT_SECTION_B -> ((ShuntCompensatorNonLinearModel.Section) obj).getB();
             case SHUNT_SECTION_G -> ((ShuntCompensatorNonLinearModel.Section) obj).getG();
-            // ThreeWindingsTransformer leg doubles
-            case THREE_WT_LEG1_R       -> ((ThreeWindingsTransformer) obj).getLeg1().getR();
-            case THREE_WT_LEG1_X       -> ((ThreeWindingsTransformer) obj).getLeg1().getX();
-            case THREE_WT_LEG1_G       -> ((ThreeWindingsTransformer) obj).getLeg1().getG();
-            case THREE_WT_LEG1_B       -> ((ThreeWindingsTransformer) obj).getLeg1().getB();
-            case THREE_WT_LEG1_RATED_U -> ((ThreeWindingsTransformer) obj).getLeg1().getRatedU();
-            case THREE_WT_LEG1_RATED_S -> ((ThreeWindingsTransformer) obj).getLeg1().getRatedS();
-            case THREE_WT_LEG1_RTC_TARGET_V        -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().getTargetV();
-            case THREE_WT_LEG1_PTC_REG_VALUE       -> ((ThreeWindingsTransformer) obj).getLeg1().getPhaseTapChanger().getRegulationValue();
             case THREE_WT_LEG1_RTC_TARGET_DEADBAND -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().getTargetDeadband();
             case THREE_WT_LEG1_PTC_TARGET_DEADBAND -> ((ThreeWindingsTransformer) obj).getLeg1().getPhaseTapChanger().getTargetDeadband();
-            case THREE_WT_LEG2_R       -> ((ThreeWindingsTransformer) obj).getLeg2().getR();
-            case THREE_WT_LEG2_X       -> ((ThreeWindingsTransformer) obj).getLeg2().getX();
-            case THREE_WT_LEG2_G       -> ((ThreeWindingsTransformer) obj).getLeg2().getG();
-            case THREE_WT_LEG2_B       -> ((ThreeWindingsTransformer) obj).getLeg2().getB();
-            case THREE_WT_LEG2_RATED_U -> ((ThreeWindingsTransformer) obj).getLeg2().getRatedU();
-            case THREE_WT_LEG2_RATED_S -> ((ThreeWindingsTransformer) obj).getLeg2().getRatedS();
-            case THREE_WT_LEG2_RTC_TARGET_V        -> ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger().getTargetV();
-            case THREE_WT_LEG2_PTC_REG_VALUE       -> ((ThreeWindingsTransformer) obj).getLeg2().getPhaseTapChanger().getRegulationValue();
             case THREE_WT_LEG2_RTC_TARGET_DEADBAND -> ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger().getTargetDeadband();
             case THREE_WT_LEG2_PTC_TARGET_DEADBAND -> ((ThreeWindingsTransformer) obj).getLeg2().getPhaseTapChanger().getTargetDeadband();
-            case THREE_WT_LEG3_R       -> ((ThreeWindingsTransformer) obj).getLeg3().getR();
-            case THREE_WT_LEG3_X       -> ((ThreeWindingsTransformer) obj).getLeg3().getX();
-            case THREE_WT_LEG3_G       -> ((ThreeWindingsTransformer) obj).getLeg3().getG();
-            case THREE_WT_LEG3_B       -> ((ThreeWindingsTransformer) obj).getLeg3().getB();
-            case THREE_WT_LEG3_RATED_U -> ((ThreeWindingsTransformer) obj).getLeg3().getRatedU();
-            case THREE_WT_LEG3_RATED_S -> ((ThreeWindingsTransformer) obj).getLeg3().getRatedS();
-            case THREE_WT_LEG3_RTC_TARGET_V        -> ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().getTargetV();
-            case THREE_WT_LEG3_PTC_REG_VALUE       -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().getRegulationValue();
             case THREE_WT_LEG3_RTC_TARGET_DEADBAND -> ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().getTargetDeadband();
             case THREE_WT_LEG3_PTC_TARGET_DEADBAND -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().getTargetDeadband();
             // State estimation extensions
@@ -207,6 +183,10 @@ public final class PropertyDispatcher {
     }
 
     public static void setDouble(Object obj, int property, double value) {
+        if (isThreeWtLegCode(property)) {
+            setThreeWtLegDouble(obj, property, value);
+            return;
+        }
         switch (property) {
             case GEN_TARGET_P  -> ((Generator) obj).setTargetP(value);
             case GEN_TARGET_Q  -> ((Generator) obj).setTargetQ(value);
@@ -239,12 +219,6 @@ public final class PropertyDispatcher {
             case BAT_TARGET_P -> ((Battery) obj).setTargetP(value);
             case BAT_TARGET_Q -> ((Battery) obj).setTargetQ(value);
             case EXT_BAT_APC_DROOP -> ext(obj, ActivePowerControl.class).setDroop(value);
-            case THREE_WT_LEG1_RTC_TARGET_V  -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().setTargetV(value);
-            case THREE_WT_LEG1_PTC_REG_VALUE -> ((ThreeWindingsTransformer) obj).getLeg1().getPhaseTapChanger().setRegulationValue(value);
-            case THREE_WT_LEG2_RTC_TARGET_V  -> ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger().setTargetV(value);
-            case THREE_WT_LEG2_PTC_REG_VALUE -> ((ThreeWindingsTransformer) obj).getLeg2().getPhaseTapChanger().setRegulationValue(value);
-            case THREE_WT_LEG3_RTC_TARGET_V  -> ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().setTargetV(value);
-            case THREE_WT_LEG3_PTC_REG_VALUE -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().setRegulationValue(value);
             case EXT_INJ_OBS_QUALITY_P + OBS_QUALITY_STD_DEV_OFF,
                  EXT_INJ_OBS_QUALITY_Q + OBS_QUALITY_STD_DEV_OFF,
                  EXT_INJ_OBS_QUALITY_V + OBS_QUALITY_STD_DEV_OFF,
@@ -266,6 +240,7 @@ public final class PropertyDispatcher {
     }
 
     public static int getInt(Object obj, int property) {
+        if (isThreeWtLegCode(property)) return threeWtLegInt(obj, property);
         return switch (property) {
             case GEN_ENERGY_SOURCE  -> ((Generator) obj).getEnergySource().ordinal();
             case LOAD_TYPE          -> ((Load) obj).getLoadType().ordinal();
@@ -312,28 +287,6 @@ public final class PropertyDispatcher {
             case SHUNT_MODEL_KIND -> ((ShuntCompensator) obj).getModelType().ordinal();
             // Terminal node number (node-breaker topology)
             case TERMINAL_NODE -> ((Terminal) obj).getNodeBreakerView().getNode();
-            // ThreeWT leg tap changer ints
-            case THREE_WT_LEG1_RTC_TAP_POS  -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().getTapPosition();
-            case THREE_WT_LEG1_RTC_LOW_TAP  -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().getLowTapPosition();
-            case THREE_WT_LEG1_RTC_HIGH_TAP -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().getHighTapPosition();
-            case THREE_WT_LEG1_PTC_TAP_POS  -> ((ThreeWindingsTransformer) obj).getLeg1().getPhaseTapChanger().getTapPosition();
-            case THREE_WT_LEG1_PTC_LOW_TAP  -> ((ThreeWindingsTransformer) obj).getLeg1().getPhaseTapChanger().getLowTapPosition();
-            case THREE_WT_LEG1_PTC_HIGH_TAP -> ((ThreeWindingsTransformer) obj).getLeg1().getPhaseTapChanger().getHighTapPosition();
-            case THREE_WT_LEG1_PTC_REG_MODE -> ((ThreeWindingsTransformer) obj).getLeg1().getPhaseTapChanger().getRegulationMode().ordinal();
-            case THREE_WT_LEG2_RTC_TAP_POS  -> ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger().getTapPosition();
-            case THREE_WT_LEG2_RTC_LOW_TAP  -> ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger().getLowTapPosition();
-            case THREE_WT_LEG2_RTC_HIGH_TAP -> ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger().getHighTapPosition();
-            case THREE_WT_LEG2_PTC_TAP_POS  -> ((ThreeWindingsTransformer) obj).getLeg2().getPhaseTapChanger().getTapPosition();
-            case THREE_WT_LEG2_PTC_LOW_TAP  -> ((ThreeWindingsTransformer) obj).getLeg2().getPhaseTapChanger().getLowTapPosition();
-            case THREE_WT_LEG2_PTC_HIGH_TAP -> ((ThreeWindingsTransformer) obj).getLeg2().getPhaseTapChanger().getHighTapPosition();
-            case THREE_WT_LEG2_PTC_REG_MODE -> ((ThreeWindingsTransformer) obj).getLeg2().getPhaseTapChanger().getRegulationMode().ordinal();
-            case THREE_WT_LEG3_RTC_TAP_POS  -> ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().getTapPosition();
-            case THREE_WT_LEG3_RTC_LOW_TAP  -> ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().getLowTapPosition();
-            case THREE_WT_LEG3_RTC_HIGH_TAP -> ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().getHighTapPosition();
-            case THREE_WT_LEG3_PTC_TAP_POS  -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().getTapPosition();
-            case THREE_WT_LEG3_PTC_LOW_TAP  -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().getLowTapPosition();
-            case THREE_WT_LEG3_PTC_HIGH_TAP -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().getHighTapPosition();
-            case THREE_WT_LEG3_PTC_REG_MODE -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().getRegulationMode().ordinal();
             // State estimation extensions
             case EXT_INJ_OBS_QUALITY_P + OBS_QUALITY_REDUNDANT_OFF,
                  EXT_INJ_OBS_QUALITY_Q + OBS_QUALITY_REDUNDANT_OFF,
@@ -362,6 +315,10 @@ public final class PropertyDispatcher {
     }
 
     public static void setInt(Object obj, int property, int value) {
+        if (isThreeWtLegCode(property)) {
+            setThreeWtLegInt(obj, property, value);
+            return;
+        }
         switch (property) {
             case HVDC_CONVERTERS_MODE ->
                 ((HvdcLine) obj).setConvertersMode(HvdcLine.ConvertersMode.values()[value]);
@@ -374,27 +331,6 @@ public final class PropertyDispatcher {
                 ((TwoWindingsTransformer) obj).getPhaseTapChanger().setTapPosition(value);
             case TWO_WT_PTC_REG_MODE ->
                 ((TwoWindingsTransformer) obj).getPhaseTapChanger().setRegulationMode(
-                    PhaseTapChanger.RegulationMode.values()[value]);
-            case THREE_WT_LEG1_RTC_TAP_POS ->
-                ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().setTapPosition(value);
-            case THREE_WT_LEG1_PTC_TAP_POS ->
-                ((ThreeWindingsTransformer) obj).getLeg1().getPhaseTapChanger().setTapPosition(value);
-            case THREE_WT_LEG1_PTC_REG_MODE ->
-                ((ThreeWindingsTransformer) obj).getLeg1().getPhaseTapChanger().setRegulationMode(
-                    PhaseTapChanger.RegulationMode.values()[value]);
-            case THREE_WT_LEG2_RTC_TAP_POS ->
-                ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger().setTapPosition(value);
-            case THREE_WT_LEG2_PTC_TAP_POS ->
-                ((ThreeWindingsTransformer) obj).getLeg2().getPhaseTapChanger().setTapPosition(value);
-            case THREE_WT_LEG2_PTC_REG_MODE ->
-                ((ThreeWindingsTransformer) obj).getLeg2().getPhaseTapChanger().setRegulationMode(
-                    PhaseTapChanger.RegulationMode.values()[value]);
-            case THREE_WT_LEG3_RTC_TAP_POS ->
-                ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().setTapPosition(value);
-            case THREE_WT_LEG3_PTC_TAP_POS ->
-                ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().setTapPosition(value);
-            case THREE_WT_LEG3_PTC_REG_MODE ->
-                ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().setRegulationMode(
                     PhaseTapChanger.RegulationMode.values()[value]);
             case EXT_INJ_OBS_QUALITY_P + OBS_QUALITY_REDUNDANT_OFF,
                  EXT_INJ_OBS_QUALITY_Q + OBS_QUALITY_REDUNDANT_OFF,
@@ -416,6 +352,7 @@ public final class PropertyDispatcher {
     }
 
     public static boolean getBool(Object obj, int property) {
+        if (isThreeWtLegCode(property)) return threeWtLegBool(obj, property);
         return switch (property) {
             case GEN_VOLTAGE_REGULATOR_ON   -> ((Generator) obj).isVoltageRegulatorOn();
             case TERMINAL_CONNECTED         -> ((Terminal) obj).isConnected();
@@ -439,25 +376,9 @@ public final class PropertyDispatcher {
             case EXT_VPRC_EXISTS     -> isVoltagePerReactivePowerControl(obj);
             case EXT_ST_EXISTS       -> ((VoltageLevel) obj).getExtension(SlackTerminal.class) != null;
             case EXT_ST_EMPTY        -> slackTerminal(obj).isEmpty();
-            // ThreeWT leg tap changer bools
-            case THREE_WT_LEG1_RTC_EXISTS     -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger() != null;
-            case THREE_WT_LEG1_RTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().isRegulating();
-            case THREE_WT_LEG1_PTC_EXISTS     -> ((ThreeWindingsTransformer) obj).getLeg1().getPhaseTapChanger() != null;
-            case THREE_WT_LEG1_PTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg1().getPhaseTapChanger().isRegulating();
-            case THREE_WT_LEG2_RTC_EXISTS     -> ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger() != null;
-            case THREE_WT_LEG2_RTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger().isRegulating();
-            case THREE_WT_LEG2_PTC_EXISTS     -> ((ThreeWindingsTransformer) obj).getLeg2().getPhaseTapChanger() != null;
-            case THREE_WT_LEG2_PTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg2().getPhaseTapChanger().isRegulating();
-            case THREE_WT_LEG3_RTC_EXISTS     -> ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger() != null;
-            case THREE_WT_LEG3_RTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().isRegulating();
-            case THREE_WT_LEG3_PTC_EXISTS     -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger() != null;
-            case THREE_WT_LEG3_PTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().isRegulating();
             case OLG_EMPTY -> ((OperationalLimitsGroup) obj).isEmpty();
             case LOAD_FICTITIOUS -> ((Load) obj).isFictitious();
             case TWO_WT_RTC_LOAD_TAP_CAP -> ((TwoWindingsTransformer) obj).getRatioTapChanger().hasLoadTapChangingCapabilities();
-            case THREE_WT_LEG1_RTC_LOAD_TAP_CAP -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().hasLoadTapChangingCapabilities();
-            case THREE_WT_LEG2_RTC_LOAD_TAP_CAP -> ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger().hasLoadTapChangingCapabilities();
-            case THREE_WT_LEG3_RTC_LOAD_TAP_CAP -> ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().hasLoadTapChangingCapabilities();
             // State estimation extensions
             case EXT_TWO_WT_TBE_EXISTS, EXT_TWO_WT_TBE_RTC, EXT_TWO_WT_TBE_PTC,
                  EXT_THREE_WT_TBE_EXISTS, EXT_THREE_WT_TBE_RTC1, EXT_THREE_WT_TBE_RTC2, EXT_THREE_WT_TBE_RTC3,
@@ -492,6 +413,10 @@ public final class PropertyDispatcher {
     }
 
     public static void setBool(Object obj, int property, boolean bval) {
+        if (isThreeWtLegCode(property)) {
+            setThreeWtLegBool(obj, property, bval);
+            return;
+        }
         switch (property) {
             case GEN_VOLTAGE_REGULATOR_ON -> ((Generator) obj).setVoltageRegulatorOn(bval);
             case TERMINAL_CONNECTED -> {
@@ -506,12 +431,6 @@ public final class PropertyDispatcher {
             case EXT_APC_PARTICIPATE     -> ext(obj, ActivePowerControl.class).setParticipate(bval);
             case EXT_BAT_APC_PARTICIPATE -> ext(obj, ActivePowerControl.class).setParticipate(bval);
             case EXT_HADAPC_ENABLED  -> ext(obj, HvdcAngleDroopActivePowerControl.class).setEnabled(bval);
-            case THREE_WT_LEG1_RTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().setRegulating(bval);
-            case THREE_WT_LEG1_PTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg1().getPhaseTapChanger().setRegulating(bval);
-            case THREE_WT_LEG2_RTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger().setRegulating(bval);
-            case THREE_WT_LEG2_PTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg2().getPhaseTapChanger().setRegulating(bval);
-            case THREE_WT_LEG3_RTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().setRegulating(bval);
-            case THREE_WT_LEG3_PTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg3().getPhaseTapChanger().setRegulating(bval);
             case EXT_TWO_WT_TBE_RTC, EXT_TWO_WT_TBE_PTC,
                  EXT_THREE_WT_TBE_RTC1, EXT_THREE_WT_TBE_RTC2, EXT_THREE_WT_TBE_RTC3,
                  EXT_THREE_WT_TBE_PTC1, EXT_THREE_WT_TBE_PTC2, EXT_THREE_WT_TBE_PTC3
@@ -913,6 +832,99 @@ public final class PropertyDispatcher {
             case SUBSTATION                 -> network.getSubstation(id);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown object type: " + objectType);
         };
+    }
+
+    // ── ThreeWindingsTransformer legs: THREE_WT_LEGn_BASE + THREE_WT_LEG_*_OFF ──
+
+    static boolean isThreeWtLegCode(int property) {
+        return property >= THREE_WT_LEG1_BASE && property < THREE_WT_LEG3_BASE + THREE_WT_LEG_BLOCK_SIZE;
+    }
+
+    private static ThreeWindingsTransformer.Leg threeWtLeg(Object obj, int property) {
+        ThreeWindingsTransformer twt = (ThreeWindingsTransformer) obj;
+        return switch ((property - THREE_WT_LEG1_BASE) / THREE_WT_LEG_BLOCK_SIZE) {
+            case 0 -> twt.getLeg1();
+            case 1 -> twt.getLeg2();
+            default -> twt.getLeg3();
+        };
+    }
+
+    private static int threeWtLegOffset(int property) {
+        return (property - THREE_WT_LEG1_BASE) % THREE_WT_LEG_BLOCK_SIZE;
+    }
+
+    private static BridgeErrors.PropertyNotFoundException unknownLegProperty(String type, int property) {
+        return new BridgeErrors.PropertyNotFoundException("Unknown " + type + " property: " + property);
+    }
+
+    static double threeWtLegDouble(Object obj, int property) {
+        ThreeWindingsTransformer.Leg leg = threeWtLeg(obj, property);
+        return switch (threeWtLegOffset(property)) {
+            case THREE_WT_LEG_R_OFF             -> leg.getR();
+            case THREE_WT_LEG_X_OFF             -> leg.getX();
+            case THREE_WT_LEG_G_OFF             -> leg.getG();
+            case THREE_WT_LEG_B_OFF             -> leg.getB();
+            case THREE_WT_LEG_RATED_U_OFF       -> leg.getRatedU();
+            case THREE_WT_LEG_RATED_S_OFF       -> leg.getRatedS();
+            case THREE_WT_LEG_RTC_TARGET_V_OFF  -> leg.getRatioTapChanger().getTargetV();
+            case THREE_WT_LEG_PTC_REG_VALUE_OFF -> leg.getPhaseTapChanger().getRegulationValue();
+            default -> throw unknownLegProperty("double", property);
+        };
+    }
+
+    static void setThreeWtLegDouble(Object obj, int property, double value) {
+        ThreeWindingsTransformer.Leg leg = threeWtLeg(obj, property);
+        switch (threeWtLegOffset(property)) {
+            case THREE_WT_LEG_RTC_TARGET_V_OFF  -> leg.getRatioTapChanger().setTargetV(value);
+            case THREE_WT_LEG_PTC_REG_VALUE_OFF -> leg.getPhaseTapChanger().setRegulationValue(value);
+            default -> throw unknownLegProperty("double", property);
+        }
+    }
+
+    static int threeWtLegInt(Object obj, int property) {
+        ThreeWindingsTransformer.Leg leg = threeWtLeg(obj, property);
+        return switch (threeWtLegOffset(property)) {
+            case THREE_WT_LEG_RTC_TAP_POS_OFF   -> leg.getRatioTapChanger().getTapPosition();
+            case THREE_WT_LEG_RTC_LOW_TAP_OFF   -> leg.getRatioTapChanger().getLowTapPosition();
+            case THREE_WT_LEG_RTC_HIGH_TAP_OFF  -> leg.getRatioTapChanger().getHighTapPosition();
+            case THREE_WT_LEG_PTC_TAP_POS_OFF   -> leg.getPhaseTapChanger().getTapPosition();
+            case THREE_WT_LEG_PTC_LOW_TAP_OFF   -> leg.getPhaseTapChanger().getLowTapPosition();
+            case THREE_WT_LEG_PTC_HIGH_TAP_OFF  -> leg.getPhaseTapChanger().getHighTapPosition();
+            case THREE_WT_LEG_PTC_REG_MODE_OFF  -> leg.getPhaseTapChanger().getRegulationMode().ordinal();
+            default -> throw unknownLegProperty("int", property);
+        };
+    }
+
+    static void setThreeWtLegInt(Object obj, int property, int value) {
+        ThreeWindingsTransformer.Leg leg = threeWtLeg(obj, property);
+        switch (threeWtLegOffset(property)) {
+            case THREE_WT_LEG_RTC_TAP_POS_OFF  -> leg.getRatioTapChanger().setTapPosition(value);
+            case THREE_WT_LEG_PTC_TAP_POS_OFF  -> leg.getPhaseTapChanger().setTapPosition(value);
+            case THREE_WT_LEG_PTC_REG_MODE_OFF ->
+                leg.getPhaseTapChanger().setRegulationMode(PhaseTapChanger.RegulationMode.values()[value]);
+            default -> throw unknownLegProperty("int", property);
+        }
+    }
+
+    static boolean threeWtLegBool(Object obj, int property) {
+        ThreeWindingsTransformer.Leg leg = threeWtLeg(obj, property);
+        return switch (threeWtLegOffset(property)) {
+            case THREE_WT_LEG_RTC_EXISTS_OFF        -> leg.getRatioTapChanger() != null;
+            case THREE_WT_LEG_RTC_REGULATING_OFF    -> leg.getRatioTapChanger().isRegulating();
+            case THREE_WT_LEG_PTC_EXISTS_OFF        -> leg.getPhaseTapChanger() != null;
+            case THREE_WT_LEG_PTC_REGULATING_OFF    -> leg.getPhaseTapChanger().isRegulating();
+            case THREE_WT_LEG_RTC_LOAD_TAP_CAP_OFF  -> leg.getRatioTapChanger().hasLoadTapChangingCapabilities();
+            default -> throw unknownLegProperty("bool", property);
+        };
+    }
+
+    static void setThreeWtLegBool(Object obj, int property, boolean value) {
+        ThreeWindingsTransformer.Leg leg = threeWtLeg(obj, property);
+        switch (threeWtLegOffset(property)) {
+            case THREE_WT_LEG_RTC_REGULATING_OFF -> leg.getRatioTapChanger().setRegulating(value);
+            case THREE_WT_LEG_PTC_REGULATING_OFF -> leg.getPhaseTapChanger().setRegulating(value);
+            default -> throw unknownLegProperty("bool", property);
+        }
     }
 
     // ── Extension helpers ─────────────────────────────────────────────────

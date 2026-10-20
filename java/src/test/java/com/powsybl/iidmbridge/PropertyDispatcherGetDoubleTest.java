@@ -366,23 +366,23 @@ class PropertyDispatcherGetDoubleTest {
 
     @Test void threeWT_leg1_params() {
         ThreeWindingsTransformer twt3 = buildThreeWT();
-        assertEquals(1.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG1_R));
-        assertEquals(10.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG1_X));
-        assertEquals(400.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG1_RATED_U));
+        assertEquals(1.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG1_BASE + THREE_WT_LEG_R_OFF));
+        assertEquals(10.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG1_BASE + THREE_WT_LEG_X_OFF));
+        assertEquals(400.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG1_BASE + THREE_WT_LEG_RATED_U_OFF));
     }
 
     @Test void threeWT_leg2_params() {
         ThreeWindingsTransformer twt3 = buildThreeWT();
-        assertEquals(2.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG2_R));
-        assertEquals(20.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG2_X));
-        assertEquals(220.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG2_RATED_U));
+        assertEquals(2.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG2_BASE + THREE_WT_LEG_R_OFF));
+        assertEquals(20.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG2_BASE + THREE_WT_LEG_X_OFF));
+        assertEquals(220.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG2_BASE + THREE_WT_LEG_RATED_U_OFF));
     }
 
     @Test void threeWT_leg3_params() {
         ThreeWindingsTransformer twt3 = buildThreeWT();
-        assertEquals(3.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG3_R));
-        assertEquals(30.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG3_X));
-        assertEquals(20.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG3_RATED_U));
+        assertEquals(3.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG3_BASE + THREE_WT_LEG_R_OFF));
+        assertEquals(30.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG3_BASE + THREE_WT_LEG_X_OFF));
+        assertEquals(20.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG3_BASE + THREE_WT_LEG_RATED_U_OFF));
     }
 
     // ── CurrentLimits ─────────────────────────────────────────────────────────
