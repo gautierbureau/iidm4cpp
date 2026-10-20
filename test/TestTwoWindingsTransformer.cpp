@@ -85,7 +85,7 @@ TEST_F(TwoWindingsTransformerTest, GetCurrentLimitsPresent) {
 
 TEST_F(TwoWindingsTransformerTest, GetName) {
     TwoWindingsTransformer twt(TWT_H, &backend);
-    EXPECT_EQ(twt.getName(), "Two Windings T1");
+    EXPECT_EQ(twt.getNameOrId(), "Two Windings T1");
 }
 
 TEST_F(TwoWindingsTransformerTest, GetOperationalLimitsGroupsEmpty) {
@@ -124,19 +124,6 @@ TEST_F(TwoWindingsTransformerTest, GetSelectedOperationalLimitsGroups) {
     ASSERT_TRUE(olg2.has_value());
     EXPECT_EQ(olg1->getId(), "GRP1");
     EXPECT_EQ(olg2->getId(), "GRP2");
-}
-
-TEST_F(TwoWindingsTransformerTest, ConnectDisconnect) {
-    backend.bools[{T1_H, prop::TERMINAL_CONNECTED}] = true;
-    backend.bools[{T2_H, prop::TERMINAL_CONNECTED}] = true;
-    TwoWindingsTransformer twt(TWT_H, &backend);
-    EXPECT_TRUE(twt.isConnected());
-    twt.disconnect();
-    EXPECT_FALSE((backend.bools[{T1_H, prop::TERMINAL_CONNECTED}]));
-    EXPECT_FALSE((backend.bools[{T2_H, prop::TERMINAL_CONNECTED}]));
-    twt.connect();
-    EXPECT_TRUE((backend.bools[{T1_H, prop::TERMINAL_CONNECTED}]));
-    EXPECT_TRUE((backend.bools[{T2_H, prop::TERMINAL_CONNECTED}]));
 }
 
 TEST_F(TwoWindingsTransformerTest, IsValid) {

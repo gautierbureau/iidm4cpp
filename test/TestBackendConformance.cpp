@@ -140,7 +140,14 @@ struct Read {
     ReadFn call;
 };
 
-enum ReadIndex { GET_DOUBLE, GET_OPT_DOUBLE, GET_INT, GET_BOOL, GET_STRING, GET_INT_LIST, GET_CHILDREN, GET_RELATED, READ_COUNT };
+enum ReadIndex {
+    GET_DOUBLE, GET_OPT_DOUBLE, GET_INT, GET_OPT_INT, GET_BOOL, GET_STRING, GET_OPT_STRING, GET_INT_LIST,
+    GET_STRING_LIST, GET_CHILDREN, GET_RELATED, READ_COUNT
+};
+
+std::string inQuotes(const std::string& value) {
+    return "\"" + value + "\"";
+}
 
 const Read kReads[READ_COUNT] = {
     {"getDouble", [](BackendProvider& b, ObjectHandle h, int code, std::vector<ObjectHandle>&) -> std::string {
@@ -153,15 +160,28 @@ const Read kReads[READ_COUNT] = {
     {"getInt", [](BackendProvider& b, ObjectHandle h, int code, std::vector<ObjectHandle>&) -> std::string {
         return std::to_string(b.getInt(h, code));
     }},
+    {"getOptInt", [](BackendProvider& b, ObjectHandle h, int code, std::vector<ObjectHandle>&) -> std::string {
+        iidm::optional<int> value = b.getOptInt(h, code);
+        return value ? std::to_string(*value) : "empty";
+    }},
     {"getBool", [](BackendProvider& b, ObjectHandle h, int code, std::vector<ObjectHandle>&) -> std::string {
         return b.getBool(h, code) ? "true" : "false";
     }},
     {"getString", [](BackendProvider& b, ObjectHandle h, int code, std::vector<ObjectHandle>&) -> std::string {
-        return "\"" + b.getString(h, code) + "\"";
+        return inQuotes(b.getString(h, code));
+    }},
+    {"getOptString", [](BackendProvider& b, ObjectHandle h, int code, std::vector<ObjectHandle>&) -> std::string {
+        iidm::optional<std::string> value = b.getOptString(h, code);
+        return value ? inQuotes(*value) : "empty";
     }},
     {"getIntList", [](BackendProvider& b, ObjectHandle h, int code, std::vector<ObjectHandle>&) -> std::string {
         std::string text = "[";
         for (int value : b.getIntList(h, code)) text += " " + std::to_string(value);
+        return text + " ]";
+    }},
+    {"getStringList", [](BackendProvider& b, ObjectHandle h, int code, std::vector<ObjectHandle>&) -> std::string {
+        std::string text = "[";
+        for (const std::string& value : b.getStringList(h, code)) text += " " + inQuotes(value);
         return text + " ]";
     }},
     {"getChildren", [](BackendProvider& b, ObjectHandle h, int code, std::vector<ObjectHandle>& objects) -> std::string {
@@ -173,7 +193,7 @@ const Read kReads[READ_COUNT] = {
     }},
 };
 
-// Reads that also take a key (getRelatedByString) or an index (getRelatedByIndex).
+// Reads that also take a key (getRelatedByString, getKeyedString) or an index (getRelatedByIndex).
 typedef std::string (*LookupFn)(BackendProvider&, ObjectHandle, int code, const std::string& key, int index,
                                 std::vector<ObjectHandle>& objects);
 
@@ -182,12 +202,17 @@ struct Lookup {
     LookupFn call;
 };
 
-enum LookupIndex { BY_STRING, BY_INDEX, LOOKUP_COUNT };
+enum LookupIndex { BY_STRING, BY_KEY, BY_INDEX, LOOKUP_COUNT };
 
 const Lookup kLookups[LOOKUP_COUNT] = {
     {"getRelatedByString", [](BackendProvider& b, ObjectHandle h, int code, const std::string& key, int,
                               std::vector<ObjectHandle>& objects) -> std::string {
         return show(b.getRelatedByString(h, code, key), objects);
+    }},
+    {"getKeyedString", [](BackendProvider& b, ObjectHandle h, int code, const std::string& key, int,
+                          std::vector<ObjectHandle>&) -> std::string {
+        iidm::optional<std::string> value = b.getKeyedString(h, code, key);
+        return value ? inQuotes(*value) : "empty";
     }},
     {"getRelatedByIndex", [](BackendProvider& b, ObjectHandle h, int code, const std::string&, int index,
                              std::vector<ObjectHandle>& objects) -> std::string {
@@ -211,6 +236,7 @@ struct Twin {
     bool identifiable = false;
     std::vector<std::pair<int, int>> readable; // (read, code) of the scalar reads that returned a value
     std::vector<int> indices;                  // values of its int lists (node numbers): getRelatedByIndex keys
+    std::map<int, std::set<std::string>> lists; // values of its string lists (property names, aliases), by list code
     std::vector<Related> related;
 };
 
@@ -311,6 +337,7 @@ private:
             if (!seen_.insert("id " + idG.value).second) return;
             twin.path += " " + idG.value;
             twin.identifiable = true;
+            compareIdentity(twin, idG.value.substr(1, idG.value.size() - 2));
         }
 
         std::vector<std::set<int>>& known = codesByLink_[twin.link];
@@ -348,6 +375,17 @@ private:
         for (const Twin& target : next) pending_.push_back(target);
     }
 
+    // Looked up again by id, the object is the same object (with another handle)
+    void compareIdentity(const Twin& twin, const std::string& id) {
+        auto same = [&](BackendProvider& b, ObjectHandle h) {
+            HandleRef found(b.findById(prop::IDENTIFIABLE, id), &b);
+            if (found == INVALID_HANDLE) return std::string("not found");
+            return std::string(b.isSameObject(h, found) && found != h ? "same object" : "not the same");
+        };
+        compare("isSameObject", twin.path, "findById(IDENTIFIABLE)",
+                attempt([&] { return same(g_, twin.g); }), attempt([&] { return same(j_, twin.j); }));
+    }
+
     // Compares one read of one code, and records what the rest of the walk needs from it.
     Outcome probe(Twin& twin, int read, const Code& code, std::string& fingerprint, std::vector<Twin>& next) {
         std::vector<ObjectHandle> objectsG, objectsJ;
@@ -374,6 +412,9 @@ private:
         case GET_INT_LIST:
             for (int value : g_.getIntList(twin.g, code.value)) twin.indices.push_back(value);
             break;
+        case GET_STRING_LIST:
+            for (const std::string& value : g_.getStringList(twin.g, code.value)) twin.lists[code.value].insert(value);
+            break;
         case GET_RELATED:
             for (const Twin& target : targets) {
                 Related related = {code.value, target.g, target.j};
@@ -387,11 +428,15 @@ private:
         return g;
     }
 
+    static bool isAction(const Code& code) {
+        return std::string(code.name).compare(0, 4, "ACT_") == 0;
+    }
+
     // invoke(object, TYPE) starts an adder and changes nothing: compared, then released unused.
-    // ACT_ADD and ACT_REMOVE change the network: removal is compared in removeAll.
+    // The actions (ACT_*) change the network: compared in writeBack and removeAll.
     void probeCreation(Twin& twin, std::set<int>& creatable, bool firstOfItsType) {
         for (const Code& code : codes_) {
-            if (code.value == prop::ACT_ADD || code.value == prop::ACT_REMOVE) continue;
+            if (isAction(code)) continue;
             if (!firstOfItsType && !creatable.count(code.value)) continue;
             std::vector<ObjectHandle> objectsG, objectsJ;
             Outcome g = attempt([&] { return show(g_.invoke(twin.g, code.value), objectsG); });
@@ -420,6 +465,8 @@ private:
     void lookUp(Twin& twin) {
         std::vector<std::set<int>>& known = codesByLink_[twin.link];
         const bool firstOfItsType = lookedUpLinks_.insert(twin.link).second;
+        std::set<std::string> keys;
+        for (const auto& list : twin.lists) keys.insert(list.second.begin(), list.second.end());
         for (int lookup = 0; lookup < LOOKUP_COUNT; ++lookup) {
             std::set<int>& exists = known[READ_COUNT + lookup];
             for (const Code& code : codes_) {
@@ -430,6 +477,12 @@ private:
                 if (probe.threw() && *probe.error == typeid(ExtensionNotFoundException)) continue; // whatever the key
                 if (lookup == BY_STRING) {
                     for (const std::string& key : ids_) lookUp(twin, lookup, code, key, -1);
+                } else if (lookup == BY_KEY) {
+                    // The object's property names and aliases, then the values found (alias types)
+                    for (const std::string& key : std::set<std::string>(keys.begin(), keys.end())) {
+                        Outcome found = lookUp(twin, lookup, code, key, -1);
+                        if (!found.threw() && found.value != "empty") keys.insert(found.value.substr(1, found.value.size() - 2));
+                    }
                 } else {
                     for (int index : twin.indices) lookUp(twin, lookup, code, "", index);
                 }
@@ -536,6 +589,56 @@ private:
             Outcome j = attempt([&] { j_.setRelated(twin.j, related.code, related.j); return std::string(); });
             if (compare("setRelated", twin.path, nameOf(related.code), g, j) && !g.threw()) ++writes;
         }
+        // Properties and aliases: removed, then added back
+        for (const std::string& name : twin.lists[prop::PROPERTY_NAMES]) removeAndRestore(twin, prop::PROPERTY, name);
+        for (const std::string& alias : twin.lists[prop::ALIASES]) removeAndRestore(twin, prop::ALIAS_TYPE, alias);
+        disconnectAndConnect(twin);
+    }
+
+    // Terminals and connectables: disconnected, then connected (a disconnected terminal: the other way round)
+    void disconnectAndConnect(Twin& twin) {
+        bool connected = true;
+        try {
+            if (twin.identifiable) {
+                if (!g_.getBool(twin.g, prop::CONNECTABLE)) return;
+            } else {
+                connected = g_.getBool(twin.g, prop::TERMINAL_CONNECTED); // throws for other objects
+            }
+        } catch (const std::exception&) {
+            return;
+        }
+        const int actions[2] = {connected ? prop::ACT_DISCONNECT : prop::ACT_CONNECT,
+                                connected ? prop::ACT_CONNECT : prop::ACT_DISCONNECT};
+        for (int action : actions) {
+            std::vector<ObjectHandle> objectsG, objectsJ;
+            Outcome g = attempt([&] { return show(g_.invoke(twin.g, action), objectsG); });
+            Outcome j = attempt([&] { return show(j_.invoke(twin.j, action), objectsJ); });
+            for (ObjectHandle h : objectsG) g_.releaseHandle(h);
+            for (ObjectHandle h : objectsJ) j_.releaseHandle(h);
+            if (compare("invoke", twin.path, nameOf(action), g, j) && !g.threw()) ++writes;
+        }
+    }
+
+    void removeAndRestore(Twin& twin, int code, const std::string& key) {
+        iidm::optional<std::string> value;
+        try {
+            value = g_.getKeyedString(twin.g, code, key);
+        } catch (const std::exception&) {
+            return;
+        }
+        const iidm::optional<std::string> restored = value ? value : iidm::optional<std::string>(""); // an alias without type
+        std::vector<ObjectHandle> none;
+        const iidm::optional<std::string> steps[] = {iidm::optional<std::string>(), restored};
+        for (const iidm::optional<std::string>& step : steps) {
+            Outcome g = attempt([&] { g_.setKeyedString(twin.g, code, key, step); return std::string(); });
+            Outcome j = attempt([&] { j_.setKeyedString(twin.j, code, key, step); return std::string(); });
+            const std::string what = step ? "setKeyedString" : "setKeyedString(none)";
+            if (!compare(what, twin.path + " \"" + key + "\"", nameOf(code), g, j) || g.threw()) return;
+            ++writes;
+            compare("getKeyedString after " + what, twin.path + " \"" + key + "\"", nameOf(code),
+                    attempt([&] { return kLookups[BY_KEY].call(g_, twin.g, code, key, -1, none); }),
+                    attempt([&] { return kLookups[BY_KEY].call(j_, twin.j, code, key, -1, none); }));
+        }
     }
 
     void compareSavedNetworks() {
@@ -611,6 +714,12 @@ void buildNetwork(BackendProvider& b) {
                      .newVoltageRegulation().withMode(RegulationMode::VOLTAGE).withRegulating(true).withTargetDeadband(1).add()
                      .add();
     g1.newActivePowerControl().withDroop(4).withParticipate(true).withParticipationFactor(0.5).withMaxTargetP(150).add();
+    // Properties, aliases, names out of ASCII (a 4-byte UTF-8 character too)
+    g1.setProperty("owner", "EDF").setProperty("unit", "1");
+    g1.addAlias("G1-alias").addAlias("G1-code", "code");
+    s.setProperty("region", "\xc3\x8ele-de-France");
+    vl1.setName("Poste \xe2\x82\xac \xf0\x9d\x84\x9e");
+    Identifiable(network, &b).setProperty("study", "conformance");
     vl2.newGenerator().setId("G2").setBus("B2").setMinP(-50).setMaxP(50).setTargetP(10).setLocalTargetQ(5)
         .newVoltageRegulation().withMode(RegulationMode::REACTIVE_POWER).withTerminal(load.getTerminal())
             .withTargetValue(-10).withRegulating(true).add()

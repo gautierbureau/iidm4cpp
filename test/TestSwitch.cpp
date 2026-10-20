@@ -27,7 +27,7 @@ TEST_F(SwitchTest, GetId) {
 
 TEST_F(SwitchTest, GetName) {
     Switch sw(SW_HANDLE, &backend);
-    EXPECT_EQ(sw.getName(), "Switch 1");
+    EXPECT_EQ(sw.getNameOrId(), "Switch 1");
 }
 
 TEST_F(SwitchTest, IsOpenAndSetOpen) {

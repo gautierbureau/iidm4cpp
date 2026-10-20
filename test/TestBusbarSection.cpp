@@ -29,7 +29,7 @@ TEST_F(BusbarSectionTest, GetId) {
 
 TEST_F(BusbarSectionTest, GetName) {
     BusbarSection bbs(BBS_HANDLE, &backend);
-    EXPECT_EQ(bbs.getName(), "Busbar 1");
+    EXPECT_EQ(bbs.getNameOrId(), "Busbar 1");
 }
 
 TEST_F(BusbarSectionTest, GetV) {

@@ -68,20 +68,7 @@ TEST_F(ThreeWindingsTransformerTest, Leg1ElectricalParams) {
 
 TEST_F(ThreeWindingsTransformerTest, GetName) {
     ThreeWindingsTransformer twt(TWT_H, &backend);
-    EXPECT_EQ(twt.getName(), "Three Windings T1");
-}
-
-TEST_F(ThreeWindingsTransformerTest, ConnectDisconnect) {
-    ThreeWindingsTransformer twt(TWT_H, &backend);
-    EXPECT_TRUE(twt.isConnected());
-    twt.disconnect();
-    EXPECT_FALSE((backend.bools[{T1_H, prop::TERMINAL_CONNECTED}]));
-    EXPECT_FALSE((backend.bools[{T2_H, prop::TERMINAL_CONNECTED}]));
-    EXPECT_FALSE((backend.bools[{T3_H, prop::TERMINAL_CONNECTED}]));
-    twt.connect();
-    EXPECT_TRUE((backend.bools[{T1_H, prop::TERMINAL_CONNECTED}]));
-    EXPECT_TRUE((backend.bools[{T2_H, prop::TERMINAL_CONNECTED}]));
-    EXPECT_TRUE((backend.bools[{T3_H, prop::TERMINAL_CONNECTED}]));
+    EXPECT_EQ(twt.getNameOrId(), "Three Windings T1");
 }
 
 TEST_F(ThreeWindingsTransformerTest, IsValid) {

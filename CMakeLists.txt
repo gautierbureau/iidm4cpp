@@ -71,6 +71,12 @@ set(IIDM_BRIDGE_SOURCES
     src/BackendProvider.cpp
     src/HandleRef.cpp
     src/Network.cpp
+    src/ObjectRef.cpp
+    src/Identifiable.cpp
+    src/Connectable.cpp
+    src/Injection.cpp
+    src/Branch.cpp
+    src/HvdcConverterStation.cpp
     src/NetworkFactory.cpp
     src/BackendSelector.cpp
     src/Battery.cpp

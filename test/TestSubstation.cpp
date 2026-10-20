@@ -16,7 +16,7 @@ protected:
     void SetUp() override {
         backend.strings[{SUB_H, prop::ID}]      = "SUB1";
         backend.strings[{SUB_H, prop::NAME}]     = "Substation 1";
-        backend.strings[{SUB_H, prop::COUNTRY}]  = "FR";
+        backend.optStrings[{SUB_H, prop::COUNTRY}] = "FR";
     }
 };
 
@@ -27,7 +27,7 @@ TEST_F(SubstationTest, GetId) {
 
 TEST_F(SubstationTest, GetName) {
     Substation sub(SUB_H, &backend);
-    EXPECT_EQ(sub.getName(), "Substation 1");
+    EXPECT_EQ(sub.getNameOrId(), "Substation 1");
 }
 
 TEST_F(SubstationTest, GetCountryPresent) {

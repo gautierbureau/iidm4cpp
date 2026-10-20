@@ -12,9 +12,8 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Exercises every branch of PropertyDispatcher.getDouble().
  *
- * Previously LCC_LOSS_FACTOR (1400), LCC_POWER_FACTOR (1401), and
- * VSC_LOSS_FACTOR (1300) were missing from the switch, causing
- * IllegalArgumentException at runtime (caught by Dynawo unit tests).
+ * LCC_POWER_FACTOR and the converter station loss factor were once missing from the switch,
+ * causing IllegalArgumentException at runtime (caught by Dynawo unit tests).
  */
 class PropertyDispatcherGetDoubleTest {
 
@@ -175,8 +174,8 @@ class PropertyDispatcherGetDoubleTest {
 
     @Test void lcc_lossFactor() {
         LccConverterStation lcc = buildIsolatedLcc(0.03f, 0.90f);
-        assertEquals(0.03, PropertyDispatcher.getDouble(reg(lcc), LCC_LOSS_FACTOR), 1e-6,
-                "LCC_LOSS_FACTOR (1400) was previously missing from getDouble");
+        assertEquals(0.03, PropertyDispatcher.getDouble(reg(lcc), CONVERTER_STATION_LOSS_FACTOR), 1e-6);
+        assertEquals(HvdcConverterStation.HvdcType.LCC.ordinal(), PropertyDispatcher.getInt(reg(lcc), CONVERTER_STATION_HVDC_TYPE));
     }
 
     @Test void lcc_powerFactor() {
@@ -189,8 +188,8 @@ class PropertyDispatcherGetDoubleTest {
 
     @Test void vsc_lossFactor() {
         VscConverterStation vsc = buildVscConverterStation(0.011f);
-        assertEquals(0.011, PropertyDispatcher.getDouble(reg(vsc), VSC_LOSS_FACTOR), 1e-6,
-                "VSC_LOSS_FACTOR (1300) was previously missing from getDouble");
+        assertEquals(0.011, PropertyDispatcher.getDouble(reg(vsc), CONVERTER_STATION_LOSS_FACTOR), 1e-6);
+        assertEquals(HvdcConverterStation.HvdcType.VSC.ordinal(), PropertyDispatcher.getInt(reg(vsc), CONVERTER_STATION_HVDC_TYPE));
     }
 
     @Test void vsc_voltageSetpoint() {

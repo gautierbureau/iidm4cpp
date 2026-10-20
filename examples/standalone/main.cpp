@@ -21,7 +21,7 @@
 
 static void printNetwork(iidm::Network& network) {
     std::cout << "Network: " << network.getId()
-              << " (" << network.getName() << ")\n\n";
+              << " (" << network.getNameOrId() << ")\n\n";
 
     // Generators
     auto generators = network.getGenerators();

@@ -34,7 +34,7 @@ TEST_F(GeneratorTest, GetId) {
 
 TEST_F(GeneratorTest, GetName) {
     Generator gen(GEN_HANDLE, &backend);
-    EXPECT_EQ(gen.getName(), "Generator 1");
+    EXPECT_EQ(gen.getNameOrId(), "Generator 1");
 }
 
 TEST_F(GeneratorTest, GetTargetP) {

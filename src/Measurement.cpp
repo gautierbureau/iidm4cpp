@@ -8,7 +8,7 @@ namespace iidm {
 // ── Measurement ───────────────────────────────────────────────────────────────
 
 Measurement::Measurement(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
+    : ObjectRef(handle, backend) {}
 
 std::string Measurement::getId() const {
     return backend_->getString(handle_, prop::MEAS_ID);
@@ -62,18 +62,10 @@ Measurement& Measurement::setValueAndValidity(double value, bool valid) {
     return *this;
 }
 
-bool Measurement::operator==(const Measurement& other) const {
-    return handle_ == other.handle_;
-}
-
-bool Measurement::operator!=(const Measurement& other) const {
-    return !(*this == other);
-}
-
 // ── Measurements ──────────────────────────────────────────────────────────────
 
 Measurements::Measurements(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
+    : ObjectRef(handle, backend) {}
 
 std::vector<Measurement> Measurements::getMeasurements() const {
     auto handles = backend_->getChildren(handle_, prop::MEASUREMENT);
@@ -95,14 +87,6 @@ iidm::optional<Measurement> Measurements::getMeasurement(const std::string& id) 
     ObjectHandle h = backend_->getRelatedByString(handle_, prop::REL_MEASUREMENT_BY_ID, id);
     if (h == INVALID_HANDLE) return {};
     return Measurement(h, backend_);
-}
-
-bool Measurements::operator==(const Measurements& other) const {
-    return handle_ == other.handle_;
-}
-
-bool Measurements::operator!=(const Measurements& other) const {
-    return !(*this == other);
 }
 
 } // namespace iidm

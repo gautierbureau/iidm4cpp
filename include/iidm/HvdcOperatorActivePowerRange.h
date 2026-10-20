@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iidm/HandleRef.h>
+#include <iidm/ObjectRef.h>
 #include <iidm/ObjectHandle.h>
 
 namespace iidm {
@@ -8,7 +8,7 @@ namespace iidm {
 class BackendProvider;
 
 // Typed wrapper for the PowSyBl HvdcOperatorActivePowerRange extension attached to an HvdcLine.
-class HvdcOperatorActivePowerRange {
+class HvdcOperatorActivePowerRange : public detail::ObjectRef {
 public:
     HvdcOperatorActivePowerRange() = default;
     explicit HvdcOperatorActivePowerRange(ObjectHandle handle, BackendProvider* backend);
@@ -18,15 +18,6 @@ public:
 
     double getOprFromCS2toCS1() const;
     HvdcOperatorActivePowerRange& setOprFromCS2toCS1(double value);
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const HvdcOperatorActivePowerRange& other) const;
-    bool operator!=(const HvdcOperatorActivePowerRange& other) const;
-
-private:
-    HandleRef  handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

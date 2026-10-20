@@ -86,15 +86,6 @@ TEST_F(ShuntCompensatorTest, GetTerminal) {
     EXPECT_TRUE(sc.getTerminal().isValid());
 }
 
-TEST_F(ShuntCompensatorTest, ConnectDisconnect) {
-    ShuntCompensator sc(SC_H, &backend);
-    EXPECT_TRUE(sc.isConnected());
-    sc.disconnect();
-    EXPECT_FALSE((backend.bools[{TERM_H, prop::TERMINAL_CONNECTED}]));
-    sc.connect();
-    EXPECT_TRUE((backend.bools[{TERM_H, prop::TERMINAL_CONNECTED}]));
-}
-
 TEST_F(ShuntCompensatorTest, IsValid) {
     ShuntCompensator valid(SC_H, &backend);
     ShuntCompensator invalid;

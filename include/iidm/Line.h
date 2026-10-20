@@ -1,27 +1,16 @@
 #pragma once
 
-#include <iidm/HandleRef.h>
-#include <iidm/ObjectHandle.h>
-#include <iidm/CurrentLimits.h>
-#include <iidm/OperationalLimitsGroup.h>
-#include <iidm/Terminal.h>
-#include <iidm/stdcxx/optional.hpp>
-#include <string>
-#include <vector>
-#include <iidm/BranchObservability.h>
-#include <iidm/Measurement.h>
+#include <iidm/Branch.h>
+#include <iidm/Connectable.h>
 
 namespace iidm {
 
-class BackendProvider;
-
-class Line {
+class Line : public Connectable, public detail::BranchMethods<Line> {
 public:
-    Line() = default;
-    explicit Line(ObjectHandle handle, BackendProvider* backend);
+    static constexpr int TYPE = prop::LINE;
 
-    std::string getId() const;
-    std::string getName() const;
+    Line() = default;
+    explicit Line(ObjectHandle handle, BackendProvider* backend) : Connectable(handle, backend) {}
 
     double getR() const;
     double getX() const;
@@ -29,37 +18,6 @@ public:
     double getB1() const;
     double getG2() const;
     double getB2() const;
-
-    Terminal getTerminal1() const;
-    Terminal getTerminal2() const;
-
-    iidm::optional<CurrentLimits> getCurrentLimits1() const;
-    iidm::optional<CurrentLimits> getCurrentLimits2() const;
-
-    std::vector<OperationalLimitsGroup> getOperationalLimitsGroups1() const;
-    std::vector<OperationalLimitsGroup> getOperationalLimitsGroups2() const;
-    iidm::optional<OperationalLimitsGroup> getSelectedOperationalLimitsGroup1() const;
-    iidm::optional<OperationalLimitsGroup> getSelectedOperationalLimitsGroup2() const;
-
-    void connect();
-    void disconnect();
-    bool isConnected() const;
-
-    // ── State estimation extensions ──────────────────────────────────────
-    bool hasBranchObservability() const;
-    BranchObservability getBranchObservability() const;
-
-    bool hasMeasurements() const;
-    Measurements getMeasurements() const;
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const Line& other) const;
-    bool operator!=(const Line& other) const;
-
-private:
-    HandleRef handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

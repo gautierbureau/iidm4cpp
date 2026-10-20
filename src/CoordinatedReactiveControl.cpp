@@ -5,7 +5,7 @@
 namespace iidm {
 
 CoordinatedReactiveControl::CoordinatedReactiveControl(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
+    : ObjectRef(handle, backend) {}
 
 double CoordinatedReactiveControl::getQPercent() const {
     return backend_->getDouble(handle_, prop::EXT_CRC_Q_PERCENT);
@@ -14,14 +14,6 @@ double CoordinatedReactiveControl::getQPercent() const {
 CoordinatedReactiveControl& CoordinatedReactiveControl::setQPercent(double qPercent) {
     backend_->setDouble(handle_, prop::EXT_CRC_Q_PERCENT, qPercent);
     return *this;
-}
-
-bool CoordinatedReactiveControl::operator==(const CoordinatedReactiveControl& other) const {
-    return handle_ == other.handle_;
-}
-
-bool CoordinatedReactiveControl::operator!=(const CoordinatedReactiveControl& other) const {
-    return !(*this == other);
 }
 
 } // namespace iidm

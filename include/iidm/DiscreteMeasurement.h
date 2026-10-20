@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iidm/Enums.h>
-#include <iidm/HandleRef.h>
+#include <iidm/ObjectRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/stdcxx/optional.hpp>
 #include <string>
@@ -16,7 +16,7 @@ class BackendProvider;
 //
 // The validity flag of the measured value is exposed as isValueValid()/setValueValid():
 // isValid() keeps the meaning it has on every iidm4cpp wrapper (the handle is valid).
-class DiscreteMeasurement {
+class DiscreteMeasurement : public detail::ObjectRef {
 public:
     DiscreteMeasurement() = default;
     explicit DiscreteMeasurement(ObjectHandle handle, BackendProvider* backend);
@@ -41,20 +41,11 @@ public:
 
     bool isValueValid() const;
     DiscreteMeasurement& setValueValid(bool valid);
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const DiscreteMeasurement& other) const;
-    bool operator!=(const DiscreteMeasurement& other) const;
-
-private:
-    HandleRef  handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 // Typed wrapper for the PowSyBl DiscreteMeasurements extension attached to an identifiable
-// (Switch, TwoWindingsTransformer, ThreeWindingsTransformer, ShuntCompensator).
-class DiscreteMeasurements {
+// (Identifiable::getDiscreteMeasurements(): switches, transformers, shunts...).
+class DiscreteMeasurements : public detail::ObjectRef {
 public:
     DiscreteMeasurements() = default;
     explicit DiscreteMeasurements(ObjectHandle handle, BackendProvider* backend);
@@ -62,15 +53,6 @@ public:
     std::vector<DiscreteMeasurement> getDiscreteMeasurements() const;
     std::vector<DiscreteMeasurement> getDiscreteMeasurements(DiscreteMeasurementType type) const;
     iidm::optional<DiscreteMeasurement> getDiscreteMeasurement(const std::string& id) const;
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const DiscreteMeasurements& other) const;
-    bool operator!=(const DiscreteMeasurements& other) const;
-
-private:
-    HandleRef  handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

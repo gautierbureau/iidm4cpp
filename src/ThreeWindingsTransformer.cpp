@@ -13,7 +13,7 @@ namespace iidm {
 ThreeWindingsTransformer::Leg::Leg(ObjectHandle twtHandle, BackendProvider* backend,
                                     int legBase, int relTerminal,
                                     int rtcStepChildType, int ptcStepChildType)
-    : handle_(twtHandle, backend), backend_(detail::orNullBackend(backend)), legBase_(legBase),
+    : ObjectRef(twtHandle, backend), legBase_(legBase),
       relTerminal_(relTerminal),
       rtcStepChildType_(rtcStepChildType), ptcStepChildType_(ptcStepChildType) {}
 
@@ -104,16 +104,6 @@ iidm::optional<OperationalLimitsGroup> ThreeWindingsTransformer::Leg::getSelecte
 
 // ── ThreeWindingsTransformer ──────────────────────────────────────────────────
 
-ThreeWindingsTransformer::ThreeWindingsTransformer(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
-
-std::string ThreeWindingsTransformer::getId() const {
-    return backend_->getString(handle_, prop::ID);
-}
-std::string ThreeWindingsTransformer::getName() const {
-    return backend_->getString(handle_, prop::NAME);
-}
-
 double ThreeWindingsTransformer::getRatedU0() const {
     return backend_->getDouble(handle_, prop::THREE_WT_RATED_U0);
 }
@@ -148,30 +138,7 @@ Terminal ThreeWindingsTransformer::getTerminal3() const {
     return Terminal(backend_->getRelated(handle_, prop::REL_TERMINAL), backend_);
 }
 
-void ThreeWindingsTransformer::connect() {
-    getTerminal1().connect();
-    getTerminal2().connect();
-    getTerminal3().connect();
-}
-void ThreeWindingsTransformer::disconnect() {
-    getTerminal1().disconnect();
-    getTerminal2().disconnect();
-    getTerminal3().disconnect();
-}
-bool ThreeWindingsTransformer::isConnected() const {
-    return getTerminal1().isConnected()
-        && getTerminal2().isConnected()
-        && getTerminal3().isConnected();
-}
-
-bool ThreeWindingsTransformer::operator==(const ThreeWindingsTransformer& other) const {
-    return handle_ == other.handle_;
-}
-bool ThreeWindingsTransformer::operator!=(const ThreeWindingsTransformer& other) const {
-    return !(*this == other);
-}
-
-// ── State estimation extensions ──────────────────────────────────────────────
+// ── Extensions ───────────────────────────────────────────────────────────────
 
 bool ThreeWindingsTransformer::hasThreeWindingsTransformerToBeEstimated() const {
     return backend_->getBool(handle_, prop::EXT_THREE_WT_TBE_EXISTS);
@@ -179,22 +146,6 @@ bool ThreeWindingsTransformer::hasThreeWindingsTransformerToBeEstimated() const 
 
 ThreeWindingsTransformerToBeEstimated ThreeWindingsTransformer::getThreeWindingsTransformerToBeEstimated() const {
     return ThreeWindingsTransformerToBeEstimated(handle_, backend_);
-}
-
-bool ThreeWindingsTransformer::hasMeasurements() const {
-    return backend_->getBool(handle_, prop::EXT_MEAS_EXISTS);
-}
-
-Measurements ThreeWindingsTransformer::getMeasurements() const {
-    return Measurements(handle_, backend_);
-}
-
-bool ThreeWindingsTransformer::hasDiscreteMeasurements() const {
-    return backend_->getBool(handle_, prop::EXT_DMEAS_EXISTS);
-}
-
-DiscreteMeasurements ThreeWindingsTransformer::getDiscreteMeasurements() const {
-    return DiscreteMeasurements(handle_, backend_);
 }
 
 } // namespace iidm

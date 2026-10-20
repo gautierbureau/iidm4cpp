@@ -29,7 +29,17 @@ enum class StaticVarCompensatorRegulationMode { VOLTAGE, REACTIVE_POWER, OFF, VO
 enum class SwitchKind { BREAKER, DISCONNECTOR, LOAD_BREAK_SWITCH };
 enum class PhaseTapChangerRegulationMode { CURRENT_LIMITER, ACTIVE_POWER_CONTROL, FIXED_TAP };
 enum class HvdcOperatorActivePowerRangeSide { SIDE1, SIDE2 };
+enum class TwoSides { ONE, TWO };
 enum class ThreeSides { ONE, TWO, THREE };
+// Type of an identifiable (powsybl IdentifiableType, same order)
+enum class IdentifiableType {
+    NETWORK, SUBSTATION, VOLTAGE_LEVEL, AREA, HVDC_LINE, BUS, SWITCH, BUSBAR_SECTION, LINE, TIE_LINE,
+    TWO_WINDINGS_TRANSFORMER, THREE_WINDINGS_TRANSFORMER, GENERATOR, BATTERY, LOAD, SHUNT_COMPENSATOR,
+    BOUNDARY_LINE, STATIC_VAR_COMPENSATOR, HVDC_CONVERTER_STATION, OVERLOAD_MANAGEMENT_SYSTEM, GROUND,
+    DC_NODE, DC_SWITCH, DC_GROUND, DC_LINE, LINE_COMMUTATED_CONVERTER, VOLTAGE_SOURCE_CONVERTER, DC_BUS
+};
+// Technology of an HVDC converter station
+enum class HvdcType { VSC, LCC };
 // Mode of a VoltageRegulation (powsybl 7.4 regulation.RegulationMode)
 enum class RegulationMode { VOLTAGE, REACTIVE_POWER, VOLTAGE_PER_REACTIVE_POWER };
 

@@ -2,7 +2,7 @@
 
 #include <iidm/Bus.h>
 #include <iidm/Enums.h>
-#include <iidm/HandleRef.h>
+#include <iidm/ObjectRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/Terminal.h>
 #include <iidm/stdcxx/optional.hpp>
@@ -15,10 +15,10 @@ class BackendProvider;
 
 // Typed wrapper for the PowSyBl ObservabilityArea extension attached to a VoltageLevel
 // (read-only: areas are produced by a state estimator).
-class ObservabilityArea {
+class ObservabilityArea : public detail::ObjectRef {
 public:
     // One observability area of the voltage level.
-    class AreaCharacteristics {
+    class AreaCharacteristics : public detail::ObjectRef {
     public:
         AreaCharacteristics() = default;
         explicit AreaCharacteristics(ObjectHandle handle, BackendProvider* backend);
@@ -32,12 +32,6 @@ public:
         std::vector<int> getNodes() const;
         // Bus-breaker voltage level: the area's bus-breaker view buses; empty in node-breaker topology.
         std::vector<Bus> getBuses() const;
-
-        bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    private:
-        HandleRef  handle_;
-        BackendProvider* backend_ = detail::nullBackend();
     };
 
     ObservabilityArea() = default;
@@ -53,15 +47,6 @@ public:
     iidm::optional<AreaCharacteristics> getObservabilityAreaByBus(const std::string& busId) const;
     // Area containing a bus of the bus-breaker view.
     iidm::optional<AreaCharacteristics> getObservabilityAreaByBusBreakerBus(const std::string& busId) const;
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const ObservabilityArea& other) const;
-    bool operator!=(const ObservabilityArea& other) const;
-
-private:
-    HandleRef  handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

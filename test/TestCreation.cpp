@@ -4,6 +4,7 @@
 #include <cmath>
 #include <limits>
 #include <string>
+#include <vector>
 
 #ifdef IIDM_BRIDGE_GRAALVM_ENABLED
 #  include "graalvm/GraalVMBackend.h"
@@ -40,7 +41,7 @@ void checkCreation(Network& network) {
                   .setLoadType(LoadType::AUXILIARY).add();
 
     EXPECT_EQ(*s.getCountry(), Country::FR);
-    EXPECT_EQ(s.getTso(), "RTE");
+    EXPECT_EQ(*s.getTso(), "RTE");
     EXPECT_DOUBLE_EQ(vl.getNominalV(), 400);
     EXPECT_DOUBLE_EQ(*vl.getLowVoltageLimit(), 380);
     EXPECT_FALSE(vl.getHighVoltageLimit());
@@ -51,7 +52,7 @@ void checkCreation(Network& network) {
     EXPECT_EQ(g.getTerminal().getBusBreakerView().getConnectableBus().getId(), "B");
     EXPECT_TRUE(g.isRegulating());
     EXPECT_DOUBLE_EQ(g.getRegulatingTargetV(), 405);
-    EXPECT_EQ(load.getName(), "load");
+    EXPECT_EQ(load.getNameOrId(), "load");
     EXPECT_EQ(load.getLoadType(), LoadType::AUXILIARY);
     ASSERT_TRUE(network.getGenerator("G"));
     EXPECT_EQ(network.getLoads().size(), 1u);
@@ -65,9 +66,9 @@ void checkCreation(Network& network) {
     EXPECT_THROW(regulation->setTargetValue(398), ValidationException); // NaN without a terminal
     regulation->setTerminal(load.getTerminal(), 398);
     EXPECT_TRUE(regulation->isWithTerminal());
-    EXPECT_EQ(regulation->getTerminal()->getConnectableId(), "L");
+    EXPECT_EQ(regulation->getTerminal()->getConnectable().getId(), "L");
     EXPECT_DOUBLE_EQ(g.getRegulatingTargetV(), 398);
-    EXPECT_EQ(g.getRegulatingTerminal().getConnectableId(), "L");
+    EXPECT_EQ(g.getRegulatingTerminal().getConnectable().getId(), "L");
     regulation->setTerminal(Terminal(), NaN);
     EXPECT_FALSE(regulation->isWithTerminal());
     EXPECT_DOUBLE_EQ(g.getRegulatingTargetV(), 405);
@@ -91,6 +92,48 @@ void checkCreation(Network& network) {
     g.removeActivePowerControl();
     EXPECT_FALSE(g.hasActivePowerControl());
     EXPECT_THROW(g.getActivePowerControl(), ExtensionNotFoundException);
+
+    // Base classes: names, properties, aliases, types, identity, connection
+    EXPECT_EQ(g.getNameOrId(), "G");
+    EXPECT_FALSE(g.getOptionalName());
+    EXPECT_EQ(*load.getOptionalName(), "load");
+    g.setProperty("owner", "EDF").setProperty("\xc3\xa9t\xc3\xa9", "\xf0\x9d\x84\x9e"); // non-ASCII, a 4-byte character
+    EXPECT_EQ(*g.getProperty("owner"), "EDF");
+    EXPECT_EQ(*g.getProperty("\xc3\xa9t\xc3\xa9"), "\xf0\x9d\x84\x9e");
+    EXPECT_EQ(g.getPropertyNames(), (std::vector<std::string>{"owner", "\xc3\xa9t\xc3\xa9"}));
+    EXPECT_TRUE(g.removeProperty("owner"));
+    EXPECT_FALSE(g.hasProperty("owner"));
+    g.addAlias("G-alias").addAlias("G-code", "code");
+    EXPECT_EQ(g.getAliases(), (std::vector<std::string>{"G-alias", "G-code"}));
+    EXPECT_EQ(*g.getAliasType("G-code"), "code");
+    EXPECT_FALSE(g.getAliasType("G-alias"));
+    EXPECT_EQ(*g.getAliasFromType("code"), "G-code");
+    EXPECT_EQ(*network.getGenerator("G-code"), g);          // found by alias; the same object
+    load.addAlias("G-alias", "", true);                      // taken: made unique
+    EXPECT_NE(load.getAliases()[0], "G-alias");
+    EXPECT_THROW(load.addAlias("G-alias"), ValidationException);
+    g.removeAlias("G-alias");
+    EXPECT_FALSE(network.getIdentifiable("G-alias"));
+
+    EXPECT_EQ(g.getType(), IdentifiableType::GENERATOR);
+    Connectable owner = load.getTerminal().getConnectable();
+    EXPECT_TRUE(owner.is<Load>());
+    EXPECT_TRUE(owner.is<Injection>());
+    EXPECT_FALSE(owner.is<Generator>());
+    EXPECT_EQ(owner.as<Load>(), load);
+    EXPECT_THROW(owner.as<Generator>(), PropertyNotFoundException);
+    EXPECT_NE(owner, g);
+    EXPECT_EQ(vl.getConnectables().size(), 2u);
+    EXPECT_EQ(network.getConnectables().size(), 2u);
+    EXPECT_EQ(network.getIdentifiables().size(), 6u); // network, S, VL, B, G, L
+    ASSERT_TRUE(network.getIdentifiable("S"));
+    EXPECT_TRUE(network.getIdentifiable("S")->is<Substation>());
+
+    EXPECT_TRUE(load.disconnect());
+    EXPECT_FALSE(load.disconnect()); // already
+    EXPECT_FALSE(load.getTerminal().isConnected());
+    EXPECT_TRUE(load.getTerminal().connect());
+    EXPECT_TRUE(load.getTerminal().isConnected());
 
     // powsybl validates at add(): nothing is created
     EXPECT_THROW(vl.newGenerator().setId("G").add(), ValidationException);                        // duplicate id

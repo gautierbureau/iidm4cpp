@@ -6,7 +6,7 @@
 namespace iidm {
 
 ActivePowerControl::ActivePowerControl(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
+    : ObjectRef(handle, backend) {}
 
 bool ActivePowerControl::isParticipate() const {
     return backend_->getBool(handle_, prop::EXT_APC_PARTICIPATE);
@@ -59,14 +59,6 @@ ActivePowerControl& ActivePowerControl::setMaxTargetP(double maxTargetP) {
 
 ActivePowerControl& ActivePowerControl::unsetMaxTargetP() {
     return setMaxTargetP(std::numeric_limits<double>::quiet_NaN());
-}
-
-bool ActivePowerControl::operator==(const ActivePowerControl& other) const {
-    return handle_ == other.handle_;
-}
-
-bool ActivePowerControl::operator!=(const ActivePowerControl& other) const {
-    return !(*this == other);
 }
 
 } // namespace iidm

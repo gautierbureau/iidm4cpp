@@ -8,17 +8,6 @@
 
 namespace iidm {
 
-TwoWindingsTransformer::TwoWindingsTransformer(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
-
-std::string TwoWindingsTransformer::getId() const {
-    return backend_->getString(handle_, prop::ID);
-}
-
-std::string TwoWindingsTransformer::getName() const {
-    return backend_->getString(handle_, prop::NAME);
-}
-
 double TwoWindingsTransformer::getR() const {
     return backend_->getDouble(handle_, prop::TWO_WT_R);
 }
@@ -169,87 +158,7 @@ TwoWindingsTransformer& TwoWindingsTransformer::setPhaseTapRegulationValue(doubl
     return *this;
 }
 
-Terminal TwoWindingsTransformer::getTerminal1() const {
-    ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_TERMINAL1);
-    return Terminal(termHandle, backend_);
-}
-
-Terminal TwoWindingsTransformer::getTerminal2() const {
-    ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_TERMINAL2);
-    return Terminal(termHandle, backend_);
-}
-
-iidm::optional<CurrentLimits> TwoWindingsTransformer::getCurrentLimits1() const {
-    ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS1);
-    if (h == INVALID_HANDLE) return {};
-    return CurrentLimits(h, backend_);
-}
-
-iidm::optional<CurrentLimits> TwoWindingsTransformer::getCurrentLimits2() const {
-    ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS2);
-    if (h == INVALID_HANDLE) return {};
-    return CurrentLimits(h, backend_);
-}
-
-std::vector<OperationalLimitsGroup> TwoWindingsTransformer::getOperationalLimitsGroups1() const {
-    auto handles = backend_->getChildren(handle_, prop::OLG_SIDE1);
-    std::vector<OperationalLimitsGroup> result;
-    result.reserve(handles.size());
-    for (auto h : handles) result.emplace_back(h, backend_);
-    return result;
-}
-
-std::vector<OperationalLimitsGroup> TwoWindingsTransformer::getOperationalLimitsGroups2() const {
-    auto handles = backend_->getChildren(handle_, prop::OLG_SIDE2);
-    std::vector<OperationalLimitsGroup> result;
-    result.reserve(handles.size());
-    for (auto h : handles) result.emplace_back(h, backend_);
-    return result;
-}
-
-iidm::optional<OperationalLimitsGroup> TwoWindingsTransformer::getSelectedOperationalLimitsGroup1() const {
-    ObjectHandle h = backend_->getRelated(handle_, prop::REL_SELECTED_OLG1);
-    if (h == INVALID_HANDLE) return {};
-    return OperationalLimitsGroup(h, backend_);
-}
-
-iidm::optional<OperationalLimitsGroup> TwoWindingsTransformer::getSelectedOperationalLimitsGroup2() const {
-    ObjectHandle h = backend_->getRelated(handle_, prop::REL_SELECTED_OLG2);
-    if (h == INVALID_HANDLE) return {};
-    return OperationalLimitsGroup(h, backend_);
-}
-
-void TwoWindingsTransformer::connect() {
-    getTerminal1().connect();
-    getTerminal2().connect();
-}
-
-void TwoWindingsTransformer::disconnect() {
-    getTerminal1().disconnect();
-    getTerminal2().disconnect();
-}
-
-bool TwoWindingsTransformer::isConnected() const {
-    return getTerminal1().isConnected() && getTerminal2().isConnected();
-}
-
-bool TwoWindingsTransformer::operator==(const TwoWindingsTransformer& other) const {
-    return handle_ == other.handle_;
-}
-
-bool TwoWindingsTransformer::operator!=(const TwoWindingsTransformer& other) const {
-    return !(*this == other);
-}
-
-// ── State estimation extensions ──────────────────────────────────────────────
-
-bool TwoWindingsTransformer::hasBranchObservability() const {
-    return backend_->getBool(handle_, prop::EXT_BRANCH_OBS_EXISTS);
-}
-
-BranchObservability TwoWindingsTransformer::getBranchObservability() const {
-    return BranchObservability(handle_, backend_);
-}
+// ── Extensions ───────────────────────────────────────────────────────────────
 
 bool TwoWindingsTransformer::hasTwoWindingsTransformerToBeEstimated() const {
     return backend_->getBool(handle_, prop::EXT_TWO_WT_TBE_EXISTS);
@@ -257,22 +166,6 @@ bool TwoWindingsTransformer::hasTwoWindingsTransformerToBeEstimated() const {
 
 TwoWindingsTransformerToBeEstimated TwoWindingsTransformer::getTwoWindingsTransformerToBeEstimated() const {
     return TwoWindingsTransformerToBeEstimated(handle_, backend_);
-}
-
-bool TwoWindingsTransformer::hasMeasurements() const {
-    return backend_->getBool(handle_, prop::EXT_MEAS_EXISTS);
-}
-
-Measurements TwoWindingsTransformer::getMeasurements() const {
-    return Measurements(handle_, backend_);
-}
-
-bool TwoWindingsTransformer::hasDiscreteMeasurements() const {
-    return backend_->getBool(handle_, prop::EXT_DMEAS_EXISTS);
-}
-
-DiscreteMeasurements TwoWindingsTransformer::getDiscreteMeasurements() const {
-    return DiscreteMeasurements(handle_, backend_);
 }
 
 } // namespace iidm

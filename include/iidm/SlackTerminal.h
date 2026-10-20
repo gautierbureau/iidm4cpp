@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iidm/HandleRef.h>
+#include <iidm/ObjectRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/Terminal.h>
 
@@ -9,7 +9,7 @@ namespace iidm {
 class BackendProvider;
 
 // Typed wrapper for the PowSyBl SlackTerminal extension attached to a VoltageLevel.
-class SlackTerminal {
+class SlackTerminal : public detail::ObjectRef {
 public:
     SlackTerminal() = default;
     explicit SlackTerminal(ObjectHandle handle, BackendProvider* backend);
@@ -21,15 +21,6 @@ public:
     SlackTerminal& setTerminal(const Terminal& terminal);
     // True when no variant has a slack terminal.
     bool isEmpty() const;
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const SlackTerminal& other) const;
-    bool operator!=(const SlackTerminal& other) const;
-
-private:
-    HandleRef  handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

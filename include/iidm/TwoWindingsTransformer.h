@@ -1,32 +1,21 @@
 #pragma once
 
-#include <iidm/HandleRef.h>
-#include <iidm/ObjectHandle.h>
-#include <iidm/CurrentLimits.h>
-#include <iidm/OperationalLimitsGroup.h>
+#include <iidm/Branch.h>
+#include <iidm/Connectable.h>
 #include <iidm/Enums.h>
-#include <iidm/RatioTapChanger.h>
 #include <iidm/PhaseTapChanger.h>
-#include <iidm/Terminal.h>
-#include <iidm/stdcxx/optional.hpp>
-#include <string>
-#include <vector>
-#include <iidm/BranchObservability.h>
+#include <iidm/RatioTapChanger.h>
 #include <iidm/TwoWindingsTransformerToBeEstimated.h>
-#include <iidm/Measurement.h>
-#include <iidm/DiscreteMeasurement.h>
+#include <iidm/stdcxx/optional.hpp>
 
 namespace iidm {
 
-class BackendProvider;
-
-class TwoWindingsTransformer {
+class TwoWindingsTransformer : public Connectable, public detail::BranchMethods<TwoWindingsTransformer> {
 public:
-    TwoWindingsTransformer() = default;
-    explicit TwoWindingsTransformer(ObjectHandle handle, BackendProvider* backend);
+    static constexpr int TYPE = prop::TWO_WINDINGS_TRANSFORMER;
 
-    std::string getId() const;
-    std::string getName() const;
+    TwoWindingsTransformer() = default;
+    explicit TwoWindingsTransformer(ObjectHandle handle, BackendProvider* backend) : Connectable(handle, backend) {}
 
     double getR() const;
     double getX() const;
@@ -35,17 +24,6 @@ public:
     double getRatedU1() const;
     double getRatedU2() const;
     iidm::optional<double> getRatedS() const;
-
-    Terminal getTerminal1() const;
-    Terminal getTerminal2() const;
-
-    iidm::optional<CurrentLimits> getCurrentLimits1() const;
-    iidm::optional<CurrentLimits> getCurrentLimits2() const;
-
-    std::vector<OperationalLimitsGroup> getOperationalLimitsGroups1() const;
-    std::vector<OperationalLimitsGroup> getOperationalLimitsGroups2() const;
-    iidm::optional<OperationalLimitsGroup> getSelectedOperationalLimitsGroup1() const;
-    iidm::optional<OperationalLimitsGroup> getSelectedOperationalLimitsGroup2() const;
 
     // ── RatioTapChanger ──────────────────────────────────────────────────────
     bool hasRatioTapChanger() const;
@@ -73,31 +51,9 @@ public:
     double getPhaseTapRegulationValue() const;
     TwoWindingsTransformer& setPhaseTapRegulationValue(double val);
 
-    void connect();
-    void disconnect();
-    bool isConnected() const;
-
-    // ── State estimation extensions ──────────────────────────────────────
-    bool hasBranchObservability() const;
-    BranchObservability getBranchObservability() const;
-
+    // ── Extensions ───────────────────────────────────────────────────────
     bool hasTwoWindingsTransformerToBeEstimated() const;
     TwoWindingsTransformerToBeEstimated getTwoWindingsTransformerToBeEstimated() const;
-
-    bool hasMeasurements() const;
-    Measurements getMeasurements() const;
-
-    bool hasDiscreteMeasurements() const;
-    DiscreteMeasurements getDiscreteMeasurements() const;
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const TwoWindingsTransformer& other) const;
-    bool operator!=(const TwoWindingsTransformer& other) const;
-
-private:
-    HandleRef handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

@@ -17,7 +17,7 @@ protected:
     void SetUp() override {
         backend.strings[{VSC_H, prop::ID}]                     = "VSC1";
         backend.strings[{VSC_H, prop::NAME}]                    = "VSC Station 1";
-        backend.doubles[{VSC_H, prop::VSC_LOSS_FACTOR}]         = 0.011f;
+        backend.doubles[{VSC_H, prop::CONVERTER_STATION_LOSS_FACTOR}]         = 0.011f;
         backend.bools  [{VSC_H, prop::VSC_VOLTAGE_REGULATOR_ON}] = true;
         backend.doubles[{VSC_H, prop::VSC_VOLTAGE_SETPOINT}]    = 400.0;
         backend.doubles[{VSC_H, prop::VSC_REACTIVE_POWER_SETPOINT}] = -50.0;
@@ -78,16 +78,7 @@ TEST_F(VscConverterStationTest, GetTerminalAndHvdcLine) {
     backend.strings[{HVDC_H, prop::ID}] = "HVDC1";
     VscConverterStation vsc(VSC_H, &backend);
     EXPECT_TRUE(vsc.getTerminal().isValid());
-    EXPECT_TRUE(vsc.getHvdcLine().isValid());
-}
-
-TEST_F(VscConverterStationTest, ConnectDisconnect) {
-    VscConverterStation vsc(VSC_H, &backend);
-    EXPECT_TRUE(vsc.isConnected());
-    vsc.disconnect();
-    EXPECT_FALSE((backend.bools[{TERM_H, prop::TERMINAL_CONNECTED}]));
-    vsc.connect();
-    EXPECT_TRUE((backend.bools[{TERM_H, prop::TERMINAL_CONNECTED}]));
+    EXPECT_TRUE(static_cast<bool>(vsc.getHvdcLine()));
 }
 
 TEST_F(VscConverterStationTest, IsValid) {

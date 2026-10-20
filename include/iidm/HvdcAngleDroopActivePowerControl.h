@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iidm/HandleRef.h>
+#include <iidm/ObjectRef.h>
 #include <iidm/ObjectHandle.h>
 
 namespace iidm {
@@ -8,7 +8,7 @@ namespace iidm {
 class BackendProvider;
 
 // Typed wrapper for the PowSyBl HvdcAngleDroopActivePowerControl extension attached to an HvdcLine.
-class HvdcAngleDroopActivePowerControl {
+class HvdcAngleDroopActivePowerControl : public detail::ObjectRef {
 public:
     HvdcAngleDroopActivePowerControl() = default;
     explicit HvdcAngleDroopActivePowerControl(ObjectHandle handle, BackendProvider* backend);
@@ -21,15 +21,6 @@ public:
 
     bool isEnabled() const;
     HvdcAngleDroopActivePowerControl& setEnabled(bool enabled);
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const HvdcAngleDroopActivePowerControl& other) const;
-    bool operator!=(const HvdcAngleDroopActivePowerControl& other) const;
-
-private:
-    HandleRef  handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

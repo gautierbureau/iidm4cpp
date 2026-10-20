@@ -1,29 +1,23 @@
 #pragma once
 
-#include <iidm/HandleRef.h>
-#include <iidm/ObjectHandle.h>
+#include <iidm/Connectable.h>
 #include <iidm/CurrentLimits.h>
 #include <iidm/OperationalLimitsGroup.h>
-#include <iidm/Enums.h>
-#include <iidm/RatioTapChanger.h>
 #include <iidm/PhaseTapChanger.h>
-#include <iidm/Substation.h>
+#include <iidm/RatioTapChanger.h>
 #include <iidm/Terminal.h>
-#include <iidm/stdcxx/optional.hpp>
-#include <string>
-#include <vector>
 #include <iidm/ThreeWindingsTransformerToBeEstimated.h>
-#include <iidm/Measurement.h>
-#include <iidm/DiscreteMeasurement.h>
+#include <iidm/stdcxx/optional.hpp>
+#include <vector>
 
 namespace iidm {
 
-class BackendProvider;
+class Substation;
 
-class ThreeWindingsTransformer {
+class ThreeWindingsTransformer : public Connectable {
 public:
     // ── Leg ──────────────────────────────────────────────────────────────────
-    class Leg {
+    class Leg : public detail::ObjectRef {
     public:
         Leg() = default;
         explicit Leg(ObjectHandle twtHandle, BackendProvider* backend,
@@ -50,11 +44,7 @@ public:
         std::vector<OperationalLimitsGroup> getOperationalLimitsGroups() const;
         iidm::optional<OperationalLimitsGroup> getSelectedOperationalLimitsGroup() const;
 
-        bool isValid() const { return handle_ != INVALID_HANDLE; }
-
     private:
-        HandleRef  handle_;
-        BackendProvider* backend_         = detail::nullBackend();
         int              legBase_         = 0;
         int              relTerminal_     = 0;
         int              rtcStepChildType_ = 0;
@@ -62,11 +52,10 @@ public:
     };
 
     // ── ThreeWindingsTransformer ──────────────────────────────────────────────
-    ThreeWindingsTransformer() = default;
-    explicit ThreeWindingsTransformer(ObjectHandle handle, BackendProvider* backend);
+    static constexpr int TYPE = prop::THREE_WINDINGS_TRANSFORMER;
 
-    std::string getId() const;
-    std::string getName() const;
+    ThreeWindingsTransformer() = default;
+    explicit ThreeWindingsTransformer(ObjectHandle handle, BackendProvider* backend) : Connectable(handle, backend) {}
 
     double     getRatedU0()    const;
     Substation getSubstation() const;
@@ -79,28 +68,9 @@ public:
     Terminal getTerminal2() const;
     Terminal getTerminal3() const;
 
-    void connect();
-    void disconnect();
-    bool isConnected() const;
-
-    // ── State estimation extensions ──────────────────────────────────────
+    // ── Extensions ───────────────────────────────────────────────────────
     bool hasThreeWindingsTransformerToBeEstimated() const;
     ThreeWindingsTransformerToBeEstimated getThreeWindingsTransformerToBeEstimated() const;
-
-    bool hasMeasurements() const;
-    Measurements getMeasurements() const;
-
-    bool hasDiscreteMeasurements() const;
-    DiscreteMeasurements getDiscreteMeasurements() const;
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const ThreeWindingsTransformer& other) const;
-    bool operator!=(const ThreeWindingsTransformer& other) const;
-
-private:
-    HandleRef handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

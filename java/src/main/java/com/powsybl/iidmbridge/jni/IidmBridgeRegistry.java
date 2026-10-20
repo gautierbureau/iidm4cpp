@@ -7,6 +7,7 @@ import com.powsybl.iidmbridge.Creation;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -84,6 +85,14 @@ public final class IidmBridgeRegistry {
      */
     public static void unregister(String id) {
         networks.remove(id);
+    }
+
+    /**
+     * Called from JNI for a C++ string that is not well-formed UTF-8: decoded as the GraalVM
+     * backend decodes C strings (malformed sequences replaced).
+     */
+    public static String fromUtf8(byte[] bytes) {
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 
     /**

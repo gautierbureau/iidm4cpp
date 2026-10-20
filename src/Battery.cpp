@@ -8,17 +8,6 @@
 
 namespace iidm {
 
-Battery::Battery(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
-
-std::string Battery::getId() const {
-    return backend_->getString(handle_, prop::ID);
-}
-
-std::string Battery::getName() const {
-    return backend_->getString(handle_, prop::NAME);
-}
-
 double Battery::getTargetP() const {
     return backend_->getDouble(handle_, prop::BAT_TARGET_P);
 }
@@ -45,27 +34,6 @@ double Battery::getMaxP() const {
     return backend_->getDouble(handle_, prop::BAT_MAX_P);
 }
 
-bool Battery::hasActivePowerControl() const {
-    HandleRef extension(backend_->getRelated(handle_, prop::ACTIVE_POWER_CONTROL), backend_);
-    return extension != INVALID_HANDLE;
-}
-
-ActivePowerControl Battery::getActivePowerControl() const {
-    ObjectHandle extension = backend_->getRelated(handle_, prop::ACTIVE_POWER_CONTROL);
-    if (extension == INVALID_HANDLE) {
-        throw ExtensionNotFoundException("ActivePowerControl extension not present on " + getId());
-    }
-    return ActivePowerControl(extension, backend_);
-}
-
-ActivePowerControlAdder Battery::newActivePowerControl() {
-    return ActivePowerControlAdder(backend_->invoke(handle_, prop::ACTIVE_POWER_CONTROL), backend_);
-}
-
-void Battery::removeActivePowerControl() {
-    backend_->setRelated(handle_, prop::ACTIVE_POWER_CONTROL, INVALID_HANDLE);
-}
-
 bool Battery::hasMinMaxReactiveLimits() const {
     return backend_->getInt(handle_, prop::BAT_REACTIVE_LIMITS_KIND) == 1;
 }
@@ -80,49 +48,6 @@ bool Battery::hasReactiveCapabilityCurve() const {
 
 ReactiveCapabilityCurve Battery::getReactiveCapabilityCurve() const {
     return ReactiveCapabilityCurve(handle_, backend_);
-}
-
-Terminal Battery::getTerminal() const {
-    ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_TERMINAL);
-    return Terminal(termHandle, backend_);
-}
-
-void Battery::connect() {
-    getTerminal().connect();
-}
-
-void Battery::disconnect() {
-    getTerminal().disconnect();
-}
-
-bool Battery::isConnected() const {
-    return getTerminal().isConnected();
-}
-
-bool Battery::operator==(const Battery& other) const {
-    return handle_ == other.handle_;
-}
-
-bool Battery::operator!=(const Battery& other) const {
-    return !(*this == other);
-}
-
-// ── State estimation extensions ──────────────────────────────────────────────
-
-bool Battery::hasInjectionObservability() const {
-    return backend_->getBool(handle_, prop::EXT_INJ_OBS_EXISTS);
-}
-
-InjectionObservability Battery::getInjectionObservability() const {
-    return InjectionObservability(handle_, backend_);
-}
-
-bool Battery::hasMeasurements() const {
-    return backend_->getBool(handle_, prop::EXT_MEAS_EXISTS);
-}
-
-Measurements Battery::getMeasurements() const {
-    return Measurements(handle_, backend_);
 }
 
 } // namespace iidm

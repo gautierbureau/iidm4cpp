@@ -1,13 +1,13 @@
 #pragma once
 
-#include <iidm/HandleRef.h>
+#include <iidm/ObjectRef.h>
 #include <iidm/ObjectHandle.h>
 
 namespace iidm {
 
 class BackendProvider;
 
-class PhaseTapChangerStep {
+class PhaseTapChangerStep : public detail::ObjectRef {
 public:
     PhaseTapChangerStep() = default;
     explicit PhaseTapChangerStep(ObjectHandle handle, BackendProvider* backend);
@@ -22,14 +22,9 @@ public:
 
     bool isValid() const { return standalone_ || handle_ != INVALID_HANDLE; }
 
-    bool operator==(const PhaseTapChangerStep& other) const;
-    bool operator!=(const PhaseTapChangerStep& other) const;
-
 private:
     bool             standalone_ = false;
     double           alpha_ = 0.0, rho_ = 0.0, r_ = 0.0, x_ = 0.0, g_ = 0.0, b_ = 0.0;
-    HandleRef  handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

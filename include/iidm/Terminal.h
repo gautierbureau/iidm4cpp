@@ -1,57 +1,40 @@
 #pragma once
 
-#include <iidm/HandleRef.h>
-#include <iidm/ObjectHandle.h>
 #include <iidm/Bus.h>
+#include <iidm/Enums.h>
+#include <iidm/ObjectRef.h>
+#include <iidm/stdcxx/optional.hpp>
 #include <string>
-#include <vector>
 
 namespace iidm {
 
-class BackendProvider;
-class SlackTerminal;
+class Connectable;
 class VoltageLevel;
-class VoltageRegulation;
-namespace detail {
-template <class Self> class VoltageRegulationFields;
-}
 
-class Terminal {
+class Terminal : public detail::ObjectRef {
 public:
     // ── BusBreakerView ───────────────────────────────────────────────────────
-    class BusBreakerView {
+    class BusBreakerView : public detail::ObjectRef {
     public:
         BusBreakerView() = default;
-        explicit BusBreakerView(ObjectHandle termHandle, BackendProvider* backend);
+        explicit BusBreakerView(ObjectHandle termHandle, BackendProvider* backend) : ObjectRef(termHandle, backend) {}
 
         Bus getBus() const;            // connected bus (invalid if disconnected)
         Bus getConnectableBus() const; // bus-breaker topology bus
-
-        bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    private:
-        HandleRef  handle_;
-        BackendProvider* backend_ = detail::nullBackend();
     };
 
     // ── NodeBreakerView ──────────────────────────────────────────────────────
-    class NodeBreakerView {
+    class NodeBreakerView : public detail::ObjectRef {
     public:
         NodeBreakerView() = default;
-        explicit NodeBreakerView(ObjectHandle termHandle, BackendProvider* backend);
+        explicit NodeBreakerView(ObjectHandle termHandle, BackendProvider* backend) : ObjectRef(termHandle, backend) {}
 
         int getNode() const;
-
-        bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    private:
-        HandleRef  handle_;
-        BackendProvider* backend_ = detail::nullBackend();
     };
 
     // ── Terminal ─────────────────────────────────────────────────────────────
     Terminal() = default;
-    explicit Terminal(ObjectHandle handle, BackendProvider* backend);
+    explicit Terminal(ObjectHandle handle, BackendProvider* backend) : ObjectRef(handle, backend) {}
 
     double getP() const;
     Terminal& setP(double p);
@@ -60,33 +43,23 @@ public:
     Terminal& setQ(double q);
 
     bool isConnected() const;
-    void connect();
-    void disconnect();
+    // Connects (disconnects) it, operating breakers if needed: true when this changed it, false
+    // when it could not, or already was
+    bool connect();
+    bool disconnect();
 
     Bus getBusView() const;
     std::string getBusId() const;
 
-    std::string           getConnectableId() const;
-    std::vector<Terminal> getTerminals()     const; // all terminals of this terminal's connectable
+    // The equipment it belongs to (include <iidm/Connectable.h> to use it)
+    Connectable getConnectable() const;
+    // Its side on a branch or three windings transformer; empty for an injection
+    iidm::optional<ThreeSides> getSide() const;
 
     VoltageLevel getVoltageLevel() const;
 
     BusBreakerView  getBusBreakerView()  const;
     NodeBreakerView getNodeBreakerView() const;
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const Terminal& other) const;
-    bool operator!=(const Terminal& other) const;
-
-private:
-    // pass the terminal handle to setRelated
-    friend class SlackTerminal;
-    friend class VoltageRegulation;
-    template <class Self> friend class detail::VoltageRegulationFields;
-
-    HandleRef handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

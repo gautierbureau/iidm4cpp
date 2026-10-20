@@ -5,17 +5,6 @@
 
 namespace iidm {
 
-Load::Load(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
-
-std::string Load::getId() const {
-    return backend_->getString(handle_, prop::ID);
-}
-
-std::string Load::getName() const {
-    return backend_->getString(handle_, prop::NAME);
-}
-
 double Load::getP0() const {
     return backend_->getDouble(handle_, prop::LOAD_P0);
 }
@@ -36,57 +25,6 @@ Load& Load::setQ0(double q0) {
 
 LoadType Load::getLoadType() const {
     return static_cast<LoadType>(backend_->getInt(handle_, prop::LOAD_TYPE));
-}
-
-bool Load::isFictitious() const {
-    return backend_->getBool(handle_, prop::FICTITIOUS);
-}
-
-Terminal Load::getTerminal() const {
-    ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_TERMINAL);
-    return Terminal(termHandle, backend_);
-}
-
-void Load::connect() {
-    getTerminal().connect();
-}
-
-void Load::disconnect() {
-    getTerminal().disconnect();
-}
-
-bool Load::isConnected() const {
-    return getTerminal().isConnected();
-}
-
-void Load::remove() {
-    backend_->invoke(handle_, prop::ACT_REMOVE);
-}
-
-bool Load::operator==(const Load& other) const {
-    return handle_ == other.handle_;
-}
-
-bool Load::operator!=(const Load& other) const {
-    return !(*this == other);
-}
-
-// ── State estimation extensions ──────────────────────────────────────────────
-
-bool Load::hasInjectionObservability() const {
-    return backend_->getBool(handle_, prop::EXT_INJ_OBS_EXISTS);
-}
-
-InjectionObservability Load::getInjectionObservability() const {
-    return InjectionObservability(handle_, backend_);
-}
-
-bool Load::hasMeasurements() const {
-    return backend_->getBool(handle_, prop::EXT_MEAS_EXISTS);
-}
-
-Measurements Load::getMeasurements() const {
-    return Measurements(handle_, backend_);
 }
 
 } // namespace iidm

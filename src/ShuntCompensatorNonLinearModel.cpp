@@ -6,7 +6,7 @@ namespace iidm {
 
 ShuntCompensatorNonLinearModel::ShuntCompensatorNonLinearModel(ObjectHandle shuntHandle,
                                                                BackendProvider* backend)
-    : handle_(shuntHandle, backend), backend_(detail::orNullBackend(backend)) {}
+    : ObjectRef(shuntHandle, backend) {}
 
 std::vector<ShuntCompensatorNonLinearModel::Section>
 ShuntCompensatorNonLinearModel::getAllSections() const {

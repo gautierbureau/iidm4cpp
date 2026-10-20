@@ -1,8 +1,8 @@
 #pragma once
 
-#include <iidm/HandleRef.h>
-#include <iidm/ObjectHandle.h>
+#include <iidm/Connectable.h>
 #include <iidm/Enums.h>
+#include <iidm/Identifiable.h>
 #include <iidm/Bus.h>
 #include <iidm/BusAdder.h>
 #include <iidm/GeneratorAdder.h>
@@ -19,7 +19,6 @@
 
 namespace iidm {
 
-class BackendProvider;
 class Generator;
 class Load;
 class Battery;
@@ -29,10 +28,10 @@ class DanglingLine;
 class LccConverterStation;
 class VscConverterStation;
 
-class VoltageLevel {
+class VoltageLevel : public Identifiable {
 public:
     // ── NodeBreakerView ──────────────────────────────────────────────────────
-    class NodeBreakerView {
+    class NodeBreakerView : public detail::ObjectRef {
     public:
         NodeBreakerView() = default;
         explicit NodeBreakerView(ObjectHandle vlHandle, BackendProvider* backend);
@@ -44,16 +43,10 @@ public:
         std::vector<int> getNodes() const;
         iidm::optional<Switch> getSwitch(const std::string& id) const;
         Terminal getTerminal(int node) const;
-
-        bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    private:
-        HandleRef  handle_;
-        BackendProvider* backend_ = detail::nullBackend();
     };
 
     // ── BusBreakerView ───────────────────────────────────────────────────────
-    class BusBreakerView {
+    class BusBreakerView : public detail::ObjectRef {
     public:
         BusBreakerView() = default;
         explicit BusBreakerView(ObjectHandle vlHandle, BackendProvider* backend);
@@ -64,21 +57,18 @@ public:
         Bus getBus1(const std::string& switchId) const;
         Bus getBus2(const std::string& switchId) const;
 
+        // Empty when it has no bus with this id
+        iidm::optional<Bus> getBus(const std::string& busId) const;
         BusAdder newBus();
-
-        bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    private:
-        HandleRef  handle_;
-        BackendProvider* backend_ = detail::nullBackend();
+        // Removes a bus that nothing is connected to (else ValidationException)
+        void removeBus(const std::string& busId);
     };
 
     // ── VoltageLevel ─────────────────────────────────────────────────────────
-    VoltageLevel() = default;
-    explicit VoltageLevel(ObjectHandle handle, BackendProvider* backend);
+    static constexpr int TYPE = prop::VOLTAGE_LEVEL;
 
-    std::string getId() const;
-    std::string getName() const;
+    VoltageLevel() = default;
+    explicit VoltageLevel(ObjectHandle handle, BackendProvider* backend) : Identifiable(handle, backend) {}
 
     double getNominalV() const;
     iidm::optional<double> getLowVoltageLimit() const;
@@ -91,6 +81,9 @@ public:
 
     std::vector<Switch>        getSwitches() const;
     std::vector<BusbarSection> getBusbarSections() const;
+
+    // Every equipment connected to it
+    std::vector<Connectable> getConnectables() const;
 
     // ── Per-injector getters ─────────────────────────────────────────────────
     std::vector<Generator>            getGenerators() const;
@@ -112,18 +105,9 @@ public:
     // branches connect it to other voltage levels
     void remove();
 
-    // ── State estimation extensions ──────────────────────────────────────
+    // ── Extensions ───────────────────────────────────────────────────────
     bool hasObservabilityArea() const;
     ObservabilityArea getObservabilityArea() const;
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const VoltageLevel& other) const;
-    bool operator!=(const VoltageLevel& other) const;
-
-private:
-    HandleRef handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

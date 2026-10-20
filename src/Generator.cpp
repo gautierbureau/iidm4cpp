@@ -9,17 +9,6 @@
 
 namespace iidm {
 
-Generator::Generator(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
-
-std::string Generator::getId() const {
-    return backend_->getString(handle_, prop::ID);
-}
-
-std::string Generator::getName() const {
-    return backend_->getString(handle_, prop::NAME);
-}
-
 double Generator::getTargetP() const {
     return backend_->getDouble(handle_, prop::GEN_TARGET_P);
 }
@@ -119,32 +108,7 @@ Terminal Generator::getRegulatingTerminal() const {
     return Terminal(backend_->getRelated(handle_, prop::REL_REGULATING_TERMINAL), backend_);
 }
 
-Terminal Generator::getTerminal() const {
-    return Terminal(backend_->getRelated(handle_, prop::REL_TERMINAL), backend_);
-}
-
 // ── Extensions ───────────────────────────────────────────────────────────────
-
-bool Generator::hasActivePowerControl() const {
-    HandleRef extension(backend_->getRelated(handle_, prop::ACTIVE_POWER_CONTROL), backend_);
-    return extension != INVALID_HANDLE;
-}
-
-ActivePowerControl Generator::getActivePowerControl() const {
-    ObjectHandle extension = backend_->getRelated(handle_, prop::ACTIVE_POWER_CONTROL);
-    if (extension == INVALID_HANDLE) {
-        throw ExtensionNotFoundException("ActivePowerControl extension not present on " + getId());
-    }
-    return ActivePowerControl(extension, backend_);
-}
-
-ActivePowerControlAdder Generator::newActivePowerControl() {
-    return ActivePowerControlAdder(backend_->invoke(handle_, prop::ACTIVE_POWER_CONTROL), backend_);
-}
-
-void Generator::removeActivePowerControl() {
-    backend_->setRelated(handle_, prop::ACTIVE_POWER_CONTROL, INVALID_HANDLE);
-}
 
 bool Generator::hasCoordinatedReactiveControl() const {
     return backend_->getBool(handle_, prop::EXT_CRC_EXISTS);
@@ -168,48 +132,6 @@ bool Generator::hasReactiveCapabilityCurve() const {
 
 ReactiveCapabilityCurve Generator::getReactiveCapabilityCurve() const {
     return ReactiveCapabilityCurve(handle_, backend_);
-}
-
-void Generator::connect() {
-    getTerminal().connect();
-}
-
-void Generator::disconnect() {
-    getTerminal().disconnect();
-}
-
-bool Generator::isConnected() const {
-    return getTerminal().isConnected();
-}
-
-void Generator::remove() {
-    backend_->invoke(handle_, prop::ACT_REMOVE);
-}
-
-bool Generator::operator==(const Generator& other) const {
-    return handle_ == other.handle_;
-}
-
-bool Generator::operator!=(const Generator& other) const {
-    return !(*this == other);
-}
-
-// ── State estimation extensions ──────────────────────────────────────────────
-
-bool Generator::hasInjectionObservability() const {
-    return backend_->getBool(handle_, prop::EXT_INJ_OBS_EXISTS);
-}
-
-InjectionObservability Generator::getInjectionObservability() const {
-    return InjectionObservability(handle_, backend_);
-}
-
-bool Generator::hasMeasurements() const {
-    return backend_->getBool(handle_, prop::EXT_MEAS_EXISTS);
-}
-
-Measurements Generator::getMeasurements() const {
-    return Measurements(handle_, backend_);
 }
 
 } // namespace iidm

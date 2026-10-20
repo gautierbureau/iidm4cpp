@@ -179,53 +179,74 @@ a shared library (`libiidmbridge.so`).
 
 ### 4.1 Network Components
 
-The public object types mirror the IIDM object model. Each class is a
-**thin value type** that wraps an opaque handle. Objects are obtained from
-a `Network` instance or from other objects via navigation methods. They are
-cheap to copy (handle copy only) and their lifetime is bounded by the
-`Network` that produced them.
+The public classes mirror the powsybl IIDM interfaces. Each object is a **thin value**: the handle
+of a Java object and the backend that holds it, nothing else (§4.2). Objects are obtained from a
+`Network` or from other objects; they are cheap to copy, and valid while the `Network` lives.
 
 ```
-Network
-├── getSubstations() → std::vector<Substation>
-├── getVoltageLevels() → std::vector<VoltageLevel>
-├── getGenerators() → std::vector<Generator>
-├── getLoads() → std::vector<Load>
-├── getLines() → std::vector<Line>
-├── getTwoWindingsTransformers() → std::vector<TwoWindingsTransformer>
-├── getThreeWindingsTransformers() → std::vector<ThreeWindingsTransformer>
-├── getHvdcLines() → std::vector<HvdcLine>
-├── getDanglingLines() → std::vector<DanglingLine>
-├── getShuntCompensators() → std::vector<ShuntCompensator>
-├── getStaticVarCompensators() → std::vector<StaticVarCompensator>
-├── getVscConverterStations() → std::vector<VscConverterStation>
-└── getLccConverterStations() → std::vector<LccConverterStation>
+Identifiable              getId(), getNameOrId(), getOptionalName(), setName(), isFictitious(),
+│                         getType(), properties, aliases, is<T>() / as<T>()
+├── Network               the root (owns the backend session, §4.3)
+├── Substation, VoltageLevel, Bus, Switch, HvdcLine
+└── Connectable           getTerminals(), connect() / disconnect(), isEquivalent(), remove()
+    ├── Injection         getTerminal()
+    │   ├── Generator, Load, Battery, ShuntCompensator, StaticVarCompensator,
+    │   │   DanglingLine, BusbarSection
+    │   └── HvdcConverterStation    getHvdcType(), getLossFactor(), getHvdcLine(),
+    │       │                       getOtherConverterStation()
+    │       └── VscConverterStation, LccConverterStation
+    ├── Line, TwoWindingsTransformer   + the Branch methods: getTerminal1/2(),
+    │                                    getTerminal(side or voltage level id), limits and
+    │                                    operational limits groups of each side
+    └── ThreeWindingsTransformer
+Branch                    any Line or TwoWindingsTransformer: both convert to a Branch
+```
 
-Substation
-├── getId() → std::string
-├── getName() → std::string
-├── getCountry() → std::optional<Country>
-└── getVoltageLevels() → std::vector<VoltageLevel>
+- **Base classes, as in powsybl.** A `Generator` is an `Injection`, a `Connectable` and an
+  `Identifiable`: it converts to any of them without losing anything, and generic code takes a
+  `const Connectable&`. `Branch` is the exception: in powsybl a branch is not always a
+  connectable (a tie line), so its methods come from a mixin (`detail::BranchMethods`) and
+  `Branch` is a separate class that `Line` and `TwoWindingsTransformer` convert to.
+- **Polymorphic results.** `Network::getIdentifiable(id)`, `getConnectable(id)`, `getBranch(id)`,
+  `getIdentifiables()`, `getConnectables()`, `getBranches()`, `getHvdcConverterStations()`,
+  `VoltageLevel::getConnectables()`, `Terminal::getConnectable()`, `HvdcLine::getConverterStation1()`
+  return the base class. `getType()` gives the powsybl `IdentifiableType`; `is<T>()` tells whether
+  the object is a `T` (Java `instanceof`), and `as<T>()` returns it as one
+  (`PropertyNotFoundException` when it is not).
+- **Equality is identity.** `a == b` when both stand for the same Java object, whatever the
+  handles (each lookup returns a new handle).
+- **Extensions on their powsybl host type.** ActivePowerControl and InjectionObservability are on
+  `Injection`, Measurements on `Connectable`, DiscreteMeasurements on `Identifiable`,
+  BranchObservability on the branches.
+- **Only current powsybl APIs** (powsybl 7.4): `getNameOrId()` / `getOptionalName()` rather than a
+  `getName()`, `connect()` returning powsybl's result, the generator's `VoltageRegulation` object.
 
-VoltageLevel
-├── getId() / getName()
-├── getNominalV() → double
-├── getLowVoltageLimit() → double
-├── getHighVoltageLimit() → double
-├── getTopologyKind() → TopologyKind
-└── getBusBreakerView() / getNodeBreakerView()
+```cpp
+for (const Connectable& c : network.getVoltageLevel("VL1")->getConnectables()) {
+    if (c.is<Generator>()) {
+        Generator g = c.as<Generator>();
+        g.setTargetP(g.getTargetP() + 10);
+    }
+}
+Connectable owner = terminal.getConnectable();
 
+g.setProperty("owner", "EDF");
+iidm::optional<std::string> owner = g.getProperty("owner"); // empty when absent
+g.addAlias("G1-code", "code");                               // type "" for none
+iidm::optional<Identifiable> same = network.getIdentifiable("G1-code");
+```
+
+The main types:
+
+```
 Generator
-├── getId() / getName()
 ├── getTargetP() / getMinP() / getMaxP() / getRatedS() → double   (+ setters)
 ├── getLocalTargetV() / getLocalTargetQ() → double                (+ setters)
 ├── getVoltageRegulation() → optional<VoltageRegulation>
 ├── newVoltageRegulation() / removeVoltageRegulation()
 ├── isRegulating() / getRegulatingTargetV() / getRegulatingTargetQ() / getRegulatingTerminal()
 ├── getEnergySource() → EnergySource                               (+ setter)
-├── isCondenser() → bool
-├── getTerminal() → Terminal
-└── remove()
+└── isCondenser() → bool
 
 VoltageRegulation (powsybl 7.4 core model)
 ├── getMode() → optional<RegulationMode>       setMode(RegulationMode)
@@ -234,94 +255,74 @@ VoltageRegulation (powsybl 7.4 core model)
 └── getTerminal() → optional<Terminal>         setTerminal(Terminal, targetValue)
 
 Load
-├── getId() / getName()
 ├── getP0() → double             setP0(double)
 ├── getQ0() → double             setQ0(double)
-├── getLoadType() → LoadType
-└── getTerminal() → Terminal
-
-Line / TwoWindingsTransformer / HvdcLine / …
-(similar getter/setter patterns for their specific attributes)
+└── getLoadType() → LoadType
 
 Terminal
-├── getBusView() → BusView
+├── getConnectable() → Connectable
+├── getSide() → optional<ThreeSides>   (empty for an injection)
+├── getBusView() → Bus
 ├── getP() → double              setP(double)
 ├── getQ() → double              setQ(double)
 ├── isConnected() → bool
-└── connect() / disconnect()
+└── connect() / disconnect() → bool    (true when this changed it)
 
-Bus (from BusView or BusBreakerView)
-├── getId() → std::string
+Bus (from a bus-breaker view, or a terminal)
 ├── getV() → double              setV(double)
-├── getAngle() → double          setAngle(double)
-└── getConnectedComponent() → ConnectedComponent
+└── getAngle() → double          setAngle(double)
 ```
 
 ### 4.2 Handle Model
 
-Every network object holds an opaque `ObjectHandle`:
+Every object holds the handle of its Java object:
 
 ```cpp
 // include/iidm/ObjectHandle.h
 namespace iidm {
 
-// An ObjectHandle is an opaque integer that uniquely identifies a Java
-// object within a backend session.  It is valid for the lifetime of the
-// Network that produced it.
+// An opaque integer that identifies a Java object within a backend session. Each lookup of an
+// object returns a new handle: compare the objects (==), not the handles.
 using ObjectHandle = std::int64_t;
 constexpr ObjectHandle INVALID_HANDLE = 0;
 
 } // namespace iidm
 ```
 
-All component classes follow the same pattern:
+The root of every class, `detail::ObjectRef`, holds it with the backend; the classes add methods
+only:
 
 ```cpp
-// include/iidm/Generator.h
 namespace iidm {
 
-class Generator {
+namespace detail {
+class ObjectRef {
 public:
-    // Constructors / destructor managed by the library
-    Generator() = default;
-    explicit Generator(ObjectHandle handle, BackendProvider* backend);
+    bool isValid() const;                            // bound to an object
+    bool operator==(const ObjectRef& other) const;   // the same Java object
+protected:
+    HandleRef        handle_;   // releases the Java reference with the last wrapper (§7)
+    BackendProvider* backend_;  // non-owning, owned by Network
+};
+}
 
-    std::string getId() const;
-    std::string getName() const;
+class Generator : public Injection {
+public:
+    static constexpr int TYPE = prop::GENERATOR;     // for is<Generator>() / as<Generator>()
+
+    Generator() = default;
+    explicit Generator(ObjectHandle handle, BackendProvider* backend) : Injection(handle, backend) {}
 
     double getTargetP() const;
     Generator& setTargetP(double targetP);
-
-    double getLocalTargetQ() const;
-    Generator& setLocalTargetQ(double localTargetQ);
-
-    double getMinP() const;
-    double getMaxP() const;
-
-    iidm::optional<VoltageRegulation> getVoltageRegulation() const;
-
-    EnergySource getEnergySource() const;
-
-    Terminal getTerminal() const;
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    // Equality is handle-based, not value-based
-    bool operator==(const Generator& other) const;
-
-private:
-    ObjectHandle handle_ = INVALID_HANDLE;
-    BackendProvider* backend_ = nullptr;  // non-owning pointer, owned by Network
+    // …
 };
 
 } // namespace iidm
 ```
 
-The setter methods return `Generator&` to support method chaining:
-
-```cpp
-gen.setTargetP(200.0).setTargetQ(50.0).setVoltageRegulatorOn(true);
-```
+Setters return the object for chaining (`gen.setTargetP(200).setMinP(0)`); setters of a base
+class return the base class (`setName`, `setFictitious`, `setProperty`).
 
 ### 4.3 Network & NetworkFactory
 
@@ -329,7 +330,8 @@ gen.setTargetP(200.0).setTargetQ(50.0).setVoltageRegulatorOn(true);
 // include/iidm/Network.h
 namespace iidm {
 
-class Network {
+// An identifiable that owns its backend session
+class Network : public Identifiable {
 public:
     ~Network();
     Network(Network&&) noexcept;
@@ -339,29 +341,17 @@ public:
     Network(const Network&) = delete;
     Network& operator=(const Network&) = delete;
 
-    std::string getId() const;
-    std::string getName() const;
-
     // Iteration helpers
+    std::vector<Identifiable>            getIdentifiables() const;
+    std::vector<Connectable>             getConnectables() const;
+    std::vector<Branch>                  getBranches() const;
     std::vector<Substation>              getSubstations() const;
-    std::vector<VoltageLevel>            getVoltageLevels() const;
     std::vector<Generator>               getGenerators() const;
-    std::vector<Load>                    getLoads() const;
-    std::vector<Line>                    getLines() const;
-    std::vector<TwoWindingsTransformer>  getTwoWindingsTransformers() const;
-    std::vector<ThreeWindingsTransformer> getThreeWindingsTransformers() const;
-    std::vector<HvdcLine>                getHvdcLines() const;
-    std::vector<ShuntCompensator>        getShuntCompensators() const;
-    std::vector<StaticVarCompensator>    getStaticVarCompensators() const;
-    std::vector<DanglingLine>            getDanglingLines() const;
-    std::vector<VscConverterStation>     getVscConverterStations() const;
-    std::vector<LccConverterStation>     getLccConverterStations() const;
+    // … and so on for each type
 
-    // Lookup by ID
-    std::optional<Generator>               getGenerator(const std::string& id) const;
-    std::optional<Load>                    getLoad(const std::string& id) const;
-    std::optional<Line>                    getLine(const std::string& id) const;
-    std::optional<TwoWindingsTransformer>  getTwoWindingsTransformer(const std::string& id) const;
+    // Lookup by ID (or alias)
+    iidm::optional<Identifiable>           getIdentifiable(const std::string& id) const;
+    iidm::optional<Generator>              getGenerator(const std::string& id) const;
     // … and so on for each type
 
     // Backend accessor (advanced usage only)
@@ -370,7 +360,7 @@ public:
 private:
     friend class NetworkFactory;
     explicit Network(std::unique_ptr<BackendProvider> backend);
-    std::unique_ptr<BackendProvider> backend_;
+    std::unique_ptr<BackendProvider> owned_;
 };
 
 } // namespace iidm
@@ -479,81 +469,93 @@ object. The Java side (`Creation.java`) maps each field to the powsybl adder met
 
 ### 5.1 BackendProvider Interface
 
+Every class of §4 goes through these primitives only, each taking the handle of an object and an
+`int` code:
+
 ```cpp
 // include/iidm/BackendProvider.h
 namespace iidm {
 
-// The complete set of primitive operations any backend must provide.
-// Component classes call exclusively into this interface; they have no
-// backend-specific code.
 class BackendProvider {
 public:
-    virtual ~BackendProvider() = default;
+    virtual ~BackendProvider();
 
-    // ── Scalar property getters ──────────────────────────────────────────
+    // ── Properties ───────────────────────────────────────────────────────
     virtual double      getDouble(ObjectHandle h, int property) const = 0;
     virtual int         getInt(ObjectHandle h, int property) const = 0;
     virtual bool        getBool(ObjectHandle h, int property) const = 0;
     virtual std::string getString(ObjectHandle h, int property) const = 0;
-
-    // ── Scalar property setters ──────────────────────────────────────────
     virtual void setDouble(ObjectHandle h, int property, double value) = 0;
     virtual void setInt   (ObjectHandle h, int property, int value) = 0;
     virtual void setBool  (ObjectHandle h, int property, bool value) = 0;
     virtual void setString(ObjectHandle h, int property, const std::string& value) = 0;
 
-    // ── Optional scalars (returns std::nullopt when undefined/NaN) ───────
-    virtual std::optional<double> getOptDouble(ObjectHandle h, int property) const = 0;
+    // Properties that may have no value: empty optional (NaN for doubles)
+    virtual iidm::optional<double>      getOptDouble(ObjectHandle h, int property) const = 0;
+    virtual iidm::optional<int>         getOptInt(ObjectHandle h, int property) const;
+    virtual iidm::optional<std::string> getOptString(ObjectHandle h, int property) const;
 
-    // ── Navigation (children, terminals, etc.) ───────────────────────────
+    // Lists, and values under a key (properties, aliases); an empty value removes the key
+    virtual std::vector<int>            getIntList(ObjectHandle h, int listCode) const = 0;
+    virtual std::vector<std::string>    getStringList(ObjectHandle h, int listCode) const;
+    virtual iidm::optional<std::string> getKeyedString(ObjectHandle h, int property, const std::string& key) const;
+    virtual void setKeyedString(ObjectHandle h, int property, const std::string& key,
+                                const iidm::optional<std::string>& value);
+
+    // ── Navigation ───────────────────────────────────────────────────────
     virtual std::vector<ObjectHandle> getChildren(ObjectHandle h, int childType) const = 0;
-    virtual ObjectHandle              getRelated(ObjectHandle h, int relation) const = 0;
+    virtual ObjectHandle getRelated(ObjectHandle h, int relation) const = 0;
+    virtual ObjectHandle getRelatedByIndex(ObjectHandle h, int relation, int index) const = 0;
+    virtual ObjectHandle getRelatedByString(ObjectHandle h, int relation, const std::string& key) const = 0;
     virtual void setRelated(ObjectHandle h, int relation, ObjectHandle value);
+    virtual ObjectHandle findById(int objectType, const std::string& id) const = 0;
+    // Whether two handles stand for the same object
+    virtual bool isSameObject(ObjectHandle h, ObjectHandle other) const;
 
-    // ── Creation and removal ─────────────────────────────────────────────
+    // ── Actions ──────────────────────────────────────────────────────────
     // invoke(parent, TYPE) → adder; invoke(adder, ACT_ADD) → new object;
-    // invoke(object, ACT_REMOVE) removes it
+    // invoke(object, ACT_REMOVE) removes it; ACT_CONNECT / ACT_DISCONNECT
     virtual ObjectHandle invoke(ObjectHandle h, int code);
 
-    // ── Lookup by ID ─────────────────────────────────────────────────────
-    virtual ObjectHandle findById(int objectType, const std::string& id) const = 0;
-
-    // ── Network root ─────────────────────────────────────────────────────
+    // ── Network and lifecycle ────────────────────────────────────────────
     virtual ObjectHandle getNetworkHandle() const = 0;
-
-    // ── Lifecycle ────────────────────────────────────────────────────────
     virtual void loadNetwork(const std::string& filePath) = 0;
     virtual void createNetwork(const std::string& id);
     virtual void close() = 0;
+    // … in-memory load and save, handle release
 };
 
 } // namespace iidm
 ```
 
-Properties and object types are encoded as `int` codes defined **once**, in
-`include/iidm/PropertyCodes.def`. `PropertyCodes.h` expands it into
-`iidm::prop::NAME` constants, and the Java build generates
-`com.powsybl.iidmbridge.PropertyCodes` from the same file, so the C++ library,
-both backends and the Java side cannot disagree on a number:
+Codes are defined **once**, in `include/iidm/PropertyCodes.def`. `PropertyCodes.h` expands it into
+`iidm::prop::NAME` constants, and the Java build generates `com.powsybl.iidmbridge.PropertyCodes`
+from the same file, so the C++ library, both backends and the Java side cannot disagree on a number:
 
 ```cpp
 // include/iidm/PropertyCodes.def
-// Object types (used in getChildren / findById)
+// Object types
 IIDM_CODE(SUBSTATION,                  1)
 IIDM_CODE(VOLTAGE_LEVEL,               2)
 IIDM_CODE(GENERATOR,                   3)
 // …
-
-// Shared properties (applicable to many types)
+IIDM_CODE(IDENTIFIABLE,                43)
+IIDM_CODE(CONNECTABLE,                 44)
+// Identifiable
 IIDM_CODE(ID,                          100)
 IIDM_CODE(NAME,                        101)
-
-// Generator-specific
+// Generator
 IIDM_CODE(GEN_TARGET_P,                200)
-IIDM_CODE(GEN_MIN_P,                   203)
-IIDM_CODE(GEN_MAX_P,                   204)
 // … and so on
 ```
+
+A code is named after the powsybl interface that declares the method (`CONVERTER_STATION_LOSS_FACTOR`
+for `HvdcConverterStation.getLossFactor`, whatever the station), and means the same in every
+primitive. A type code stands for its type: `getChildren(parent, TYPE)` lists the parent's objects
+of that type, `findById(TYPE, id)` looks one up, `getBool(object, TYPE)` tells whether the object is
+one, `invoke(parent, TYPE)` starts a new one. For a property that may have no value,
+`getString`/`getInt` give a value or fail (`getString(NAME)` is the name, or else the id) while
+`getOptString`/`getOptInt` give it as it is (`getOptString(NAME)` is empty without a name).
 
 ### 5.2 GraalVM Native Image Backend
 
@@ -641,13 +643,17 @@ void GraalVMBackend::setDouble(ObjectHandle h, int property, double value) {
 }
 ```
 
-#### String ownership convention
+#### Strings
 
-When the native image returns a `const char*` from a string getter, the
-string is allocated in the isolate heap. The C++ backend copies it into a
-`std::string` immediately and then calls a corresponding
-`iidm_free_string(thread_, ptr)` exported function to release the isolate
-memory. **No raw pointers escape the backend layer.**
+Strings cross the boundary as UTF-8 C strings, decoded and encoded in Java with
+`StandardCharsets.UTF_8` (a null pointer is "no value" for the optional and keyed getters).
+When the native image returns a string, it is allocated with `UnmanagedMemory`; the C++ backend
+copies it into a `std::string` immediately and releases it with `iidm_free`. A string list is one
+buffer of strings each followed by a 0 byte. **No raw pointers escape the backend layer.**
+
+The JNI backend converts the same way: UTF-8 to UTF-16 in C++ (Java's own decoder when the bytes
+are not well-formed UTF-8), and back as `String.getBytes(UTF_8)` does. JNI's `NewStringUTF` /
+`GetStringUTFChars` are not used: they take modified UTF-8, which differs outside the BMP.
 
 ### 5.3 JNI Embedded Backend
 
@@ -720,7 +726,7 @@ a C++ `IidmException` containing the Java exception's message.
 ### 5.4 Extensions
 
 IIDM extensions are optional property bags that can be attached to network
-components (e.g. `ActivePowerControl` on `Generator`). The bridge exposes
+components (e.g. `ActivePowerControl` on any injection). The bridge exposes
 them through the same `BackendProvider` property-code mechanism as core
 properties, but the two backends handle the dispatch differently.
 
@@ -732,7 +738,7 @@ when absent), `newX()` and `removeX()`:
 
 ```cpp
 // include/iidm/ActivePowerControl.h
-class ActivePowerControl {
+class ActivePowerControl : public detail::ObjectRef {
 public:
     explicit ActivePowerControl(ObjectHandle handle, BackendProvider* backend);
     bool   isParticipate() const;                     // EXT_APC_PARTICIPATE
@@ -742,7 +748,7 @@ public:
     // …
 };
 
-// include/iidm/Generator.h (and Battery.h)
+// include/iidm/Injection.h: the host type of ActivePowerControl
 bool                    hasActivePowerControl() const;
 ActivePowerControl      getActivePowerControl() const;
 ActivePowerControlAdder newActivePowerControl();
@@ -818,7 +824,7 @@ The state estimation extensions are exercised end to end by
 |---|---|
 | Codes: the type code, then one per property | `include/iidm/PropertyCodes.def` (one line each) |
 | C++ extension wrapper and adder | `include/iidm/MyExt.h` + `src/MyExt.cpp`, `include/iidm/MyExtAdder.h` (+ `CMakeLists.txt`, `iidm.h`) |
-| Host accessors: `hasMyExt`, `getMyExt`, `newMyExt`, `removeMyExt` | e.g. `Generator.h` / `Generator.cpp` |
+| Host accessors: `hasMyExt`, `getMyExt`, `newMyExt`, `removeMyExt`, on the class of the host type | e.g. `Injection.h` / `Injection.cpp` |
 | `PropertyDispatcher` cases (getRelatedObject, properties) and `Creation` cases (adder, fields, removal) | `PropertyDispatcher.java`, `Creation.java` — serve **both** backends |
 | C++ unit tests | `test/TestMyExt.cpp` with `MockBackend` |
 | Java dispatcher tests | `java/src/test/...` (covers the handle and object APIs) |
@@ -1486,11 +1492,15 @@ test network (`examples/*.xiidm`, `test/data/*.xiidm`) into both backends in the
 and walks every object reachable from the network root in lockstep. For every object, every
 code of `PropertyCodes.def` and every accessor, both backends must return the same value, the
 same children / related objects (visited in turn) or the same C++ exception type. Keyed and
-indexed lookups and `findById` are tried with every id and node number met on the way. Every
-value read is then written back through its setter (same acceptance, same value read back),
-and both networks must save to the same XIIDM. New codes and new test data are picked up
-automatically. It runs when both `IIDM_BRIDGE_GRAALVM_LIB` and `IIDM_BRIDGE_JAR` are set (CI
-`graalvm` and `dynawo` jobs), in about 2 s per network.
+indexed lookups and `findById` are tried with every id and node number met on the way, keyed
+strings with the object's property names and aliases; an identifiable looked up again by id
+must be the same object (`isSameObject`). Every value read is then written back through its
+setter (same acceptance, same value read back), properties and aliases are removed and added
+back, terminals and connectables disconnected and connected, and both networks must save to the
+same XIIDM. One network is built through the C++ adders, with properties, aliases and names out
+of ASCII (it found that JNI's modified UTF-8 corrupted characters outside the BMP). New codes and
+new test data are picked up automatically. It runs when both `IIDM_BRIDGE_GRAALVM_LIB` and
+`IIDM_BRIDGE_JAR` are set (CI `graalvm` and `dynawo` jobs), in 2 to 4 s per network.
 
 ### Property codes
 
@@ -1515,7 +1525,7 @@ the `iidm4cpp` baseline to validate the migration.
 | API style | Full object model | Pandas DataFrames | Object model with getters/setters |
 | Embedded JVM support | No | No | Yes (JNI backend) |
 | Maintenance burden | High (full reimplementation) | Low | Low |
-| Network creation | Yes | Yes | No (by design) |
+| Network creation | Yes | Yes | Yes (powsybl adders, §4.5) |
 | Topology access | Yes | Via DataFrames | Yes (read-only) |
 | Extensions | Partially | Via DataFrames | Delegated to Java |
 | Use case | General C++ IIDM consumer | Data science / Python | Dynawo simulation core |

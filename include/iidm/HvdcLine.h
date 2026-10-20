@@ -1,23 +1,19 @@
 #pragma once
 
-#include <iidm/HandleRef.h>
-#include <iidm/ObjectHandle.h>
 #include <iidm/Enums.h>
 #include <iidm/HvdcAngleDroopActivePowerControl.h>
+#include <iidm/HvdcConverterStation.h>
 #include <iidm/HvdcOperatorActivePowerRange.h>
-#include <string>
+#include <iidm/Identifiable.h>
 
 namespace iidm {
 
-class BackendProvider;
-
-class HvdcLine {
+class HvdcLine : public Identifiable {
 public:
-    HvdcLine() = default;
-    explicit HvdcLine(ObjectHandle handle, BackendProvider* backend);
+    static constexpr int TYPE = prop::HVDC_LINE;
 
-    std::string getId() const;
-    std::string getName() const;
+    HvdcLine() = default;
+    explicit HvdcLine(ObjectHandle handle, BackendProvider* backend) : Identifiable(handle, backend) {}
 
     double getR() const;
     double getNominalV() const;
@@ -28,23 +24,18 @@ public:
     HvdcConverterStationMode getConvertersMode() const;
     HvdcLine& setConvertersMode(HvdcConverterStationMode mode);
 
-    std::string getConverterStation1Id() const;
-    std::string getConverterStation2Id() const;
+    HvdcConverterStation getConverterStation1() const;
+    HvdcConverterStation getConverterStation2() const;
 
+    // Removes the HVDC line (its converter stations stay)
+    void remove();
+
+    // ── Extensions ───────────────────────────────────────────────────────
     bool hasHvdcAngleDroopActivePowerControl() const;
     HvdcAngleDroopActivePowerControl getHvdcAngleDroopActivePowerControl() const;
 
     bool hasHvdcOperatorActivePowerRange() const;
     HvdcOperatorActivePowerRange getHvdcOperatorActivePowerRange() const;
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const HvdcLine& other) const;
-    bool operator!=(const HvdcLine& other) const;
-
-private:
-    HandleRef handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

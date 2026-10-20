@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iidm/HandleRef.h>
+#include <iidm/ObjectRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/stdcxx/optional.hpp>
 
@@ -8,9 +8,9 @@ namespace iidm {
 
 class BackendProvider;
 
-// The ActivePowerControl extension of a generator or a battery: an object of its own, from
-// Generator::getActivePowerControl() / Battery::getActivePowerControl().
-class ActivePowerControl {
+// The ActivePowerControl extension of an injection (generator, battery...): an object of its own,
+// from Injection::getActivePowerControl().
+class ActivePowerControl : public detail::ObjectRef {
 public:
     ActivePowerControl() = default;
     explicit ActivePowerControl(ObjectHandle handle, BackendProvider* backend);
@@ -33,15 +33,6 @@ public:
     iidm::optional<double> getMaxTargetP() const;
     ActivePowerControl& setMaxTargetP(double maxTargetP);
     ActivePowerControl& unsetMaxTargetP();
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const ActivePowerControl& other) const;
-    bool operator!=(const ActivePowerControl& other) const;
-
-private:
-    HandleRef handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

@@ -7,6 +7,13 @@
 #include <iidm/Enums.h>
 #include <iidm/PropertyCodes.h>
 #include <iidm/BackendProvider.h>
+#include <iidm/ObjectRef.h>
+#include <iidm/PropertiesHolder.h>
+#include <iidm/Identifiable.h>
+#include <iidm/Connectable.h>
+#include <iidm/Injection.h>
+#include <iidm/Branch.h>
+#include <iidm/HvdcConverterStation.h>
 #include <iidm/Bus.h>
 #include <iidm/Terminal.h>
 #include <iidm/Substation.h>
@@ -36,6 +43,9 @@
 #include <iidm/StaticVarCompensator.h>
 #include <iidm/VscConverterStation.h>
 #include <iidm/LccConverterStation.h>
+#include <iidm/Battery.h>
+#include <iidm/BusbarSection.h>
+#include <iidm/Switch.h>
 #include <iidm/VoltageRegulation.h>
 #include <iidm/Adder.h>
 #include <iidm/SubstationAdder.h>

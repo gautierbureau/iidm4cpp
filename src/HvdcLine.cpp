@@ -7,17 +7,6 @@
 
 namespace iidm {
 
-HvdcLine::HvdcLine(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
-
-std::string HvdcLine::getId() const {
-    return backend_->getString(handle_, prop::ID);
-}
-
-std::string HvdcLine::getName() const {
-    return backend_->getString(handle_, prop::NAME);
-}
-
 double HvdcLine::getR() const {
     return backend_->getDouble(handle_, prop::HVDC_R);
 }
@@ -48,12 +37,16 @@ HvdcLine& HvdcLine::setConvertersMode(HvdcConverterStationMode mode) {
     return *this;
 }
 
-std::string HvdcLine::getConverterStation1Id() const {
-    return backend_->getString(handle_, prop::HVDC_CONVERTER_STATION1_ID);
+HvdcConverterStation HvdcLine::getConverterStation1() const {
+    return HvdcConverterStation(backend_->getRelated(handle_, prop::REL_CONVERTER_STATION1), backend_);
 }
 
-std::string HvdcLine::getConverterStation2Id() const {
-    return backend_->getString(handle_, prop::HVDC_CONVERTER_STATION2_ID);
+HvdcConverterStation HvdcLine::getConverterStation2() const {
+    return HvdcConverterStation(backend_->getRelated(handle_, prop::REL_CONVERTER_STATION2), backend_);
+}
+
+void HvdcLine::remove() {
+    backend_->invoke(handle_, prop::ACT_REMOVE);
 }
 
 bool HvdcLine::hasHvdcAngleDroopActivePowerControl() const {
@@ -70,14 +63,6 @@ bool HvdcLine::hasHvdcOperatorActivePowerRange() const {
 
 HvdcOperatorActivePowerRange HvdcLine::getHvdcOperatorActivePowerRange() const {
     return HvdcOperatorActivePowerRange(handle_, backend_);
-}
-
-bool HvdcLine::operator==(const HvdcLine& other) const {
-    return handle_ == other.handle_;
-}
-
-bool HvdcLine::operator!=(const HvdcLine& other) const {
-    return !(*this == other);
 }
 
 } // namespace iidm

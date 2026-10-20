@@ -1,0 +1,74 @@
+#include <iidm/Identifiable.h>
+#include <iidm/BackendProvider.h>
+
+namespace iidm {
+
+std::string Identifiable::getId() const {
+    return backend_->getString(handle_, prop::ID);
+}
+
+std::string Identifiable::getNameOrId() const {
+    return backend_->getString(handle_, prop::NAME);
+}
+
+iidm::optional<std::string> Identifiable::getOptionalName() const {
+    return backend_->getOptString(handle_, prop::NAME);
+}
+
+Identifiable& Identifiable::setName(const std::string& name) {
+    backend_->setString(handle_, prop::NAME, name);
+    return *this;
+}
+
+bool Identifiable::isFictitious() const {
+    return backend_->getBool(handle_, prop::FICTITIOUS);
+}
+
+Identifiable& Identifiable::setFictitious(bool fictitious) {
+    backend_->setBool(handle_, prop::FICTITIOUS, fictitious);
+    return *this;
+}
+
+IdentifiableType Identifiable::getType() const {
+    return static_cast<IdentifiableType>(backend_->getInt(handle_, prop::IDENTIFIABLE_TYPE));
+}
+
+// ── Aliases ──────────────────────────────────────────────────────────────────
+
+std::vector<std::string> Identifiable::getAliases() const {
+    return backend_->getStringList(handle_, prop::ALIASES);
+}
+
+bool Identifiable::hasAliases() const {
+    return !getAliases().empty();
+}
+
+iidm::optional<std::string> Identifiable::getAliasType(const std::string& alias) const {
+    return backend_->getKeyedString(handle_, prop::ALIAS_TYPE, alias);
+}
+
+iidm::optional<std::string> Identifiable::getAliasFromType(const std::string& aliasType) const {
+    return backend_->getKeyedString(handle_, prop::ALIAS_FROM_TYPE, aliasType);
+}
+
+Identifiable& Identifiable::addAlias(const std::string& alias, const std::string& aliasType, bool ensureAliasUnicity) {
+    backend_->setKeyedString(handle_, ensureAliasUnicity ? prop::UNIQUE_ALIAS_TYPE : prop::ALIAS_TYPE, alias, aliasType);
+    return *this;
+}
+
+Identifiable& Identifiable::removeAlias(const std::string& alias) {
+    backend_->setKeyedString(handle_, prop::ALIAS_TYPE, alias, iidm::optional<std::string>());
+    return *this;
+}
+
+// ── Extensions ───────────────────────────────────────────────────────────────
+
+bool Identifiable::hasDiscreteMeasurements() const {
+    return backend_->getBool(handle_, prop::EXT_DMEAS_EXISTS);
+}
+
+DiscreteMeasurements Identifiable::getDiscreteMeasurements() const {
+    return DiscreteMeasurements(handle_, backend_);
+}
+
+} // namespace iidm

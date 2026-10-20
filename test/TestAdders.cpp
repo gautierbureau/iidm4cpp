@@ -135,7 +135,7 @@ TEST_F(AddersTest, NetworkSubstationVoltageLevelBusLoad) {
     BusAdder busAdder = vl.getBusBreakerView().newBus();
     EXPECT_EQ(mock.invocations.back(), call(V, prop::BUS));
     mock.addResults[mock.lastAdder] = B;
-    Bus bus = busAdder.setId("B").add();
+    busAdder.setId("B").add();
 
     LoadAdder loadAdder = vl.newLoad();
     EXPECT_EQ(mock.invocations.back(), call(V, prop::LOAD));
@@ -150,8 +150,10 @@ TEST_F(AddersTest, NetworkSubstationVoltageLevelBusLoad) {
 
     load.remove();
     EXPECT_EQ(mock.invocations.back(), call(L, prop::ACT_REMOVE));
-    bus.remove();
+    mock.relatedByString[std::make_tuple(V, prop::REL_BBV_BUS, std::string("B"))] = B;
+    vl.getBusBreakerView().removeBus("B");
     EXPECT_EQ(mock.invocations.back(), call(B, prop::ACT_REMOVE));
+    EXPECT_THROW(vl.getBusBreakerView().removeBus("NOPE"), ValidationException);
     vl.remove();
     EXPECT_EQ(mock.invocations.back(), call(V, prop::ACT_REMOVE));
     s.remove();

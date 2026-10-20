@@ -77,7 +77,7 @@ TEST(NetworkFactoryTest, CreateFromBackendReturnsValidNetwork) {
     b->strings[{1, prop::NAME}] = "Network 1";
     Network net = NetworkFactory::createFromBackend(std::move(b));
     EXPECT_EQ(net.getId(),   "net1");
-    EXPECT_EQ(net.getName(), "Network 1");
+    EXPECT_EQ(net.getNameOrId(), "Network 1");
 }
 
 TEST(NetworkFactoryTest, NetworkMoveAssignment) {

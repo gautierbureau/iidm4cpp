@@ -13,6 +13,8 @@ import com.powsybl.iidm.network.regulation.VoltageRegulationBuilder;
 import com.powsybl.iidm.network.regulation.VoltageRegulationHolder;
 import com.powsybl.iidm.network.regulation.VoltageRegulationHolderAdder;
 
+import java.util.Objects;
+
 import static com.powsybl.iidmbridge.PropertyCodes.*;
 
 /**
@@ -111,6 +113,7 @@ public final class Creation {
             case Connectable<?> connectable -> connectable.remove();
             case VoltageLevel voltageLevel -> voltageLevel.remove();
             case Substation substation -> substation.remove();
+            case HvdcLine hvdcLine -> hvdcLine.remove();
             case Bus bus -> bus.getVoltageLevel().getBusBreakerView().removeBus(bus.getId());
             default -> throw new BridgeErrors.PropertyNotFoundException("Cannot remove " + obj);
         }
@@ -179,6 +182,7 @@ public final class Creation {
         switch (property) {
             case FICTITIOUS -> ((IdentifiableAdder<?, ?>) a).setFictitious(value);
             case ENSURE_ID_UNICITY -> ((IdentifiableAdder<?, ?>) a).setEnsureIdUnicity(value);
+            case EQUIVALENT -> ((ConnectableAdder<?, ?>) a).setEquivalent(value);
             case GEN_CONDENSER -> ((GeneratorAdder) a).setCondenser(value);
             case VR_REGULATING -> ((VoltageRegulationAdderOrBuilder<?>) a).withRegulating(value);
             case EXT_APC_PARTICIPATE -> ((ActivePowerControlAdder<?>) a).withParticipate(value);
@@ -196,6 +200,15 @@ public final class Creation {
             case TERMINAL_BUS_BREAKER_BUS_ID -> ((InjectionAdder<?, ?>) a).setBus(value);
             case TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID -> ((InjectionAdder<?, ?>) a).setConnectableBus(value);
             default -> throw unknownField("string", property);
+        }
+    }
+
+    /** Properties of the adders that are properties holders (limits, reactive limits...). */
+    static void setKeyedString(PendingAdd pending, int property, String key, String value) {
+        Object a = pending.adder();
+        switch (property) {
+            case PROPERTY -> ((BasePropertiesHolder) a).setProperty(key, Objects.requireNonNull(value, "property value"));
+            default -> throw unknownField("keyed string", property);
         }
     }
 

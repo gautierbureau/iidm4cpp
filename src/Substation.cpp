@@ -1,42 +1,27 @@
 #include <iidm/Substation.h>
 #include <iidm/BackendProvider.h>
-#include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
+#include "Wrap.h"
 
 namespace iidm {
 
-Substation::Substation(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
-
-std::string Substation::getId() const {
-    return backend_->getString(handle_, prop::ID);
-}
-
-std::string Substation::getName() const {
-    return backend_->getString(handle_, prop::NAME);
-}
-
 iidm::optional<Country> Substation::getCountry() const {
-    return countryFromName(backend_->getString(handle_, prop::COUNTRY));
+    iidm::optional<std::string> name = backend_->getOptString(handle_, prop::COUNTRY);
+    if (!name) return {};
+    return countryFromName(*name);
 }
 
-std::vector<VoltageLevel> Substation::getVoltageLevels() const {
-    auto handles = backend_->getChildren(handle_, prop::VOLTAGE_LEVEL);
-    std::vector<VoltageLevel> result;
-    result.reserve(handles.size());
-    for (auto h : handles) {
-        result.emplace_back(h, backend_);
-    }
-    return result;
-}
-
-std::string Substation::getTso() const {
-    return backend_->getString(handle_, prop::SUBSTATION_TSO);
+iidm::optional<std::string> Substation::getTso() const {
+    return backend_->getOptString(handle_, prop::SUBSTATION_TSO);
 }
 
 Substation& Substation::setTso(const std::string& tso) {
     backend_->setString(handle_, prop::SUBSTATION_TSO, tso);
     return *this;
+}
+
+std::vector<VoltageLevel> Substation::getVoltageLevels() const {
+    return detail::wrapAll<VoltageLevel>(backend_->getChildren(handle_, prop::VOLTAGE_LEVEL), backend_);
 }
 
 VoltageLevelAdder Substation::newVoltageLevel() {
@@ -45,14 +30,6 @@ VoltageLevelAdder Substation::newVoltageLevel() {
 
 void Substation::remove() {
     backend_->invoke(handle_, prop::ACT_REMOVE);
-}
-
-bool Substation::operator==(const Substation& other) const {
-    return handle_ == other.handle_;
-}
-
-bool Substation::operator!=(const Substation& other) const {
-    return !(*this == other);
 }
 
 } // namespace iidm

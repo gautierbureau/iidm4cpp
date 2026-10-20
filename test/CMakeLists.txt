@@ -28,6 +28,7 @@ set(TEST_SOURCES
     TestTwoWindingsTransformerTapChanger.cpp
     TestBusbarSection.cpp
     TestConnect.cpp
+    TestIdentifiable.cpp
     TestBackendSelector.cpp
     TestIntegration.cpp
     TestShuntCompensator.cpp

@@ -62,22 +62,34 @@ cd java && mvn clean verify
 
 ### Key patterns
 
-**Handle model** — every component stores an `ObjectHandle` (opaque integer)
-plus a `BackendProvider*`.  It never copies network data into C++ memory.
+**Handle model** — every component is a handle on a Java object plus a `BackendProvider*`,
+held by the root class `detail::ObjectRef`. It never copies network data into C++ memory.
 
 ```cpp
 // Typical component header shape
-class Generator {
+class Generator : public Injection {          // the powsybl interface it extends
 public:
-    std::string getId() const;
+    static constexpr int TYPE = prop::GENERATOR;
+    Generator() = default;
+    explicit Generator(ObjectHandle handle, BackendProvider* backend) : Injection(handle, backend) {}
+
     double getTargetP() const;
-    Generator& setTargetP(double mw);   // chainable setter
-    // ...
-private:
-    ObjectHandle handle_;
-    BackendProvider* backend_;
+    Generator& setTargetP(double mw);         // chainable setter
 };
 ```
+
+**Class model** — the C++ classes follow the powsybl interfaces:
+
+- `Identifiable` → `Connectable` → `Injection` → `HvdcConverterStation` are base classes; a class
+  derives from the one its powsybl interface extends, and gets its methods (id, names, properties,
+  aliases, terminals, connect/disconnect, remove, the extensions of that host type...). Never
+  re-declare a base-class method in a derived class.
+- A powsybl interface that unrelated types share (`Branch`: lines and transformers, but also tie
+  lines, which are not connectables) is a CRTP mixin `detail::XMethods<Self>`, plus a class `X`
+  for results of that type, which every implementing class converts to (see `Branch.h`).
+- Every identifiable class has `static constexpr int TYPE = prop::<ITS_TYPE_CODE>;`:
+  `is<T>()` / `as<T>()` and the network lists use it.
+- `==` is the identity of the Java object (`isSameObject`), never a handle comparison.
 
 **Property codes** — C++/Java communicate via integer keys defined **once** in
 `include/iidm/PropertyCodes.def` (`IIDM_CODE(NAME, value)  // comment`).
@@ -115,15 +127,29 @@ cmake/          CMake helper modules (FindGraalVM.cmake, etc.)
 
 ### Adding a new network component
 
-1. Add a header under `include/iidm/MyComponent.h` following the existing
-   component headers as a template.
+1. Add a header under `include/iidm/MyComponent.h`: derive from the class of the powsybl interface
+   it extends (`Injection`, `Connectable`, `Identifiable`; mixins for the others), declare
+   `TYPE`, and only the methods of its own powsybl interface.
 2. Add `src/MyComponent.cpp`.
-3. Add any new property codes to `include/iidm/PropertyCodes.def`.
+3. Add a type code and its property codes to `include/iidm/PropertyCodes.def`: one code per method
+   of a powsybl interface, named after that interface.
 4. Expose the component through `Network` (or the appropriate parent) with a
    getter that returns by value or `std::vector`.
-5. Add a corresponding `getMyComponent` / `getMyComponents` entry in
-   `java/.../PropertyDispatcher.java`.
+5. In `java/.../PropertyDispatcher.java`: its property cases, its type code in `getBool` (instanceof),
+   `childStream` and `findObjectById`.
 6. Add unit tests in `test/TestMyComponent.cpp` using `MockBackend`.
+
+### Primitives for values that may be absent, lists and keys
+
+- An optional value: `getOptInt` / `getOptString` (and `getOptDouble`, where NaN is no value).
+  The plain getter of the same code gives a non-null value or fails (`getString(NAME)` is the
+  name or else the id); never invent sentinels for ints (tap positions can be negative).
+- A list of strings: `getStringList` (sets are sorted on the Java side, so that both backends
+  give the same order).
+- Values under a key: `getKeyedString` / `setKeyedString` (an empty optional removes the key), as
+  for properties (`PROPERTY`) and aliases (`ALIAS_TYPE`).
+- An action: `invoke(object, ACT_...)`; it returns an object, or the object itself for a boolean
+  result (`ACT_CONNECT`: when the terminal was connected by this call).
 
 ### Adding a new extension
 
@@ -153,7 +179,9 @@ codes; do not add new ones that way.)
    handle) and `include/iidm/FooAdder.h` (`detail::AdderBase`, one line per field, `add()`).
 
 3. **Host accessors** — `hasFoo()`, `getFoo()` (`ExtensionNotFoundException` when absent),
-   `newFoo()` and `removeFoo()` on each host (see `Generator`).
+   `newFoo()` and `removeFoo()` on the class of its powsybl host type: an extension of any
+   injection goes on `Injection` (see `ActivePowerControl` in `Injection.h`), of a generator only
+   on `Generator`.
 
 4. **Java** — in `PropertyDispatcher.java`, `getRelatedObject` returns the extension for `FOO`,
    and the property cases cast the extension object; in `Creation.java`, `newAdder` creates its

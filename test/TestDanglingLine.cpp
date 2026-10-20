@@ -45,7 +45,7 @@ TEST_F(DanglingLineTest, GetCurrentLimitsPresent) {
 
 TEST_F(DanglingLineTest, GetName) {
     DanglingLine dl(DL_HANDLE, &backend);
-    EXPECT_EQ(dl.getName(), "Dangling Line 1");
+    EXPECT_EQ(dl.getNameOrId(), "Dangling Line 1");
 }
 
 TEST_F(DanglingLineTest, GetP0Q0) {
@@ -78,18 +78,6 @@ TEST_F(DanglingLineTest, GetTerminal) {
     backend.doubles[{TERM_H, prop::TERMINAL_P}]      = 50.0;
     DanglingLine dl(DL_HANDLE, &backend);
     EXPECT_TRUE(dl.getTerminal().isValid());
-}
-
-TEST_F(DanglingLineTest, ConnectDisconnect) {
-    static constexpr ObjectHandle TERM_H = 50;
-    backend.related[{DL_HANDLE, prop::REL_TERMINAL}]    = TERM_H;
-    backend.bools  [{TERM_H,    prop::TERMINAL_CONNECTED}] = true;
-    DanglingLine dl(DL_HANDLE, &backend);
-    EXPECT_TRUE(dl.isConnected());
-    dl.disconnect();
-    EXPECT_FALSE((backend.bools[{TERM_H, prop::TERMINAL_CONNECTED}]));
-    dl.connect();
-    EXPECT_TRUE((backend.bools[{TERM_H, prop::TERMINAL_CONNECTED}]));
 }
 
 TEST_F(DanglingLineTest, IsValid) {

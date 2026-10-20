@@ -86,15 +86,6 @@ TEST_F(StaticVarCompensatorTest, GetTerminal) {
     EXPECT_TRUE(svc.getRegulatingTerminal().isValid());
 }
 
-TEST_F(StaticVarCompensatorTest, ConnectDisconnect) {
-    StaticVarCompensator svc(SVC_H, &backend);
-    EXPECT_TRUE(svc.isConnected());
-    svc.disconnect();
-    EXPECT_FALSE((backend.bools[{TERM_H, prop::TERMINAL_CONNECTED}]));
-    svc.connect();
-    EXPECT_TRUE((backend.bools[{TERM_H, prop::TERMINAL_CONNECTED}]));
-}
-
 TEST_F(StaticVarCompensatorTest, IsValid) {
     StaticVarCompensator valid(SVC_H, &backend);
     StaticVarCompensator invalid;

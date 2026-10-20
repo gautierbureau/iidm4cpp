@@ -3,6 +3,7 @@
 #include <iidm/IidmException.h>
 #include <cstdlib>
 #include <cstring>
+#include <limits>
 #include <stdexcept>
 #include <string>
 
@@ -110,6 +111,12 @@ void GraalVMBackend::resolveSymbols() {
     fnGetRelatedByString_ = resolveSymbol<FnGetRelatedByString>(libHandle_, "iidm_get_related_by_string");
     fnFindById_           = resolveSymbol<FnFindById>          (libHandle_, "iidm_find_by_id");
     fnInvoke_             = resolveSymbol<FnInvoke>            (libHandle_, "iidm_invoke");
+    fnGetOptInt_          = resolveSymbol<FnGetOptInt>         (libHandle_, "iidm_get_opt_int");
+    fnGetOptString_       = resolveSymbol<FnGetOptString>      (libHandle_, "iidm_get_opt_string");
+    fnGetStringList_      = resolveSymbol<FnGetStringList>     (libHandle_, "iidm_get_string_list");
+    fnGetKeyedString_     = resolveSymbol<FnGetKeyedString>    (libHandle_, "iidm_get_keyed_string");
+    fnSetKeyedString_     = resolveSymbol<FnSetKeyedString>    (libHandle_, "iidm_set_keyed_string");
+    fnIsSameObject_       = resolveSymbol<FnIsSameObject>      (libHandle_, "iidm_is_same_object");
 }
 
 void GraalVMBackend::check(int status) const {
@@ -124,6 +131,11 @@ std::string GraalVMBackend::takeString(char* raw) const {
     std::string result(raw ? raw : "");
     if (raw) fnFree_(thread_, raw);
     return result;
+}
+
+iidm::optional<std::string> GraalVMBackend::takeOptString(char* raw) const {
+    if (!raw) return {};
+    return takeString(raw);
 }
 
 void GraalVMBackend::loadNetwork(const std::string& filePath) {
@@ -234,6 +246,52 @@ iidm::optional<double> GraalVMBackend::getOptDouble(ObjectHandle h, int property
     // NaN signals "undefined"
     if (val != val) return {};  // NaN check
     return val;
+}
+
+iidm::optional<int> GraalVMBackend::getOptInt(ObjectHandle h, int property) const {
+    std::int64_t value = 0;
+    check(fnGetOptInt_(thread_, h, property, &value));
+    if (value == std::numeric_limits<std::int64_t>::min()) return {}; // PropertyDispatcher.NO_INT
+    return static_cast<int>(value);
+}
+
+iidm::optional<std::string> GraalVMBackend::getOptString(ObjectHandle h, int property) const {
+    char* raw = nullptr;
+    check(fnGetOptString_(thread_, h, property, &raw));
+    return takeOptString(raw);
+}
+
+std::vector<std::string> GraalVMBackend::getStringList(ObjectHandle h, int listCode) const {
+    char* raw = nullptr;
+    int length = 0;
+    check(fnGetStringList_(thread_, h, listCode, &raw, &length));
+    // Each string is followed by a 0 byte
+    std::vector<std::string> values;
+    for (int start = 0, i = 0; i < length; ++i) {
+        if (raw[i] == '\0') {
+            values.emplace_back(raw + start, static_cast<std::size_t>(i - start));
+            start = i + 1;
+        }
+    }
+    if (raw) fnFree_(thread_, raw);
+    return values;
+}
+
+iidm::optional<std::string> GraalVMBackend::getKeyedString(ObjectHandle h, int property, const std::string& key) const {
+    char* raw = nullptr;
+    check(fnGetKeyedString_(thread_, h, property, key.c_str(), &raw));
+    return takeOptString(raw);
+}
+
+void GraalVMBackend::setKeyedString(ObjectHandle h, int property, const std::string& key,
+                                    const iidm::optional<std::string>& value) {
+    check(fnSetKeyedString_(thread_, h, property, key.c_str(), value ? value->c_str() : nullptr));
+}
+
+bool GraalVMBackend::isSameObject(ObjectHandle h, ObjectHandle other) const {
+    int same = 0;
+    check(fnIsSameObject_(thread_, h, other, &same));
+    return same != 0;
 }
 
 std::vector<ObjectHandle> GraalVMBackend::getChildren(ObjectHandle h, int childType) const {

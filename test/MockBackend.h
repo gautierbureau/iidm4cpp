@@ -6,6 +6,8 @@
 #include <cmath>
 #include <map>
 #include <memory>
+#include <set>
+#include <tuple>
 #include <iidm/stdcxx/optional.hpp>
 // When building without C++17, iidm::optional<T> is boost::optional<T>.
 // Include the Boost I/O header so GTest can print optional values on failure.
@@ -41,6 +43,11 @@ public:
     std::map<std::pair<ObjectHandle,int>, std::vector<int>>          intLists;
     std::map<std::tuple<ObjectHandle,int,int>, ObjectHandle>                         relatedByIndex;
     std::map<std::tuple<ObjectHandle,int,std::string>, ObjectHandle>                 relatedByString;
+    // Optional values: absent from the map = no value
+    std::map<std::pair<ObjectHandle,int>, int>         optInts;
+    std::map<std::pair<ObjectHandle,int>, std::string> optStrings;
+    std::map<std::pair<ObjectHandle,int>, std::vector<std::string>> stringLists;
+    std::map<std::tuple<ObjectHandle,int,std::string>, std::string>  keyedStrings;
     ObjectHandle networkHandle = 1;
     bool closed = false;
     std::string lastSavedPath;
@@ -84,6 +91,35 @@ public:
         double v = getDouble(h, p);
         if (std::isnan(v)) return {};
         return v;
+    }
+
+    iidm::optional<int> getOptInt(ObjectHandle h, int p) const override {
+        auto it = optInts.find({h, p});
+        if (it == optInts.end()) return {};
+        return it->second;
+    }
+
+    iidm::optional<std::string> getOptString(ObjectHandle h, int p) const override {
+        auto it = optStrings.find({h, p});
+        if (it == optStrings.end()) return {};
+        return it->second;
+    }
+
+    std::vector<std::string> getStringList(ObjectHandle h, int listCode) const override {
+        auto it = stringLists.find({h, listCode});
+        if (it == stringLists.end()) return {};
+        return it->second;
+    }
+
+    iidm::optional<std::string> getKeyedString(ObjectHandle h, int p, const std::string& key) const override {
+        auto it = keyedStrings.find(std::make_tuple(h, p, key));
+        if (it == keyedStrings.end()) return {};
+        return it->second;
+    }
+
+    void setKeyedString(ObjectHandle h, int p, const std::string& key, const iidm::optional<std::string>& value) override {
+        if (value) keyedStrings[std::make_tuple(h, p, key)] = *value;
+        else keyedStrings.erase(std::make_tuple(h, p, key));
     }
 
     std::vector<ObjectHandle> getChildren(ObjectHandle h, int childType) const override {
@@ -142,16 +178,19 @@ public:
 
     // ── Creation and removal ──────────────────────────────────────────────
     // Every invoke is recorded. invoke(parent, type) returns a new adder handle (lastAdder);
-    // invoke(adder, ACT_ADD) returns addResults[adder] (INVALID_HANDLE by default).
+    // invoke(adder, ACT_ADD) returns addResults[adder] (INVALID_HANDLE by default);
+    // ACT_CONNECT / ACT_DISCONNECT return the object (it changed) unless listed in unchanged.
     std::vector<std::pair<ObjectHandle,int>> invocations;
     std::map<ObjectHandle, ObjectHandle> addResults;
     ObjectHandle nextAdder = 100000;
     ObjectHandle lastAdder = INVALID_HANDLE;
     std::string createdNetworkId;
+    std::set<ObjectHandle> unchanged;
 
     ObjectHandle invoke(ObjectHandle h, int code) override {
         invocations.push_back(std::make_pair(h, code));
         if (code == prop::ACT_REMOVE) return INVALID_HANDLE;
+        if (code == prop::ACT_CONNECT || code == prop::ACT_DISCONNECT) return unchanged.count(h) ? INVALID_HANDLE : h;
         if (code == prop::ACT_ADD) {
             auto it = addResults.find(h);
             return it == addResults.end() ? INVALID_HANDLE : it->second;

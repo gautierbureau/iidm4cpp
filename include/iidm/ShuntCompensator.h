@@ -1,28 +1,28 @@
 #pragma once
 
-#include <iidm/HandleRef.h>
-#include <iidm/ObjectHandle.h>
-#include <iidm/Terminal.h>
+#include <iidm/Injection.h>
 #include <iidm/ShuntCompensatorNonLinearModel.h>
+#include <iidm/Terminal.h>
+#include <iidm/stdcxx/optional.hpp>
 #include <string>
-#include <iidm/InjectionObservability.h>
-#include <iidm/Measurement.h>
-#include <iidm/DiscreteMeasurement.h>
 
 namespace iidm {
 
-class BackendProvider;
-
-class ShuntCompensator {
+class ShuntCompensator : public Injection {
 public:
-    ShuntCompensator() = default;
-    explicit ShuntCompensator(ObjectHandle handle, BackendProvider* backend);
+    static constexpr int TYPE = prop::SHUNT_COMPENSATOR;
 
-    std::string getId() const;
-    std::string getName() const;
+    ShuntCompensator() = default;
+    explicit ShuntCompensator(ObjectHandle handle, BackendProvider* backend) : Injection(handle, backend) {}
 
     int getSectionCount() const;
+    // Empty when the section count is not defined
+    iidm::optional<int> findSectionCount() const;
     ShuntCompensator& setSectionCount(int count);
+
+    // Section count of a load flow solution; empty when there is none
+    iidm::optional<int> getSolvedSectionCount() const;
+    ShuntCompensator& setSolvedSectionCount(int count);
 
     int getMaximumSectionCount() const;
 
@@ -34,35 +34,10 @@ public:
     bool hasNonLinearModel() const;
     ShuntCompensatorNonLinearModel getNonLinearModel() const;
 
-    Terminal getTerminal() const;
-
     bool isVoltageRegulatorOn() const;
     double getTargetV() const;
     std::string getRegulatingTerminalId() const;
     Terminal getRegulatingTerminal() const;
-
-    void connect();
-    void disconnect();
-    bool isConnected() const;
-
-    // ── State estimation extensions ──────────────────────────────────────
-    bool hasInjectionObservability() const;
-    InjectionObservability getInjectionObservability() const;
-
-    bool hasMeasurements() const;
-    Measurements getMeasurements() const;
-
-    bool hasDiscreteMeasurements() const;
-    DiscreteMeasurements getDiscreteMeasurements() const;
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const ShuntCompensator& other) const;
-    bool operator!=(const ShuntCompensator& other) const;
-
-private:
-    HandleRef handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

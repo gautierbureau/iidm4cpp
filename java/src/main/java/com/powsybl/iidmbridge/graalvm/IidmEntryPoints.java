@@ -13,7 +13,6 @@ import org.graalvm.nativeimage.c.type.CCharPointerPointer;
 import org.graalvm.nativeimage.c.type.CDoublePointer;
 import org.graalvm.nativeimage.c.type.CIntPointer;
 import org.graalvm.nativeimage.c.type.CLongPointer;
-import org.graalvm.nativeimage.c.type.CTypeConversion;
 import org.graalvm.nativeimage.c.type.WordPointer;
 import org.graalvm.word.PointerBase;
 import org.graalvm.word.WordFactory;
@@ -58,6 +57,27 @@ public final class IidmEntryPoints {
         return ptr;
     }
 
+    /** A C string from C++, as UTF-8 (the JNI backend converts the same way); a null pointer is null. */
+    private static String fromCString(CCharPointer value) {
+        if (value.isNull()) {
+            return null;
+        }
+        int length = 0;
+        while (value.read(length) != 0) {
+            length++;
+        }
+        byte[] bytes = new byte[length];
+        for (int i = 0; i < length; i++) {
+            bytes[i] = value.read(i);
+        }
+        return new String(bytes, StandardCharsets.UTF_8);
+    }
+
+    /** No value (null) is a null pointer. */
+    private static CCharPointer toNullableCString(String value) {
+        return value == null ? WordFactory.nullPointer() : toCString(value);
+    }
+
     // ── Errors and memory ─────────────────────────────────────────────────
 
     /**
@@ -90,7 +110,7 @@ public final class IidmEntryPoints {
     @CEntryPoint(name = "iidm_load_network")
     public static int loadNetwork(IsolateThread thread, CCharPointer filePath, CLongPointer outHandle) {
         try {
-            Network network = Network.read(Path.of(CTypeConversion.toJavaString(filePath)));
+            Network network = Network.read(Path.of(fromCString(filePath)));
             outHandle.write(NetworkRegistry.register(network));
             return BridgeErrors.OK;
         } catch (Throwable t) {
@@ -101,7 +121,7 @@ public final class IidmEntryPoints {
     @CEntryPoint(name = "iidm_create_network")
     public static int createNetwork(IsolateThread thread, CCharPointer id, CLongPointer outHandle) {
         try {
-            outHandle.write(NetworkRegistry.register(Creation.createNetwork(CTypeConversion.toJavaString(id))));
+            outHandle.write(NetworkRegistry.register(Creation.createNetwork(fromCString(id))));
             return BridgeErrors.OK;
         } catch (Throwable t) {
             return fail(t);
@@ -112,7 +132,7 @@ public final class IidmEntryPoints {
     public static int saveNetwork(IsolateThread thread, long handle, CCharPointer filePath) {
         try {
             Network network = (Network) NetworkRegistry.lookup(handle);
-            NetworkSerDe.write(network, Path.of(CTypeConversion.toJavaString(filePath)));
+            NetworkSerDe.write(network, Path.of(fromCString(filePath)));
             return BridgeErrors.OK;
         } catch (Throwable t) {
             return fail(t);
@@ -250,7 +270,92 @@ public final class IidmEntryPoints {
     @CEntryPoint(name = "iidm_set_string")
     public static int setString(IsolateThread thread, long handle, int property, CCharPointer value) {
         try {
-            PropertyDispatcher.setString(handle, property, CTypeConversion.toJavaString(value));
+            PropertyDispatcher.setString(handle, property, fromCString(value));
+            return BridgeErrors.OK;
+        } catch (Throwable t) {
+            return fail(t);
+        }
+    }
+
+    /** Writes the value, or {@link PropertyDispatcher#NO_INT} when there is none. */
+    @CEntryPoint(name = "iidm_get_opt_int")
+    public static int getOptInt(IsolateThread thread, long handle, int property, CLongPointer out) {
+        try {
+            out.write(PropertyDispatcher.getOptInt(handle, property));
+            return BridgeErrors.OK;
+        } catch (Throwable t) {
+            return fail(t);
+        }
+    }
+
+    /** Writes the value, or a null pointer when there is none. */
+    @CEntryPoint(name = "iidm_get_opt_string")
+    public static int getOptString(IsolateThread thread, long handle, int property, CCharPointerPointer out) {
+        try {
+            out.write(toNullableCString(PropertyDispatcher.getOptString(handle, property)));
+            return BridgeErrors.OK;
+        } catch (Throwable t) {
+            return fail(t);
+        }
+    }
+
+    /**
+     * Writes the strings one after the other, each followed by a 0 byte, in one freshly
+     * allocated buffer (null when empty), and the length of the buffer.
+     */
+    @CEntryPoint(name = "iidm_get_string_list")
+    public static int getStringList(IsolateThread thread, long handle, int listCode,
+                                    CCharPointerPointer outData, CIntPointer outLength) {
+        try {
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            for (String value : PropertyDispatcher.getStringList(handle, listCode)) {
+                buffer.writeBytes(value.getBytes(StandardCharsets.UTF_8));
+                buffer.write(0);
+            }
+            byte[] bytes = buffer.toByteArray();
+            CCharPointer ptr = WordFactory.nullPointer();
+            if (bytes.length > 0) {
+                ptr = UnmanagedMemory.malloc(bytes.length);
+                for (int i = 0; i < bytes.length; i++) {
+                    ptr.write(i, bytes[i]);
+                }
+            }
+            outData.write(ptr);
+            outLength.write(bytes.length);
+            return BridgeErrors.OK;
+        } catch (Throwable t) {
+            return fail(t);
+        }
+    }
+
+    /** Writes the value under the key, or a null pointer when there is none. */
+    @CEntryPoint(name = "iidm_get_keyed_string")
+    public static int getKeyedString(IsolateThread thread, long handle, int property, CCharPointer key,
+                                     CCharPointerPointer out) {
+        try {
+            out.write(toNullableCString(PropertyDispatcher.getKeyedString(handle, property, fromCString(key))));
+            return BridgeErrors.OK;
+        } catch (Throwable t) {
+            return fail(t);
+        }
+    }
+
+    /** A null value removes the key. */
+    @CEntryPoint(name = "iidm_set_keyed_string")
+    public static int setKeyedString(IsolateThread thread, long handle, int property, CCharPointer key,
+                                     CCharPointer value) {
+        try {
+            PropertyDispatcher.setKeyedString(handle, property, fromCString(key), fromCString(value));
+            return BridgeErrors.OK;
+        } catch (Throwable t) {
+            return fail(t);
+        }
+    }
+
+    @CEntryPoint(name = "iidm_is_same_object")
+    public static int isSameObject(IsolateThread thread, long handle, long otherHandle, CIntPointer out) {
+        try {
+            out.write(PropertyDispatcher.isSameObject(handle, otherHandle));
             return BridgeErrors.OK;
         } catch (Throwable t) {
             return fail(t);
@@ -346,7 +451,7 @@ public final class IidmEntryPoints {
     public static int getRelatedByString(IsolateThread thread, long handle, int relation, CCharPointer key,
                                          CLongPointer out) {
         try {
-            out.write(PropertyDispatcher.getRelatedByString(handle, relation, CTypeConversion.toJavaString(key)));
+            out.write(PropertyDispatcher.getRelatedByString(handle, relation, fromCString(key)));
             return BridgeErrors.OK;
         } catch (Throwable t) {
             return fail(t);
@@ -357,7 +462,7 @@ public final class IidmEntryPoints {
     public static int findById(IsolateThread thread, long networkHandle, int objectType,
                                CCharPointer id, CLongPointer out) {
         try {
-            out.write(PropertyDispatcher.findById(networkHandle, objectType, CTypeConversion.toJavaString(id)));
+            out.write(PropertyDispatcher.findById(networkHandle, objectType, fromCString(id)));
             return BridgeErrors.OK;
         } catch (Throwable t) {
             return fail(t);

@@ -35,7 +35,7 @@ TEST_F(BatteryTest, GetId) {
 
 TEST_F(BatteryTest, GetName) {
     Battery bat(BAT_HANDLE, &backend);
-    EXPECT_EQ(bat.getName(), "Battery 1");
+    EXPECT_EQ(bat.getNameOrId(), "Battery 1");
 }
 
 TEST_F(BatteryTest, TargetPGetSet) {
@@ -58,11 +58,6 @@ TEST_F(BatteryTest, MinMaxP) {
     Battery bat(BAT_HANDLE, &backend);
     EXPECT_DOUBLE_EQ(bat.getMinP(), -100.0);
     EXPECT_DOUBLE_EQ(bat.getMaxP(),  100.0);
-}
-
-TEST_F(BatteryTest, IsConnected) {
-    Battery bat(BAT_HANDLE, &backend);
-    EXPECT_TRUE(bat.isConnected());
 }
 
 TEST_F(BatteryTest, IsValid) {

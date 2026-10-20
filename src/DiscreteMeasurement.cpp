@@ -8,7 +8,7 @@ namespace iidm {
 // ── DiscreteMeasurement ───────────────────────────────────────────────────────
 
 DiscreteMeasurement::DiscreteMeasurement(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
+    : ObjectRef(handle, backend) {}
 
 std::string DiscreteMeasurement::getId() const {
     return backend_->getString(handle_, prop::DMEAS_ID);
@@ -68,18 +68,10 @@ DiscreteMeasurement& DiscreteMeasurement::setValueValid(bool valid) {
     return *this;
 }
 
-bool DiscreteMeasurement::operator==(const DiscreteMeasurement& other) const {
-    return handle_ == other.handle_;
-}
-
-bool DiscreteMeasurement::operator!=(const DiscreteMeasurement& other) const {
-    return !(*this == other);
-}
-
 // ── DiscreteMeasurements ──────────────────────────────────────────────────────
 
 DiscreteMeasurements::DiscreteMeasurements(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
+    : ObjectRef(handle, backend) {}
 
 std::vector<DiscreteMeasurement> DiscreteMeasurements::getDiscreteMeasurements() const {
     auto handles = backend_->getChildren(handle_, prop::DISCRETE_MEASUREMENT);
@@ -101,14 +93,6 @@ iidm::optional<DiscreteMeasurement> DiscreteMeasurements::getDiscreteMeasurement
     ObjectHandle h = backend_->getRelatedByString(handle_, prop::REL_DISCRETE_MEASUREMENT_BY_ID, id);
     if (h == INVALID_HANDLE) return {};
     return DiscreteMeasurement(h, backend_);
-}
-
-bool DiscreteMeasurements::operator==(const DiscreteMeasurements& other) const {
-    return handle_ == other.handle_;
-}
-
-bool DiscreteMeasurements::operator!=(const DiscreteMeasurements& other) const {
-    return !(*this == other);
 }
 
 } // namespace iidm

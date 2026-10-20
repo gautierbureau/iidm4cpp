@@ -6,17 +6,6 @@
 
 namespace iidm {
 
-Bus::Bus(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
-
-std::string Bus::getId() const {
-    return backend_->getString(handle_, prop::ID);
-}
-
-std::string Bus::getName() const {
-    return backend_->getString(handle_, prop::NAME);
-}
-
 double Bus::getV() const {
     return backend_->getDouble(handle_, prop::BUS_V);
 }
@@ -38,18 +27,6 @@ Bus& Bus::setAngle(double angle) {
 VoltageLevel Bus::getVoltageLevel() const {
     ObjectHandle vlHandle = backend_->getRelated(handle_, prop::REL_VOLTAGE_LEVEL);
     return VoltageLevel(vlHandle, backend_);
-}
-
-void Bus::remove() {
-    backend_->invoke(handle_, prop::ACT_REMOVE);
-}
-
-bool Bus::operator==(const Bus& other) const {
-    return handle_ == other.handle_;
-}
-
-bool Bus::operator!=(const Bus& other) const {
-    return !(*this == other);
 }
 
 } // namespace iidm

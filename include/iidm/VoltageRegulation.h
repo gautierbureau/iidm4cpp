@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iidm/Enums.h>
-#include <iidm/HandleRef.h>
+#include <iidm/ObjectRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/Terminal.h>
 #include <iidm/stdcxx/optional.hpp>
@@ -16,7 +16,7 @@ class BackendProvider;
 // holder's local target V (VOLTAGE and VOLTAGE_PER_REACTIVE_POWER modes) or local target Q
 // (REACTIVE_POWER mode). With a terminal the regulation is remote, and the target value applies
 // to that terminal. powsybl validates every change: an inconsistent one throws ValidationException.
-class VoltageRegulation {
+class VoltageRegulation : public detail::ObjectRef {
 public:
     VoltageRegulation() = default;
     explicit VoltageRegulation(ObjectHandle handle, BackendProvider* backend);
@@ -44,15 +44,6 @@ public:
     // The terminal and the target value change together. A default-constructed Terminal (and a
     // NaN target value) makes the regulation local again.
     VoltageRegulation& setTerminal(const Terminal& terminal, double targetValue);
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const VoltageRegulation& other) const;
-    bool operator!=(const VoltageRegulation& other) const;
-
-private:
-    HandleRef handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

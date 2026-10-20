@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iidm/Enums.h>
-#include <iidm/HandleRef.h>
+#include <iidm/ObjectRef.h>
 #include <iidm/ObjectHandle.h>
 
 namespace iidm {
@@ -10,7 +10,7 @@ class BackendProvider;
 
 // Typed wrapper for the PowSyBl ThreeWindingsTransformerToBeEstimated extension: tells a state
 // estimator which tap changers of a ThreeWindingsTransformer must be estimated.
-class ThreeWindingsTransformerToBeEstimated {
+class ThreeWindingsTransformerToBeEstimated : public detail::ObjectRef {
 public:
     ThreeWindingsTransformerToBeEstimated() = default;
     explicit ThreeWindingsTransformerToBeEstimated(ObjectHandle handle, BackendProvider* backend);
@@ -34,15 +34,6 @@ public:
     ThreeWindingsTransformerToBeEstimated& shouldEstimatePhaseTapChanger2(bool toBeEstimated);
     ThreeWindingsTransformerToBeEstimated& shouldEstimatePhaseTapChanger3(bool toBeEstimated);
     ThreeWindingsTransformerToBeEstimated& shouldEstimatePhaseTapChanger(bool toBeEstimated, ThreeSides side);
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const ThreeWindingsTransformerToBeEstimated& other) const;
-    bool operator!=(const ThreeWindingsTransformerToBeEstimated& other) const;
-
-private:
-    HandleRef  handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

@@ -5,7 +5,7 @@
 namespace iidm {
 
 ReactiveCapabilityCurve::ReactiveCapabilityCurve(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
+    : ObjectRef(handle, backend) {}
 
 std::vector<ReactiveCapabilityCurve::Point> ReactiveCapabilityCurve::getPoints() const {
     auto handles = backend_->getChildren(handle_, prop::REACTIVE_CURVE_POINT);
@@ -19,14 +19,6 @@ std::vector<ReactiveCapabilityCurve::Point> ReactiveCapabilityCurve::getPoints()
         });
     }
     return pts;
-}
-
-bool ReactiveCapabilityCurve::operator==(const ReactiveCapabilityCurve& other) const {
-    return handle_ == other.handle_;
-}
-
-bool ReactiveCapabilityCurve::operator!=(const ReactiveCapabilityCurve& other) const {
-    return !(*this == other);
 }
 
 } // namespace iidm

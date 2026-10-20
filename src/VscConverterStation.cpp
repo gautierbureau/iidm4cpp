@@ -8,21 +8,6 @@
 
 namespace iidm {
 
-VscConverterStation::VscConverterStation(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
-
-std::string VscConverterStation::getId() const {
-    return backend_->getString(handle_, prop::ID);
-}
-
-std::string VscConverterStation::getName() const {
-    return backend_->getString(handle_, prop::NAME);
-}
-
-double VscConverterStation::getLossFactor() const {
-    return backend_->getDouble(handle_, prop::VSC_LOSS_FACTOR);
-}
-
 bool VscConverterStation::isVoltageRegulatorOn() const {
     return backend_->getBool(handle_, prop::VSC_VOLTAGE_REGULATOR_ON);
 }
@@ -66,57 +51,9 @@ ReactiveCapabilityCurve VscConverterStation::getReactiveCapabilityCurve() const 
     return ReactiveCapabilityCurve(handle_, backend_);
 }
 
-Terminal VscConverterStation::getTerminal() const {
-    ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_TERMINAL);
-    return Terminal(termHandle, backend_);
-}
-
 Terminal VscConverterStation::getRegulatingTerminal() const {
     ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_REGULATING_TERMINAL);
     return Terminal(termHandle, backend_);
-}
-
-HvdcLine VscConverterStation::getHvdcLine() const {
-    ObjectHandle hvdcHandle = backend_->getRelated(handle_, prop::REL_HVDC_LINE);
-    return HvdcLine(hvdcHandle, backend_);
-}
-
-void VscConverterStation::connect() {
-    getTerminal().connect();
-}
-
-void VscConverterStation::disconnect() {
-    getTerminal().disconnect();
-}
-
-bool VscConverterStation::isConnected() const {
-    return getTerminal().isConnected();
-}
-
-bool VscConverterStation::operator==(const VscConverterStation& other) const {
-    return handle_ == other.handle_;
-}
-
-bool VscConverterStation::operator!=(const VscConverterStation& other) const {
-    return !(*this == other);
-}
-
-// ── State estimation extensions ──────────────────────────────────────────────
-
-bool VscConverterStation::hasInjectionObservability() const {
-    return backend_->getBool(handle_, prop::EXT_INJ_OBS_EXISTS);
-}
-
-InjectionObservability VscConverterStation::getInjectionObservability() const {
-    return InjectionObservability(handle_, backend_);
-}
-
-bool VscConverterStation::hasMeasurements() const {
-    return backend_->getBool(handle_, prop::EXT_MEAS_EXISTS);
-}
-
-Measurements VscConverterStation::getMeasurements() const {
-    return Measurements(handle_, backend_);
 }
 
 } // namespace iidm
