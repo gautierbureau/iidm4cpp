@@ -7,6 +7,8 @@
 #include <iidm/stdcxx/optional.hpp>
 #include <string>
 #include <vector>
+#include <iidm/BranchObservability.h>
+#include <iidm/Measurement.h>
 
 namespace iidm {
 
@@ -41,6 +43,13 @@ public:
     void connect();
     void disconnect();
     bool isConnected() const;
+
+    // ── State estimation extensions ──────────────────────────────────────
+    bool hasBranchObservability() const;
+    BranchObservability getBranchObservability() const;
+
+    bool hasMeasurements() const;
+    Measurements getMeasurements() const;
 
     bool isValid() const { return handle_ != INVALID_HANDLE; }
 

@@ -101,4 +101,22 @@ bool VscConverterStation::operator!=(const VscConverterStation& other) const {
     return !(*this == other);
 }
 
+// ── State estimation extensions ──────────────────────────────────────────────
+
+bool VscConverterStation::hasInjectionObservability() const {
+    return backend_->getBool(handle_, prop::EXT_INJ_OBS_EXISTS);
+}
+
+InjectionObservability VscConverterStation::getInjectionObservability() const {
+    return InjectionObservability(handle_, backend_);
+}
+
+bool VscConverterStation::hasMeasurements() const {
+    return backend_->getBool(handle_, prop::EXT_MEAS_EXISTS);
+}
+
+Measurements VscConverterStation::getMeasurements() const {
+    return Measurements(handle_, backend_);
+}
+
 } // namespace iidm

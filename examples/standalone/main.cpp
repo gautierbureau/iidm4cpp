@@ -13,6 +13,7 @@
  *   ./example_standalone path/to/network.xiidm
  */
 #include <iidm/iidm.h>
+#include "../StateEstimationReport.h"
 #include <iidm/RatioTapChanger.h>
 #include <iostream>
 #include <string>
@@ -203,6 +204,8 @@ int main(int argc, char* argv[]) {
 
         iidm::Network network = iidm::NetworkFactory::load(argv[1], opts);
         printNetwork(network);
+        std::cout << "\nState estimation extensions:\n";
+        example::reportStateEstimation(network, "  ");
 
     } catch (const iidm::IidmException& ex) {
         std::cerr << "Error: " << ex.what() << "\n";

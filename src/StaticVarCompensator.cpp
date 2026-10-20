@@ -91,4 +91,22 @@ bool StaticVarCompensator::operator!=(const StaticVarCompensator& other) const {
     return !(*this == other);
 }
 
+// ── State estimation extensions ──────────────────────────────────────────────
+
+bool StaticVarCompensator::hasInjectionObservability() const {
+    return backend_->getBool(handle_, prop::EXT_INJ_OBS_EXISTS);
+}
+
+InjectionObservability StaticVarCompensator::getInjectionObservability() const {
+    return InjectionObservability(handle_, backend_);
+}
+
+bool StaticVarCompensator::hasMeasurements() const {
+    return backend_->getBool(handle_, prop::EXT_MEAS_EXISTS);
+}
+
+Measurements StaticVarCompensator::getMeasurements() const {
+    return Measurements(handle_, backend_);
+}
+
 } // namespace iidm

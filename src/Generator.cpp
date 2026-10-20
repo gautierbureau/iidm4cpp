@@ -130,4 +130,22 @@ bool Generator::operator!=(const Generator& other) const {
     return !(*this == other);
 }
 
+// ── State estimation extensions ──────────────────────────────────────────────
+
+bool Generator::hasInjectionObservability() const {
+    return backend_->getBool(handle_, prop::EXT_INJ_OBS_EXISTS);
+}
+
+InjectionObservability Generator::getInjectionObservability() const {
+    return InjectionObservability(handle_, backend_);
+}
+
+bool Generator::hasMeasurements() const {
+    return backend_->getBool(handle_, prop::EXT_MEAS_EXISTS);
+}
+
+Measurements Generator::getMeasurements() const {
+    return Measurements(handle_, backend_);
+}
+
 } // namespace iidm

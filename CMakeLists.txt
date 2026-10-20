@@ -82,6 +82,13 @@ set(IIDM_BRIDGE_SOURCES
     src/HvdcOperatorActivePowerRange.cpp
     src/VoltagePerReactivePowerControl.cpp
     src/SlackTerminal.cpp
+    src/TwoWindingsTransformerToBeEstimated.cpp
+    src/ThreeWindingsTransformerToBeEstimated.cpp
+    src/InjectionObservability.cpp
+    src/BranchObservability.cpp
+    src/Measurement.cpp
+    src/DiscreteMeasurement.cpp
+    src/ObservabilityArea.cpp
     src/Generator.cpp
     src/Load.cpp
     src/Terminal.cpp

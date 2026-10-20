@@ -36,4 +36,22 @@ bool BusbarSection::operator!=(const BusbarSection& other) const {
     return !(*this == other);
 }
 
+// ── State estimation extensions ──────────────────────────────────────────────
+
+bool BusbarSection::hasInjectionObservability() const {
+    return backend_->getBool(handle_, prop::EXT_INJ_OBS_EXISTS);
+}
+
+InjectionObservability BusbarSection::getInjectionObservability() const {
+    return InjectionObservability(handle_, backend_);
+}
+
+bool BusbarSection::hasMeasurements() const {
+    return backend_->getBool(handle_, prop::EXT_MEAS_EXISTS);
+}
+
+Measurements BusbarSection::getMeasurements() const {
+    return Measurements(handle_, backend_);
+}
+
 } // namespace iidm

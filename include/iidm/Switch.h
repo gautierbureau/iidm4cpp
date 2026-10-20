@@ -3,6 +3,7 @@
 #include <iidm/ObjectHandle.h>
 #include <iidm/Enums.h>
 #include <string>
+#include <iidm/DiscreteMeasurement.h>
 
 namespace iidm {
 
@@ -26,6 +27,10 @@ public:
 
     int getNode1() const;
     int getNode2() const;
+
+    // ── State estimation extensions ──────────────────────────────────────
+    bool hasDiscreteMeasurements() const;
+    DiscreteMeasurements getDiscreteMeasurements() const;
 
     bool isValid() const { return handle_ != INVALID_HANDLE; }
 

@@ -241,4 +241,38 @@ bool TwoWindingsTransformer::operator!=(const TwoWindingsTransformer& other) con
     return !(*this == other);
 }
 
+// ── State estimation extensions ──────────────────────────────────────────────
+
+bool TwoWindingsTransformer::hasBranchObservability() const {
+    return backend_->getBool(handle_, prop::EXT_BRANCH_OBS_EXISTS);
+}
+
+BranchObservability TwoWindingsTransformer::getBranchObservability() const {
+    return BranchObservability(handle_, backend_);
+}
+
+bool TwoWindingsTransformer::hasTwoWindingsTransformerToBeEstimated() const {
+    return backend_->getBool(handle_, prop::EXT_TWO_WT_TBE_EXISTS);
+}
+
+TwoWindingsTransformerToBeEstimated TwoWindingsTransformer::getTwoWindingsTransformerToBeEstimated() const {
+    return TwoWindingsTransformerToBeEstimated(handle_, backend_);
+}
+
+bool TwoWindingsTransformer::hasMeasurements() const {
+    return backend_->getBool(handle_, prop::EXT_MEAS_EXISTS);
+}
+
+Measurements TwoWindingsTransformer::getMeasurements() const {
+    return Measurements(handle_, backend_);
+}
+
+bool TwoWindingsTransformer::hasDiscreteMeasurements() const {
+    return backend_->getBool(handle_, prop::EXT_DMEAS_EXISTS);
+}
+
+DiscreteMeasurements TwoWindingsTransformer::getDiscreteMeasurements() const {
+    return DiscreteMeasurements(handle_, backend_);
+}
+
 } // namespace iidm

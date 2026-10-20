@@ -53,4 +53,14 @@ bool Switch::operator!=(const Switch& other) const {
     return !(*this == other);
 }
 
+// ── State estimation extensions ──────────────────────────────────────────────
+
+bool Switch::hasDiscreteMeasurements() const {
+    return backend_->getBool(handle_, prop::EXT_DMEAS_EXISTS);
+}
+
+DiscreteMeasurements Switch::getDiscreteMeasurements() const {
+    return DiscreteMeasurements(handle_, backend_);
+}
+
 } // namespace iidm

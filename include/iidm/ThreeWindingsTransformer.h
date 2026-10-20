@@ -11,6 +11,9 @@
 #include <iidm/stdcxx/optional.hpp>
 #include <string>
 #include <vector>
+#include <iidm/ThreeWindingsTransformerToBeEstimated.h>
+#include <iidm/Measurement.h>
+#include <iidm/DiscreteMeasurement.h>
 
 namespace iidm {
 
@@ -78,6 +81,16 @@ public:
     void connect();
     void disconnect();
     bool isConnected() const;
+
+    // ── State estimation extensions ──────────────────────────────────────
+    bool hasThreeWindingsTransformerToBeEstimated() const;
+    ThreeWindingsTransformerToBeEstimated getThreeWindingsTransformerToBeEstimated() const;
+
+    bool hasMeasurements() const;
+    Measurements getMeasurements() const;
+
+    bool hasDiscreteMeasurements() const;
+    DiscreteMeasurements getDiscreteMeasurements() const;
 
     bool isValid() const { return handle_ != INVALID_HANDLE; }
 

@@ -11,6 +11,7 @@
 #include <iidm/stdcxx/optional.hpp>
 #include <string>
 #include <vector>
+#include <iidm/ObservabilityArea.h>
 
 namespace iidm {
 
@@ -97,6 +98,10 @@ public:
 
     NodeBreakerView getNodeBreakerView() const;
     BusBreakerView  getBusBreakerView()  const;
+
+    // ── State estimation extensions ──────────────────────────────────────
+    bool hasObservabilityArea() const;
+    ObservabilityArea getObservabilityArea() const;
 
     bool isValid() const { return handle_ != INVALID_HANDLE; }
 

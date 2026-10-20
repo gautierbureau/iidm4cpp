@@ -10,6 +10,10 @@
 #include <iidm/stdcxx/optional.hpp>
 #include <string>
 #include <vector>
+#include <iidm/BranchObservability.h>
+#include <iidm/TwoWindingsTransformerToBeEstimated.h>
+#include <iidm/Measurement.h>
+#include <iidm/DiscreteMeasurement.h>
 
 namespace iidm {
 
@@ -71,6 +75,19 @@ public:
     void connect();
     void disconnect();
     bool isConnected() const;
+
+    // ── State estimation extensions ──────────────────────────────────────
+    bool hasBranchObservability() const;
+    BranchObservability getBranchObservability() const;
+
+    bool hasTwoWindingsTransformerToBeEstimated() const;
+    TwoWindingsTransformerToBeEstimated getTwoWindingsTransformerToBeEstimated() const;
+
+    bool hasMeasurements() const;
+    Measurements getMeasurements() const;
+
+    bool hasDiscreteMeasurements() const;
+    DiscreteMeasurements getDiscreteMeasurements() const;
 
     bool isValid() const { return handle_ != INVALID_HANDLE; }
 

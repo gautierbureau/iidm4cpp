@@ -376,4 +376,79 @@ public final class PropertyCodes {
 
     // ── Child types (new) ─────────────────────────────────────────────────
     public static final int CONNECTABLE_TERMINALS = 37; // all terminals of the Connectable owning a Terminal
+
+    // ── Extension: TwoWindingsTransformerToBeEstimated (on TwoWT) ────────────
+    public static final int EXT_TWO_WT_TBE_EXISTS          = 3700; // bool
+    public static final int EXT_TWO_WT_TBE_RTC             = 3701; // bool: shouldEstimateRatioTapChanger
+    public static final int EXT_TWO_WT_TBE_PTC             = 3702; // bool: shouldEstimatePhaseTapChanger
+
+    // ── Extension: ThreeWindingsTransformerToBeEstimated (on ThreeWT) ────────
+    public static final int EXT_THREE_WT_TBE_EXISTS        = 3800; // bool
+    public static final int EXT_THREE_WT_TBE_RTC1          = 3801; // bool: shouldEstimateRatioTapChanger1
+    public static final int EXT_THREE_WT_TBE_RTC2          = 3802; // bool
+    public static final int EXT_THREE_WT_TBE_RTC3          = 3803; // bool
+    public static final int EXT_THREE_WT_TBE_PTC1          = 3804; // bool: shouldEstimatePhaseTapChanger1
+    public static final int EXT_THREE_WT_TBE_PTC2          = 3805; // bool
+    public static final int EXT_THREE_WT_TBE_PTC3          = 3806; // bool
+
+    // ── Extension observability quality blocks: qualityBase + offset below ───
+    public static final int OBS_QUALITY_EXISTS_OFF         = 0; // bool: quality defined
+    public static final int OBS_QUALITY_STD_DEV_OFF        = 1; // double: standard deviation (setting it creates the quality)
+    public static final int OBS_QUALITY_REDUNDANT_OFF      = 2; // int: -1 = undefined, 0 = false, 1 = true
+
+    // ── Extension: InjectionObservability (on any Injection) ─────────────────
+    public static final int EXT_INJ_OBS_EXISTS             = 3900; // bool
+    public static final int EXT_INJ_OBS_OBSERVABLE         = 3901; // bool
+    public static final int EXT_INJ_OBS_QUALITY_P          = 3910; // quality block base
+    public static final int EXT_INJ_OBS_QUALITY_Q          = 3920; // quality block base
+    public static final int EXT_INJ_OBS_QUALITY_V          = 3930; // quality block base
+
+    // ── Extension: BranchObservability (on Line / TwoWT) ─────────────────────
+    public static final int EXT_BRANCH_OBS_EXISTS          = 4000; // bool
+    public static final int EXT_BRANCH_OBS_OBSERVABLE      = 4001; // bool
+    public static final int EXT_BRANCH_OBS_QUALITY_P1      = 4010; // quality block base
+    public static final int EXT_BRANCH_OBS_QUALITY_P2      = 4020; // quality block base
+    public static final int EXT_BRANCH_OBS_QUALITY_Q1      = 4030; // quality block base
+    public static final int EXT_BRANCH_OBS_QUALITY_Q2      = 4040; // quality block base
+
+    // ── Extension: Measurements (on any Connectable) and Measurement handles ───
+    public static final int EXT_MEAS_EXISTS                = 4100; // bool, on the host
+    public static final int MEAS_ID                        = 4101; // string
+    public static final int MEAS_TYPE                      = 4102; // int: MeasurementType ordinal
+    public static final int MEAS_VALUE                     = 4103; // double
+    public static final int MEAS_STD_DEV                   = 4104; // double
+    public static final int MEAS_VALID                     = 4105; // bool
+    public static final int MEAS_SIDE                      = 4106; // int: -1 = none, 0 = ONE, 1 = TWO, 2 = THREE
+
+    // ── Extension: DiscreteMeasurements (on any Identifiable) and DiscreteMeasurement handles ───
+    public static final int EXT_DMEAS_EXISTS               = 4200; // bool, on the host
+    public static final int DMEAS_ID                       = 4201; // string
+    public static final int DMEAS_TYPE                     = 4202; // int: DiscreteMeasurementType ordinal
+    public static final int DMEAS_TAP_CHANGER              = 4203; // int: DiscreteMeasurementTapChanger ordinal, -1 = none
+    public static final int DMEAS_VALUE_TYPE               = 4204; // int: DiscreteMeasurementValueType ordinal
+    public static final int DMEAS_VALUE_STRING             = 4205; // string
+    public static final int DMEAS_VALUE_INT                = 4206; // int
+    public static final int DMEAS_VALUE_BOOL               = 4207; // bool
+    public static final int DMEAS_VALID                    = 4208; // bool
+
+    // ── Extension: ObservabilityArea (on VoltageLevel) and area handles ──────
+    public static final int EXT_OBS_AREA_EXISTS            = 4300; // bool, on the VoltageLevel
+    public static final int EXT_OBS_AREA_CONSISTENT        = 4301; // bool: isConsistentWithTopology, on the VoltageLevel
+    public static final int OBS_AREA_NUMBER                = 4302; // int
+    public static final int OBS_AREA_STATUS                = 4303; // int: ObservabilityStatus ordinal
+    public static final int OBS_AREA_NODES                 = 4304; // int list: node-breaker nodes (empty in bus-breaker topology)
+
+    // ── Child types: state estimation extensions ─────────────────────────────
+    public static final int MEASUREMENT                    = 38; // Measurement handles of a Connectable
+    public static final int DISCRETE_MEASUREMENT           = 39; // DiscreteMeasurement handles of an Identifiable
+    public static final int OBSERVABILITY_AREA             = 40; // observability areas of a VoltageLevel
+    public static final int OBS_AREA_TERMINALS             = 41; // Terminal handles of an observability area
+    public static final int OBS_AREA_BUSES                 = 42; // bus-breaker view Bus handles of an observability area
+
+    // ── Relations: state estimation extensions ───────────────────────────────
+    public static final int REL_MEASUREMENT_BY_ID          = 2025; // host (keyed by measurement id) → Measurement (getRelatedByString)
+    public static final int REL_DISCRETE_MEASUREMENT_BY_ID = 2026; // host (keyed by id) → DiscreteMeasurement (getRelatedByString)
+    public static final int REL_OBS_AREA_BY_NODE           = 2027; // VL (indexed by node) → observability area (getRelatedByIndex)
+    public static final int REL_OBS_AREA_BY_BUS            = 2028; // VL (keyed by bus view bus id) → observability area (getRelatedByString)
+    public static final int REL_OBS_AREA_BY_BBV_BUS        = 2029; // VL (keyed by bus-breaker bus id) → observability area (getRelatedByString)
 }
