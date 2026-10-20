@@ -96,6 +96,7 @@ constexpr int LINE_B2                     = 705;
 constexpr int THREE_WT_LEG1_BASE          = 820;
 constexpr int THREE_WT_LEG2_BASE          = 840;
 constexpr int THREE_WT_LEG3_BASE          = 860;
+constexpr int THREE_WT_LEG_BLOCK_SIZE     = 20;  // codes per leg block
 // Leg property offsets (add to LEG*_BASE)
 constexpr int THREE_WT_LEG_R_OFF              = 0;
 constexpr int THREE_WT_LEG_X_OFF              = 1;
