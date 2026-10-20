@@ -3,15 +3,19 @@
 #include <iidm/Enums.h>
 #include <iidm/ObjectRef.h>
 #include <iidm/ObjectHandle.h>
+#include <iidm/PropertyCodes.h>
 
 namespace iidm {
 
 class BackendProvider;
 
-// Typed wrapper for the PowSyBl ThreeWindingsTransformerToBeEstimated extension: tells a state
-// estimator which tap changers of a ThreeWindingsTransformer must be estimated.
+// The ThreeWindingsTransformerToBeEstimated extension of a three windings transformer: which of
+// its tap changers a state estimator must estimate. An object of its own, from
+// ThreeWindingsTransformer::getThreeWindingsTransformerToBeEstimated().
 class ThreeWindingsTransformerToBeEstimated : public detail::ObjectRef {
 public:
+    static constexpr int TYPE = prop::THREE_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED;
+
     ThreeWindingsTransformerToBeEstimated() = default;
     explicit ThreeWindingsTransformerToBeEstimated(ObjectHandle handle, BackendProvider* backend);
 

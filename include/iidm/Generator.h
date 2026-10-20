@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iidm/CoordinatedReactiveControl.h>
+#include <iidm/CoordinatedReactiveControlAdder.h>
 #include <iidm/Enums.h>
 #include <iidm/Injection.h>
 #include <iidm/ReactiveLimitsHolder.h>
@@ -39,6 +40,8 @@ public:
     // ── Extensions ───────────────────────────────────────────────────────
     bool hasCoordinatedReactiveControl() const;
     CoordinatedReactiveControl getCoordinatedReactiveControl() const;
+    CoordinatedReactiveControlAdder newCoordinatedReactiveControl();
+    void removeCoordinatedReactiveControl();
 };
 
 } // namespace iidm

@@ -2,6 +2,7 @@
 #include <iidm/BackendProvider.h>
 #include <iidm/Line.h>
 #include <iidm/TwoWindingsTransformer.h>
+#include "Extensions.h"
 #include "Wrap.h"
 
 namespace iidm { namespace detail {
@@ -58,12 +59,22 @@ iidm::optional<OperationalLimitsGroup> BranchMethods<Self>::getSelectedOperation
 
 template <class Self>
 bool BranchMethods<Self>::hasBranchObservability() const {
-    return backend()->getBool(handle(), prop::EXT_BRANCH_OBS_EXISTS);
+    return hasExtension<BranchObservability>(backend(), handle());
 }
 
 template <class Self>
 BranchObservability BranchMethods<Self>::getBranchObservability() const {
-    return BranchObservability(handle(), backend());
+    return getExtension<BranchObservability>(backend(), handle(), "BranchObservability");
+}
+
+template <class Self>
+BranchObservabilityAdder BranchMethods<Self>::newBranchObservability() {
+    return newExtension<BranchObservability, BranchObservabilityAdder>(backend(), handle());
+}
+
+template <class Self>
+void BranchMethods<Self>::removeBranchObservability() {
+    removeExtension<BranchObservability>(backend(), handle());
 }
 
 template class BranchMethods<Branch>;

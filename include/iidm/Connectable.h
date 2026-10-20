@@ -2,6 +2,7 @@
 
 #include <iidm/Identifiable.h>
 #include <iidm/Measurement.h>
+#include <iidm/MeasurementsAdder.h>
 #include <iidm/Terminal.h>
 #include <vector>
 
@@ -31,8 +32,11 @@ public:
     void remove();
 
     // ── Extensions ───────────────────────────────────────────────────────
+    // An extension's getter throws ExtensionNotFoundException when it is absent
     bool hasMeasurements() const;
     Measurements getMeasurements() const;
+    MeasurementsAdder newMeasurements();
+    void removeMeasurements();
 };
 
 } // namespace iidm

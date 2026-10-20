@@ -1,5 +1,6 @@
 #include <iidm/Connectable.h>
 #include <iidm/BackendProvider.h>
+#include "Extensions.h"
 #include "Wrap.h"
 
 namespace iidm {
@@ -33,11 +34,19 @@ void Connectable::remove() {
 // ── Extensions ───────────────────────────────────────────────────────────────
 
 bool Connectable::hasMeasurements() const {
-    return backend_->getBool(handle_, prop::EXT_MEAS_EXISTS);
+    return detail::hasExtension<Measurements>(backend_, handle_);
 }
 
 Measurements Connectable::getMeasurements() const {
-    return Measurements(handle_, backend_);
+    return detail::getExtension<Measurements>(backend_, handle_, "Measurements");
+}
+
+MeasurementsAdder Connectable::newMeasurements() {
+    return detail::newExtension<Measurements, MeasurementsAdder>(backend_, handle_);
+}
+
+void Connectable::removeMeasurements() {
+    detail::removeExtension<Measurements>(backend_, handle_);
 }
 
 } // namespace iidm

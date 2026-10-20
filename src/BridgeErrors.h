@@ -10,9 +10,8 @@ enum BridgeErrorKind {
     BRIDGE_GENERIC             = 1, // IidmException
     BRIDGE_INVALID_HANDLE      = 2, // InvalidHandleException
     BRIDGE_PROPERTY_NOT_FOUND  = 3, // PropertyNotFoundException
-    BRIDGE_EXTENSION_NOT_FOUND = 4, // ExtensionNotFoundException
-    BRIDGE_VALIDATION          = 5, // ValidationException
-    BRIDGE_NETWORK_NOT_FOUND   = 6  // NetworkNotFoundException
+    BRIDGE_VALIDATION          = 4, // ValidationException
+    BRIDGE_NETWORK_NOT_FOUND   = 5  // NetworkNotFoundException
 };
 
 // Throws the C++ exception matching a Java error kind.

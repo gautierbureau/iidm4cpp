@@ -1,19 +1,20 @@
 #include <iidm/SlackTerminal.h>
 #include <iidm/BackendProvider.h>
 #include <iidm/PropertyCodes.h>
+#include "Wrap.h"
 
 namespace iidm {
 
 SlackTerminal::SlackTerminal(ObjectHandle handle, BackendProvider* backend)
     : ObjectRef(handle, backend) {}
 
-Terminal SlackTerminal::getTerminal() const {
-    ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_SLACK_TERMINAL);
-    return Terminal(termHandle, backend_);
+iidm::optional<Terminal> SlackTerminal::getTerminal() const {
+    return detail::wrapOptional<Terminal>(backend_->getRelated(handle_, prop::REL_TERMINAL), backend_);
 }
 
-SlackTerminal& SlackTerminal::setTerminal(const Terminal& terminal) {
-    backend_->setRelated(handle_, prop::REL_SLACK_TERMINAL, detail::Access::handle(terminal));
+SlackTerminal& SlackTerminal::setTerminal(const Terminal& terminal, bool cleanIfEmpty) {
+    backend_->setRelated(handle_, prop::REL_TERMINAL, detail::Access::handle(terminal));
+    if (cleanIfEmpty) backend_->invoke(handle_, prop::ACT_CLEAN_IF_EMPTY);
     return *this;
 }
 

@@ -35,16 +35,28 @@ TEST(HandleRefTest, ReleasedWhenLastWrapperIsDestroyed) {
     EXPECT_EQ(backend.liveHandleCount(), 0u);
 }
 
-TEST(HandleRefTest, SubWrappersShareTheHandle) {
+TEST(HandleRefTest, ViewsShareTheHandle) {
     RecordingBackend backend;
-    CoordinatedReactiveControl crc;
+    VoltageLevel::BusBreakerView view;
+    {
+        VoltageLevel vl(10, &backend);
+        view = vl.getBusBreakerView();   // same handle as the voltage level
+    }
+    EXPECT_EQ(backend.releases(10), 0) << "still used by the view";
+    view = VoltageLevel::BusBreakerView();
+    EXPECT_EQ(backend.releases(10), 1);
+}
+
+TEST(HandleRefTest, ExtensionsHaveTheirOwnHandle) {
+    RecordingBackend backend;
+    backend.related[{10, prop::COORDINATED_REACTIVE_CONTROL}] = 11;
     {
         Generator g(10, &backend);
-        crc = g.getCoordinatedReactiveControl();   // same handle as the generator
+        CoordinatedReactiveControl crc = g.getCoordinatedReactiveControl();
+        EXPECT_EQ(backend.liveHandleCount(), 2u);
     }
-    EXPECT_EQ(backend.releases(10), 0) << "still used by the extension wrapper";
-    crc = CoordinatedReactiveControl();
     EXPECT_EQ(backend.releases(10), 1);
+    EXPECT_EQ(backend.releases(11), 1);
 }
 
 TEST(HandleRefTest, MovesDoNotReleaseTwice) {

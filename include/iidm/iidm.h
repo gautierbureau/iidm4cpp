@@ -68,5 +68,15 @@
 #include <iidm/LoadAdder.h>
 #include <iidm/VoltageRegulationAdder.h>
 #include <iidm/ActivePowerControlAdder.h>
+#include <iidm/CoordinatedReactiveControlAdder.h>
+#include <iidm/HvdcAngleDroopActivePowerControlAdder.h>
+#include <iidm/HvdcOperatorActivePowerRangeAdder.h>
+#include <iidm/SlackTerminalAdder.h>
+#include <iidm/TwoWindingsTransformerToBeEstimatedAdder.h>
+#include <iidm/ThreeWindingsTransformerToBeEstimatedAdder.h>
+#include <iidm/InjectionObservabilityAdder.h>
+#include <iidm/BranchObservabilityAdder.h>
+#include <iidm/MeasurementsAdder.h>
+#include <iidm/DiscreteMeasurementsAdder.h>
 #include <iidm/Network.h>
 #include <iidm/NetworkFactory.h>

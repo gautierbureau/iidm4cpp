@@ -14,14 +14,15 @@ protected:
     static constexpr ObjectHandle AREA2_H  = 72;
     static constexpr ObjectHandle TERM_H   = 73;
     static constexpr ObjectHandle BUS_H    = 74;
+    static constexpr ObjectHandle EXT_H    = 75; // the extension object
 
     void SetUp() override {
-        backend.bools[{VL_H, prop::EXT_OBS_AREA_EXISTS}]     = true;
-        backend.bools[{VL_H, prop::EXT_OBS_AREA_CONSISTENT}] = true;
-        backend.children[{VL_H, prop::OBSERVABILITY_AREA}] = {AREA1_H, AREA2_H};
-        backend.relatedByIndex[std::make_tuple(VL_H, prop::REL_OBS_AREA_BY_NODE, 4)] = AREA1_H;
-        backend.relatedByString[std::make_tuple(VL_H, prop::REL_OBS_AREA_BY_BUS, std::string("VL_0"))] = AREA1_H;
-        backend.relatedByString[std::make_tuple(VL_H, prop::REL_OBS_AREA_BY_BBV_BUS, std::string("B2"))] = AREA2_H;
+        backend.related[{VL_H, prop::OBSERVABILITY_AREA}] = EXT_H;
+        backend.bools[{EXT_H, prop::EXT_OBS_AREA_CONSISTENT}] = true;
+        backend.children[{EXT_H, prop::AREA_CHARACTERISTICS}] = {AREA1_H, AREA2_H};
+        backend.relatedByIndex[std::make_tuple(EXT_H, prop::REL_OBS_AREA_BY_NODE, 4)] = AREA1_H;
+        backend.relatedByString[std::make_tuple(EXT_H, prop::REL_OBS_AREA_BY_BUS, std::string("VL_0"))] = AREA1_H;
+        backend.relatedByString[std::make_tuple(EXT_H, prop::REL_OBS_AREA_BY_BBV_BUS, std::string("B2"))] = AREA2_H;
 
         backend.ints[{AREA1_H, prop::OBS_AREA_NUMBER}] = 7;
         backend.ints[{AREA1_H, prop::OBS_AREA_STATUS}] = static_cast<int>(ObservabilityStatus::NON_OBSERVABLE);
@@ -36,8 +37,15 @@ protected:
 
 TEST_F(ObservabilityAreaTest, HasExtension) {
     EXPECT_TRUE(VoltageLevel(VL_H, &backend).hasObservabilityArea());
+    EXPECT_EQ(VoltageLevel(VL_H, &backend).getObservabilityArea(), ObservabilityArea(EXT_H, &backend));
     MockBackend empty;
     EXPECT_FALSE(VoltageLevel(VL_H, &empty).hasObservabilityArea());
+    EXPECT_THROW(VoltageLevel(VL_H, &empty).getObservabilityArea(), ExtensionNotFoundException);
+}
+
+TEST_F(ObservabilityAreaTest, Remove) {
+    VoltageLevel(VL_H, &backend).removeObservabilityArea();
+    EXPECT_EQ((backend.related[{VL_H, prop::OBSERVABILITY_AREA}]), INVALID_HANDLE);
 }
 
 TEST_F(ObservabilityAreaTest, Areas) {

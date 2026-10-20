@@ -27,16 +27,22 @@ inline const char* toString(iidm::ObservabilityStatus status) {
 
 inline std::string toString(const iidm::optional<iidm::ObservabilityQuality>& quality) {
     if (!quality) return "-";
-    std::string s = "sd=" + std::to_string(quality->standardDeviation);
-    if (quality->redundant) s += *quality->redundant ? " redundant" : " not-redundant";
+    std::string s = "sd=" + std::to_string(quality->getStandardDeviation());
+    iidm::optional<bool> redundant = quality->isRedundant();
+    if (redundant) s += *redundant ? " redundant" : " not-redundant";
     return s;
+}
+
+// A measurement may have no id
+inline std::string toString(const iidm::optional<std::string>& id) {
+    return id ? *id : "-";
 }
 
 template <typename Host>
 void printMeasurements(const Host& host, const std::string& prefix) {
     if (!host.hasMeasurements()) return;
     for (const auto& m : host.getMeasurements().getMeasurements()) {
-        std::cout << prefix << "  measurement " << m.getId() << " " << toString(m.getType())
+        std::cout << prefix << "  measurement " << toString(m.getId()) << " " << toString(m.getType())
                   << " value=" << m.getValue() << " sd=" << m.getStandardDeviation()
                   << " valid=" << (m.isValueValid() ? "true" : "false");
         if (m.getSide()) std::cout << " side=" << (static_cast<int>(*m.getSide()) + 1);
@@ -48,7 +54,7 @@ template <typename Host>
 void printDiscreteMeasurements(const Host& host, const std::string& prefix) {
     if (!host.hasDiscreteMeasurements()) return;
     for (const auto& m : host.getDiscreteMeasurements().getDiscreteMeasurements()) {
-        std::cout << prefix << "  discreteMeasurement " << m.getId() << " value=";
+        std::cout << prefix << "  discreteMeasurement " << toString(m.getId()) << " value=";
         switch (m.getValueType()) {
             case iidm::DiscreteMeasurementValueType::BOOLEAN: std::cout << (m.getValueAsBoolean() ? "true" : "false"); break;
             case iidm::DiscreteMeasurementValueType::INT:     std::cout << m.getValueAsInt(); break;

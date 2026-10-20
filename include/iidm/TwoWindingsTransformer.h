@@ -4,6 +4,7 @@
 #include <iidm/Connectable.h>
 #include <iidm/TapChangerHolder.h>
 #include <iidm/TwoWindingsTransformerToBeEstimated.h>
+#include <iidm/TwoWindingsTransformerToBeEstimatedAdder.h>
 #include <iidm/stdcxx/optional.hpp>
 
 namespace iidm {
@@ -26,8 +27,11 @@ public:
     iidm::optional<double> getRatedS() const;
 
     // ── Extensions ───────────────────────────────────────────────────────
+    // An extension's getter throws ExtensionNotFoundException when it is absent
     bool hasTwoWindingsTransformerToBeEstimated() const;
     TwoWindingsTransformerToBeEstimated getTwoWindingsTransformerToBeEstimated() const;
+    TwoWindingsTransformerToBeEstimatedAdder newTwoWindingsTransformerToBeEstimated();
+    void removeTwoWindingsTransformerToBeEstimated();
 };
 
 } // namespace iidm

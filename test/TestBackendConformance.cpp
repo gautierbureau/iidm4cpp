@@ -499,7 +499,6 @@ private:
                 Outcome probe = lookUp(twin, lookup, code, "", -1);
                 if (probe.notForThisType()) continue;
                 exists.insert(code.value);
-                if (probe.threw() && *probe.error == typeid(ExtensionNotFoundException)) continue; // whatever the key
                 if (lookup == BY_STRING) {
                     for (const std::string& key : ids_) lookUp(twin, lookup, code, key, -1);
                 } else if (lookup == BY_KEY) {

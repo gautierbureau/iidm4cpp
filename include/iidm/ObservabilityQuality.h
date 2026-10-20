@@ -1,14 +1,27 @@
 #pragma once
 
+#include <iidm/ObjectRef.h>
+#include <iidm/ObjectHandle.h>
 #include <iidm/stdcxx/optional.hpp>
 
 namespace iidm {
 
-// Quality of an observable quantity (P, Q, V...) in the PowSyBl InjectionObservability and
-// BranchObservability extensions. Plain value: reading it does not keep a link to the network.
-struct ObservabilityQuality {
-    double                 standardDeviation = 0.0;
-    iidm::optional<bool>   redundant;   // empty when the redundancy is undefined
+class BackendProvider;
+
+// The quality of an observed quantity (P, Q, V...) of an InjectionObservability or
+// BranchObservability extension: an object of its own, from getQualityP()...
+class ObservabilityQuality : public detail::ObjectRef {
+public:
+    ObservabilityQuality() = default;
+    explicit ObservabilityQuality(ObjectHandle handle, BackendProvider* backend);
+
+    double getStandardDeviation() const;
+    ObservabilityQuality& setStandardDeviation(double standardDeviation);
+
+    // Empty when the redundancy is undefined
+    iidm::optional<bool> isRedundant() const;
+    // Empty makes it undefined
+    ObservabilityQuality& setRedundant(iidm::optional<bool> redundant);
 };
 
 } // namespace iidm

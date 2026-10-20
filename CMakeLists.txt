@@ -95,6 +95,7 @@ set(IIDM_BRIDGE_SOURCES
     src/SlackTerminal.cpp
     src/TwoWindingsTransformerToBeEstimated.cpp
     src/ThreeWindingsTransformerToBeEstimated.cpp
+    src/ObservabilityQuality.cpp
     src/InjectionObservability.cpp
     src/BranchObservability.cpp
     src/Measurement.cpp

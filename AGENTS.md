@@ -176,8 +176,6 @@ extension code**. The supported extensions are listed in README §5.4.
 #### Steps common to both backends
 
 An extension is an object of its own, as in powsybl: `ActivePowerControl` is the model to copy.
-(The extensions ported earlier are still read through their host's handle with `EXT_X_EXISTS`
-codes; do not add new ones that way.)
 
 1. **Property codes** — a block in `include/iidm/PropertyCodes.def`. Its first code is the
    extension's type code; the others are its properties, which apply to the extension object.
@@ -196,7 +194,7 @@ codes; do not add new ones that way.)
 3. **Host accessors** — `hasFoo()`, `getFoo()` (`ExtensionNotFoundException` when absent),
    `newFoo()` and `removeFoo()` on the class of its powsybl host type: an extension of any
    injection goes on `Injection` (see `ActivePowerControl` in `Injection.h`), of a generator only
-   on `Generator`.
+   on `Generator`. Each is one line, with the helpers of `src/Extensions.h`.
 
 4. **Java** — in `PropertyDispatcher.java`, `getRelatedObject` returns the extension for `FOO`,
    and the property cases cast the extension object; in `Creation.java`, `newAdder` creates its
@@ -204,7 +202,7 @@ codes; do not add new ones that way.)
 
    ```java
    // PropertyDispatcher.java
-   case FOO            -> ((Extendable<?>) obj).getExtension(Foo.class);   // getRelatedObject
+   case FOO            -> extension(obj, Foo.class);                       // getRelatedObject
    case EXT_FOO_SOME_D -> ((Foo<?>) obj).getSomeD();                       // getDouble
    // Creation.java
    case FOO            -> newExtension(owner, FooAdder.class);             // newAdder
@@ -217,9 +215,10 @@ codes; do not add new ones that way.)
    and the adder, on both backends without any change to the test.
 
 Larger extensions can keep their Java logic in a helper class called from the
-dispatcher cases (e.g. `StateEstimationDispatch.java`). Child objects of an
-extension (e.g. `Measurement`) get a child-type code (`getChildren`) and, for
-lookups by id, a `getRelatedByString` relation.
+dispatcher cases (e.g. `StateEstimationDispatch.java`). The objects an extension holds are
+objects too: a `Measurement` of a `Measurements` extension has the type code `MEASUREMENT`,
+used for `getChildren` (all of them), `getRelatedByString` (one by id) and `invoke` (the adder of
+a new one); the quality of P of an observability extension is the relation `OBS_QUALITY_P`.
 
 #### Both backends — no extra C++ backend work
 
@@ -255,11 +254,12 @@ sub-wrapper built from the parent's handle shares the count automatically.
 
 #### Errors
 
-Throw from Java with the `BridgeErrors` exception types
-(`PropertyNotFoundException` for unknown codes, `ExtensionNotFoundException` for an
-absent extension — use the `ext(obj, Foo.class)` helper rather than
-`getExtension(Foo.class).getX()`). Both backends turn them into the matching C++
-exception (README §9); never let a GraalVM `@CEntryPoint` throw.
+Throw from Java with the `BridgeErrors` exception types (`PropertyNotFoundException`
+for unknown codes). An absent extension or optional object is null from
+`getRelatedObject` (INVALID_HANDLE in C++), and the C++ getter decides: `getFoo()` throws
+`ExtensionNotFoundException`, an optional object comes back empty. Both backends turn Java
+exceptions into the matching C++ exception (README §9); never let a GraalVM `@CEntryPoint`
+throw.
 
 #### Checking the JNI path end to end
 

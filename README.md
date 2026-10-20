@@ -826,9 +826,11 @@ IIDM_CODE(EXT_APC_PARTICIPATE,  3002)
 ```
 
 The extension type is the same whatever the host, so a generator's and a battery's
-ActivePowerControl use the same codes. The extensions ported before this model (all but
-ActivePowerControl) are still read through their host's handle (`EXT_X_EXISTS` and host-based
-codes) until they move to it.
+ActivePowerControl use the same codes. What an extension holds is made of objects too: the
+quality of each quantity of an observability extension (`getRelated(extension, OBS_QUALITY_P)`,
+an `ObservabilityQuality`), the measurements of a `Measurements` extension (children of type
+`MEASUREMENT`, one of them by id with `getRelatedByString`, a new one with `invoke`), the areas
+of an `ObservabilityArea`.
 
 #### GraalVM backend — automatic
 
@@ -839,9 +841,9 @@ switch. Adding an extension only requires new cases in `PropertyDispatcher`
 
 ```java
 // PropertyDispatcher.java
-case ACTIVE_POWER_CONTROL -> ((Extendable<?>) obj).getExtension(ActivePowerControl.class); // getRelatedObject
-case EXT_APC_DROOP        -> activePowerControl(obj).getDroop();                          // getDouble
-case EXT_APC_PARTICIPATE  -> activePowerControl(obj).isParticipate();                     // getBool
+case ACTIVE_POWER_CONTROL -> extension(obj, ActivePowerControl.class); // getRelatedObject
+case EXT_APC_DROOP        -> activePowerControl(obj).getDroop();         // getDouble
+case EXT_APC_PARTICIPATE  -> activePowerControl(obj).isParticipate();    // getBool
 ```
 
 No C++ changes are needed in the GraalVM backend.
@@ -856,20 +858,22 @@ powsybl-core.
 
 #### Supported extensions
 
+Every extension below has an adder (`newX()`), except `ObservabilityArea` for now.
+
 | Extension | Hosts | Codes |
 |---|---|---|
-| `ActivePowerControl` (object, with adder) | all injections | `ACTIVE_POWER_CONTROL`, `EXT_APC_*` |
-| `CoordinatedReactiveControl` | Generator | `EXT_CRC_*` |
-| `HvdcAngleDroopActivePowerControl` | HvdcLine | `EXT_HADAPC_*` |
-| `HvdcOperatorActivePowerRange` | HvdcLine | `EXT_HOAR_*` |
-| `SlackTerminal` | VoltageLevel | `EXT_ST_*` |
-| `Measurements` | all connectables | `EXT_MEAS_*`, `MEAS_*` |
-| `DiscreteMeasurements` | Switch, ShuntCompensator, 2WT, 3WT | `EXT_DMEAS_*`, `DMEAS_*` |
-| `InjectionObservability` | all injections incl. BusbarSection | `EXT_INJ_OBS_*` |
-| `BranchObservability` | Line, 2WT | `EXT_BRANCH_OBS_*` |
-| `TwoWindingsTransformerToBeEstimated` | 2WT | `EXT_TWO_WT_TBE_*` |
-| `ThreeWindingsTransformerToBeEstimated` | 3WT | `EXT_THREE_WT_TBE_*` |
-| `ObservabilityArea` | VoltageLevel (read-only) | `EXT_OBS_AREA_*`, `OBS_AREA_*` |
+| `ActivePowerControl` | all injections | `ACTIVE_POWER_CONTROL`, `EXT_APC_*` |
+| `CoordinatedReactiveControl` | Generator | `COORDINATED_REACTIVE_CONTROL`, `EXT_CRC_*` |
+| `HvdcAngleDroopActivePowerControl` | HvdcLine | `HVDC_ANGLE_DROOP_ACTIVE_POWER_CONTROL`, `EXT_HADAPC_*` |
+| `HvdcOperatorActivePowerRange` | HvdcLine | `HVDC_OPERATOR_ACTIVE_POWER_RANGE`, `EXT_HOAR_*` |
+| `SlackTerminal` | VoltageLevel | `SLACK_TERMINAL`, `EXT_ST_*`, `REL_TERMINAL` |
+| `Measurements` | all connectables | `MEASUREMENTS`; its `MEASUREMENT`s: `MEAS_*` |
+| `DiscreteMeasurements` | all identifiables | `DISCRETE_MEASUREMENTS`; its `DISCRETE_MEASUREMENT`s: `DMEAS_*` |
+| `InjectionObservability` | all injections incl. BusbarSection | `INJECTION_OBSERVABILITY`, `EXT_OBS_OBSERVABLE`, `OBS_QUALITY_*` |
+| `BranchObservability` | all branches | `BRANCH_OBSERVABILITY`, `EXT_OBS_OBSERVABLE`, `OBS_QUALITY_*` |
+| `TwoWindingsTransformerToBeEstimated` | 2WT | `TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED`, `EXT_TWO_WT_TBE_*` |
+| `ThreeWindingsTransformerToBeEstimated` | 3WT | `THREE_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED`, `EXT_THREE_WT_TBE_*` |
+| `ObservabilityArea` | VoltageLevel (read-only) | `OBSERVABILITY_AREA`, `EXT_OBS_AREA_*`; its `AREA_CHARACTERISTICS`: `OBS_AREA_*` |
 
 The `VoltagePerReactivePowerControl`, `RemoteReactivePowerControl` and battery `VoltageRegulation`
 extensions were removed from powsybl-core 7.4 (`extensions.removed`): their data is the core
@@ -1159,7 +1163,7 @@ DynawoLauncher.run(simulationParameters);
 Every handle returned by a backend holds a Java-side reference (a JNI global reference, or
 an entry of the GraalVM `NetworkRegistry`). Wrappers hold it through `HandleRef`, which
 counts the wrappers using a handle — across copies, and across sub-wrappers built from the
-same handle (the extensions and views read through their host) — and calls
+same handle (the views read through their host) — and calls
 `BackendProvider::releaseHandle()` when the last one is destroyed. So a loop like
 
 ```cpp
@@ -1216,7 +1220,8 @@ class BackendNotAvailableException : public IidmException { /* … */ };
 class InvalidHandleException       : public IidmException { /* … */ };  // handle 0 / unknown
 class PropertyNotFoundException    : public IidmException { /* … */ };  // code unknown or not
                                                                          // applicable, optional part absent
-class ExtensionNotFoundException   : public PropertyNotFoundException { /* … */ };
+class ExtensionNotFoundException   : public PropertyNotFoundException { /* … */ };  // getX() of an
+                                                                         // absent extension
 class ValidationException          : public IidmException { /* … */ };  // the model rejected the change
 class NetworkNotFoundException     : public IidmException { /* … */ };
 
@@ -1235,7 +1240,6 @@ try {
 |---|---|
 | `BridgeErrors.InvalidHandleException` | `InvalidHandleException` |
 | `BridgeErrors.PropertyNotFoundException`, `ClassCastException`, `NullPointerException` | `PropertyNotFoundException` |
-| `BridgeErrors.ExtensionNotFoundException` | `ExtensionNotFoundException` |
 | `PowsyblException` (incl. `ValidationException`), `IllegalArgumentException`, `UnsupportedOperationException` | `ValidationException` |
 | `BridgeErrors.NetworkNotFoundException` | `NetworkNotFoundException` |
 | anything else | `IidmException` (message prefixed with the Java class) |

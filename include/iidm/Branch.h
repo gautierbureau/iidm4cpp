@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iidm/BranchObservability.h>
+#include <iidm/BranchObservabilityAdder.h>
 #include <iidm/CurrentLimits.h>
 #include <iidm/Enums.h>
 #include <iidm/Identifiable.h>
@@ -35,8 +36,11 @@ public:
     iidm::optional<OperationalLimitsGroup> getSelectedOperationalLimitsGroup2() const;
 
     // ── Extensions ───────────────────────────────────────────────────────
+    // An extension's getter throws ExtensionNotFoundException when it is absent
     bool hasBranchObservability() const;
     BranchObservability getBranchObservability() const;
+    BranchObservabilityAdder newBranchObservability();
+    void removeBranchObservability();
 
 protected:
     BranchMethods() = default;

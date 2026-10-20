@@ -4,6 +4,7 @@
 #include <iidm/BackendProvider.h>
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
+#include "Extensions.h"
 
 namespace iidm {
 
@@ -59,11 +60,19 @@ Generator& Generator::setEnergySource(EnergySource energySource) {
 // ── Extensions ───────────────────────────────────────────────────────────────
 
 bool Generator::hasCoordinatedReactiveControl() const {
-    return backend_->getBool(handle_, prop::EXT_CRC_EXISTS);
+    return detail::hasExtension<CoordinatedReactiveControl>(backend_, handle_);
 }
 
 CoordinatedReactiveControl Generator::getCoordinatedReactiveControl() const {
-    return CoordinatedReactiveControl(handle_, backend_);
+    return detail::getExtension<CoordinatedReactiveControl>(backend_, handle_, "CoordinatedReactiveControl");
+}
+
+CoordinatedReactiveControlAdder Generator::newCoordinatedReactiveControl() {
+    return detail::newExtension<CoordinatedReactiveControl, CoordinatedReactiveControlAdder>(backend_, handle_);
+}
+
+void Generator::removeCoordinatedReactiveControl() {
+    detail::removeExtension<CoordinatedReactiveControl>(backend_, handle_);
 }
 
 } // namespace iidm

@@ -33,6 +33,10 @@ protected:
     Self& boolField(int code, bool value)                 { backend_->setBool(adder_, code, value); return self(); }
     Self& stringField(int code, const std::string& value) { backend_->setString(adder_, code, value); return self(); }
     Self& relatedField(int code, ObjectHandle value)      { backend_->setRelated(adder_, code, value); return self(); }
+    Self& keyedStringField(int code, const std::string& key, const std::string& value) {
+        backend_->setKeyedString(adder_, code, key, value);
+        return self();
+    }
 
     // Adds the object: its handle (INVALID_HANDLE for a nested adder)
     ObjectHandle create() { return backend_->invoke(adder_, prop::ACT_ADD); }

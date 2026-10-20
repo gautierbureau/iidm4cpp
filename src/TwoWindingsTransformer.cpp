@@ -1,6 +1,7 @@
 #include <iidm/TwoWindingsTransformer.h>
 #include <iidm/BackendProvider.h>
 #include <iidm/PropertyCodes.h>
+#include "Extensions.h"
 
 namespace iidm {
 
@@ -35,11 +36,19 @@ iidm::optional<double> TwoWindingsTransformer::getRatedS() const {
 // ── Extensions ───────────────────────────────────────────────────────────────
 
 bool TwoWindingsTransformer::hasTwoWindingsTransformerToBeEstimated() const {
-    return backend_->getBool(handle_, prop::EXT_TWO_WT_TBE_EXISTS);
+    return detail::hasExtension<TwoWindingsTransformerToBeEstimated>(backend_, handle_);
 }
 
 TwoWindingsTransformerToBeEstimated TwoWindingsTransformer::getTwoWindingsTransformerToBeEstimated() const {
-    return TwoWindingsTransformerToBeEstimated(handle_, backend_);
+    return detail::getExtension<TwoWindingsTransformerToBeEstimated>(backend_, handle_, "TwoWindingsTransformerToBeEstimated");
+}
+
+TwoWindingsTransformerToBeEstimatedAdder TwoWindingsTransformer::newTwoWindingsTransformerToBeEstimated() {
+    return detail::newExtension<TwoWindingsTransformerToBeEstimated, TwoWindingsTransformerToBeEstimatedAdder>(backend_, handle_);
+}
+
+void TwoWindingsTransformer::removeTwoWindingsTransformerToBeEstimated() {
+    detail::removeExtension<TwoWindingsTransformerToBeEstimated>(backend_, handle_);
 }
 
 } // namespace iidm

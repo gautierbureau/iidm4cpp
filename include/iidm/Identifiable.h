@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iidm/DiscreteMeasurement.h>
+#include <iidm/DiscreteMeasurementsAdder.h>
 #include <iidm/Enums.h>
 #include <iidm/IidmException.h>
 #include <iidm/ObjectRef.h>
@@ -49,8 +50,11 @@ public:
     Identifiable& removeAlias(const std::string& alias);
 
     // ── Extensions ───────────────────────────────────────────────────────
+    // An extension's getter throws ExtensionNotFoundException when it is absent
     bool hasDiscreteMeasurements() const;
     DiscreteMeasurements getDiscreteMeasurements() const;
+    DiscreteMeasurementsAdder newDiscreteMeasurements();
+    void removeDiscreteMeasurements();
 };
 
 } // namespace iidm

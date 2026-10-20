@@ -2,14 +2,18 @@
 
 #include <iidm/ObjectRef.h>
 #include <iidm/ObjectHandle.h>
+#include <iidm/PropertyCodes.h>
 
 namespace iidm {
 
 class BackendProvider;
 
-// Typed wrapper for the PowSyBl HvdcOperatorActivePowerRange extension attached to an HvdcLine.
+// The HvdcOperatorActivePowerRange extension of an HVDC line: an object of its own, from
+// HvdcLine::getHvdcOperatorActivePowerRange(). Its values are floats in powsybl.
 class HvdcOperatorActivePowerRange : public detail::ObjectRef {
 public:
+    static constexpr int TYPE = prop::HVDC_OPERATOR_ACTIVE_POWER_RANGE;
+
     HvdcOperatorActivePowerRange() = default;
     explicit HvdcOperatorActivePowerRange(ObjectHandle handle, BackendProvider* backend);
 

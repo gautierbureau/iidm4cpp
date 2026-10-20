@@ -93,7 +93,7 @@ public:
     virtual ObjectHandle              getRelatedByIndex(ObjectHandle h, int relation, int index) const = 0;
     virtual ObjectHandle              getRelatedByString(ObjectHandle h, int relation, const std::string& key) const = 0;
 
-    // Sets an object-valued property (e.g. REL_SLACK_TERMINAL); INVALID_HANDLE stands for null.
+    // Sets an object-valued property (e.g. REL_REGULATION_TERMINAL); INVALID_HANDLE stands for null.
     // Not pure so that existing BackendProvider implementations keep compiling.
     virtual void setRelated(ObjectHandle /*h*/, int relation, ObjectHandle /*value*/) {
         throw IidmException("setRelated not supported by this backend (relation " + std::to_string(relation) + ")");

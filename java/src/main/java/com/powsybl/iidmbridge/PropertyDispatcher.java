@@ -3,16 +3,7 @@ package com.powsybl.iidmbridge;
 import com.powsybl.iidm.network.*;
 import com.powsybl.iidm.network.ShuntCompensatorNonLinearModel;
 import com.powsybl.iidm.network.LoadingLimits.TemporaryLimit;
-import com.powsybl.iidm.network.extensions.ActivePowerControl;
-import com.powsybl.iidm.network.extensions.CoordinatedReactiveControl;
-import com.powsybl.iidm.network.extensions.HvdcAngleDroopActivePowerControl;
-import com.powsybl.iidm.network.extensions.HvdcOperatorActivePowerRange;
-import com.powsybl.iidm.network.extensions.SlackTerminal;
-import com.powsybl.iidm.network.extensions.DiscreteMeasurement;
-import com.powsybl.iidm.network.extensions.DiscreteMeasurements;
-import com.powsybl.iidm.network.extensions.Measurement;
-import com.powsybl.iidm.network.extensions.Measurements;
-import com.powsybl.iidm.network.extensions.ObservabilityArea;
+import com.powsybl.iidm.network.extensions.*;
 import com.powsybl.commons.extensions.Extendable;
 import com.powsybl.iidm.network.regulation.RegulationMode;
 import com.powsybl.iidm.network.regulation.VoltageRegulation;
@@ -120,11 +111,11 @@ public final class PropertyDispatcher {
             case EXT_APC_PARTICIPATION_FACTOR -> activePowerControl(obj).getParticipationFactor();
             case EXT_APC_MIN_TARGET_P -> activePowerControl(obj).getMinTargetP().orElse(Double.NaN);
             case EXT_APC_MAX_TARGET_P -> activePowerControl(obj).getMaxTargetP().orElse(Double.NaN);
-            case EXT_CRC_Q_PERCENT -> ext(obj, CoordinatedReactiveControl.class).getQPercent();
-            case EXT_HADAPC_DROOP -> ext(obj, HvdcAngleDroopActivePowerControl.class).getDroop();
-            case EXT_HADAPC_P0 -> ext(obj, HvdcAngleDroopActivePowerControl.class).getP0();
-            case EXT_HOAR_OPR_CS1_TO_CS2 -> ext(obj, HvdcOperatorActivePowerRange.class).getOprFromCS1toCS2();
-            case EXT_HOAR_OPR_CS2_TO_CS1 -> ext(obj, HvdcOperatorActivePowerRange.class).getOprFromCS2toCS1();
+            case EXT_CRC_Q_PERCENT -> ((CoordinatedReactiveControl) obj).getQPercent();
+            case EXT_HADAPC_DROOP -> ((HvdcAngleDroopActivePowerControl) obj).getDroop();
+            case EXT_HADAPC_P0 -> ((HvdcAngleDroopActivePowerControl) obj).getP0();
+            case EXT_HOAR_OPR_CS1_TO_CS2 -> ((HvdcOperatorActivePowerRange) obj).getOprFromCS1toCS2();
+            case EXT_HOAR_OPR_CS2_TO_CS1 -> ((HvdcOperatorActivePowerRange) obj).getOprFromCS2toCS1();
             case BBS_V     -> ((BusbarSection) obj).getV();
             case BBS_ANGLE -> ((BusbarSection) obj).getAngle();
             // Battery
@@ -156,14 +147,7 @@ public final class PropertyDispatcher {
             case SHUNT_SECTION_B -> ((ShuntCompensatorNonLinearModel.Section) obj).getB();
             case SHUNT_SECTION_G -> ((ShuntCompensatorNonLinearModel.Section) obj).getG();
             // State estimation extensions
-            case EXT_INJ_OBS_QUALITY_P + OBS_QUALITY_STD_DEV_OFF,
-                 EXT_INJ_OBS_QUALITY_Q + OBS_QUALITY_STD_DEV_OFF,
-                 EXT_INJ_OBS_QUALITY_V + OBS_QUALITY_STD_DEV_OFF,
-                 EXT_BRANCH_OBS_QUALITY_P1 + OBS_QUALITY_STD_DEV_OFF,
-                 EXT_BRANCH_OBS_QUALITY_P2 + OBS_QUALITY_STD_DEV_OFF,
-                 EXT_BRANCH_OBS_QUALITY_Q1 + OBS_QUALITY_STD_DEV_OFF,
-                 EXT_BRANCH_OBS_QUALITY_Q2 + OBS_QUALITY_STD_DEV_OFF
-                -> StateEstimationDispatch.getQualityStandardDeviation(obj, property);
+            case OBS_QUALITY_STANDARD_DEVIATION -> ((ObservabilityQuality<?>) obj).getStandardDeviation();
             case MEAS_VALUE   -> ((Measurement) obj).getValue();
             case MEAS_STD_DEV -> ((Measurement) obj).getStandardDeviation();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown double property: " + property);
@@ -207,11 +191,11 @@ public final class PropertyDispatcher {
             case EXT_APC_PARTICIPATION_FACTOR -> activePowerControl(obj).setParticipationFactor(value);
             case EXT_APC_MIN_TARGET_P -> activePowerControl(obj).setMinTargetP(value);
             case EXT_APC_MAX_TARGET_P -> activePowerControl(obj).setMaxTargetP(value);
-            case EXT_CRC_Q_PERCENT -> ext(obj, CoordinatedReactiveControl.class).setQPercent(value);
-            case EXT_HADAPC_DROOP -> ext(obj, HvdcAngleDroopActivePowerControl.class).setDroop((float) value);
-            case EXT_HADAPC_P0 -> ext(obj, HvdcAngleDroopActivePowerControl.class).setP0((float) value);
-            case EXT_HOAR_OPR_CS1_TO_CS2 -> ext(obj, HvdcOperatorActivePowerRange.class).setOprFromCS1toCS2((float) value);
-            case EXT_HOAR_OPR_CS2_TO_CS1 -> ext(obj, HvdcOperatorActivePowerRange.class).setOprFromCS2toCS1((float) value);
+            case EXT_CRC_Q_PERCENT -> ((CoordinatedReactiveControl) obj).setQPercent(value);
+            case EXT_HADAPC_DROOP -> ((HvdcAngleDroopActivePowerControl) obj).setDroop((float) value);
+            case EXT_HADAPC_P0 -> ((HvdcAngleDroopActivePowerControl) obj).setP0((float) value);
+            case EXT_HOAR_OPR_CS1_TO_CS2 -> ((HvdcOperatorActivePowerRange) obj).setOprFromCS1toCS2((float) value);
+            case EXT_HOAR_OPR_CS2_TO_CS1 -> ((HvdcOperatorActivePowerRange) obj).setOprFromCS2toCS1((float) value);
             case LEG_R       -> ((ThreeWindingsTransformer.Leg) obj).setR(value);
             case LEG_X       -> ((ThreeWindingsTransformer.Leg) obj).setX(value);
             case LEG_G       -> ((ThreeWindingsTransformer.Leg) obj).setG(value);
@@ -227,14 +211,15 @@ public final class PropertyDispatcher {
             case STEP_B         -> ((TapChangerStep<?>) obj).setB(value);
             case PTC_STEP_ALPHA -> ((PhaseTapChangerStep) obj).setAlpha(value);
             case BAT_TARGET_P -> ((Battery) obj).setTargetP(value);
-            case EXT_INJ_OBS_QUALITY_P + OBS_QUALITY_STD_DEV_OFF,
-                 EXT_INJ_OBS_QUALITY_Q + OBS_QUALITY_STD_DEV_OFF,
-                 EXT_INJ_OBS_QUALITY_V + OBS_QUALITY_STD_DEV_OFF,
-                 EXT_BRANCH_OBS_QUALITY_P1 + OBS_QUALITY_STD_DEV_OFF,
-                 EXT_BRANCH_OBS_QUALITY_P2 + OBS_QUALITY_STD_DEV_OFF,
-                 EXT_BRANCH_OBS_QUALITY_Q1 + OBS_QUALITY_STD_DEV_OFF,
-                 EXT_BRANCH_OBS_QUALITY_Q2 + OBS_QUALITY_STD_DEV_OFF
-                -> StateEstimationDispatch.setQualityStandardDeviation(obj, property, value);
+            case OBS_QUALITY_STANDARD_DEVIATION -> ((ObservabilityQuality<?>) obj).setStandardDeviation(value);
+            // Creates the quality if needed
+            case OBS_QUALITY_P  -> ((InjectionObservability<?>) obj).setQualityP(value);
+            case OBS_QUALITY_Q  -> ((InjectionObservability<?>) obj).setQualityQ(value);
+            case OBS_QUALITY_V  -> ((InjectionObservability<?>) obj).setQualityV(value);
+            case OBS_QUALITY_P1 -> ((BranchObservability<?>) obj).setQualityP1(value);
+            case OBS_QUALITY_P2 -> ((BranchObservability<?>) obj).setQualityP2(value);
+            case OBS_QUALITY_Q1 -> ((BranchObservability<?>) obj).setQualityQ1(value);
+            case OBS_QUALITY_Q2 -> ((BranchObservability<?>) obj).setQualityQ2(value);
             case MEAS_VALUE   -> ((Measurement) obj).setValue(value);
             case MEAS_STD_DEV -> ((Measurement) obj).setStandardDeviation(value);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown double property for set: " + property);
@@ -285,22 +270,15 @@ public final class PropertyDispatcher {
             // Terminal node number (node-breaker topology)
             case TERMINAL_NODE -> ((Terminal) obj).getNodeBreakerView().getNode();
             // State estimation extensions
-            case EXT_INJ_OBS_QUALITY_P + OBS_QUALITY_REDUNDANT_OFF,
-                 EXT_INJ_OBS_QUALITY_Q + OBS_QUALITY_REDUNDANT_OFF,
-                 EXT_INJ_OBS_QUALITY_V + OBS_QUALITY_REDUNDANT_OFF,
-                 EXT_BRANCH_OBS_QUALITY_P1 + OBS_QUALITY_REDUNDANT_OFF,
-                 EXT_BRANCH_OBS_QUALITY_P2 + OBS_QUALITY_REDUNDANT_OFF,
-                 EXT_BRANCH_OBS_QUALITY_Q1 + OBS_QUALITY_REDUNDANT_OFF,
-                 EXT_BRANCH_OBS_QUALITY_Q2 + OBS_QUALITY_REDUNDANT_OFF
-                -> StateEstimationDispatch.getQualityRedundant(obj, property);
+            case OBS_QUALITY_REDUNDANT -> ((ObservabilityQuality<?>) obj).isRedundant().map(r -> r ? 1 : 0).orElse(-1);
             case MEAS_TYPE          -> ((Measurement) obj).getType().ordinal();
             case MEAS_SIDE          -> StateEstimationDispatch.measurementSide((Measurement) obj);
             case DMEAS_TYPE         -> ((DiscreteMeasurement) obj).getType().ordinal();
             case DMEAS_TAP_CHANGER  -> StateEstimationDispatch.discreteMeasurementTapChanger((DiscreteMeasurement) obj);
             case DMEAS_VALUE_TYPE   -> ((DiscreteMeasurement) obj).getValueType().ordinal();
             case DMEAS_VALUE_INT    -> ((DiscreteMeasurement) obj).getValueAsInt();
-            case OBS_AREA_NUMBER    -> ((StateEstimationDispatch.ObservabilityAreaRef) obj).area().getAreaNumber();
-            case OBS_AREA_STATUS    -> ((StateEstimationDispatch.ObservabilityAreaRef) obj).area().getStatus().ordinal();
+            case OBS_AREA_NUMBER    -> ((StateEstimationDispatch.AreaRef) obj).area().getAreaNumber();
+            case OBS_AREA_STATUS    -> ((StateEstimationDispatch.AreaRef) obj).area().getStatus().ordinal();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown int property: " + property);
         };
     }
@@ -330,14 +308,7 @@ public final class PropertyDispatcher {
             case TC_SOLVED_TAP_POSITION -> tapChanger(obj).setSolvedTapPosition(value);
             case PTC_REGULATION_MODE ->
                 ((PhaseTapChanger) obj).setRegulationMode(Creation.enumValue(PhaseTapChanger.RegulationMode.class, value));
-            case EXT_INJ_OBS_QUALITY_P + OBS_QUALITY_REDUNDANT_OFF,
-                 EXT_INJ_OBS_QUALITY_Q + OBS_QUALITY_REDUNDANT_OFF,
-                 EXT_INJ_OBS_QUALITY_V + OBS_QUALITY_REDUNDANT_OFF,
-                 EXT_BRANCH_OBS_QUALITY_P1 + OBS_QUALITY_REDUNDANT_OFF,
-                 EXT_BRANCH_OBS_QUALITY_P2 + OBS_QUALITY_REDUNDANT_OFF,
-                 EXT_BRANCH_OBS_QUALITY_Q1 + OBS_QUALITY_REDUNDANT_OFF,
-                 EXT_BRANCH_OBS_QUALITY_Q2 + OBS_QUALITY_REDUNDANT_OFF
-                -> StateEstimationDispatch.setQualityRedundant(obj, property, value);
+            case OBS_QUALITY_REDUNDANT -> ((ObservabilityQuality<?>) obj).setRedundant(value < 0 ? null : value != 0);
             case DMEAS_VALUE_INT -> ((DiscreteMeasurement) obj).setValue(value);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown int property for set: " + property);
         }
@@ -385,6 +356,21 @@ public final class PropertyDispatcher {
             case REACTIVE_CAPABILITY_SHAPE  -> obj instanceof ReactiveCapabilityShape;
             case REACTIVE_CURVE_POINT       -> obj instanceof ReactiveCapabilityCurve.Point;
             case REACTIVE_CAPABILITY_SHAPE_PLANE -> obj instanceof ReactiveCapabilityShapePlane;
+            case ACTIVE_POWER_CONTROL       -> obj instanceof ActivePowerControl<?>;
+            case COORDINATED_REACTIVE_CONTROL -> obj instanceof CoordinatedReactiveControl;
+            case HVDC_ANGLE_DROOP_ACTIVE_POWER_CONTROL -> obj instanceof HvdcAngleDroopActivePowerControl;
+            case HVDC_OPERATOR_ACTIVE_POWER_RANGE -> obj instanceof HvdcOperatorActivePowerRange;
+            case SLACK_TERMINAL             -> obj instanceof SlackTerminal;
+            case TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED -> obj instanceof TwoWindingsTransformerToBeEstimated;
+            case THREE_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED -> obj instanceof ThreeWindingsTransformerToBeEstimated;
+            case INJECTION_OBSERVABILITY    -> obj instanceof InjectionObservability<?>;
+            case BRANCH_OBSERVABILITY       -> obj instanceof BranchObservability<?>;
+            case MEASUREMENTS               -> obj instanceof Measurements<?>;
+            case MEASUREMENT                -> obj instanceof Measurement;
+            case DISCRETE_MEASUREMENTS      -> obj instanceof DiscreteMeasurements<?>;
+            case DISCRETE_MEASUREMENT       -> obj instanceof DiscreteMeasurement;
+            case OBSERVABILITY_AREA         -> obj instanceof ObservabilityArea;
+            case AREA_CHARACTERISTICS       -> obj instanceof StateEstimationDispatch.AreaRef;
             case PLANE_LESS_OR_EQUAL        -> ((ReactiveCapabilityShapePlane) obj).isLessOrEqual();
             case PLANE_GREATER_OR_EQUAL     -> ((ReactiveCapabilityShapePlane) obj).isGreaterOrEqual();
             case FICTITIOUS                 -> ((Identifiable<?>) obj).isFictitious();
@@ -402,36 +388,23 @@ public final class PropertyDispatcher {
             case SW_OPEN     -> ((Switch) obj).isOpen();
             case SW_RETAINED -> ((Switch) obj).isRetained();
             case EXT_APC_PARTICIPATE -> activePowerControl(obj).isParticipate();
-            case EXT_CRC_EXISTS      -> ((Generator) obj).getExtension(CoordinatedReactiveControl.class) != null;
-            case EXT_HADAPC_EXISTS   -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class) != null;
-            case EXT_HADAPC_ENABLED  -> ext(obj, HvdcAngleDroopActivePowerControl.class).isEnabled();
-            case EXT_HOAR_EXISTS     -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class) != null;
-            case EXT_ST_EXISTS       -> ((VoltageLevel) obj).getExtension(SlackTerminal.class) != null;
-            case EXT_ST_EMPTY        -> slackTerminal(obj).isEmpty();
+            case EXT_HADAPC_ENABLED  -> ((HvdcAngleDroopActivePowerControl) obj).isEnabled();
+            case EXT_ST_EMPTY        -> ((SlackTerminal) obj).isEmpty();
+            case EXT_TWO_WT_TBE_RTC  -> ((TwoWindingsTransformerToBeEstimated) obj).shouldEstimateRatioTapChanger();
+            case EXT_TWO_WT_TBE_PTC  -> ((TwoWindingsTransformerToBeEstimated) obj).shouldEstimatePhaseTapChanger();
+            case EXT_THREE_WT_TBE_RTC1 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimateRatioTapChanger1();
+            case EXT_THREE_WT_TBE_RTC2 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimateRatioTapChanger2();
+            case EXT_THREE_WT_TBE_RTC3 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimateRatioTapChanger3();
+            case EXT_THREE_WT_TBE_PTC1 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimatePhaseTapChanger1();
+            case EXT_THREE_WT_TBE_PTC2 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimatePhaseTapChanger2();
+            case EXT_THREE_WT_TBE_PTC3 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimatePhaseTapChanger3();
+            case EXT_OBS_OBSERVABLE  -> ((Observability<?>) obj).isObservable();
             case OLG_EMPTY -> ((OperationalLimitsGroup) obj).isEmpty();
             // State estimation extensions
-            case EXT_TWO_WT_TBE_EXISTS, EXT_TWO_WT_TBE_RTC, EXT_TWO_WT_TBE_PTC,
-                 EXT_THREE_WT_TBE_EXISTS, EXT_THREE_WT_TBE_RTC1, EXT_THREE_WT_TBE_RTC2, EXT_THREE_WT_TBE_RTC3,
-                 EXT_THREE_WT_TBE_PTC1, EXT_THREE_WT_TBE_PTC2, EXT_THREE_WT_TBE_PTC3
-                -> StateEstimationDispatch.getToBeEstimated(obj, property);
-            case EXT_INJ_OBS_EXISTS, EXT_INJ_OBS_OBSERVABLE, EXT_BRANCH_OBS_EXISTS, EXT_BRANCH_OBS_OBSERVABLE
-                -> StateEstimationDispatch.getObservabilityFlag(obj, property);
-            case EXT_INJ_OBS_QUALITY_P + OBS_QUALITY_EXISTS_OFF,
-                 EXT_INJ_OBS_QUALITY_Q + OBS_QUALITY_EXISTS_OFF,
-                 EXT_INJ_OBS_QUALITY_V + OBS_QUALITY_EXISTS_OFF,
-                 EXT_BRANCH_OBS_QUALITY_P1 + OBS_QUALITY_EXISTS_OFF,
-                 EXT_BRANCH_OBS_QUALITY_P2 + OBS_QUALITY_EXISTS_OFF,
-                 EXT_BRANCH_OBS_QUALITY_Q1 + OBS_QUALITY_EXISTS_OFF,
-                 EXT_BRANCH_OBS_QUALITY_Q2 + OBS_QUALITY_EXISTS_OFF
-                -> StateEstimationDispatch.qualityExists(obj, property);
-            case EXT_MEAS_EXISTS  -> StateEstimationDispatch.findExtension(obj, Measurements.class) != null;
             case MEAS_VALID       -> ((Measurement) obj).isValid();
-            case EXT_DMEAS_EXISTS -> StateEstimationDispatch.findExtension(obj, DiscreteMeasurements.class) != null;
             case DMEAS_VALUE_BOOL -> ((DiscreteMeasurement) obj).getValueAsBoolean();
             case DMEAS_VALID      -> ((DiscreteMeasurement) obj).isValid();
-            case EXT_OBS_AREA_EXISTS     -> ((VoltageLevel) obj).getExtension(ObservabilityArea.class) != null;
-            case EXT_OBS_AREA_CONSISTENT -> StateEstimationDispatch.extension(obj, ObservabilityArea.class) instanceof ObservabilityArea oa
-                                            && oa.isConsistentWithTopology();
+            case EXT_OBS_AREA_CONSISTENT -> ((ObservabilityArea) obj).isConsistentWithTopology();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown bool property: " + property);
         };
     }
@@ -456,12 +429,16 @@ public final class PropertyDispatcher {
             case REGULATING -> ((PhaseTapChanger) obj).setRegulating(bval);
             case TC_LOAD_TAP_CHANGING_CAPABILITIES -> tapChanger(obj).setLoadTapChangingCapabilities(bval);
             case EXT_APC_PARTICIPATE     -> activePowerControl(obj).setParticipate(bval);
-            case EXT_HADAPC_ENABLED  -> ext(obj, HvdcAngleDroopActivePowerControl.class).setEnabled(bval);
-            case EXT_TWO_WT_TBE_RTC, EXT_TWO_WT_TBE_PTC,
-                 EXT_THREE_WT_TBE_RTC1, EXT_THREE_WT_TBE_RTC2, EXT_THREE_WT_TBE_RTC3,
-                 EXT_THREE_WT_TBE_PTC1, EXT_THREE_WT_TBE_PTC2, EXT_THREE_WT_TBE_PTC3
-                -> StateEstimationDispatch.setToBeEstimated(obj, property, bval);
-            case EXT_INJ_OBS_OBSERVABLE, EXT_BRANCH_OBS_OBSERVABLE -> StateEstimationDispatch.setObservable(obj, property, bval);
+            case EXT_HADAPC_ENABLED  -> ((HvdcAngleDroopActivePowerControl) obj).setEnabled(bval);
+            case EXT_TWO_WT_TBE_RTC  -> ((TwoWindingsTransformerToBeEstimated) obj).shouldEstimateRatioTapChanger(bval);
+            case EXT_TWO_WT_TBE_PTC  -> ((TwoWindingsTransformerToBeEstimated) obj).shouldEstimatePhaseTapChanger(bval);
+            case EXT_THREE_WT_TBE_RTC1 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimateRatioTapChanger1(bval);
+            case EXT_THREE_WT_TBE_RTC2 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimateRatioTapChanger2(bval);
+            case EXT_THREE_WT_TBE_RTC3 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimateRatioTapChanger3(bval);
+            case EXT_THREE_WT_TBE_PTC1 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimatePhaseTapChanger1(bval);
+            case EXT_THREE_WT_TBE_PTC2 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimatePhaseTapChanger2(bval);
+            case EXT_THREE_WT_TBE_PTC3 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimatePhaseTapChanger3(bval);
+            case EXT_OBS_OBSERVABLE  -> ((Observability<?>) obj).setObservable(bval);
             case MEAS_VALID       -> ((Measurement) obj).setValid(bval);
             case DMEAS_VALUE_BOOL -> ((DiscreteMeasurement) obj).setValue(bval);
             case DMEAS_VALID      -> ((DiscreteMeasurement) obj).setValid(bval);
@@ -475,8 +452,9 @@ public final class PropertyDispatcher {
         return getString(NetworkRegistry.lookup(handle), property);
     }
 
+    /** A value, or fails: a property that may have none is read with {@link #getOptString}. */
     public static String getString(Object obj, int property) {
-        return switch (property) {
+        String value = switch (property) {
             case ID   -> ((Identifiable<?>) obj).getId();
             case NAME -> ((Identifiable<?>) obj).getNameOrId();
             case TL_NAME -> ((TemporaryLimit) obj).getName();
@@ -506,6 +484,11 @@ public final class PropertyDispatcher {
             case DMEAS_VALUE_STRING -> ((DiscreteMeasurement) obj).getValueAsString();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown string property: " + property);
         };
+        if (value == null) {
+            // Both backends fail the same way (JNI would read null as "", GraalVM would fail)
+            throw new BridgeErrors.PropertyNotFoundException("No value for string property " + property);
+        }
+        return value;
     }
 
     // ── String setters ────────────────────────────────────────────────────
@@ -563,6 +546,8 @@ public final class PropertyDispatcher {
             case NAME           -> ((Identifiable<?>) obj).getOptionalName().orElse(null);
             case SUBSTATION_TSO -> ((Substation) obj).getTso();
             case COUNTRY        -> ((Substation) obj).getCountry().map(Country::name).orElse(null);
+            case MEAS_ID        -> ((Measurement) obj).getId();
+            case DMEAS_ID       -> ((DiscreteMeasurement) obj).getId();
             default -> getString(obj, property);
         };
     }
@@ -576,7 +561,11 @@ public final class PropertyDispatcher {
     /** Sets are sorted, so that both backends list them in the same order. */
     public static String[] getStringList(Object obj, int listCode) {
         Collection<String> values = switch (listCode) {
-            case PROPERTY_NAMES -> ((BasePropertiesHolder) obj).getPropertyNames();
+            case PROPERTY_NAMES -> switch (obj) {
+                case Measurement m -> m.getPropertyNames();
+                case DiscreteMeasurement m -> m.getPropertyNames();
+                default -> ((BasePropertiesHolder) obj).getPropertyNames();
+            };
             case ALIASES        -> ((Identifiable<?>) obj).getAliases();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown string list code: " + listCode);
         };
@@ -592,7 +581,11 @@ public final class PropertyDispatcher {
     /** The value under a key, null when there is none. */
     public static String getKeyedString(Object obj, int property, String key) {
         return switch (property) {
-            case PROPERTY        -> ((BasePropertiesHolder) obj).getProperty(key);
+            case PROPERTY        -> switch (obj) {
+                case Measurement m -> m.getProperty(key);
+                case DiscreteMeasurement m -> m.getProperty(key);
+                default -> ((BasePropertiesHolder) obj).getProperty(key);
+            };
             case ALIAS_TYPE      -> ((Identifiable<?>) obj).getAliasType(key).orElse(null);
             case ALIAS_FROM_TYPE -> ((Identifiable<?>) obj).getAliasFromType(key).orElse(null);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown keyed property: " + property);
@@ -611,8 +604,20 @@ public final class PropertyDispatcher {
         }
         switch (property) {
             case PROPERTY -> {
-                if (value == null) ((PropertiesHolder) obj).removeProperty(key);
-                else ((BasePropertiesHolder) obj).setProperty(key, value);
+                switch (obj) {
+                    case Measurement m -> {
+                        if (value == null) m.removeProperty(key);
+                        else m.putProperty(key, value);
+                    }
+                    case DiscreteMeasurement m -> {
+                        if (value == null) m.removeProperty(key);
+                        else m.putProperty(key, value);
+                    }
+                    default -> {
+                        if (value == null) ((PropertiesHolder) obj).removeProperty(key);
+                        else ((BasePropertiesHolder) obj).setProperty(key, value);
+                    }
+                }
             }
             case ALIAS_TYPE -> {
                 if (value == null) ((Identifiable<?>) obj).removeAlias(key);
@@ -779,9 +784,9 @@ public final class PropertyDispatcher {
             case OLG_SIDE1 -> ((Branch<?>) obj).getOperationalLimitsGroups1().stream();
             case OLG_SIDE2 -> ((Branch<?>) obj).getOperationalLimitsGroups2().stream();
             case OPERATIONAL_LIMITS_GROUP -> ((FlowsLimitsHolder) obj).getOperationalLimitsGroups().stream();
-            case MEASUREMENT          -> StateEstimationDispatch.measurements(obj);
-            case DISCRETE_MEASUREMENT -> StateEstimationDispatch.discreteMeasurements(obj);
-            case OBSERVABILITY_AREA   -> StateEstimationDispatch.observabilityAreas(obj);
+            case MEASUREMENT          -> ((Measurements<?>) obj).getMeasurements().stream();
+            case DISCRETE_MEASUREMENT -> ((DiscreteMeasurements<?>) obj).getDiscreteMeasurements().stream();
+            case AREA_CHARACTERISTICS -> StateEstimationDispatch.observabilityAreas((ObservabilityArea) obj);
             case OBS_AREA_TERMINALS   -> StateEstimationDispatch.observabilityAreaTerminals(obj);
             case OBS_AREA_BUSES       -> StateEstimationDispatch.observabilityAreaBuses(obj);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown child type: " + childType);
@@ -800,6 +805,7 @@ public final class PropertyDispatcher {
                 if (obj instanceof Injection<?> inj) yield inj.getTerminal();
                 if (obj instanceof VoltageRegulation vr) yield vr.getTerminal();
                 if (obj instanceof ThreeWindingsTransformer.Leg leg) yield leg.getTerminal();
+                if (obj instanceof SlackTerminal st) yield st.getTerminal();
                 throw new BridgeErrors.PropertyNotFoundException("Object does not have a single terminal: " + obj);
             }
             case REL_TERMINAL1 -> {
@@ -834,12 +840,6 @@ public final class PropertyDispatcher {
                     yield twt.getLeg1().getTerminal().getVoltageLevel().getSubstation().orElse(null);
                 yield ((VoltageLevel) obj).getSubstation().orElse(null);
             }
-            case REL_SLACK_TERMINAL -> {
-                VoltageLevel vl = (VoltageLevel) obj;
-                SlackTerminal st = vl.getExtension(SlackTerminal.class);
-                if (st == null) throw new BridgeErrors.ExtensionNotFoundException("SlackTerminal extension not present on " + vl.getId());
-                yield st.getTerminal();
-            }
             case REL_CONNECTABLE_BUS -> ((Terminal) obj).getBusBreakerView().getConnectableBus();
             case REL_REGULATING_TERMINAL -> ((VoltageRegulationHolder<?>) obj).getRegulatingTerminal();
             case REL_CURRENT_LIMITS1 -> ((Branch<?>) obj).getCurrentLimits1().orElse(null);
@@ -852,7 +852,25 @@ public final class PropertyDispatcher {
                 : ((FlowsLimitsHolder) obj).getCurrentLimits().orElse(null);
             case REL_CONNECTABLE -> ((Terminal) obj).getConnectable();
             case VOLTAGE_REGULATION -> ((VoltageRegulationHolder<?>) obj).getVoltageRegulation();
-            case ACTIVE_POWER_CONTROL -> ((Extendable<?>) obj).getExtension(ActivePowerControl.class);
+            case ACTIVE_POWER_CONTROL -> extension(obj, ActivePowerControl.class);
+            case COORDINATED_REACTIVE_CONTROL -> extension(obj, CoordinatedReactiveControl.class);
+            case HVDC_ANGLE_DROOP_ACTIVE_POWER_CONTROL -> extension(obj, HvdcAngleDroopActivePowerControl.class);
+            case HVDC_OPERATOR_ACTIVE_POWER_RANGE -> extension(obj, HvdcOperatorActivePowerRange.class);
+            case SLACK_TERMINAL -> extension(obj, SlackTerminal.class);
+            case TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED -> extension(obj, TwoWindingsTransformerToBeEstimated.class);
+            case THREE_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED -> extension(obj, ThreeWindingsTransformerToBeEstimated.class);
+            case INJECTION_OBSERVABILITY -> extension(obj, InjectionObservability.class);
+            case BRANCH_OBSERVABILITY -> extension(obj, BranchObservability.class);
+            case MEASUREMENTS -> extension(obj, Measurements.class);
+            case DISCRETE_MEASUREMENTS -> extension(obj, DiscreteMeasurements.class);
+            case OBSERVABILITY_AREA -> extension(obj, ObservabilityArea.class);
+            case OBS_QUALITY_P  -> ((InjectionObservability<?>) obj).getNullableQualityP();
+            case OBS_QUALITY_Q  -> ((InjectionObservability<?>) obj).getNullableQualityQ();
+            case OBS_QUALITY_V  -> ((InjectionObservability<?>) obj).getNullableQualityV();
+            case OBS_QUALITY_P1 -> ((BranchObservability<?>) obj).getNullableQualityP1();
+            case OBS_QUALITY_P2 -> ((BranchObservability<?>) obj).getNullableQualityP2();
+            case OBS_QUALITY_Q1 -> ((BranchObservability<?>) obj).getNullableQualityQ1();
+            case OBS_QUALITY_Q2 -> ((BranchObservability<?>) obj).getNullableQualityQ2();
             case REACTIVE_LIMITS           -> ((ReactiveLimitsHolder) obj).getReactiveLimits();
             case MIN_MAX_REACTIVE_LIMITS   -> ((ReactiveLimitsHolder) obj).getReactiveLimits(MinMaxReactiveLimits.class);
             case REACTIVE_CAPABILITY_CURVE -> ((ReactiveLimitsHolder) obj).getReactiveLimits(ReactiveCapabilityCurve.class);
@@ -875,11 +893,14 @@ public final class PropertyDispatcher {
             return;
         }
         switch (relation) {
-            case REL_SLACK_TERMINAL -> slackTerminal(obj).setTerminal((Terminal) value);
+            case REL_TERMINAL -> ((SlackTerminal) obj).setTerminal((Terminal) value);
             case REL_REGULATION_TERMINAL -> ((PhaseTapChanger) obj).setRegulationTerminal((Terminal) value);
             // Only clearing (INVALID_HANDLE): new ones are created with invoke
-            case VOLTAGE_REGULATION -> Creation.clear(obj, relation, value);
-            case ACTIVE_POWER_CONTROL -> Creation.clear(obj, relation, value);
+            case VOLTAGE_REGULATION, ACTIVE_POWER_CONTROL, COORDINATED_REACTIVE_CONTROL,
+                 HVDC_ANGLE_DROOP_ACTIVE_POWER_CONTROL, HVDC_OPERATOR_ACTIVE_POWER_RANGE, SLACK_TERMINAL,
+                 TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED, THREE_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED,
+                 INJECTION_OBSERVABILITY, BRANCH_OBSERVABILITY, MEASUREMENTS, DISCRETE_MEASUREMENTS,
+                 OBSERVABILITY_AREA -> Creation.clear(obj, relation, value);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown relation for set: " + relation);
         }
     }
@@ -920,6 +941,15 @@ public final class PropertyDispatcher {
             }
             case ACT_APPLY_SOLVED_VALUES -> {
                 tapChanger(obj).applySolvedValues();
+                yield null;
+            }
+            case ACT_CLEAN_IF_EMPTY -> {
+                switch (obj) {
+                    case Measurements<?> measurements -> measurements.cleanIfEmpty();
+                    case DiscreteMeasurements<?> measurements -> measurements.cleanIfEmpty();
+                    case SlackTerminal slackTerminal -> slackTerminal.setTerminal(slackTerminal.getTerminal(), true);
+                    default -> throw new BridgeErrors.PropertyNotFoundException("Cannot clean " + obj);
+                }
                 yield null;
             }
             case ACT_SET_TAP_POSITION_TO_SOLVED_TAP_POSITION -> {
@@ -970,9 +1000,10 @@ public final class PropertyDispatcher {
             case REL_BBV_BUS -> ((VoltageLevel) obj).getBusBreakerView().getBus(key);
             case REL_VL_BBV_BUS1 -> ((VoltageLevel) obj).getBusBreakerView().getBus1(key);
             case REL_VL_BBV_BUS2 -> ((VoltageLevel) obj).getBusBreakerView().getBus2(key);
-            case REL_MEASUREMENT_BY_ID          -> StateEstimationDispatch.measurementById(obj, key);
-            case REL_DISCRETE_MEASUREMENT_BY_ID -> StateEstimationDispatch.discreteMeasurementById(obj, key);
-            case REL_OBS_AREA_BY_BUS, REL_OBS_AREA_BY_BBV_BUS -> StateEstimationDispatch.observabilityAreaByBus(obj, relation, key);
+            case MEASUREMENT          -> ((Measurements<?>) obj).getMeasurement(key);
+            case DISCRETE_MEASUREMENT -> ((DiscreteMeasurements<?>) obj).getDiscreteMeasurement(key);
+            case REL_OBS_AREA_BY_BUS, REL_OBS_AREA_BY_BBV_BUS
+                -> StateEstimationDispatch.observabilityAreaByBus((ObservabilityArea) obj, relation, key);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown keyed relation: " + relation);
         };
     }
@@ -990,7 +1021,7 @@ public final class PropertyDispatcher {
             case THREE_WINDINGS_TRANSFORMER_LEG -> ((ThreeWindingsTransformer) obj).getLeg(Creation.enumValue(ThreeSides.class, index));
             case RATIO_TAP_CHANGER_STEP -> ((RatioTapChanger) obj).getStep(index);
             case PHASE_TAP_CHANGER_STEP -> ((PhaseTapChanger) obj).getStep(index);
-            case REL_OBS_AREA_BY_NODE -> StateEstimationDispatch.observabilityAreaByNode(obj, index);
+            case REL_OBS_AREA_BY_NODE -> StateEstimationDispatch.observabilityAreaByNode((ObservabilityArea) obj, index);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown indexed relation: " + relation);
         };
     }
@@ -1029,6 +1060,15 @@ public final class PropertyDispatcher {
         };
     }
 
+    // ── Extensions ────────────────────────────────────────────────────────
+
+    /** The extension of the given class of an extendable object, or null. */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static Object extension(Object extendable, Class type) {
+        // Raw: the extension classes are generic in their extendable, which Class<X> cannot express
+        return ((Extendable) extendable).getExtension(type);
+    }
+
     // ── Tap changers ──────────────────────────────────────────────────────
 
     static TapChanger<?, ?, ?, ?> tapChanger(Object obj) {
@@ -1043,18 +1083,9 @@ public final class PropertyDispatcher {
 
     // ── Extension helpers ─────────────────────────────────────────────────
 
-    /** Extension of any extendable object; ExtensionNotFoundException when absent. */
-    static <E extends com.powsybl.commons.extensions.Extension<?>> E ext(Object obj, Class<? super E> type) {
-        return StateEstimationDispatch.extension(obj, type);
-    }
-
     /** The ActivePowerControl extension object (from getRelated(injection, ACTIVE_POWER_CONTROL)). */
     static ActivePowerControl<?> activePowerControl(Object obj) {
         return (ActivePowerControl<?>) obj;
-    }
-
-    static SlackTerminal slackTerminal(Object obj) {
-        return StateEstimationDispatch.extension(obj, SlackTerminal.class);
     }
 
     /** The ordinals of the regulation modes that satisfy a test. */
