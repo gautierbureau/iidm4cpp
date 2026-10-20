@@ -1,35 +1,26 @@
 #include <gtest/gtest.h>
 #include <iidm/iidm.h>
-#include <cstdlib>
-#include <fstream>
-#include <memory>
-#include <sstream>
+#include "RealBackends.h"
 #include <string>
-#include <vector>
 
 #ifdef IIDM_BRIDGE_GRAALVM_ENABLED
 #  include "graalvm/GraalVMBackend.h"
 #endif
 #ifdef IIDM_BRIDGE_JNI_ENABLED
 #  include "jni/JNIBackend.h"
-#  include <jni.h>
 #endif
 
 // Java-side failures must surface as C++ exceptions, with the same type on both backends,
-// and leave the backend usable. Runs against the real backends:
-//   - GraalVM: IIDM_BRIDGE_GRAALVM_LIB = path to libpowsybl-iidm-native
-//   - JNI:     IIDM_BRIDGE_JAR         = path to iidm-bridge-java-*-fat.jar (a JVM is created)
-// Each backend is skipped when its variable is not set.
+// and leave the backend usable. Runs against the real backends (see RealBackends.h).
 
 using namespace iidm;
+using iidm::test::envPath;
+using iidm::test::readFile;
 
 namespace {
 
 std::string readTestNetwork() {
-    std::ifstream in("data/backend_errors_test.xiidm", std::ios::binary);
-    std::stringstream ss;
-    ss << in.rdbuf();
-    return ss.str();
+    return readFile("data/backend_errors_test.xiidm");
 }
 
 // Same scenarios for every backend; the network is test/data/backend_errors_test.xiidm.
@@ -108,15 +99,15 @@ void checkHandlesAreReleased(BackendProvider& b) {
 
 #ifdef IIDM_BRIDGE_GRAALVM_ENABLED
 TEST(BackendErrorsTest, GraalVM) {
-    const char* lib = std::getenv("IIDM_BRIDGE_GRAALVM_LIB");
-    if (!lib || !lib[0]) GTEST_SKIP() << "IIDM_BRIDGE_GRAALVM_LIB not set";
+    const char* lib = envPath("IIDM_BRIDGE_GRAALVM_LIB");
+    if (!lib) GTEST_SKIP() << "IIDM_BRIDGE_GRAALVM_LIB not set";
     GraalVMBackend backend(lib);
     checkBackendErrors(backend);
 }
 
 TEST(BackendHandlesTest, GraalVM) {
-    const char* lib = std::getenv("IIDM_BRIDGE_GRAALVM_LIB");
-    if (!lib || !lib[0]) GTEST_SKIP() << "IIDM_BRIDGE_GRAALVM_LIB not set";
+    const char* lib = envPath("IIDM_BRIDGE_GRAALVM_LIB");
+    if (!lib) GTEST_SKIP() << "IIDM_BRIDGE_GRAALVM_LIB not set";
     GraalVMBackend backend(lib);
     checkHandlesAreReleased(backend);
     // The Java-side registry does not grow either (network + a few live wrappers)
@@ -125,31 +116,7 @@ TEST(BackendHandlesTest, GraalVM) {
 #endif
 
 #ifdef IIDM_BRIDGE_JNI_ENABLED
-namespace {
-
-// Creates the JVM once per process (class path from IIDM_BRIDGE_JAR); false when not configured.
-bool ensureJvm() {
-    const char* jar = std::getenv("IIDM_BRIDGE_JAR");
-    if (!jar || !jar[0]) return false;
-    JavaVM* jvm = nullptr;
-    jsize count = 0;
-    if (JNI_GetCreatedJavaVMs(&jvm, 1, &count) == JNI_OK && count > 0) return true;
-    std::string classPath = std::string("-Djava.class.path=") + jar;
-    std::vector<JavaVMOption> options(2);
-    options[0].optionString = const_cast<char*>(classPath.c_str());
-    options[0].extraInfo = nullptr;
-    options[1].optionString = const_cast<char*>("-Xcheck:jni"); // catches invalid JNI reference use
-    options[1].extraInfo = nullptr;
-    JavaVMInitArgs args;
-    args.version = JNI_VERSION_1_8;
-    args.nOptions = static_cast<jint>(options.size());
-    args.options = options.data();
-    args.ignoreUnrecognized = JNI_FALSE;
-    JNIEnv* env = nullptr;
-    return JNI_CreateJavaVM(&jvm, reinterpret_cast<void**>(&env), &args) == JNI_OK;
-}
-
-} // namespace
+using iidm::test::ensureJvm;
 
 TEST(BackendErrorsTest, JNI) {
     if (!ensureJvm()) GTEST_SKIP() << "IIDM_BRIDGE_JAR not set";

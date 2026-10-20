@@ -1175,7 +1175,8 @@ pointer. `isValid()` and `operator==` never throw.
 
 `test/TestBackendErrors.cpp` runs the same failure scenarios against the real GraalVM
 library (`IIDM_BRIDGE_GRAALVM_LIB`) and against a JVM created in-process
-(`IIDM_BRIDGE_JAR`).
+(`IIDM_BRIDGE_JAR`); `test/TestBackendConformance.cpp` checks that both backends throw the
+same exception type for every failing call (§13).
 
 ---
 
@@ -1459,6 +1460,19 @@ TestBackendSelector  — AUTO mode picks JNI when JVM present, GraalVM otherwise
 A full integration test loads the IEEE-14 bus network, reads and modifies
 generator target P values, and verifies round-trips match the original Java
 results. This test is run with both backends.
+
+### GraalVM / JNI conformance
+
+`test/TestBackendConformance.cpp` makes sure the two backends cannot drift apart. It loads each
+test network (`examples/*.xiidm`, `test/data/*.xiidm`) into both backends in the same process
+and walks every object reachable from the network root in lockstep. For every object, every
+code of `PropertyCodes.def` and every accessor, both backends must return the same value, the
+same children / related objects (visited in turn) or the same C++ exception type. Keyed and
+indexed lookups and `findById` are tried with every id and node number met on the way. Every
+value read is then written back through its setter (same acceptance, same value read back),
+and both networks must save to the same XIIDM. New codes and new test data are picked up
+automatically. It runs when both `IIDM_BRIDGE_GRAALVM_LIB` and `IIDM_BRIDGE_JAR` are set (CI
+`graalvm` and `dynawo` jobs), in about 2 s per network.
 
 ### Property codes
 
