@@ -17,7 +17,7 @@ int phaseCode(ThreeSides side) {
 } // namespace
 
 ThreeWindingsTransformerToBeEstimated::ThreeWindingsTransformerToBeEstimated(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
+    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
 
 bool ThreeWindingsTransformerToBeEstimated::shouldEstimateRatioTapChanger1() const {
     return shouldEstimateRatioTapChanger(ThreeSides::ONE);

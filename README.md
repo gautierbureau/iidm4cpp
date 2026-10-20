@@ -673,73 +673,32 @@ void JNIBackend::attachToJVM() {
 }
 ```
 
-#### Method ID caching
+#### One dispatch table: `PropertyDispatcher`
 
-JNI method lookups (`GetMethodID`) are expensive. The backend caches all
-`jmethodID` and `jfieldID` values it will ever need at construction time,
-resolving them once against the Java classes in the live JVM.
+The JNI backend does not call IIDM methods itself. Each `BackendProvider` operation is a
+single static JNI call to the object API of `PropertyDispatcher` — the same Java dispatch
+table the GraalVM backend uses, so both backends behave identically:
 
 ```cpp
-// src/jni/JNIMethodCache.h
-struct JNIMethodCache {
-    // Classes
-    jclass networkClass;
-    jclass generatorClass;
-    jclass loadClass;
-    jclass terminalClass;
-    jclass busClass;
-    // …
-
-    // Method IDs
-    jmethodID network_getGenerators;
-    jmethodID network_getLoads;
-    jmethodID generator_getTargetP;
-    jmethodID generator_setTargetP;
-    jmethodID generator_getTargetQ;
-    jmethodID generator_setTargetQ;
-    jmethodID generator_getTargetV;
-    jmethodID generator_setTargetV;
-    jmethodID generator_isVoltageRegulatorOn;
-    jmethodID generator_setVoltageRegulatorOn;
-    // … all getters and setters for all supported types
-};
+// src/jni/JNIBackend.cpp
+double JNIBackend::getDouble(ObjectHandle h, int property) const {
+    double result = env_->CallStaticDoubleMethod(cache_.dispatcherClass, cache_.disp_getDouble,
+                                                 toObject(h), static_cast<jint>(property));
+    checkJNIException(env_);
+    return result;
+}
 ```
+
+Only the registry calls (`IidmBridgeRegistry`: network lookup, load / save) and the
+dispatcher methods are resolved, once, at construction (`JNIMethodCache.h`). A simple
+property read costs about 150–250 ns, the same as the former hand-written JNI calls.
 
 #### Handle = global JNI reference
 
-In the JNI backend, an `ObjectHandle` is the integer value of a `jobject`
-**global reference**. The backend casts between `ObjectHandle` and `jobject`
-with `reinterpret_cast`. Global references prevent GC collection of the
-Java objects as long as the `Network` is alive.
-
-```cpp
-// src/jni/JNIBackend.cpp (excerpt)
-
-double JNIBackend::getDouble(ObjectHandle h, int property) const {
-    auto obj = reinterpret_cast<jobject>(h);
-    switch (property) {
-        case prop::GEN_TARGET_P:
-            return env_->CallDoubleMethod(obj, cache_.generator_getTargetP);
-        case prop::GEN_TARGET_Q:
-            return env_->CallDoubleMethod(obj, cache_.generator_getTargetQ);
-        // …
-        default:
-            throw IidmException("Unknown double property: " + std::to_string(property));
-    }
-    checkJNIException();
-}
-
-void JNIBackend::setDouble(ObjectHandle h, int property, double value) {
-    auto obj = reinterpret_cast<jobject>(h);
-    switch (property) {
-        case prop::GEN_TARGET_P:
-            env_->CallVoidMethod(obj, cache_.generator_setTargetP, value);
-            break;
-        // …
-    }
-    checkJNIException();
-}
-```
+In the JNI backend, an `ObjectHandle` is the integer value of a `jobject` **global
+reference**. Each handle returned to C++ (children, related objects, lookups) is a new
+global reference; it is deleted (`DeleteGlobalRef`) when the last C++ wrapper using it is
+destroyed — see §7.
 
 #### Exception bridging
 
@@ -805,26 +764,13 @@ case EXT_APC_PARTICIPATE -> ((Generator) obj).getExtension(ActivePowerControl.cl
 
 No C++ changes are needed in the GraalVM backend.
 
-#### JNI backend — shared dispatcher fallback
+#### JNI backend — same dispatch table
 
-The JNI backend hand-wires the hot core properties (generator set-points,
-terminal flows, …) as direct JNI calls. **Every other code** — and therefore
-every extension — falls through its `default:` branches to the object-based
-overloads of `PropertyDispatcher` (`getDouble(Object, int)`,
-`getChildObjects(Object, int)`, `getRelatedObject(Object, int)`, …) in a
-single static JNI call:
-
-```cpp
-// src/jni/JNIBackend.cpp — getDouble()
-default:
-    result = env_->CallStaticDoubleMethod(cache_.dispatcherClass, cache_.disp_getDouble,
-                                          obj, static_cast<jint>(property));
-```
-
-So both backends share one Java dispatch table, and a new extension only needs
-`PropertyDispatcher` cases. Hand-wire a code in `JNIBackend.cpp` only when it is
-on a hot path; any `GetMethodID` signature must then match the pinned
-powsybl-core version exactly, or `JNIBackend` construction fails.
+The JNI backend sends every property, child and relation code to the object-based
+overloads of `PropertyDispatcher` (`getDouble(Object, int)`, `getChildObjects(Object, int)`,
+`getRelatedObject(Object, int)`, …), so a new extension only needs `PropertyDispatcher`
+cases and works on both backends. No JNI method signature has to be kept in sync with
+powsybl-core.
 
 #### Supported extensions
 
@@ -1122,16 +1068,33 @@ DynawoLauncher.run(simulationParameters);
 |---|---|---|
 | `Network` | Caller (move-only) | Until `Network` goes out of scope |
 | `BackendProvider` | `Network` (unique_ptr) | Destroyed with `Network` |
-| Component objects (e.g. `Generator`) | Caller (value type) | Valid as long as parent `Network` is alive |
+| Component objects (e.g. `Generator`) | Caller (value type) | Usable as long as parent `Network` is alive |
+| Object handles (JNI global refs, GraalVM registry entries) | Component objects, via `HandleRef` | Released when the last wrapper using them is destroyed, or when the backend closes |
 | GraalVM isolate | `GraalVMBackend` | One per process; destroyed in destructor |
-| JNI global refs | `JNIBackend` | Deleted in destructor via `DeleteGlobalRef` |
 | JNI thread attachment | `JNIBackend` | Detached in destructor via `DetachCurrentThread` |
+
+### Handle release
+
+Every handle returned by a backend holds a Java-side reference (a JNI global reference, or
+an entry of the GraalVM `NetworkRegistry`). Wrappers hold it through `HandleRef`, which
+counts the wrappers using a handle — across copies, and across sub-wrappers built from the
+same handle (extensions, transformer legs, views) — and calls
+`BackendProvider::releaseHandle()` when the last one is destroyed. So a loop like
+
+```cpp
+for (int step = 0; step < 1000000; ++step)
+    p += gen.getTerminal().getP();   // a new terminal handle each time
+```
+
+keeps a constant memory footprint on both backends. When a backend closes it releases every
+handle still held; wrappers destroyed afterwards release nothing (`BackendProvider::
+liveHandleCount()` reports the handles currently held).
 
 ### Invalidation
 
-Calling any method on a component object after the parent `Network` has
-been destroyed is **undefined behavior**. In debug builds, a validity
-check is performed and an `IidmException` is thrown.
+Calling a method on a component object after the parent `Network` has been destroyed is
+**undefined behavior**; destroying it afterwards is safe. Objects never bound to a network
+(default-constructed, moved-from `Network`) throw `InvalidHandleException` (§9).
 
 ### GraalVM isolate lifecycle
 

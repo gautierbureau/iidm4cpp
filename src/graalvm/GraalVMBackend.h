@@ -49,6 +49,11 @@ public:
     std::string saveNetworkBytes(const std::string& filenameHint) const override;
     void close() override;
 
+    void releaseHandle(ObjectHandle h) override;
+
+    // Number of objects registered on the Java side (diagnostics, tests).
+    int javaHandleCount() const;
+
 private:
     void init(const std::string& libPath);
     void resolveSymbols();
@@ -72,6 +77,8 @@ private:
     using FnTearDownIsolate = int(*)(graal_isolatethread_t*);
     using FnTakeLastError   = char*(*)(graal_isolatethread_t*);
     using FnFree            = void(*)(graal_isolatethread_t*, void*);
+    using FnReleaseHandle   = void(*)(graal_isolatethread_t*, ObjectHandle);
+    using FnHandleCount     = int(*)(graal_isolatethread_t*);
     using FnLoadNetwork     = int(*)(graal_isolatethread_t*, const char*, ObjectHandle*);
     using FnSaveNetwork     = int(*)(graal_isolatethread_t*, ObjectHandle, const char*);
     using FnLoadNetworkBytes = int(*)(graal_isolatethread_t*, const char*, int, const char*, ObjectHandle*);
@@ -96,6 +103,8 @@ private:
     FnTearDownIsolate fnTearDownIsolate_ = nullptr;
     FnTakeLastError   fnTakeLastError_   = nullptr;
     FnFree            fnFree_            = nullptr;
+    FnReleaseHandle   fnReleaseHandle_   = nullptr;
+    FnHandleCount     fnHandleCount_     = nullptr;
     FnLoadNetwork     fnLoadNetwork_     = nullptr;
     FnSaveNetwork     fnSaveNetwork_     = nullptr;
     FnLoadNetworkBytes fnLoadNetworkBytes_ = nullptr;

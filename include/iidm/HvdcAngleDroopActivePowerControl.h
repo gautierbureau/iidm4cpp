@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iidm/HandleRef.h>
 #include <iidm/ObjectHandle.h>
 
 namespace iidm {
@@ -27,7 +28,7 @@ public:
     bool operator!=(const HvdcAngleDroopActivePowerControl& other) const;
 
 private:
-    ObjectHandle     handle_  = INVALID_HANDLE;
+    HandleRef  handle_;
     BackendProvider* backend_ = detail::nullBackend();
 };
 

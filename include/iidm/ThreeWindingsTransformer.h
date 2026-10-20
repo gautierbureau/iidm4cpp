@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iidm/HandleRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/CurrentLimits.h>
 #include <iidm/OperationalLimitsGroup.h>
@@ -52,7 +53,7 @@ public:
         bool isValid() const { return handle_ != INVALID_HANDLE; }
 
     private:
-        ObjectHandle     handle_          = INVALID_HANDLE;
+        HandleRef  handle_;
         BackendProvider* backend_         = detail::nullBackend();
         int              legBase_         = 0;
         int              relTerminal_     = 0;
@@ -98,7 +99,7 @@ public:
     bool operator!=(const ThreeWindingsTransformer& other) const;
 
 private:
-    ObjectHandle    handle_  = INVALID_HANDLE;
+    HandleRef handle_;
     BackendProvider* backend_ = detail::nullBackend();
 };
 

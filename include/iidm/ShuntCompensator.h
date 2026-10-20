@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iidm/HandleRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/Terminal.h>
 #include <iidm/ShuntCompensatorNonLinearModel.h>
@@ -60,7 +61,7 @@ public:
     bool operator!=(const ShuntCompensator& other) const;
 
 private:
-    ObjectHandle    handle_  = INVALID_HANDLE;
+    HandleRef handle_;
     BackendProvider* backend_ = detail::nullBackend();
 };
 

@@ -13,7 +13,7 @@ namespace iidm {
 ThreeWindingsTransformer::Leg::Leg(ObjectHandle twtHandle, BackendProvider* backend,
                                     int legBase, int relTerminal,
                                     int rtcStepChildType, int ptcStepChildType)
-    : handle_(twtHandle), backend_(detail::orNullBackend(backend)), legBase_(legBase),
+    : handle_(twtHandle, backend), backend_(detail::orNullBackend(backend)), legBase_(legBase),
       relTerminal_(relTerminal),
       rtcStepChildType_(rtcStepChildType), ptcStepChildType_(ptcStepChildType) {}
 
@@ -105,7 +105,7 @@ iidm::optional<OperationalLimitsGroup> ThreeWindingsTransformer::Leg::getSelecte
 // ── ThreeWindingsTransformer ──────────────────────────────────────────────────
 
 ThreeWindingsTransformer::ThreeWindingsTransformer(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
+    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
 
 std::string ThreeWindingsTransformer::getId() const {
     return backend_->getString(handle_, prop::ID);

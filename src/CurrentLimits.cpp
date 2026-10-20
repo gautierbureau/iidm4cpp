@@ -5,7 +5,7 @@
 namespace iidm {
 
 CurrentLimits::CurrentLimits(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
+    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
 
 double CurrentLimits::getPermanentLimit() const {
     return backend_->getDouble(handle_, prop::CL_PERMANENT_LIMIT);

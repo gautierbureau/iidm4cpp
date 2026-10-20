@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iidm/HandleRef.h>
 #include <iidm/ObjectHandle.h>
 #include <vector>
 
@@ -26,7 +27,7 @@ public:
     bool operator!=(const ReactiveCapabilityCurve& other) const;
 
 private:
-    ObjectHandle     handle_  = INVALID_HANDLE;
+    HandleRef  handle_;
     BackendProvider* backend_ = detail::nullBackend();
 };
 

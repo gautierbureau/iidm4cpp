@@ -5,7 +5,7 @@
 namespace iidm {
 
 SlackTerminal::SlackTerminal(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
+    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
 
 Terminal SlackTerminal::getTerminal() const {
     ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_SLACK_TERMINAL);

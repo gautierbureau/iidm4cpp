@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iidm/Enums.h>
+#include <iidm/HandleRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/stdcxx/optional.hpp>
 #include <string>
@@ -43,7 +44,7 @@ public:
     bool operator!=(const Measurement& other) const;
 
 private:
-    ObjectHandle     handle_  = INVALID_HANDLE;
+    HandleRef  handle_;
     BackendProvider* backend_ = detail::nullBackend();
 };
 
@@ -63,7 +64,7 @@ public:
     bool operator!=(const Measurements& other) const;
 
 private:
-    ObjectHandle     handle_  = INVALID_HANDLE;
+    HandleRef  handle_;
     BackendProvider* backend_ = detail::nullBackend();
 };
 

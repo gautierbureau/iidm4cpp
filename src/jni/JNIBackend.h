@@ -10,6 +10,11 @@
 
 namespace iidm {
 
+// Backend for the embedded mode: C++ runs inside (or next to) a JVM that holds the network.
+//
+// Every operation is a single JNI call to the object API of PropertyDispatcher — the same
+// Java dispatch table as the GraalVM backend, so both backends behave identically. Handles
+// are JNI global references, released when the last wrapper using them is destroyed.
 class JNIBackend : public BackendProvider {
 public:
     explicit JNIBackend(const std::string& networkId = "");
@@ -45,32 +50,19 @@ public:
     std::string saveNetworkBytes(const std::string& filenameHint) const override;
     void close() override;
 
+    void releaseHandle(ObjectHandle h) override;
+
 private:
     void attachToJVM();
     void cacheMethodIds();
     void cacheClass(jclass& out, const char* name);
+    void bindRegisteredNetwork();
 
-    // Make a global reference to a Java object and return as ObjectHandle
-    ObjectHandle makeHandle(jobject obj) const;
-    // Cast ObjectHandle back to jobject (global ref)
+    // Global reference for a local one (and deletes the local one)
+    ObjectHandle toHandle(jobject local) const;
     jobject toObject(ObjectHandle h) const;          // throws InvalidHandleException for 0
     jobject toNullableObject(ObjectHandle h) const;  // INVALID_HANDLE → null
-    // Wrap a Java Iterable/List into a vector of handles
-    std::vector<ObjectHandle> collectionToHandles(jobject collection) const;
-    // Wrap a Java Object[] into a vector of handles (deletes the local array ref)
-    std::vector<ObjectHandle> objectArrayToHandles(jobjectArray arr) const;
-    // Wrap a java.util.Map's values() into a vector of handles
-    std::vector<ObjectHandle> sortedMapValuesToHandles(jobject sortedMap) const;
-    // Return a local ref to the ActivePowerControl extension of a generator (may be null)
-    jobject fetchApcExtension(jobject gen) const;
-    // Generic helper: fetch a named extension from any Extendable object (may be null)
-    jobject fetchExtension(jobject obj, const char* extensionName) const;
-    jobject fetchCrcExtension(jobject gen) const;
-    jobject fetchHadapcExtension(jobject hvdc) const;
-    jobject fetchHoarExtension(jobject hvdc) const;
-    // VoltageRegulation of an SVC in VOLTAGE_PER_REACTIVE_POWER mode (may be null)
-    jobject fetchVprcExtension(jobject svc) const;
-    jobject fetchStExtension(jobject vl) const;
+    std::string toString(jstring local) const;       // deletes the local reference
 
     std::string  networkId_;
     JavaVM*      jvm_  = nullptr;

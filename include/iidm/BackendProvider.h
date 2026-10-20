@@ -4,17 +4,32 @@
 #include <iidm/ObjectHandle.h>
 #include <iidm/stdcxx/optional.hpp>
 #include <cstddef>
+#include <memory>
 #include <string>
 #include <vector>
 
 namespace iidm {
+
+namespace detail {
+class HandleTracker;
+}
 
 // The complete set of primitive operations any backend must provide.
 // Component classes call exclusively into this interface; they have no
 // backend-specific code.
 class BackendProvider {
 public:
-    virtual ~BackendProvider() = default;
+    BackendProvider();
+    virtual ~BackendProvider();
+
+    // ── Handle lifetime ──────────────────────────────────────────────────
+    // Wrappers hold their handle through HandleRef, which calls releaseHandle() when the
+    // last wrapper using a handle is destroyed. Default: nothing to release.
+    virtual void releaseHandle(ObjectHandle /*h*/) {}
+    // Tracker shared by the HandleRefs of this backend.
+    const std::shared_ptr<detail::HandleTracker>& handleTracker() const { return tracker_; }
+    // Number of handles currently held by wrappers (diagnostics, tests).
+    std::size_t liveHandleCount() const;
 
     // ── Scalar property getters ──────────────────────────────────────────
     virtual double      getDouble(ObjectHandle h, int property) const = 0;
@@ -64,6 +79,13 @@ public:
     virtual std::string saveNetworkBytes(const std::string& filenameHint) const = 0;
 
     virtual void close() = 0;
+
+protected:
+    // For close(): releases every handle still held by wrappers; later releases are no-ops.
+    void releaseAllHandles() noexcept;
+
+private:
+    std::shared_ptr<detail::HandleTracker> tracker_;
 };
 
 } // namespace iidm

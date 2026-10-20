@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iidm/HandleRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/RatioTapChangerStep.h>
 #include <iidm/Terminal.h>
@@ -58,7 +59,7 @@ public:
     bool operator!=(const RatioTapChanger& other) const;
 
 private:
-    ObjectHandle          handle_  = INVALID_HANDLE;
+    HandleRef       handle_;
     BackendProvider*      backend_ = detail::nullBackend();
     RatioTapChangerConfig cfg_     = {};
 };

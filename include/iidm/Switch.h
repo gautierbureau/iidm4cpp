@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iidm/HandleRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/Enums.h>
 #include <string>
@@ -38,7 +39,7 @@ public:
     bool operator!=(const Switch& other) const;
 
 private:
-    ObjectHandle     handle_  = INVALID_HANDLE;
+    HandleRef  handle_;
     BackendProvider* backend_ = detail::nullBackend();
 };
 

@@ -5,7 +5,7 @@
 namespace iidm {
 
 VoltagePerReactivePowerControl::VoltagePerReactivePowerControl(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
+    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
 
 double VoltagePerReactivePowerControl::getSlope() const {
     return backend_->getDouble(handle_, prop::EXT_VPRC_SLOPE);

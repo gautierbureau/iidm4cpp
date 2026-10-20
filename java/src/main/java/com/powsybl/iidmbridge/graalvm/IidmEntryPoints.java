@@ -158,6 +158,12 @@ public final class IidmEntryPoints {
         NetworkRegistry.release(handle);
     }
 
+    /** Number of objects registered in the isolate (diagnostics, tests). */
+    @CEntryPoint(name = "iidm_handle_count")
+    public static int handleCount(IsolateThread thread) {
+        return NetworkRegistry.size();
+    }
+
     // ── Scalar properties ─────────────────────────────────────────────────
 
     @CEntryPoint(name = "iidm_get_double")
