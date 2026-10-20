@@ -282,9 +282,15 @@ if(IIDM_BRIDGE_BUILD_JAVA OR IIDM_BRIDGE_BUILD_NATIVE)
     set(_FAT_JAR
         "${CMAKE_SOURCE_DIR}/java/target/iidm-bridge-java-${IIDM_BRIDGE_JAVA_VERSION}-fat.jar")
 
+    # Rebuild the JAR (and the native image built from it) whenever the Java sources, the
+    # Maven build or the shared property codes change.
+    file(GLOB_RECURSE _JAVA_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/java/src/main/*.java")
     add_custom_command(
         OUTPUT  "${_FAT_JAR}"
         COMMAND "${MAVEN_EXECUTABLE}" --batch-mode package -DskipTests
+        DEPENDS ${_JAVA_SOURCES}
+                "${CMAKE_SOURCE_DIR}/java/pom.xml"
+                "${CMAKE_SOURCE_DIR}/include/iidm/PropertyCodes.def"
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/java"
         COMMENT "Building Java fat-JAR"
         VERBATIM

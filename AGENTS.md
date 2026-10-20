@@ -79,10 +79,10 @@ private:
 };
 ```
 
-**Property codes** — C++/Java communicate via integer keys defined in
-`include/iidm/PropertyCodes.h` and mirrored in
-`java/src/main/java/com/powsybl/iidmbridge/PropertyCodes.java`.
-**Both files must stay in sync.**  There is a CI test that validates this.
+**Property codes** — C++/Java communicate via integer keys defined **once** in
+`include/iidm/PropertyCodes.def` (`IIDM_CODE(NAME, value)  // comment`).
+`PropertyCodes.h` expands it into `iidm::prop::NAME`; the Maven build generates
+the Java `PropertyCodes` class from it. There is no second copy to keep in sync.
 
 **Fluent setters** — setters return `*this` so callers can chain:
 
@@ -118,8 +118,7 @@ cmake/          CMake helper modules (FindGraalVM.cmake, etc.)
 1. Add a header under `include/iidm/MyComponent.h` following the existing
    component headers as a template.
 2. Add `src/MyComponent.cpp`.
-3. Add any new property integer codes to **both** `PropertyCodes.h` and
-   `PropertyCodes.java` (same value in each file).
+3. Add any new property codes to `include/iidm/PropertyCodes.def`.
 4. Expose the component through `Network` (or the appropriate parent) with a
    getter that returns by value or `std::vector`.
 5. Add a corresponding `getMyComponent` / `getMyComponents` entry in
@@ -135,15 +134,14 @@ extension code**. The supported extensions are listed in README §5.4.
 
 #### Steps common to both backends
 
-1. **Property codes** — add constants to **both** `PropertyCodes.h` and
-   `PropertyCodes.java` (same integer values). Reserve three kinds of codes:
-   existence check, getters, setters.
+1. **Property codes** — add them to `include/iidm/PropertyCodes.def`. Reserve
+   three kinds of codes: existence check, getters, setters.
 
    ```cpp
-   // include/iidm/PropertyCodes.h
-   constexpr int EXT_FOO_EXISTS  = 9000;  // bool (pick the next free block)
-   constexpr int EXT_FOO_SOME_D  = 9001;  // double getter/setter
-   constexpr int EXT_FOO_SOME_B  = 9002;  // bool getter/setter
+   // include/iidm/PropertyCodes.def
+   IIDM_CODE(EXT_FOO_EXISTS, 9000)  // bool (pick the next free block)
+   IIDM_CODE(EXT_FOO_SOME_D, 9001)  // double getter/setter
+   IIDM_CODE(EXT_FOO_SOME_B, 9002)  // bool getter/setter
    ```
 
 2. **C++ extension class** — add `include/iidm/FooExtension.h` and
