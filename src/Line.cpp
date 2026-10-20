@@ -6,17 +6,6 @@
 
 namespace iidm {
 
-Line::Line(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
-
-std::string Line::getId() const {
-    return backend_->getString(handle_, prop::ID);
-}
-
-std::string Line::getName() const {
-    return backend_->getString(handle_, prop::NAME);
-}
-
 double Line::getR() const {
     return backend_->getDouble(handle_, prop::LINE_R);
 }
@@ -39,96 +28,6 @@ double Line::getG2() const {
 
 double Line::getB2() const {
     return backend_->getDouble(handle_, prop::LINE_B2);
-}
-
-Terminal Line::getTerminal1() const {
-    ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_TERMINAL1);
-    return Terminal(termHandle, backend_);
-}
-
-Terminal Line::getTerminal2() const {
-    ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_TERMINAL2);
-    return Terminal(termHandle, backend_);
-}
-
-iidm::optional<CurrentLimits> Line::getCurrentLimits1() const {
-    ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS1);
-    if (h == INVALID_HANDLE) return {};
-    return CurrentLimits(h, backend_);
-}
-
-iidm::optional<CurrentLimits> Line::getCurrentLimits2() const {
-    ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS2);
-    if (h == INVALID_HANDLE) return {};
-    return CurrentLimits(h, backend_);
-}
-
-std::vector<OperationalLimitsGroup> Line::getOperationalLimitsGroups1() const {
-    auto handles = backend_->getChildren(handle_, prop::OLG_SIDE1);
-    std::vector<OperationalLimitsGroup> result;
-    result.reserve(handles.size());
-    for (auto h : handles) result.emplace_back(h, backend_);
-    return result;
-}
-
-std::vector<OperationalLimitsGroup> Line::getOperationalLimitsGroups2() const {
-    auto handles = backend_->getChildren(handle_, prop::OLG_SIDE2);
-    std::vector<OperationalLimitsGroup> result;
-    result.reserve(handles.size());
-    for (auto h : handles) result.emplace_back(h, backend_);
-    return result;
-}
-
-iidm::optional<OperationalLimitsGroup> Line::getSelectedOperationalLimitsGroup1() const {
-    ObjectHandle h = backend_->getRelated(handle_, prop::REL_SELECTED_OLG1);
-    if (h == INVALID_HANDLE) return {};
-    return OperationalLimitsGroup(h, backend_);
-}
-
-iidm::optional<OperationalLimitsGroup> Line::getSelectedOperationalLimitsGroup2() const {
-    ObjectHandle h = backend_->getRelated(handle_, prop::REL_SELECTED_OLG2);
-    if (h == INVALID_HANDLE) return {};
-    return OperationalLimitsGroup(h, backend_);
-}
-
-void Line::connect() {
-    getTerminal1().connect();
-    getTerminal2().connect();
-}
-
-void Line::disconnect() {
-    getTerminal1().disconnect();
-    getTerminal2().disconnect();
-}
-
-bool Line::isConnected() const {
-    return getTerminal1().isConnected() && getTerminal2().isConnected();
-}
-
-bool Line::operator==(const Line& other) const {
-    return handle_ == other.handle_;
-}
-
-bool Line::operator!=(const Line& other) const {
-    return !(*this == other);
-}
-
-// ── State estimation extensions ──────────────────────────────────────────────
-
-bool Line::hasBranchObservability() const {
-    return backend_->getBool(handle_, prop::EXT_BRANCH_OBS_EXISTS);
-}
-
-BranchObservability Line::getBranchObservability() const {
-    return BranchObservability(handle_, backend_);
-}
-
-bool Line::hasMeasurements() const {
-    return backend_->getBool(handle_, prop::EXT_MEAS_EXISTS);
-}
-
-Measurements Line::getMeasurements() const {
-    return Measurements(handle_, backend_);
 }
 
 } // namespace iidm

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iidm/HandleRef.h>
+#include <iidm/ObjectRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/ObservabilityQuality.h>
 #include <iidm/stdcxx/optional.hpp>
@@ -10,9 +10,8 @@ namespace iidm {
 class BackendProvider;
 
 // Typed wrapper for the PowSyBl InjectionObservability extension attached to an injection
-// (Generator, Load, Battery, ShuntCompensator, StaticVarCompensator, converter stations,
-// DanglingLine, BusbarSection).
-class InjectionObservability {
+// (Injection::getInjectionObservability()).
+class InjectionObservability : public detail::ObjectRef {
 public:
     InjectionObservability() = default;
     explicit InjectionObservability(ObjectHandle handle, BackendProvider* backend);
@@ -34,15 +33,6 @@ public:
     InjectionObservability& setQualityP(double standardDeviation, iidm::optional<bool> redundant);
     InjectionObservability& setQualityQ(double standardDeviation, iidm::optional<bool> redundant);
     InjectionObservability& setQualityV(double standardDeviation, iidm::optional<bool> redundant);
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const InjectionObservability& other) const;
-    bool operator!=(const InjectionObservability& other) const;
-
-private:
-    HandleRef  handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

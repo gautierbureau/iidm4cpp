@@ -46,6 +46,38 @@ public:
     // ── Optional scalars (returns empty optional when undefined/NaN) ───────
     virtual iidm::optional<double> getOptDouble(ObjectHandle h, int property) const = 0;
 
+    // Properties that may have no value, as they are (getString(h, NAME) is the name or else the
+    // id, getOptString(h, NAME) the name only). Any int or string property can be read this way.
+    // Not pure, like the primitives below, so that existing BackendProvider implementations keep
+    // compiling.
+    virtual iidm::optional<int> getOptInt(ObjectHandle /*h*/, int property) const {
+        throw IidmException("getOptInt not supported by this backend (property " + std::to_string(property) + ")");
+    }
+    virtual iidm::optional<std::string> getOptString(ObjectHandle /*h*/, int property) const {
+        throw IidmException("getOptString not supported by this backend (property " + std::to_string(property) + ")");
+    }
+
+    // ── String lists (property names, aliases...) ────────────────────────
+    virtual std::vector<std::string> getStringList(ObjectHandle /*h*/, int listCode) const {
+        throw IidmException("getStringList not supported by this backend (list " + std::to_string(listCode) + ")");
+    }
+
+    // ── Keyed strings (properties, aliases) ──────────────────────────────
+    // Empty when there is no value under the key; setting an empty optional removes the key.
+    virtual iidm::optional<std::string> getKeyedString(ObjectHandle /*h*/, int property, const std::string& /*key*/) const {
+        throw IidmException("getKeyedString not supported by this backend (property " + std::to_string(property) + ")");
+    }
+    virtual void setKeyedString(ObjectHandle /*h*/, int property, const std::string& /*key*/,
+                                const iidm::optional<std::string>& /*value*/) {
+        throw IidmException("setKeyedString not supported by this backend (property " + std::to_string(property) + ")");
+    }
+
+    // ── Identity ─────────────────────────────────────────────────────────
+    // Whether two handles stand for the same object: each lookup returns a new handle.
+    virtual bool isSameObject(ObjectHandle h, ObjectHandle other) const {
+        return h == other;
+    }
+
     // ── Navigation (children, terminals, etc.) ───────────────────────────
     virtual std::vector<ObjectHandle> getChildren(ObjectHandle h, int childType) const = 0;
     virtual ObjectHandle              getRelated(ObjectHandle h, int relation) const = 0;

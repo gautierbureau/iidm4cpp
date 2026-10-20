@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <iidm/Terminal.h>
 #include <iidm/PropertyCodes.h>
+#include <iidm/Connectable.h>
 #include "MockBackend.h"
 
 using namespace iidm;
@@ -40,17 +41,15 @@ TEST_F(TerminalTest, IsConnected) {
     EXPECT_TRUE(term.isConnected());
 }
 
-TEST_F(TerminalTest, Disconnect) {
+TEST_F(TerminalTest, ConnectAndDisconnect) {
     Terminal term(TERM_HANDLE, &backend);
-    term.disconnect();
-    EXPECT_FALSE((backend.bools[{TERM_HANDLE, prop::TERMINAL_CONNECTED}]));
-}
-
-TEST_F(TerminalTest, Connect) {
-    Terminal term(TERM_HANDLE, &backend);
-    term.disconnect();
-    term.connect();
-    EXPECT_TRUE((backend.bools[{TERM_HANDLE, prop::TERMINAL_CONNECTED}]));
+    EXPECT_TRUE(term.disconnect());
+    EXPECT_EQ(backend.invocations.back(), std::make_pair(ObjectHandle(TERM_HANDLE), prop::ACT_DISCONNECT));
+    EXPECT_TRUE(term.connect());
+    EXPECT_EQ(backend.invocations.back(), std::make_pair(ObjectHandle(TERM_HANDLE), prop::ACT_CONNECT));
+    backend.unchanged.insert(ObjectHandle(TERM_HANDLE)); // could not, or already was
+    EXPECT_FALSE(term.connect());
+    EXPECT_EQ(backend.liveHandleCount(), 1u); // the result handles are released
 }
 
 TEST_F(TerminalTest, GetBusView) {
@@ -61,19 +60,28 @@ TEST_F(TerminalTest, GetBusView) {
     EXPECT_DOUBLE_EQ(bus.getAngle(), 0.05);
 }
 
-TEST_F(TerminalTest, GetConnectableId) {
-    backend.strings[{TERM_HANDLE, prop::TERMINAL_CONNECTABLE_ID}] = "GEN1";
+TEST_F(TerminalTest, ConnectableAndSide) {
+    static constexpr ObjectHandle GEN = 26;
+    backend.related[{TERM_HANDLE, prop::REL_CONNECTABLE}] = GEN;
+    backend.strings[{GEN, prop::ID}] = "GEN1";
+    backend.ints[{TERM_HANDLE, prop::TERMINAL_SIDE}] = -1;
     Terminal term(TERM_HANDLE, &backend);
-    EXPECT_EQ(term.getConnectableId(), "GEN1");
+    EXPECT_EQ(term.getConnectable().getId(), "GEN1");
+    EXPECT_FALSE(term.getSide());
+    backend.ints[{TERM_HANDLE, prop::TERMINAL_SIDE}] = static_cast<int>(ThreeSides::TWO);
+    EXPECT_EQ(*term.getSide(), ThreeSides::TWO);
 }
 
-TEST_F(TerminalTest, GetTerminals) {
+TEST_F(TerminalTest, ConnectableTerminals) {
+    static constexpr ObjectHandle GEN = 26;
     static constexpr ObjectHandle OTHER_TERM = 25;
-    backend.children[{TERM_HANDLE, prop::CONNECTABLE_TERMINALS}] = {TERM_HANDLE, OTHER_TERM};
+    backend.related[{TERM_HANDLE, prop::REL_CONNECTABLE}] = GEN;
+    backend.children[{GEN, prop::TERMINAL}] = {TERM_HANDLE, OTHER_TERM};
     backend.doubles[{OTHER_TERM, prop::TERMINAL_P}] = 30.0;
     Terminal term(TERM_HANDLE, &backend);
-    auto terms = term.getTerminals();
+    auto terms = term.getConnectable().getTerminals();
     ASSERT_EQ(terms.size(), 2u);
+    EXPECT_EQ(terms[0], term);
     EXPECT_DOUBLE_EQ(terms[0].getP(), 55.0);
     EXPECT_DOUBLE_EQ(terms[1].getP(), 30.0);
 }

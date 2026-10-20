@@ -3,6 +3,7 @@
 #include <iidm/BackendProvider.h>
 #include <iidm/IidmException.h>
 #include <iidm/stdcxx/optional.hpp>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -31,6 +32,13 @@ public:
     void setString(ObjectHandle h, int property, const std::string& value) override;
 
     iidm::optional<double> getOptDouble(ObjectHandle h, int property) const override;
+    iidm::optional<int>         getOptInt(ObjectHandle h, int property) const override;
+    iidm::optional<std::string> getOptString(ObjectHandle h, int property) const override;
+    std::vector<std::string>    getStringList(ObjectHandle h, int listCode) const override;
+    iidm::optional<std::string> getKeyedString(ObjectHandle h, int property, const std::string& key) const override;
+    void setKeyedString(ObjectHandle h, int property, const std::string& key,
+                        const iidm::optional<std::string>& value) override;
+    bool isSameObject(ObjectHandle h, ObjectHandle other) const override;
 
     std::vector<ObjectHandle> getChildren(ObjectHandle h, int childType) const override;
     ObjectHandle              getRelated(ObjectHandle h, int relation) const override;
@@ -72,6 +80,7 @@ private:
     // (the message is fetched with iidm_take_last_error).
     void check(int status) const;
     std::string takeString(char* raw) const;
+    iidm::optional<std::string> takeOptString(char* raw) const; // null: no value
 
     // ── C function pointer types resolved from the shared library ────────
     // Every entry point that can fail returns a status (0 = success, else a BridgeErrorKind)
@@ -103,6 +112,12 @@ private:
     using FnGetRelatedByString = int(*)(graal_isolatethread_t*, ObjectHandle, int, const char*, ObjectHandle*);
     using FnFindById           = int(*)(graal_isolatethread_t*, ObjectHandle, int, const char*, ObjectHandle*);
     using FnInvoke             = int(*)(graal_isolatethread_t*, ObjectHandle, int, ObjectHandle*);
+    using FnGetOptInt          = int(*)(graal_isolatethread_t*, ObjectHandle, int, std::int64_t*);
+    using FnGetOptString       = int(*)(graal_isolatethread_t*, ObjectHandle, int, char**);
+    using FnGetStringList      = int(*)(graal_isolatethread_t*, ObjectHandle, int, char**, int*);
+    using FnGetKeyedString     = int(*)(graal_isolatethread_t*, ObjectHandle, int, const char*, char**);
+    using FnSetKeyedString     = int(*)(graal_isolatethread_t*, ObjectHandle, int, const char*, const char*);
+    using FnIsSameObject       = int(*)(graal_isolatethread_t*, ObjectHandle, ObjectHandle, int*);
 
     FnCreateIsolate   fnCreateIsolate_   = nullptr;
     FnTearDownIsolate fnTearDownIsolate_ = nullptr;
@@ -131,6 +146,12 @@ private:
     FnGetRelatedByString fnGetRelatedByString_ = nullptr;
     FnFindById           fnFindById_           = nullptr;
     FnInvoke             fnInvoke_             = nullptr;
+    FnGetOptInt          fnGetOptInt_          = nullptr;
+    FnGetOptString       fnGetOptString_       = nullptr;
+    FnGetStringList      fnGetStringList_      = nullptr;
+    FnGetKeyedString     fnGetKeyedString_     = nullptr;
+    FnSetKeyedString     fnSetKeyedString_     = nullptr;
+    FnIsSameObject       fnIsSameObject_       = nullptr;
 };
 
 } // namespace iidm

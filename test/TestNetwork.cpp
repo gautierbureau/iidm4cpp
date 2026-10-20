@@ -38,7 +38,7 @@ static Network makeTestNetwork() {
 TEST(NetworkTest, GetIdName) {
     auto net = makeTestNetwork();
     EXPECT_EQ(net.getId(),   "test-network");
-    EXPECT_EQ(net.getName(), "Test Network");
+    EXPECT_EQ(net.getNameOrId(), "Test Network");
 }
 
 TEST(NetworkTest, GetGenerators) {
@@ -216,7 +216,7 @@ TEST(NetworkTest, GetVscConverterStations) {
     b->strings[{1, prop::ID}] = "N";
     b->children[{1, prop::VSC_CONVERTER_STATION}] = {100};
     b->strings[{100, prop::ID}] = "VSC1";
-    b->doubles[{100, prop::VSC_LOSS_FACTOR}] = 0.01f;
+    b->doubles[{100, prop::CONVERTER_STATION_LOSS_FACTOR}] = 0.01f;
     auto net = NetworkFactory::createFromBackend(std::move(b));
     auto vscs = net.getVscConverterStations();
     ASSERT_EQ(vscs.size(), 1u);
@@ -228,7 +228,7 @@ TEST(NetworkTest, GetLccConverterStations) {
     b->strings[{1, prop::ID}] = "N";
     b->children[{1, prop::LCC_CONVERTER_STATION}] = {110};
     b->strings[{110, prop::ID}] = "LCC1";
-    b->doubles[{110, prop::LCC_LOSS_FACTOR}] = 0.02f;
+    b->doubles[{110, prop::CONVERTER_STATION_LOSS_FACTOR}] = 0.02f;
     auto net = NetworkFactory::createFromBackend(std::move(b));
     auto lccs = net.getLccConverterStations();
     ASSERT_EQ(lccs.size(), 1u);

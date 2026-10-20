@@ -6,7 +6,7 @@
 namespace iidm {
 
 BranchObservability::BranchObservability(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
+    : ObjectRef(handle, backend) {}
 
 bool BranchObservability::isObservable() const {
     return backend_->getBool(handle_, prop::EXT_BRANCH_OBS_OBSERVABLE);
@@ -71,14 +71,6 @@ BranchObservability& BranchObservability::setQualityQ1(double standardDeviation,
 BranchObservability& BranchObservability::setQualityQ2(double standardDeviation, iidm::optional<bool> redundant) {
     detail::writeQuality(backend_, handle_, prop::EXT_BRANCH_OBS_QUALITY_Q2, standardDeviation, redundant);
     return *this;
-}
-
-bool BranchObservability::operator==(const BranchObservability& other) const {
-    return handle_ == other.handle_;
-}
-
-bool BranchObservability::operator!=(const BranchObservability& other) const {
-    return !(*this == other);
 }
 
 } // namespace iidm

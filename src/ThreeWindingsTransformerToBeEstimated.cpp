@@ -17,7 +17,7 @@ int phaseCode(ThreeSides side) {
 } // namespace
 
 ThreeWindingsTransformerToBeEstimated::ThreeWindingsTransformerToBeEstimated(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
+    : ObjectRef(handle, backend) {}
 
 bool ThreeWindingsTransformerToBeEstimated::shouldEstimateRatioTapChanger1() const {
     return shouldEstimateRatioTapChanger(ThreeSides::ONE);
@@ -83,14 +83,6 @@ ThreeWindingsTransformerToBeEstimated& ThreeWindingsTransformerToBeEstimated::sh
 ThreeWindingsTransformerToBeEstimated& ThreeWindingsTransformerToBeEstimated::shouldEstimatePhaseTapChanger(bool toBeEstimated, ThreeSides side) {
     backend_->setBool(handle_, phaseCode(side), toBeEstimated);
     return *this;
-}
-
-bool ThreeWindingsTransformerToBeEstimated::operator==(const ThreeWindingsTransformerToBeEstimated& other) const {
-    return handle_ == other.handle_;
-}
-
-bool ThreeWindingsTransformerToBeEstimated::operator!=(const ThreeWindingsTransformerToBeEstimated& other) const {
-    return !(*this == other);
 }
 
 } // namespace iidm

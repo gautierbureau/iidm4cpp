@@ -5,7 +5,7 @@
 namespace iidm {
 
 InternalConnection::InternalConnection(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
+    : ObjectRef(handle, backend) {}
 
 int InternalConnection::getNode1() const {
     return backend_->getInt(handle_, prop::IC_NODE1);

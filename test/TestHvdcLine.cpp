@@ -29,22 +29,17 @@ TEST_F(HvdcLineTest, GetId) {
     EXPECT_EQ(hvdc.getId(), "HVDC1");
 }
 
-TEST_F(HvdcLineTest, GetConverterStation1Id) {
-    backend.strings[{HVDC_HANDLE, prop::HVDC_CONVERTER_STATION1_ID}] = "VSC1";
+TEST_F(HvdcLineTest, ConverterStations) {
+    static constexpr ObjectHandle VSC_H = 80;
+    static constexpr ObjectHandle LCC_H = 81;
+    backend.related[{HVDC_HANDLE, prop::REL_CONVERTER_STATION1}] = VSC_H;
+    backend.related[{HVDC_HANDLE, prop::REL_CONVERTER_STATION2}] = LCC_H;
+    backend.strings[{VSC_H, prop::ID}] = "VSC1";
+    backend.ints[{LCC_H, prop::CONVERTER_STATION_HVDC_TYPE}] = static_cast<int>(HvdcType::LCC);
     HvdcLine hvdc(HVDC_HANDLE, &backend);
-    EXPECT_EQ(hvdc.getConverterStation1Id(), "VSC1");
-}
-
-TEST_F(HvdcLineTest, GetConverterStation2Id) {
-    backend.strings[{HVDC_HANDLE, prop::HVDC_CONVERTER_STATION2_ID}] = "VSC2";
-    HvdcLine hvdc(HVDC_HANDLE, &backend);
-    EXPECT_EQ(hvdc.getConverterStation2Id(), "VSC2");
-}
-
-TEST_F(HvdcLineTest, GetConverterStationIdsEmpty) {
-    HvdcLine hvdc(HVDC_HANDLE, &backend);
-    EXPECT_EQ(hvdc.getConverterStation1Id(), "");
-    EXPECT_EQ(hvdc.getConverterStation2Id(), "");
+    EXPECT_EQ(hvdc.getConverterStation1().getId(), "VSC1");
+    EXPECT_EQ(hvdc.getConverterStation2().getHvdcType(), HvdcType::LCC);
+    EXPECT_EQ(hvdc.getConverterStation2(), HvdcConverterStation(LCC_H, &backend));
 }
 
 // ── Converter station getHvdcLine ─────────────────────────────────────────────
@@ -54,24 +49,39 @@ TEST_F(HvdcLineTest, VscGetHvdcLine) {
     backend.strings[{VSC_H, prop::ID}] = "VSC1";
     backend.related[{VSC_H, prop::REL_HVDC_LINE}] = HVDC_HANDLE;
     VscConverterStation vsc(VSC_H, &backend);
-    HvdcLine line = vsc.getHvdcLine();
-    EXPECT_TRUE(line.isValid());
-    EXPECT_EQ(line.getId(), "HVDC1");
+    iidm::optional<HvdcLine> line = vsc.getHvdcLine();
+    ASSERT_TRUE(line);
+    EXPECT_EQ(line->getId(), "HVDC1");
 }
 
 TEST_F(HvdcLineTest, LccGetHvdcLine) {
     static constexpr ObjectHandle LCC_H = 81;
+    static constexpr ObjectHandle VSC_H = 80;
     backend.strings[{LCC_H, prop::ID}] = "LCC1";
     backend.related[{LCC_H, prop::REL_HVDC_LINE}] = HVDC_HANDLE;
+    backend.related[{LCC_H, prop::REL_OTHER_CONVERTER_STATION}] = VSC_H;
     LccConverterStation lcc(LCC_H, &backend);
-    HvdcLine line = lcc.getHvdcLine();
-    EXPECT_TRUE(line.isValid());
-    EXPECT_EQ(line.getId(), "HVDC1");
+    iidm::optional<HvdcLine> line = lcc.getHvdcLine();
+    ASSERT_TRUE(line);
+    EXPECT_EQ(line->getId(), "HVDC1");
+    EXPECT_EQ(*lcc.getOtherConverterStation(), HvdcConverterStation(VSC_H, &backend));
+}
+
+TEST_F(HvdcLineTest, StationWithoutLine) {
+    VscConverterStation vsc(82, &backend);
+    EXPECT_FALSE(vsc.getHvdcLine());
+    EXPECT_FALSE(vsc.getOtherConverterStation());
+}
+
+TEST_F(HvdcLineTest, Remove) {
+    HvdcLine hvdc(HVDC_HANDLE, &backend);
+    hvdc.remove();
+    EXPECT_EQ(backend.invocations.back(), std::make_pair(ObjectHandle(HVDC_HANDLE), prop::ACT_REMOVE));
 }
 
 TEST_F(HvdcLineTest, GetName) {
     HvdcLine hvdc(HVDC_HANDLE, &backend);
-    EXPECT_EQ(hvdc.getName(), "HVDC Line 1");
+    EXPECT_EQ(hvdc.getNameOrId(), "HVDC Line 1");
 }
 
 TEST_F(HvdcLineTest, GetRNominalVMaxP) {

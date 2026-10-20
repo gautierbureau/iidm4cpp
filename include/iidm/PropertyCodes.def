@@ -7,7 +7,10 @@
 //
 // Keep one IIDM_CODE per line, with a literal value; comments use //.
 
-// ── Object types (used in getChildren / findById) ───────────────────────────
+// ── Object types ─────────────────────────────────────────────────────────────
+// A type code stands for its type in every primitive: getChildren(parent, TYPE) lists the
+// parent's objects of that type, findById(TYPE, id) looks one up, getBool(object, TYPE) tells
+// whether the object is one (Java instanceof), invoke(parent, TYPE) starts a new one.
 IIDM_CODE(SUBSTATION,                  1)
 IIDM_CODE(VOLTAGE_LEVEL,               2)
 IIDM_CODE(GENERATOR,                   3)
@@ -44,14 +47,39 @@ IIDM_CODE(OLG_SIDE2,                   33) // all OperationalLimitsGroups for Br
 IIDM_CODE(OLG_LEG1,                    34) // all OperationalLimitsGroups for ThreeWT leg 1
 IIDM_CODE(OLG_LEG2,                    35) // all OperationalLimitsGroups for ThreeWT leg 2
 IIDM_CODE(OLG_LEG3,                    36) // all OperationalLimitsGroups for ThreeWT leg 3
+// Abstract types (Java interfaces)
+IIDM_CODE(IDENTIFIABLE,                43)
+IIDM_CODE(CONNECTABLE,                 44)
+IIDM_CODE(INJECTION,                   45)
+IIDM_CODE(BRANCH,                      46)
+IIDM_CODE(HVDC_CONVERTER_STATION,      47)
 
 // ── Shared properties (applicable to many types) ────────────────────────────
 IIDM_CODE(ID,                          100)
-IIDM_CODE(NAME,                        101)
+IIDM_CODE(NAME,                        101) // string: getNameOrId; optional string: getOptionalName; set: setName
 IIDM_CODE(COUNTRY,                     102) // string: Substation country (Country enum name)
 IIDM_CODE(FICTITIOUS,                  103) // bool: any Identifiable (and its adder)
 IIDM_CODE(ENSURE_ID_UNICITY,           104) // bool, adders only: make the id unique if it is taken
 IIDM_CODE(SUBSTATION_TSO,              105) // string
+
+// ── Identifiable ─────────────────────────────────────────────────────────────
+IIDM_CODE(IDENTIFIABLE_TYPE,           120) // int: IdentifiableType ordinal
+IIDM_CODE(ALIASES,                     121) // string list (sorted)
+IIDM_CODE(ALIAS_TYPE,                  122) // keyed by alias: its type (none if it has none, or no such alias);
+                                            // set: addAlias(alias, type), "" = no type; set none: removeAlias
+IIDM_CODE(UNIQUE_ALIAS_TYPE,           123) // keyed by alias, set only: addAlias(alias, type, ensureAliasUnicity = true)
+IIDM_CODE(ALIAS_FROM_TYPE,             124) // keyed by alias type: the alias of that type
+
+// ── Properties (identifiables and the other powsybl properties holders) ──────
+IIDM_CODE(PROPERTY,                    130) // keyed by property name: its value (none when absent); set none: removeProperty
+IIDM_CODE(PROPERTY_NAMES,              131) // string list (sorted)
+
+// ── Connectable ──────────────────────────────────────────────────────────────
+IIDM_CODE(EQUIVALENT,                  140) // bool: an equivalent, from a network reduction (also an adder field)
+
+// ── HvdcConverterStation (VSC and LCC) ───────────────────────────────────────
+IIDM_CODE(CONVERTER_STATION_HVDC_TYPE, 150) // int: HvdcType ordinal (VSC, LCC)
+IIDM_CODE(CONVERTER_STATION_LOSS_FACTOR, 151) // double (a float in powsybl)
 
 // ── Network ──────────────────────────────────────────────────────────────────
 IIDM_CODE(NETWORK_CASE_DATE,           110) // string: ISO-8601 date-time (ZonedDateTime)
@@ -77,12 +105,12 @@ IIDM_CODE(LOAD_TYPE,                   302)
 // ── Terminal ─────────────────────────────────────────────────────────────────
 IIDM_CODE(TERMINAL_P,                  400)
 IIDM_CODE(TERMINAL_Q,                  401)
-IIDM_CODE(TERMINAL_CONNECTED,          402)
+IIDM_CODE(TERMINAL_CONNECTED,          402) // bool, read-only: connect with invoke(terminal, ACT_CONNECT)
 IIDM_CODE(TERMINAL_BUS_ID,            403)
 IIDM_CODE(TERMINAL_NODE,               404) // node number (node-breaker topology)
-IIDM_CODE(TERMINAL_CONNECTABLE_ID,     405) // string: ID of the Connectable owning this terminal
 IIDM_CODE(TERMINAL_BUS_BREAKER_BUS_ID, 406) // string: bus-breaker view bus ("" when disconnected); adders: setBus
 IIDM_CODE(TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID, 407) // string: bus-breaker view connectable bus; adders: setConnectableBus
+IIDM_CODE(TERMINAL_SIDE,               408) // int: ThreeSides ordinal, -1 for an injection's terminal
 
 // ── Bus ──────────────────────────────────────────────────────────────────────
 IIDM_CODE(BUS_V,                       500)
@@ -199,8 +227,6 @@ IIDM_CODE(HVDC_NOMINAL_V,             901)
 IIDM_CODE(HVDC_ACTIVE_POWER_SETPOINT, 902)
 IIDM_CODE(HVDC_MAX_P,                  903)
 IIDM_CODE(HVDC_CONVERTERS_MODE,        904)
-IIDM_CODE(HVDC_CONVERTER_STATION1_ID,  905)
-IIDM_CODE(HVDC_CONVERTER_STATION2_ID,  906)
 
 // ── DanglingLine ─────────────────────────────────────────────────────────────
 IIDM_CODE(DL_P0,                       1000)
@@ -211,7 +237,7 @@ IIDM_CODE(DL_G,                        1004)
 IIDM_CODE(DL_B,                        1005)
 
 // ── ShuntCompensator ─────────────────────────────────────────────────────────
-IIDM_CODE(SHUNT_SECTION_COUNT,         1100)
+IIDM_CODE(SHUNT_SECTION_COUNT,         1100) // int; optional int: findSectionCount
 IIDM_CODE(SHUNT_MAX_SECTION_COUNT,     1101)
 IIDM_CODE(SHUNT_B_PER_SECTION,         1102)
 IIDM_CODE(SHUNT_G_PER_SECTION,         1103)
@@ -222,6 +248,7 @@ IIDM_CODE(SHUNT_VOLTAGE_REGULATOR_ON,  1107)
 IIDM_CODE(SHUNT_TARGET_V,              1108)
 IIDM_CODE(SHUNT_REGULATING_TERMINAL_ID, 1109)
 IIDM_CODE(SHUNT_B,                     1110) // total B for current section count
+IIDM_CODE(SHUNT_SOLVED_SECTION_COUNT,  1111) // optional int
 
 // ── StaticVarCompensator ─────────────────────────────────────────────────────
 IIDM_CODE(SVC_B_MIN,                   1200)
@@ -231,7 +258,6 @@ IIDM_CODE(SVC_REACTIVE_POWER_SETPOINT, 1203)
 IIDM_CODE(SVC_REGULATION_MODE,         1204)
 
 // ── VscConverterStation ──────────────────────────────────────────────────────
-IIDM_CODE(VSC_LOSS_FACTOR,             1300)
 IIDM_CODE(VSC_VOLTAGE_REGULATOR_ON,    1301)
 IIDM_CODE(VSC_VOLTAGE_SETPOINT,        1302)
 IIDM_CODE(VSC_REACTIVE_POWER_SETPOINT, 1303)
@@ -240,7 +266,6 @@ IIDM_CODE(VSC_MIN_Q,                   1305)
 IIDM_CODE(VSC_MAX_Q,                   1306)
 
 // ── LccConverterStation ──────────────────────────────────────────────────────
-IIDM_CODE(LCC_LOSS_FACTOR,             1400)
 IIDM_CODE(LCC_POWER_FACTOR,            1401)
 
 // ── BusbarSection ────────────────────────────────────────────────────────────
@@ -321,7 +346,7 @@ IIDM_CODE(OLG_EMPTY,                   1981) // bool: isEmpty()
 // ── Relations (used in getRelated) ──────────────────────────────────────────
 IIDM_CODE(REL_TERMINAL1,               2000)
 IIDM_CODE(REL_TERMINAL2,               2001)
-IIDM_CODE(REL_TERMINAL,                2002)
+IIDM_CODE(REL_TERMINAL,                2002) // injection or regulation → its terminal; branch or 3WT keyed by voltage level id (getRelatedByString)
 IIDM_CODE(REL_BUS,                     2003)
 IIDM_CODE(REL_VOLTAGE_LEVEL,           2004)
 IIDM_CODE(REL_SUBSTATION,              2005)
@@ -335,13 +360,17 @@ IIDM_CODE(REL_SELECTED_OLG1,           2012) // Branch side 1 or ThreeWT leg 1 �
 IIDM_CODE(REL_SELECTED_OLG2,           2013) // Branch side 2 or ThreeWT leg 2 → selected OLG
 IIDM_CODE(REL_SELECTED_OLG3,           2014) // ThreeWT leg 3 → selected OLG
 IIDM_CODE(REL_OLG_CURRENT_LIMITS,      2015) // OLG → its CurrentLimits
-IIDM_CODE(REL_HVDC_LINE,               2016) // LCC/VSC converter station → its HvdcLine
+IIDM_CODE(REL_HVDC_LINE,               2016) // converter station → its HvdcLine (none when not in an HVDC line)
 IIDM_CODE(REL_TWO_WT_RTC_REG_TERMINAL,        2017) // TwoWT → RTC regulating terminal
 IIDM_CODE(REL_THREE_WT_LEG1_RTC_REG_TERMINAL, 2018) // ThreeWT Leg1 → RTC regulating terminal
 IIDM_CODE(REL_THREE_WT_LEG2_RTC_REG_TERMINAL, 2019) // ThreeWT Leg2 → RTC regulating terminal
 IIDM_CODE(REL_THREE_WT_LEG3_RTC_REG_TERMINAL, 2020) // ThreeWT Leg3 → RTC regulating terminal
 IIDM_CODE(REL_NBV_TERMINAL_AT_NODE,    2021) // NodeBreakerView: terminal at node (use getRelatedByIndex)
 IIDM_CODE(REL_CONNECTABLE,             2022) // Terminal → its Connectable
+IIDM_CODE(REL_CONVERTER_STATION1,      2030) // HvdcLine → converter station 1
+IIDM_CODE(REL_CONVERTER_STATION2,      2031) // HvdcLine → converter station 2
+IIDM_CODE(REL_OTHER_CONVERTER_STATION, 2032) // converter station → the other station of its HVDC line (none without line)
+IIDM_CODE(REL_BBV_BUS,                 2033) // VL (keyed by bus id) → bus-breaker view bus (getRelatedByString)
 IIDM_CODE(REL_VL_BBV_BUS1,            2023) // VL (keyed by switchId) → Bus on side 1 (getRelatedByString)
 IIDM_CODE(REL_VL_BBV_BUS2,            2024) // VL (keyed by switchId) → Bus on side 2 (getRelatedByString)
 
@@ -366,15 +395,17 @@ IIDM_CODE(REGULATING,                  2212) // bool, read-only: has a regulatio
 IIDM_CODE(REGULATING_TARGET_V,         2213) // double, read-only: regulation target if it regulates V remotely, else local target V
 IIDM_CODE(REGULATING_TARGET_Q,         2214) // double, read-only: same for Q
 
-// ── Creation and removal (invoke) ────────────────────────────────────────────
+// ── Actions (invoke) ─────────────────────────────────────────────────────────
 // invoke(parent, <type code>) starts a new object: it returns an adder, on which the setters
 // take the object's own property codes (setDouble(adder, GEN_TARGET_P, 100)); nothing changes
 // in the network until invoke(adder, ACT_ADD).
 IIDM_CODE(ACT_ADD,                     5000) // invoke(adder): adds the object, returns it (INVALID_HANDLE for nested adders)
 IIDM_CODE(ACT_REMOVE,                  5001) // invoke(identifiable): removes it from the network
-
-// ── Child types (new) ────────────────────────────────────────────────────────
-IIDM_CODE(CONNECTABLE_TERMINALS,       37) // all terminals of the Connectable owning a Terminal
+// invoke(terminal or connectable, ACT_CONNECT / ACT_DISCONNECT): connects / disconnects it (every
+// terminal of a connectable); returns the object when this changed it, INVALID_HANDLE when it could
+// not, or already was.
+IIDM_CODE(ACT_CONNECT,                 5002)
+IIDM_CODE(ACT_DISCONNECT,              5003)
 
 // ── Extension: TwoWindingsTransformerToBeEstimated (on TwoWT) ────────────────
 IIDM_CODE(EXT_TWO_WT_TBE_EXISTS,          3700) // bool

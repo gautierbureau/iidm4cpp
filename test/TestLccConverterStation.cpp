@@ -17,7 +17,7 @@ protected:
     void SetUp() override {
         backend.strings[{LCC_H, prop::ID}]           = "LCC1";
         backend.strings[{LCC_H, prop::NAME}]          = "LCC Station 1";
-        backend.doubles[{LCC_H, prop::LCC_LOSS_FACTOR}]  = 0.02f;
+        backend.doubles[{LCC_H, prop::CONVERTER_STATION_LOSS_FACTOR}]  = 0.02f;
         backend.doubles[{LCC_H, prop::LCC_POWER_FACTOR}] = 0.95f;
         backend.related[{LCC_H, prop::REL_TERMINAL}]    = TERM_H;
         backend.bools  [{TERM_H, prop::TERMINAL_CONNECTED}] = true;
@@ -47,16 +47,7 @@ TEST_F(LccConverterStationTest, GetTerminal) {
 TEST_F(LccConverterStationTest, GetHvdcLine) {
     backend.strings[{HVDC_H, prop::ID}] = "HVDC1";
     LccConverterStation lcc(LCC_H, &backend);
-    EXPECT_TRUE(lcc.getHvdcLine().isValid());
-}
-
-TEST_F(LccConverterStationTest, ConnectDisconnect) {
-    LccConverterStation lcc(LCC_H, &backend);
-    EXPECT_TRUE(lcc.isConnected());
-    lcc.disconnect();
-    EXPECT_FALSE((backend.bools[{TERM_H, prop::TERMINAL_CONNECTED}]));
-    lcc.connect();
-    EXPECT_TRUE((backend.bools[{TERM_H, prop::TERMINAL_CONNECTED}]));
+    EXPECT_TRUE(static_cast<bool>(lcc.getHvdcLine()));
 }
 
 TEST_F(LccConverterStationTest, IsValid) {

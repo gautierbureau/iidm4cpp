@@ -1,21 +1,17 @@
 #pragma once
 
-#include <iidm/HandleRef.h>
-#include <iidm/ObjectHandle.h>
-#include <string>
+#include <iidm/Identifiable.h>
 
 namespace iidm {
 
-class BackendProvider;
 class VoltageLevel;
 
-class Bus {
+class Bus : public Identifiable {
 public:
-    Bus() = default;
-    explicit Bus(ObjectHandle handle, BackendProvider* backend);
+    static constexpr int TYPE = prop::BUS;
 
-    std::string getId() const;
-    std::string getName() const;
+    Bus() = default;
+    explicit Bus(ObjectHandle handle, BackendProvider* backend) : Identifiable(handle, backend) {}
 
     double getV() const;
     Bus& setV(double v);
@@ -24,18 +20,6 @@ public:
     Bus& setAngle(double angle);
 
     VoltageLevel getVoltageLevel() const;
-
-    // Removes a bus-breaker bus that nothing is connected to (else ValidationException)
-    void remove();
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const Bus& other) const;
-    bool operator!=(const Bus& other) const;
-
-private:
-    HandleRef handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

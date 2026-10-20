@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iidm/HandleRef.h>
+#include <iidm/ObjectRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/RatioTapChangerStep.h>
 #include <iidm/Terminal.h>
@@ -26,7 +26,7 @@ struct RatioTapChangerConfig {
     int loadTapChangingCapabilities; // bool property code
 };
 
-class RatioTapChanger {
+class RatioTapChanger : public detail::ObjectRef {
 public:
     RatioTapChanger() = default;
     explicit RatioTapChanger(ObjectHandle handle, BackendProvider* backend,
@@ -53,14 +53,11 @@ public:
     std::vector<RatioTapChangerStep> getAllSteps() const;
     RatioTapChangerStep getCurrentStep() const;
 
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
+    // Same transformer and same tap changer
     bool operator==(const RatioTapChanger& other) const;
-    bool operator!=(const RatioTapChanger& other) const;
+    bool operator!=(const RatioTapChanger& other) const { return !(*this == other); }
 
 private:
-    HandleRef       handle_;
-    BackendProvider*      backend_ = detail::nullBackend();
     RatioTapChangerConfig cfg_     = {};
 };
 

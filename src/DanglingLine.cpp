@@ -6,17 +6,6 @@
 
 namespace iidm {
 
-DanglingLine::DanglingLine(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
-
-std::string DanglingLine::getId() const {
-    return backend_->getString(handle_, prop::ID);
-}
-
-std::string DanglingLine::getName() const {
-    return backend_->getString(handle_, prop::NAME);
-}
-
 double DanglingLine::getP0() const {
     return backend_->getDouble(handle_, prop::DL_P0);
 }
@@ -55,49 +44,6 @@ iidm::optional<CurrentLimits> DanglingLine::getCurrentLimits() const {
     ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS1);
     if (h == INVALID_HANDLE) return {};
     return CurrentLimits(h, backend_);
-}
-
-Terminal DanglingLine::getTerminal() const {
-    ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_TERMINAL);
-    return Terminal(termHandle, backend_);
-}
-
-void DanglingLine::connect() {
-    getTerminal().connect();
-}
-
-void DanglingLine::disconnect() {
-    getTerminal().disconnect();
-}
-
-bool DanglingLine::isConnected() const {
-    return getTerminal().isConnected();
-}
-
-bool DanglingLine::operator==(const DanglingLine& other) const {
-    return handle_ == other.handle_;
-}
-
-bool DanglingLine::operator!=(const DanglingLine& other) const {
-    return !(*this == other);
-}
-
-// ── State estimation extensions ──────────────────────────────────────────────
-
-bool DanglingLine::hasInjectionObservability() const {
-    return backend_->getBool(handle_, prop::EXT_INJ_OBS_EXISTS);
-}
-
-InjectionObservability DanglingLine::getInjectionObservability() const {
-    return InjectionObservability(handle_, backend_);
-}
-
-bool DanglingLine::hasMeasurements() const {
-    return backend_->getBool(handle_, prop::EXT_MEAS_EXISTS);
-}
-
-Measurements DanglingLine::getMeasurements() const {
-    return Measurements(handle_, backend_);
 }
 
 } // namespace iidm

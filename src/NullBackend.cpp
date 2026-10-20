@@ -20,6 +20,12 @@ public:
     void setString(ObjectHandle, int, const std::string&) override { fail(); }
 
     iidm::optional<double> getOptDouble(ObjectHandle, int) const override { fail(); }
+    iidm::optional<int>         getOptInt(ObjectHandle, int) const override { fail(); }
+    iidm::optional<std::string> getOptString(ObjectHandle, int) const override { fail(); }
+    std::vector<std::string>    getStringList(ObjectHandle, int) const override { fail(); }
+    iidm::optional<std::string> getKeyedString(ObjectHandle, int, const std::string&) const override { fail(); }
+    void setKeyedString(ObjectHandle, int, const std::string&, const iidm::optional<std::string>&) override { fail(); }
+    bool isSameObject(ObjectHandle, ObjectHandle) const override { fail(); }
 
     std::vector<ObjectHandle> getChildren(ObjectHandle, int) const override { fail(); }
     ObjectHandle              getRelated(ObjectHandle, int) const override { fail(); }

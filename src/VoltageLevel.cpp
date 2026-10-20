@@ -16,13 +16,14 @@
 #include <iidm/DanglingLine.h>
 #include <iidm/LccConverterStation.h>
 #include <iidm/VscConverterStation.h>
+#include "Wrap.h"
 
 namespace iidm {
 
 // ── NodeBreakerView ───────────────────────────────────────────────────────────
 
 VoltageLevel::NodeBreakerView::NodeBreakerView(ObjectHandle h, BackendProvider* b)
-    : handle_(h, b), backend_(detail::orNullBackend(b)) {}
+    : ObjectRef(h, b) {}
 
 std::vector<Switch> VoltageLevel::NodeBreakerView::getSwitches() const {
     auto handles = backend_->getChildren(handle_, prop::SWITCH);
@@ -66,7 +67,7 @@ Terminal VoltageLevel::NodeBreakerView::getTerminal(int node) const {
 // ── BusBreakerView ────────────────────────────────────────────────────────────
 
 VoltageLevel::BusBreakerView::BusBreakerView(ObjectHandle h, BackendProvider* b)
-    : handle_(h, b), backend_(detail::orNullBackend(b)) {}
+    : ObjectRef(h, b) {}
 
 std::vector<Bus> VoltageLevel::BusBreakerView::getBuses() const {
     auto handles = backend_->getChildren(handle_, prop::BUS);
@@ -92,22 +93,21 @@ Bus VoltageLevel::BusBreakerView::getBus2(const std::string& switchId) const {
     return Bus(backend_->getRelatedByString(handle_, prop::REL_VL_BBV_BUS2, switchId), backend_);
 }
 
+iidm::optional<Bus> VoltageLevel::BusBreakerView::getBus(const std::string& busId) const {
+    return detail::wrapOptional<Bus>(backend_->getRelatedByString(handle_, prop::REL_BBV_BUS, busId), backend_);
+}
+
 BusAdder VoltageLevel::BusBreakerView::newBus() {
     return BusAdder(backend_->invoke(handle_, prop::BUS), backend_);
 }
 
+void VoltageLevel::BusBreakerView::removeBus(const std::string& busId) {
+    iidm::optional<Bus> bus = getBus(busId);
+    if (!bus) throw ValidationException("Bus " + busId + " not found");
+    backend_->invoke(detail::Access::handle(*bus), prop::ACT_REMOVE);
+}
+
 // ── VoltageLevel ──────────────────────────────────────────────────────────────
-
-VoltageLevel::VoltageLevel(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
-
-std::string VoltageLevel::getId() const {
-    return backend_->getString(handle_, prop::ID);
-}
-
-std::string VoltageLevel::getName() const {
-    return backend_->getString(handle_, prop::NAME);
-}
 
 double VoltageLevel::getNominalV() const {
     return backend_->getDouble(handle_, prop::VL_NOMINAL_V);
@@ -131,6 +131,10 @@ bool VoltageLevel::hasSlackTerminal() const {
 
 SlackTerminal VoltageLevel::getSlackTerminal() const {
     return SlackTerminal(handle_, backend_);
+}
+
+std::vector<Connectable> VoltageLevel::getConnectables() const {
+    return detail::wrapAll<Connectable>(backend_->getChildren(handle_, prop::CONNECTABLE), backend_);
 }
 
 std::vector<Switch> VoltageLevel::getSwitches() const {
@@ -237,15 +241,7 @@ VoltageLevel::BusBreakerView VoltageLevel::getBusBreakerView() const {
     return BusBreakerView(handle_, backend_);
 }
 
-bool VoltageLevel::operator==(const VoltageLevel& other) const {
-    return handle_ == other.handle_;
-}
-
-bool VoltageLevel::operator!=(const VoltageLevel& other) const {
-    return !(*this == other);
-}
-
-// ── State estimation extensions ──────────────────────────────────────────────
+// ── Extensions ───────────────────────────────────────────────────────────────
 
 bool VoltageLevel::hasObservabilityArea() const {
     return backend_->getBool(handle_, prop::EXT_OBS_AREA_EXISTS);

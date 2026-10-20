@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iidm/HandleRef.h>
+#include <iidm/ObjectRef.h>
 #include <iidm/ObjectHandle.h>
 #include <vector>
 
@@ -8,7 +8,7 @@ namespace iidm {
 
 class BackendProvider;
 
-class ReactiveCapabilityCurve {
+class ReactiveCapabilityCurve : public detail::ObjectRef {
 public:
     struct Point {
         double p;
@@ -20,15 +20,6 @@ public:
     explicit ReactiveCapabilityCurve(ObjectHandle handle, BackendProvider* backend);
 
     std::vector<Point> getPoints() const;
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const ReactiveCapabilityCurve& other) const;
-    bool operator!=(const ReactiveCapabilityCurve& other) const;
-
-private:
-    HandleRef  handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

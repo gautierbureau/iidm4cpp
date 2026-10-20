@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iidm/HandleRef.h>
+#include <iidm/ObjectRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/ObservabilityQuality.h>
 #include <iidm/stdcxx/optional.hpp>
@@ -11,7 +11,7 @@ class BackendProvider;
 
 // Typed wrapper for the PowSyBl BranchObservability extension attached to a branch
 // (Line, TwoWindingsTransformer).
-class BranchObservability {
+class BranchObservability : public detail::ObjectRef {
 public:
     BranchObservability() = default;
     explicit BranchObservability(ObjectHandle handle, BackendProvider* backend);
@@ -36,15 +36,6 @@ public:
     BranchObservability& setQualityP2(double standardDeviation, iidm::optional<bool> redundant);
     BranchObservability& setQualityQ1(double standardDeviation, iidm::optional<bool> redundant);
     BranchObservability& setQualityQ2(double standardDeviation, iidm::optional<bool> redundant);
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const BranchObservability& other) const;
-    bool operator!=(const BranchObservability& other) const;
-
-private:
-    HandleRef  handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

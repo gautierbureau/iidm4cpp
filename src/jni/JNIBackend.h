@@ -32,6 +32,13 @@ public:
     void setString(ObjectHandle h, int property, const std::string& value) override;
 
     iidm::optional<double> getOptDouble(ObjectHandle h, int property) const override;
+    iidm::optional<int>         getOptInt(ObjectHandle h, int property) const override;
+    iidm::optional<std::string> getOptString(ObjectHandle h, int property) const override;
+    std::vector<std::string>    getStringList(ObjectHandle h, int listCode) const override;
+    iidm::optional<std::string> getKeyedString(ObjectHandle h, int property, const std::string& key) const override;
+    void setKeyedString(ObjectHandle h, int property, const std::string& key,
+                        const iidm::optional<std::string>& value) override;
+    bool isSameObject(ObjectHandle h, ObjectHandle other) const override;
 
     std::vector<ObjectHandle> getChildren(ObjectHandle h, int childType) const override;
     ObjectHandle              getRelated(ObjectHandle h, int relation) const override;
@@ -68,6 +75,7 @@ private:
     jobject toObject(ObjectHandle h) const;          // throws InvalidHandleException for 0
     jobject toNullableObject(ObjectHandle h) const;  // INVALID_HANDLE → null
     std::string toString(jstring local) const;       // deletes the local reference
+    jstring newString(const std::string& value) const; // a new local reference (UTF-8 → Java)
 
     std::string  networkId_;
     JavaVM*      jvm_  = nullptr;

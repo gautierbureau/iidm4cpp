@@ -6,7 +6,7 @@
 namespace iidm {
 
 InjectionObservability::InjectionObservability(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
+    : ObjectRef(handle, backend) {}
 
 bool InjectionObservability::isObservable() const {
     return backend_->getBool(handle_, prop::EXT_INJ_OBS_OBSERVABLE);
@@ -57,14 +57,6 @@ InjectionObservability& InjectionObservability::setQualityQ(double standardDevia
 InjectionObservability& InjectionObservability::setQualityV(double standardDeviation, iidm::optional<bool> redundant) {
     detail::writeQuality(backend_, handle_, prop::EXT_INJ_OBS_QUALITY_V, standardDeviation, redundant);
     return *this;
-}
-
-bool InjectionObservability::operator==(const InjectionObservability& other) const {
-    return handle_ == other.handle_;
-}
-
-bool InjectionObservability::operator!=(const InjectionObservability& other) const {
-    return !(*this == other);
 }
 
 } // namespace iidm

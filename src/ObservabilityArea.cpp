@@ -7,7 +7,7 @@ namespace iidm {
 // ── ObservabilityArea::AreaCharacteristics ────────────────────────────────────
 
 ObservabilityArea::AreaCharacteristics::AreaCharacteristics(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
+    : ObjectRef(handle, backend) {}
 
 int ObservabilityArea::AreaCharacteristics::getAreaNumber() const {
     return backend_->getInt(handle_, prop::OBS_AREA_NUMBER);
@@ -49,7 +49,7 @@ iidm::optional<ObservabilityArea::AreaCharacteristics> toArea(ObjectHandle h, Ba
 } // namespace
 
 ObservabilityArea::ObservabilityArea(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
+    : ObjectRef(handle, backend) {}
 
 bool ObservabilityArea::isConsistentWithTopology() const {
     return backend_->getBool(handle_, prop::EXT_OBS_AREA_CONSISTENT);
@@ -73,14 +73,6 @@ iidm::optional<ObservabilityArea::AreaCharacteristics> ObservabilityArea::getObs
 
 iidm::optional<ObservabilityArea::AreaCharacteristics> ObservabilityArea::getObservabilityAreaByBusBreakerBus(const std::string& busId) const {
     return toArea(backend_->getRelatedByString(handle_, prop::REL_OBS_AREA_BY_BBV_BUS, busId), backend_);
-}
-
-bool ObservabilityArea::operator==(const ObservabilityArea& other) const {
-    return handle_ == other.handle_;
-}
-
-bool ObservabilityArea::operator!=(const ObservabilityArea& other) const {
-    return !(*this == other);
 }
 
 } // namespace iidm

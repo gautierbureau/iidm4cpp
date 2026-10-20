@@ -347,13 +347,13 @@ class StateEstimationDispatchTest {
         assertEquals("B2", PropertyDispatcher.getString(buses[0], ID));
         long[] terminals = PropertyDispatcher.getChildren(border, OBS_AREA_TERMINALS);
         assertEquals(1, terminals.length); // T3 leg 1
-        assertEquals("T3", PropertyDispatcher.getString(terminals[0], TERMINAL_CONNECTABLE_ID));
+        assertEquals("T3", connectableId(terminals[0]));
         assertEquals(0L, PropertyDispatcher.getRelatedByString(vl1, REL_OBS_AREA_BY_BBV_BUS, "UNKNOWN"));
 
         // Sorted by connectable id, so the same on every run (powsybl gives them as a HashSet)
         long observable = PropertyDispatcher.getRelatedByString(vl1, REL_OBS_AREA_BY_BBV_BUS, "B1");
         assertEquals(java.util.List.of("G1", "LINE1", "T2"), Arrays.stream(PropertyDispatcher.getChildren(observable, OBS_AREA_TERMINALS))
-            .mapToObj(t -> PropertyDispatcher.getString(t, TERMINAL_CONNECTABLE_ID)).toList());
+            .mapToObj(StateEstimationDispatchTest::connectableId).toList());
 
         long vl2 = reg(network.getVoltageLevel("VL2"));
         assertEquals(0, PropertyDispatcher.getBool(vl2, EXT_OBS_AREA_EXISTS));
@@ -370,8 +370,12 @@ class StateEstimationDispatchTest {
         assertArrayEquals(new int[] {0, 1, 2}, PropertyDispatcher.getIntList(area, OBS_AREA_NODES));
         long[] terminals = PropertyDispatcher.getChildren(area, OBS_AREA_TERMINALS);
         assertEquals(Set.of("BBS1", "L4", "LINE1"), Arrays.stream(terminals)
-            .mapToObj(t -> PropertyDispatcher.getString(t, TERMINAL_CONNECTABLE_ID))
+            .mapToObj(StateEstimationDispatchTest::connectableId)
             .collect(java.util.stream.Collectors.toSet()));
+    }
+
+    private static String connectableId(long terminal) {
+        return PropertyDispatcher.getString(PropertyDispatcher.getRelated(terminal, REL_CONNECTABLE), ID);
     }
 
     // ── Object-based API (JNI fallback) ───────────────────────────────────

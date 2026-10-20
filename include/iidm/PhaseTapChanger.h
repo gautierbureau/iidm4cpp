@@ -1,6 +1,6 @@
 #pragma once
 
-#include <iidm/HandleRef.h>
+#include <iidm/ObjectRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/Enums.h>
 #include <iidm/PhaseTapChangerStep.h>
@@ -25,7 +25,7 @@ struct PhaseTapChangerConfig {
     int regulationTerminalId;
 };
 
-class PhaseTapChanger {
+class PhaseTapChanger : public detail::ObjectRef {
 public:
     PhaseTapChanger() = default;
     explicit PhaseTapChanger(ObjectHandle handle, BackendProvider* backend,
@@ -52,14 +52,11 @@ public:
     std::vector<PhaseTapChangerStep> getAllSteps() const;
     PhaseTapChangerStep getCurrentStep() const;
 
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
+    // Same transformer and same tap changer
     bool operator==(const PhaseTapChanger& other) const;
-    bool operator!=(const PhaseTapChanger& other) const;
+    bool operator!=(const PhaseTapChanger& other) const { return !(*this == other); }
 
 private:
-    HandleRef       handle_;
-    BackendProvider*      backend_ = detail::nullBackend();
     PhaseTapChangerConfig cfg_     = {};
 };
 

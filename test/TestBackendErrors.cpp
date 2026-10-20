@@ -51,7 +51,7 @@ void checkBackendErrors(BackendProvider& b) {
 
     SlackTerminal slack = VoltageLevel(vl1, &b).getSlackTerminal();
     EXPECT_THROW(slack.setTerminal(l2.getTerminal()), ValidationException);
-    EXPECT_EQ(slack.getTerminal().getConnectableId(), "G");
+    EXPECT_EQ(slack.getTerminal().getConnectable().getId(), "G");
 
     // Unknown codes, codes on the wrong type of object, invalid handles
     EXPECT_THROW(b.getDouble(g, 999999), PropertyNotFoundException);

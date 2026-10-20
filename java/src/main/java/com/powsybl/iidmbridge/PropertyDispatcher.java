@@ -19,6 +19,8 @@ import com.powsybl.iidm.network.regulation.VoltageRegulation;
 import com.powsybl.iidm.network.regulation.VoltageRegulationHolder;
 import com.powsybl.iidmbridge.graalvm.NetworkRegistry;
 import java.util.Collection;
+import java.util.Objects;
+import java.util.OptionalInt;
 
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -99,10 +101,9 @@ public final class PropertyDispatcher {
             case SVC_B_MAX                   -> ((StaticVarCompensator) obj).getBmax();
             case SVC_VOLTAGE_SETPOINT        -> ((StaticVarCompensator) obj).getVoltageSetpoint();
             case SVC_REACTIVE_POWER_SETPOINT -> ((StaticVarCompensator) obj).getReactivePowerSetpoint();
-            case VSC_LOSS_FACTOR             -> ((VscConverterStation) obj).getLossFactor();
             case VSC_VOLTAGE_SETPOINT        -> ((VscConverterStation) obj).getVoltageSetpoint();
             case VSC_REACTIVE_POWER_SETPOINT -> ((VscConverterStation) obj).getReactivePowerSetpoint();
-            case LCC_LOSS_FACTOR  -> ((LccConverterStation) obj).getLossFactor();
+            case CONVERTER_STATION_LOSS_FACTOR -> ((HvdcConverterStation<?>) obj).getLossFactor();
             case LCC_POWER_FACTOR -> ((LccConverterStation) obj).getPowerFactor();
             case EXT_APC_DROOP -> activePowerControl(obj).getDroop();
             case EXT_APC_PARTICIPATION_FACTOR -> activePowerControl(obj).getParticipationFactor();
@@ -221,6 +222,7 @@ public final class PropertyDispatcher {
             case SVC_REACTIVE_POWER_SETPOINT -> ((StaticVarCompensator) obj).setReactivePowerSetpoint(value);
             case VSC_VOLTAGE_SETPOINT        -> ((VscConverterStation) obj).setVoltageSetpoint(value);
             case VSC_REACTIVE_POWER_SETPOINT -> ((VscConverterStation) obj).setReactivePowerSetpoint(value);
+            case CONVERTER_STATION_LOSS_FACTOR -> ((HvdcConverterStation<?>) obj).setLossFactor((float) value);
             case EXT_APC_DROOP -> activePowerControl(obj).setDroop(value);
             case EXT_APC_PARTICIPATION_FACTOR -> activePowerControl(obj).setParticipationFactor(value);
             case EXT_APC_MIN_TARGET_P -> activePowerControl(obj).setMinTargetP(value);
@@ -258,6 +260,12 @@ public final class PropertyDispatcher {
     public static int getInt(Object obj, int property) {
         if (isThreeWtLegCode(property)) return threeWtLegInt(obj, property);
         return switch (property) {
+            case IDENTIFIABLE_TYPE  -> ((Identifiable<?>) obj).getType().ordinal();
+            case CONVERTER_STATION_HVDC_TYPE -> ((HvdcConverterStation<?>) obj).getHvdcType().ordinal();
+            case TERMINAL_SIDE -> {
+                ThreeSides side = ((Terminal) obj).getSide();
+                yield side == null ? -1 : side.ordinal();
+            }
             case GEN_ENERGY_SOURCE  -> ((Generator) obj).getEnergySource().ordinal();
             case NETWORK_FORECAST_DISTANCE -> ((Network) obj).getForecastDistance();
             case VR_MODE -> {
@@ -353,6 +361,7 @@ public final class PropertyDispatcher {
             case SVC_REGULATION_MODE -> setSvcRegulationModeFromCode((StaticVarCompensator) obj, value);
             case SHUNT_SECTION_COUNT ->
                 ((ShuntCompensator) obj).setSectionCount(value);
+            case SHUNT_SOLVED_SECTION_COUNT -> ((ShuntCompensator) obj).setSolvedSectionCount(value);
             case TWO_WT_RTC_TAP_POSITION ->
                 ((TwoWindingsTransformer) obj).getRatioTapChanger().setTapPosition(value);
             case TWO_WT_PTC_TAP_POSITION ->
@@ -382,7 +391,31 @@ public final class PropertyDispatcher {
     public static boolean getBool(Object obj, int property) {
         if (isThreeWtLegCode(property)) return threeWtLegBool(obj, property);
         return switch (property) {
+            // Identifiable type codes: whether the object is one
+            case IDENTIFIABLE               -> obj instanceof Identifiable<?>;
+            case CONNECTABLE                -> obj instanceof Connectable<?>;
+            case INJECTION                  -> obj instanceof Injection<?>;
+            case BRANCH                     -> obj instanceof Branch<?>;
+            case HVDC_CONVERTER_STATION     -> obj instanceof HvdcConverterStation<?>;
+            case SUBSTATION                 -> obj instanceof Substation;
+            case VOLTAGE_LEVEL              -> obj instanceof VoltageLevel;
+            case GENERATOR                  -> obj instanceof Generator;
+            case LOAD                       -> obj instanceof Load;
+            case LINE                       -> obj instanceof Line;
+            case TWO_WINDINGS_TRANSFORMER   -> obj instanceof TwoWindingsTransformer;
+            case THREE_WINDINGS_TRANSFORMER -> obj instanceof ThreeWindingsTransformer;
+            case HVDC_LINE                  -> obj instanceof HvdcLine;
+            case DANGLING_LINE              -> obj instanceof BoundaryLine;
+            case SHUNT_COMPENSATOR          -> obj instanceof ShuntCompensator;
+            case STATIC_VAR_COMPENSATOR     -> obj instanceof StaticVarCompensator;
+            case VSC_CONVERTER_STATION      -> obj instanceof VscConverterStation;
+            case LCC_CONVERTER_STATION      -> obj instanceof LccConverterStation;
+            case BUS                        -> obj instanceof Bus;
+            case SWITCH                     -> obj instanceof Switch;
+            case BUSBAR_SECTION             -> obj instanceof BusbarSection;
+            case BATTERY                    -> obj instanceof Battery;
             case FICTITIOUS                 -> ((Identifiable<?>) obj).isFictitious();
+            case EQUIVALENT                 -> ((Connectable<?>) obj).isEquivalent();
             case GEN_CONDENSER              -> ((Generator) obj).isCondenser();
             case REGULATING                 -> ((VoltageRegulationHolder<?>) obj).isRegulating();
             case VR_REGULATING              -> ((VoltageRegulation) obj).isRegulating();
@@ -451,11 +484,8 @@ public final class PropertyDispatcher {
         }
         switch (property) {
             case FICTITIOUS -> ((Identifiable<?>) obj).setFictitious(bval);
+            case EQUIVALENT -> ((Connectable<?>) obj).setEquivalent(bval);
             case VR_REGULATING -> ((VoltageRegulation) obj).setRegulating(bval);
-            case TERMINAL_CONNECTED -> {
-                if (bval) ((Terminal) obj).connect();
-                else      ((Terminal) obj).disconnect();
-            }
             case VSC_VOLTAGE_REGULATOR_ON -> ((VscConverterStation) obj).setVoltageRegulatorOn(bval);
             case SW_OPEN     -> ((Switch) obj).setOpen(bval);
             case SW_RETAINED -> ((Switch) obj).setRetained(bval);
@@ -491,7 +521,6 @@ public final class PropertyDispatcher {
                 Bus bus = t.getBusView().getConnectableBus();
                 yield bus != null ? bus.getId() : "";
             }
-            case TERMINAL_CONNECTABLE_ID -> ((Terminal) obj).getConnectable().getId();
             case TERMINAL_BUS_BREAKER_BUS_ID -> {
                 Bus bus = ((Terminal) obj).getBusBreakerView().getBus();
                 yield bus != null ? bus.getId() : "";
@@ -510,8 +539,6 @@ public final class PropertyDispatcher {
                 Terminal rt = ((ShuntCompensator) obj).getRegulatingTerminal();
                 yield rt != null ? rt.getConnectable().getId() : "";
             }
-            case HVDC_CONVERTER_STATION1_ID -> ((HvdcLine) obj).getConverterStation1().getId();
-            case HVDC_CONVERTER_STATION2_ID -> ((HvdcLine) obj).getConverterStation2().getId();
             case TWO_WT_RTC_REG_TERMINAL_ID -> {
                 Terminal rt = ((TwoWindingsTransformer) obj).getRatioTapChanger().getRegulationTerminal();
                 yield rt != null ? rt.getConnectable().getId() : "";
@@ -574,6 +601,108 @@ public final class PropertyDispatcher {
         }
     }
 
+    // ── Optional values ───────────────────────────────────────────────────
+    //
+    // Some properties may have no value. getOptInt / getOptString give it as it is (no value:
+    // NO_INT, null), while getInt / getString give a value or fail (getString(NAME) is the name,
+    // or else the id). Any int or string property can be read as an optional one.
+
+    /** getOptInt: the property has no value (outside the int range). */
+    public static final long NO_INT = Long.MIN_VALUE;
+
+    public static long getOptInt(long handle, int property) {
+        return getOptInt(NetworkRegistry.lookup(handle), property);
+    }
+
+    public static long getOptInt(Object obj, int property) {
+        OptionalInt value = switch (property) {
+            case SHUNT_SECTION_COUNT        -> ((ShuntCompensator) obj).findSectionCount();
+            case SHUNT_SOLVED_SECTION_COUNT -> ((ShuntCompensator) obj).findSolvedSectionCount();
+            default -> OptionalInt.of(getInt(obj, property));
+        };
+        return value.isPresent() ? value.getAsInt() : NO_INT;
+    }
+
+    public static String getOptString(long handle, int property) {
+        return getOptString(NetworkRegistry.lookup(handle), property);
+    }
+
+    public static String getOptString(Object obj, int property) {
+        return switch (property) {
+            case NAME           -> ((Identifiable<?>) obj).getOptionalName().orElse(null);
+            case SUBSTATION_TSO -> ((Substation) obj).getTso();
+            case COUNTRY        -> ((Substation) obj).getCountry().map(Country::name).orElse(null);
+            default -> getString(obj, property);
+        };
+    }
+
+    // ── String lists ──────────────────────────────────────────────────────
+
+    public static String[] getStringList(long handle, int listCode) {
+        return getStringList(NetworkRegistry.lookup(handle), listCode);
+    }
+
+    /** Sets are sorted, so that both backends list them in the same order. */
+    public static String[] getStringList(Object obj, int listCode) {
+        Collection<String> values = switch (listCode) {
+            case PROPERTY_NAMES -> ((BasePropertiesHolder) obj).getPropertyNames();
+            case ALIASES        -> ((Identifiable<?>) obj).getAliases();
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown string list code: " + listCode);
+        };
+        return values.stream().sorted().toArray(String[]::new);
+    }
+
+    // ── Keyed strings (properties, aliases) ───────────────────────────────
+
+    public static String getKeyedString(long handle, int property, String key) {
+        return getKeyedString(NetworkRegistry.lookup(handle), property, key);
+    }
+
+    /** The value under a key, null when there is none. */
+    public static String getKeyedString(Object obj, int property, String key) {
+        return switch (property) {
+            case PROPERTY        -> ((BasePropertiesHolder) obj).getProperty(key);
+            case ALIAS_TYPE      -> ((Identifiable<?>) obj).getAliasType(key).orElse(null);
+            case ALIAS_FROM_TYPE -> ((Identifiable<?>) obj).getAliasFromType(key).orElse(null);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown keyed property: " + property);
+        };
+    }
+
+    public static void setKeyedString(long handle, int property, String key, String value) {
+        setKeyedString(NetworkRegistry.lookup(handle), property, key, value);
+    }
+
+    /** Sets the value under a key; a null value removes the key. */
+    public static void setKeyedString(Object obj, int property, String key, String value) {
+        if (obj instanceof Creation.PendingAdd adder) {
+            Creation.setKeyedString(adder, property, key, value);
+            return;
+        }
+        switch (property) {
+            case PROPERTY -> {
+                if (value == null) ((PropertiesHolder) obj).removeProperty(key);
+                else ((BasePropertiesHolder) obj).setProperty(key, value);
+            }
+            case ALIAS_TYPE -> {
+                if (value == null) ((Identifiable<?>) obj).removeAlias(key);
+                else ((Identifiable<?>) obj).addAlias(key, value);
+            }
+            case UNIQUE_ALIAS_TYPE -> ((Identifiable<?>) obj).addAlias(key, Objects.requireNonNull(value), true);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown keyed property for set: " + property);
+        }
+    }
+
+    // ── Identity ──────────────────────────────────────────────────────────
+
+    /** Whether two handles stand for the same object (handles are not unique: each lookup makes one). */
+    public static int isSameObject(long handle, long otherHandle) {
+        return isSameObject(NetworkRegistry.lookup(handle), NetworkRegistry.lookup(otherHandle)) ? 1 : 0;
+    }
+
+    public static boolean isSameObject(Object obj, Object other) {
+        return Objects.equals(obj, other);
+    }
+
     // ── Children (navigation) ─────────────────────────────────────────────
 
     public static long[] getChildren(long parentHandle, int childType) {
@@ -620,6 +749,14 @@ public final class PropertyDispatcher {
                 yield ((Network) obj).getVscConverterStationStream();
             }
             case LINE        -> ((Network) obj).getLineStream();
+            case IDENTIFIABLE -> ((Network) obj).getIdentifiables().stream();
+            case CONNECTABLE -> {
+                if (obj instanceof VoltageLevel vl) yield vl.getConnectableStream();
+                yield ((Network) obj).getConnectableStream();
+            }
+            case BRANCH -> ((Network) obj).getBranchStream();
+            case HVDC_CONVERTER_STATION -> ((Network) obj).getHvdcConverterStationStream();
+            case TERMINAL -> ((Connectable<?>) obj).getTerminals().stream();
             case SUBSTATION  -> ((Network) obj).getSubstationStream();
             case VOLTAGE_LEVEL -> {
                 if (obj instanceof Substation sub)
@@ -696,7 +833,6 @@ public final class PropertyDispatcher {
                 yield sc.getModel(ShuntCompensatorNonLinearModel.class).getAllSections().stream();
             }
             case TEMPORARY_LIMIT -> ((LoadingLimits) obj).getTemporaryLimits().stream();
-            case CONNECTABLE_TERMINALS -> ((Terminal) obj).getConnectable().getTerminals().stream();
             case OLG_SIDE1 -> ((Branch<?>) obj).getOperationalLimitsGroups1().stream();
             case OLG_SIDE2 -> ((Branch<?>) obj).getOperationalLimitsGroups2().stream();
             case OLG_LEG1  -> ((ThreeWindingsTransformer) obj).getLeg1().getOperationalLimitsGroups().stream();
@@ -741,6 +877,9 @@ public final class PropertyDispatcher {
                 yield ((Terminal) obj).getVoltageLevel();
             }
             case REL_HVDC_LINE -> ((HvdcConverterStation<?>) obj).getHvdcLine();
+            case REL_CONVERTER_STATION1 -> ((HvdcLine) obj).getConverterStation1();
+            case REL_CONVERTER_STATION2 -> ((HvdcLine) obj).getConverterStation2();
+            case REL_OTHER_CONVERTER_STATION -> ((HvdcConverterStation<?>) obj).getOtherConverterStation().orElse(null);
             case REL_TWO_WT_RTC_REG_TERMINAL        -> ((TwoWindingsTransformer) obj).getRatioTapChanger().getRegulationTerminal();
             case REL_THREE_WT_LEG1_RTC_REG_TERMINAL -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().getRegulationTerminal();
             case REL_THREE_WT_LEG2_RTC_REG_TERMINAL -> ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger().getRegulationTerminal();
@@ -829,9 +968,13 @@ public final class PropertyDispatcher {
      * does not change); {@link PropertyCodes#ACT_ADD} on an adder: adds the object and returns it;
      * {@link PropertyCodes#ACT_REMOVE} on an identifiable: removes it (returns null). Also starts
      * changes that take several values ({@code invoke(regulation, REL_TERMINAL)}). See {@link Creation}.
+     * {@link PropertyCodes#ACT_CONNECT} / {@link PropertyCodes#ACT_DISCONNECT} on a terminal or a
+     * connectable: returns it when this changed it, else null.
      */
     public static Object invokeObject(Object obj, int code) {
         return switch (code) {
+            case ACT_CONNECT -> (obj instanceof Terminal t ? t.connect() : ((Connectable<?>) obj).connect()) ? obj : null;
+            case ACT_DISCONNECT -> (obj instanceof Terminal t ? t.disconnect() : ((Connectable<?>) obj).disconnect()) ? obj : null;
             case ACT_ADD -> Creation.add(obj);
             case ACT_REMOVE -> {
                 Creation.remove(obj);
@@ -867,6 +1010,11 @@ public final class PropertyDispatcher {
 
     public static Object getRelatedObjectByString(Object obj, int relation, String key) {
         return switch (relation) {
+            case REL_TERMINAL -> {
+                if (obj instanceof Branch<?> branch) yield branch.getTerminal(key);
+                yield ((ThreeWindingsTransformer) obj).getTerminal(key);
+            }
+            case REL_BBV_BUS -> ((VoltageLevel) obj).getBusBreakerView().getBus(key);
             case REL_VL_BBV_BUS1 -> ((VoltageLevel) obj).getBusBreakerView().getBus1(key);
             case REL_VL_BBV_BUS2 -> ((VoltageLevel) obj).getBusBreakerView().getBus2(key);
             case REL_MEASUREMENT_BY_ID          -> StateEstimationDispatch.measurementById(obj, key);
@@ -915,6 +1063,11 @@ public final class PropertyDispatcher {
             case BATTERY                    -> network.getBattery(id);
             case VOLTAGE_LEVEL              -> network.getVoltageLevel(id);
             case SUBSTATION                 -> network.getSubstation(id);
+            case IDENTIFIABLE               -> network.getIdentifiable(id);
+            case CONNECTABLE                -> network.getConnectable(id);
+            case INJECTION                  -> network.getConnectable(id) instanceof Injection<?> injection ? injection : null;
+            case BRANCH                     -> network.getBranch(id);
+            case HVDC_CONVERTER_STATION     -> network.getHvdcConverterStation(id);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown object type: " + objectType);
         };
     }

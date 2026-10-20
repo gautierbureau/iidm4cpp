@@ -1,44 +1,18 @@
 #pragma once
 
-#include <iidm/HandleRef.h>
-#include <iidm/ObjectHandle.h>
-#include <iidm/Terminal.h>
-#include <string>
-#include <iidm/InjectionObservability.h>
-#include <iidm/Measurement.h>
+#include <iidm/Injection.h>
 
 namespace iidm {
 
-class BackendProvider;
-
-class BusbarSection {
+class BusbarSection : public Injection {
 public:
-    BusbarSection() = default;
-    explicit BusbarSection(ObjectHandle handle, BackendProvider* backend);
+    static constexpr int TYPE = prop::BUSBAR_SECTION;
 
-    std::string getId() const;
-    std::string getName() const;
+    BusbarSection() = default;
+    explicit BusbarSection(ObjectHandle handle, BackendProvider* backend) : Injection(handle, backend) {}
 
     double getV() const;
     double getAngle() const;
-
-    Terminal getTerminal() const;
-
-    // ── State estimation extensions ──────────────────────────────────────
-    bool hasInjectionObservability() const;
-    InjectionObservability getInjectionObservability() const;
-
-    bool hasMeasurements() const;
-    Measurements getMeasurements() const;
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const BusbarSection& other) const;
-    bool operator!=(const BusbarSection& other) const;
-
-private:
-    HandleRef  handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

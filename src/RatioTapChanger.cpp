@@ -8,7 +8,7 @@ namespace iidm {
 
 RatioTapChanger::RatioTapChanger(ObjectHandle handle, BackendProvider* backend,
                                    const RatioTapChangerConfig& cfg)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)), cfg_(cfg) {}
+    : ObjectRef(handle, backend), cfg_(cfg) {}
 
 int RatioTapChanger::getTapPosition() const {
     return backend_->getInt(handle_, cfg_.tapPosition);
@@ -70,11 +70,9 @@ RatioTapChangerStep RatioTapChanger::getCurrentStep() const {
     return RatioTapChangerStep();
 }
 
+// The tap changers of the legs of a three windings transformer share its handle
 bool RatioTapChanger::operator==(const RatioTapChanger& other) const {
-    return handle_ == other.handle_ && cfg_.exists == other.cfg_.exists;
-}
-bool RatioTapChanger::operator!=(const RatioTapChanger& other) const {
-    return !(*this == other);
+    return ObjectRef::operator==(other) && cfg_.exists == other.cfg_.exists;
 }
 
 } // namespace iidm

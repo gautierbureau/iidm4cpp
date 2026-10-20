@@ -6,7 +6,7 @@ namespace iidm {
 
 PhaseTapChanger::PhaseTapChanger(ObjectHandle handle, BackendProvider* backend,
                                    const PhaseTapChangerConfig& cfg)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)), cfg_(cfg) {}
+    : ObjectRef(handle, backend), cfg_(cfg) {}
 
 int PhaseTapChanger::getTapPosition() const {
     return backend_->getInt(handle_, cfg_.tapPosition);
@@ -67,11 +67,9 @@ PhaseTapChangerStep PhaseTapChanger::getCurrentStep() const {
     return PhaseTapChangerStep();
 }
 
+// The tap changers of the legs of a three windings transformer share its handle
 bool PhaseTapChanger::operator==(const PhaseTapChanger& other) const {
-    return handle_ == other.handle_ && cfg_.exists == other.cfg_.exists;
-}
-bool PhaseTapChanger::operator!=(const PhaseTapChanger& other) const {
-    return !(*this == other);
+    return ObjectRef::operator==(other) && cfg_.exists == other.cfg_.exists;
 }
 
 } // namespace iidm

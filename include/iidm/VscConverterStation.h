@@ -1,28 +1,18 @@
 #pragma once
 
-#include <iidm/HandleRef.h>
-#include <iidm/ObjectHandle.h>
+#include <iidm/HvdcConverterStation.h>
 #include <iidm/MinMaxReactiveLimits.h>
 #include <iidm/ReactiveCapabilityCurve.h>
 #include <iidm/Terminal.h>
-#include <string>
-#include <iidm/InjectionObservability.h>
-#include <iidm/Measurement.h>
 
 namespace iidm {
 
-class BackendProvider;
-class HvdcLine;
-
-class VscConverterStation {
+class VscConverterStation : public HvdcConverterStation {
 public:
+    static constexpr int TYPE = prop::VSC_CONVERTER_STATION;
+
     VscConverterStation() = default;
-    explicit VscConverterStation(ObjectHandle handle, BackendProvider* backend);
-
-    std::string getId() const;
-    std::string getName() const;
-
-    double getLossFactor() const;
+    explicit VscConverterStation(ObjectHandle handle, BackendProvider* backend) : HvdcConverterStation(handle, backend) {}
 
     bool isVoltageRegulatorOn() const;
     VscConverterStation& setVoltageRegulatorOn(bool on);
@@ -33,35 +23,14 @@ public:
     double getReactivePowerSetpoint() const;
     VscConverterStation& setReactivePowerSetpoint(double value);
 
+    Terminal getRegulatingTerminal() const;
+
+    // ── Reactive limits ──────────────────────────────────────────────────
     bool hasMinMaxReactiveLimits() const;
     MinMaxReactiveLimits getMinMaxReactiveLimits() const;
 
     bool hasReactiveCapabilityCurve() const;
     ReactiveCapabilityCurve getReactiveCapabilityCurve() const;
-
-    Terminal getTerminal() const;
-    Terminal getRegulatingTerminal() const;
-    HvdcLine getHvdcLine() const;
-
-    void connect();
-    void disconnect();
-    bool isConnected() const;
-
-    // ── State estimation extensions ──────────────────────────────────────
-    bool hasInjectionObservability() const;
-    InjectionObservability getInjectionObservability() const;
-
-    bool hasMeasurements() const;
-    Measurements getMeasurements() const;
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const VscConverterStation& other) const;
-    bool operator!=(const VscConverterStation& other) const;
-
-private:
-    HandleRef handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

@@ -47,7 +47,7 @@ TEST(EnumsTest, CountryFromNameEmptyIsNullopt) {
 TEST(EnumsTest, SubstationGetCountryPresent) {
     MockBackend b;
     static constexpr ObjectHandle H = 1;
-    b.strings[{H, prop::COUNTRY}] = "AF";
+    b.optStrings[{H, prop::COUNTRY}] = "AF";
     Substation sub(H, &b);
     auto c = sub.getCountry();
     ASSERT_TRUE(c.has_value());
@@ -57,7 +57,7 @@ TEST(EnumsTest, SubstationGetCountryPresent) {
 TEST(EnumsTest, SubstationGetCountryAbsent) {
     MockBackend b;
     static constexpr ObjectHandle H = 1;
-    // no COUNTRY entry → getString returns "" → nullopt
+    // no COUNTRY entry: no value
     Substation sub(H, &b);
     EXPECT_FALSE(sub.getCountry().has_value());
 }

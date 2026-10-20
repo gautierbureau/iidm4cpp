@@ -29,11 +29,11 @@ inline void editActivePowerControlAndSlackTerminal(iidm::Network& network, const
         if (!vl.hasSlackTerminal()) continue;
         auto st = vl.getSlackTerminal();
         std::cout << prefix << "VoltageLevel " << vl.getId() << " slackTerminal="
-                  << st.getTerminal().getConnectableId()
+                  << st.getTerminal().getConnectable().getId()
                   << " empty=" << (st.isEmpty() ? "true" : "false") << "\n";
         for (const auto& svc : vl.getStaticVarCompensators()) {
             st.setTerminal(svc.getTerminal());
-            std::cout << prefix << "  slackTerminal moved to " << st.getTerminal().getConnectableId() << "\n";
+            std::cout << prefix << "  slackTerminal moved to " << st.getTerminal().getConnectable().getId() << "\n";
             break;
         }
     }

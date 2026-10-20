@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../BridgeErrors.h"
+#include "JNIStrings.h"
 #include <iidm/IidmException.h>
 #include <jni.h>
 #include <string>
@@ -35,11 +36,7 @@ inline void checkJNIException(JNIEnv* env) {
                 msg = nullptr;
             }
             if (msg) {
-                const char* chars = env->GetStringUTFChars(msg, nullptr);
-                if (chars) {
-                    message = chars;
-                    env->ReleaseStringUTFChars(msg, chars);
-                }
+                message = detail::javaString(env, msg);
                 env->DeleteLocalRef(msg);
             }
         }

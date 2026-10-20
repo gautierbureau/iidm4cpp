@@ -47,7 +47,7 @@ TEST_F(BusTest, IsValid) {
 
 TEST_F(BusTest, GetName) {
     Bus bus(BUS_HANDLE, &backend);
-    EXPECT_EQ(bus.getName(), "Bus 1");
+    EXPECT_EQ(bus.getNameOrId(), "Bus 1");
 }
 
 TEST_F(BusTest, GetVoltageLevel) {

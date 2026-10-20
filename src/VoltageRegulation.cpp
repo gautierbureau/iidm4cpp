@@ -5,7 +5,7 @@
 namespace iidm {
 
 VoltageRegulation::VoltageRegulation(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
+    : ObjectRef(handle, backend) {}
 
 double VoltageRegulation::getTargetValue() const {
     return backend_->getDouble(handle_, prop::VR_TARGET_VALUE);
@@ -68,18 +68,10 @@ VoltageRegulation& VoltageRegulation::setTerminal(const Terminal& terminal, doub
     // One change applied at once: separate setters would go through an invalid state
     // (a remote regulation without target value, or a local one with a target value)
     HandleRef change(backend_->invoke(handle_, prop::REL_TERMINAL), backend_);
-    backend_->setRelated(change, prop::REL_TERMINAL, terminal.handle_);
+    backend_->setRelated(change, prop::REL_TERMINAL, detail::Access::handle(terminal));
     backend_->setDouble(change, prop::VR_TARGET_VALUE, targetValue);
     backend_->invoke(change, prop::ACT_ADD);
     return *this;
-}
-
-bool VoltageRegulation::operator==(const VoltageRegulation& other) const {
-    return handle_ == other.handle_ && backend_ == other.backend_;
-}
-
-bool VoltageRegulation::operator!=(const VoltageRegulation& other) const {
-    return !(*this == other);
 }
 
 } // namespace iidm

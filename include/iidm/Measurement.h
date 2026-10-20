@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iidm/Enums.h>
-#include <iidm/HandleRef.h>
+#include <iidm/ObjectRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/stdcxx/optional.hpp>
 #include <string>
@@ -15,7 +15,7 @@ class BackendProvider;
 //
 // The validity flag of the measured value is exposed as isValueValid()/setValueValid():
 // isValid() keeps the meaning it has on every iidm4cpp wrapper (the handle is valid).
-class Measurement {
+class Measurement : public detail::ObjectRef {
 public:
     Measurement() = default;
     explicit Measurement(ObjectHandle handle, BackendProvider* backend);
@@ -37,19 +37,10 @@ public:
 
     // Same as powsybl-core's setValueAndValidity: the validity is never true for a stale value.
     Measurement& setValueAndValidity(double value, bool valid);
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const Measurement& other) const;
-    bool operator!=(const Measurement& other) const;
-
-private:
-    HandleRef  handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 // Typed wrapper for the PowSyBl Measurements extension attached to a connectable.
-class Measurements {
+class Measurements : public detail::ObjectRef {
 public:
     Measurements() = default;
     explicit Measurements(ObjectHandle handle, BackendProvider* backend);
@@ -57,15 +48,6 @@ public:
     std::vector<Measurement> getMeasurements() const;
     std::vector<Measurement> getMeasurements(MeasurementType type) const;
     iidm::optional<Measurement> getMeasurement(const std::string& id) const;
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const Measurements& other) const;
-    bool operator!=(const Measurements& other) const;
-
-private:
-    HandleRef  handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

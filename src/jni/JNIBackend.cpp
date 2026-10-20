@@ -1,8 +1,11 @@
 #include "JNIBackend.h"
 #include "JNIExceptionBridge.h"
+#include "JNIStrings.h"
 #include <iidm/IidmException.h>
 #include <cmath>
+#include <cstring>
 #include <fstream>
+#include <limits>
 #include <iterator>
 #include <string>
 
@@ -58,6 +61,8 @@ void JNIBackend::cacheMethodIds() {
         "saveToBytes", "(Ljava/lang/String;Ljava/lang/String;)[B");
     cache_.registry_createNetwork = env_->GetStaticMethodID(cache_.iidmRegistryClass,
         "createNetwork", "(Ljava/lang/String;Ljava/lang/String;)V");
+    cache_.registry_fromUtf8 = env_->GetStaticMethodID(cache_.iidmRegistryClass,
+        "fromUtf8", "([B)Ljava/lang/String;");
     checkJNIException(env_);
 
     cacheClass(cache_.dispatcherClass, "com/powsybl/iidmbridge/PropertyDispatcher");
@@ -84,13 +89,21 @@ void JNIBackend::cacheMethodIds() {
     cache_.disp_findObjectById = env_->GetStaticMethodID(d, "findObjectById",
         "(Ljava/lang/Object;ILjava/lang/String;)Ljava/lang/Object;");
     cache_.disp_invokeObject = env_->GetStaticMethodID(d, "invokeObject", "(Ljava/lang/Object;I)Ljava/lang/Object;");
+    cache_.disp_getOptInt    = env_->GetStaticMethodID(d, "getOptInt", "(Ljava/lang/Object;I)J");
+    cache_.disp_getOptString = env_->GetStaticMethodID(d, "getOptString", "(Ljava/lang/Object;I)Ljava/lang/String;");
+    cache_.disp_getStringList = env_->GetStaticMethodID(d, "getStringList", "(Ljava/lang/Object;I)[Ljava/lang/String;");
+    cache_.disp_getKeyedString = env_->GetStaticMethodID(d, "getKeyedString",
+        "(Ljava/lang/Object;ILjava/lang/String;)Ljava/lang/String;");
+    cache_.disp_setKeyedString = env_->GetStaticMethodID(d, "setKeyedString",
+        "(Ljava/lang/Object;ILjava/lang/String;Ljava/lang/String;)V");
+    cache_.disp_isSameObject = env_->GetStaticMethodID(d, "isSameObject", "(Ljava/lang/Object;Ljava/lang/Object;)Z");
     checkJNIException(env_);
 }
 
 void JNIBackend::bindRegisteredNetwork() {
     // Bind the network already registered under networkId_, if any (embedded mode).
     // Otherwise the network comes later from loadNetwork / loadNetworkBytes.
-    jstring jId = env_->NewStringUTF(networkId_.c_str());
+    jstring jId = newString(networkId_);
     jobject netObj = env_->CallStaticObjectMethod(cache_.iidmRegistryClass, cache_.registry_get, jId);
     env_->DeleteLocalRef(jId);
     if (env_->ExceptionCheck()) {
@@ -114,8 +127,8 @@ void JNIBackend::loadNetwork(const std::string& filePath) {
 }
 
 void JNIBackend::saveNetwork(const std::string& filePath) {
-    jstring jId   = env_->NewStringUTF(networkId_.c_str());
-    jstring jPath = env_->NewStringUTF(filePath.c_str());
+    jstring jId   = newString(networkId_);
+    jstring jPath = newString(filePath);
     env_->CallStaticVoidMethod(cache_.iidmRegistryClass, cache_.registry_save, jId, jPath);
     env_->DeleteLocalRef(jId);
     env_->DeleteLocalRef(jPath);
@@ -133,8 +146,8 @@ void JNIBackend::loadNetworkBytes(const char* data, std::size_t length,
         env_->SetByteArrayRegion(arr, 0, static_cast<jsize>(length),
                                  reinterpret_cast<const jbyte*>(data));
     }
-    jstring jId   = env_->NewStringUTF(networkId_.c_str());
-    jstring jHint = env_->NewStringUTF(filenameHint.c_str());
+    jstring jId   = newString(networkId_);
+    jstring jHint = newString(filenameHint);
     env_->CallStaticVoidMethod(cache_.iidmRegistryClass,
                                cache_.registry_loadFromBytes, jId, arr, jHint);
     env_->DeleteLocalRef(jHint);
@@ -145,8 +158,8 @@ void JNIBackend::loadNetworkBytes(const char* data, std::size_t length,
 }
 
 void JNIBackend::createNetwork(const std::string& id) {
-    jstring jId        = env_->NewStringUTF(networkId_.c_str());
-    jstring jNetworkId = env_->NewStringUTF(id.c_str());
+    jstring jId        = newString(networkId_);
+    jstring jNetworkId = newString(id);
     env_->CallStaticVoidMethod(cache_.iidmRegistryClass, cache_.registry_createNetwork, jId, jNetworkId);
     env_->DeleteLocalRef(jNetworkId);
     env_->DeleteLocalRef(jId);
@@ -167,8 +180,8 @@ void JNIBackend::rebindNetwork(const char* operation) {
 }
 
 std::string JNIBackend::saveNetworkBytes(const std::string& filenameHint) const {
-    jstring jId   = env_->NewStringUTF(networkId_.c_str());
-    jstring jHint = env_->NewStringUTF(filenameHint.c_str());
+    jstring jId   = newString(networkId_);
+    jstring jHint = newString(filenameHint);
     jobject result = env_->CallStaticObjectMethod(cache_.iidmRegistryClass,
                                                   cache_.registry_saveToBytes, jId, jHint);
     env_->DeleteLocalRef(jHint);
@@ -234,14 +247,25 @@ jobject JNIBackend::toNullableObject(ObjectHandle h) const {
 std::string JNIBackend::toString(jstring local) const {
     std::string result;
     if (local) {
-        const char* chars = env_->GetStringUTFChars(local, nullptr);
-        if (chars) {
-            result = chars;
-            env_->ReleaseStringUTFChars(local, chars);
-        }
+        result = detail::javaString(env_, local);
         env_->DeleteLocalRef(local);
     }
     return result;
+}
+
+jstring JNIBackend::newString(const std::string& value) const {
+    std::u16string utf16;
+    if (detail::utf8ToUtf16(value.c_str(), utf16)) {
+        return env_->NewString(reinterpret_cast<const jchar*>(utf16.data()), static_cast<jsize>(utf16.size()));
+    }
+    // Not well-formed UTF-8: decoded by Java, as by the GraalVM backend
+    const jsize length = static_cast<jsize>(std::strlen(value.c_str()));
+    jbyteArray bytes = env_->NewByteArray(length);
+    env_->SetByteArrayRegion(bytes, 0, length, reinterpret_cast<const jbyte*>(value.c_str()));
+    jobject text = env_->CallStaticObjectMethod(cache_.iidmRegistryClass, cache_.registry_fromUtf8, bytes);
+    env_->DeleteLocalRef(bytes);
+    checkJNIException(env_);
+    return static_cast<jstring>(text);
 }
 
 // ── Properties (PropertyDispatcher object API) ────────────────────────────────
@@ -297,7 +321,7 @@ std::string JNIBackend::getString(ObjectHandle h, int property) const {
 }
 
 void JNIBackend::setString(ObjectHandle h, int property, const std::string& value) {
-    jstring jval = env_->NewStringUTF(value.c_str());
+    jstring jval = newString(value);
     env_->CallStaticVoidMethod(cache_.dispatcherClass, cache_.disp_setString,
                                toObject(h), static_cast<jint>(property), jval);
     env_->DeleteLocalRef(jval);
@@ -308,6 +332,68 @@ iidm::optional<double> JNIBackend::getOptDouble(ObjectHandle h, int property) co
     double val = getDouble(h, property);
     if (std::isnan(val)) return {};
     return val;
+}
+
+iidm::optional<int> JNIBackend::getOptInt(ObjectHandle h, int property) const {
+    jlong value = env_->CallStaticLongMethod(cache_.dispatcherClass, cache_.disp_getOptInt,
+                                             toObject(h), static_cast<jint>(property));
+    checkJNIException(env_);
+    if (value == std::numeric_limits<jlong>::min()) return {}; // PropertyDispatcher.NO_INT
+    return static_cast<int>(value);
+}
+
+iidm::optional<std::string> JNIBackend::getOptString(ObjectHandle h, int property) const {
+    jobject result = env_->CallStaticObjectMethod(cache_.dispatcherClass, cache_.disp_getOptString,
+                                                  toObject(h), static_cast<jint>(property));
+    checkJNIException(env_);
+    if (!result) return {};
+    return toString(static_cast<jstring>(result));
+}
+
+std::vector<std::string> JNIBackend::getStringList(ObjectHandle h, int listCode) const {
+    jobject result = env_->CallStaticObjectMethod(cache_.dispatcherClass, cache_.disp_getStringList,
+                                                  toObject(h), static_cast<jint>(listCode));
+    checkJNIException(env_);
+    std::vector<std::string> values;
+    if (!result) return values;
+    jobjectArray arr = static_cast<jobjectArray>(result);
+    jsize len = env_->GetArrayLength(arr);
+    values.reserve(static_cast<std::size_t>(len));
+    for (jsize i = 0; i < len; ++i) {
+        values.push_back(toString(static_cast<jstring>(env_->GetObjectArrayElement(arr, i))));
+    }
+    env_->DeleteLocalRef(arr);
+    return values;
+}
+
+iidm::optional<std::string> JNIBackend::getKeyedString(ObjectHandle h, int property, const std::string& key) const {
+    jobject obj = toObject(h);
+    jstring jKey = newString(key);
+    jobject result = env_->CallStaticObjectMethod(cache_.dispatcherClass, cache_.disp_getKeyedString,
+                                                  obj, static_cast<jint>(property), jKey);
+    env_->DeleteLocalRef(jKey);
+    checkJNIException(env_);
+    if (!result) return {};
+    return toString(static_cast<jstring>(result));
+}
+
+void JNIBackend::setKeyedString(ObjectHandle h, int property, const std::string& key,
+                                const iidm::optional<std::string>& value) {
+    jobject obj = toObject(h);
+    jstring jKey   = newString(key);
+    jstring jValue = value ? newString(*value) : nullptr; // null removes the key
+    env_->CallStaticVoidMethod(cache_.dispatcherClass, cache_.disp_setKeyedString,
+                               obj, static_cast<jint>(property), jKey, jValue);
+    env_->DeleteLocalRef(jKey);
+    if (jValue) env_->DeleteLocalRef(jValue);
+    checkJNIException(env_);
+}
+
+bool JNIBackend::isSameObject(ObjectHandle h, ObjectHandle other) const {
+    jboolean same = env_->CallStaticBooleanMethod(cache_.dispatcherClass, cache_.disp_isSameObject,
+                                                  toObject(h), toObject(other));
+    checkJNIException(env_);
+    return same == JNI_TRUE;
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
@@ -372,7 +458,7 @@ ObjectHandle JNIBackend::getRelatedByIndex(ObjectHandle h, int relation, int ind
 
 ObjectHandle JNIBackend::getRelatedByString(ObjectHandle h, int relation, const std::string& key) const {
     jobject obj = toObject(h);
-    jstring jKey = env_->NewStringUTF(key.c_str());
+    jstring jKey = newString(key);
     jobject related = env_->CallStaticObjectMethod(cache_.dispatcherClass, cache_.disp_getRelatedObjectByString,
                                                    obj, static_cast<jint>(relation), jKey);
     env_->DeleteLocalRef(jKey);
@@ -382,7 +468,7 @@ ObjectHandle JNIBackend::getRelatedByString(ObjectHandle h, int relation, const 
 
 ObjectHandle JNIBackend::findById(int objectType, const std::string& id) const {
     if (!networkRef_) throw NetworkNotFoundException("No network loaded or registered with id: " + networkId_);
-    jstring jId = env_->NewStringUTF(id.c_str());
+    jstring jId = newString(id);
     jobject found = env_->CallStaticObjectMethod(cache_.dispatcherClass, cache_.disp_findObjectById,
                                                  networkRef_, static_cast<jint>(objectType), jId);
     env_->DeleteLocalRef(jId);

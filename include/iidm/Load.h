@@ -1,24 +1,16 @@
 #pragma once
 
-#include <iidm/HandleRef.h>
-#include <iidm/ObjectHandle.h>
 #include <iidm/Enums.h>
-#include <iidm/Terminal.h>
-#include <string>
-#include <iidm/InjectionObservability.h>
-#include <iidm/Measurement.h>
+#include <iidm/Injection.h>
 
 namespace iidm {
 
-class BackendProvider;
-
-class Load {
+class Load : public Injection {
 public:
-    Load() = default;
-    explicit Load(ObjectHandle handle, BackendProvider* backend);
+    static constexpr int TYPE = prop::LOAD;
 
-    std::string getId() const;
-    std::string getName() const;
+    Load() = default;
+    explicit Load(ObjectHandle handle, BackendProvider* backend) : Injection(handle, backend) {}
 
     double getP0() const;
     Load& setP0(double p0);
@@ -27,32 +19,6 @@ public:
     Load& setQ0(double q0);
 
     LoadType getLoadType() const;
-    bool isFictitious() const;
-
-    Terminal getTerminal() const;
-
-    void connect();
-    void disconnect();
-    bool isConnected() const;
-
-    // Removes the load from the network
-    void remove();
-
-    // ── State estimation extensions ──────────────────────────────────────
-    bool hasInjectionObservability() const;
-    InjectionObservability getInjectionObservability() const;
-
-    bool hasMeasurements() const;
-    Measurements getMeasurements() const;
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const Load& other) const;
-    bool operator!=(const Load& other) const;
-
-private:
-    HandleRef handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

@@ -6,71 +6,8 @@
 
 namespace iidm {
 
-LccConverterStation::LccConverterStation(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
-
-std::string LccConverterStation::getId() const {
-    return backend_->getString(handle_, prop::ID);
-}
-
-std::string LccConverterStation::getName() const {
-    return backend_->getString(handle_, prop::NAME);
-}
-
-double LccConverterStation::getLossFactor() const {
-    return backend_->getDouble(handle_, prop::LCC_LOSS_FACTOR);
-}
-
 double LccConverterStation::getPowerFactor() const {
     return backend_->getDouble(handle_, prop::LCC_POWER_FACTOR);
-}
-
-Terminal LccConverterStation::getTerminal() const {
-    ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_TERMINAL);
-    return Terminal(termHandle, backend_);
-}
-
-HvdcLine LccConverterStation::getHvdcLine() const {
-    ObjectHandle hvdcHandle = backend_->getRelated(handle_, prop::REL_HVDC_LINE);
-    return HvdcLine(hvdcHandle, backend_);
-}
-
-void LccConverterStation::connect() {
-    getTerminal().connect();
-}
-
-void LccConverterStation::disconnect() {
-    getTerminal().disconnect();
-}
-
-bool LccConverterStation::isConnected() const {
-    return getTerminal().isConnected();
-}
-
-bool LccConverterStation::operator==(const LccConverterStation& other) const {
-    return handle_ == other.handle_;
-}
-
-bool LccConverterStation::operator!=(const LccConverterStation& other) const {
-    return !(*this == other);
-}
-
-// ── State estimation extensions ──────────────────────────────────────────────
-
-bool LccConverterStation::hasInjectionObservability() const {
-    return backend_->getBool(handle_, prop::EXT_INJ_OBS_EXISTS);
-}
-
-InjectionObservability LccConverterStation::getInjectionObservability() const {
-    return InjectionObservability(handle_, backend_);
-}
-
-bool LccConverterStation::hasMeasurements() const {
-    return backend_->getBool(handle_, prop::EXT_MEAS_EXISTS);
-}
-
-Measurements LccConverterStation::getMeasurements() const {
-    return Measurements(handle_, backend_);
 }
 
 } // namespace iidm

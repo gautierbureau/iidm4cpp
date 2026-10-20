@@ -18,7 +18,7 @@ public:
     Self& withTargetValue(double targetValue)       { return this->doubleField(prop::VR_TARGET_VALUE, targetValue); }
     Self& withTargetDeadband(double targetDeadband) { return this->doubleField(prop::VR_TARGET_DEADBAND, targetDeadband); }
     Self& withSlope(double slope)                   { return this->doubleField(prop::VR_SLOPE, slope); }
-    Self& withTerminal(const Terminal& terminal)    { return this->relatedField(prop::REL_TERMINAL, terminal.handle_); }
+    Self& withTerminal(const Terminal& terminal)    { return this->relatedField(prop::REL_TERMINAL, Access::handle(terminal)); }
     Self& withMode(RegulationMode mode)             { return this->intField(prop::VR_MODE, static_cast<int>(mode)); }
     Self& withRegulating(bool regulating)           { return this->boolField(prop::VR_REGULATING, regulating); }
 

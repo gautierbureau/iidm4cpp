@@ -6,17 +6,6 @@
 
 namespace iidm {
 
-StaticVarCompensator::StaticVarCompensator(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
-
-std::string StaticVarCompensator::getId() const {
-    return backend_->getString(handle_, prop::ID);
-}
-
-std::string StaticVarCompensator::getName() const {
-    return backend_->getString(handle_, prop::NAME);
-}
-
 double StaticVarCompensator::getBMin() const {
     return backend_->getDouble(handle_, prop::SVC_B_MIN);
 }
@@ -53,11 +42,6 @@ StaticVarCompensator& StaticVarCompensator::setRegulationMode(StaticVarCompensat
     return *this;
 }
 
-Terminal StaticVarCompensator::getTerminal() const {
-    ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_TERMINAL);
-    return Terminal(termHandle, backend_);
-}
-
 Terminal StaticVarCompensator::getRegulatingTerminal() const {
     ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_REGULATING_TERMINAL);
     return Terminal(termHandle, backend_);
@@ -69,44 +53,6 @@ bool StaticVarCompensator::hasVoltagePerReactivePowerControl() const {
 
 VoltagePerReactivePowerControl StaticVarCompensator::getVoltagePerReactivePowerControl() const {
     return VoltagePerReactivePowerControl(handle_, backend_);
-}
-
-void StaticVarCompensator::connect() {
-    getTerminal().connect();
-}
-
-void StaticVarCompensator::disconnect() {
-    getTerminal().disconnect();
-}
-
-bool StaticVarCompensator::isConnected() const {
-    return getTerminal().isConnected();
-}
-
-bool StaticVarCompensator::operator==(const StaticVarCompensator& other) const {
-    return handle_ == other.handle_;
-}
-
-bool StaticVarCompensator::operator!=(const StaticVarCompensator& other) const {
-    return !(*this == other);
-}
-
-// ── State estimation extensions ──────────────────────────────────────────────
-
-bool StaticVarCompensator::hasInjectionObservability() const {
-    return backend_->getBool(handle_, prop::EXT_INJ_OBS_EXISTS);
-}
-
-InjectionObservability StaticVarCompensator::getInjectionObservability() const {
-    return InjectionObservability(handle_, backend_);
-}
-
-bool StaticVarCompensator::hasMeasurements() const {
-    return backend_->getBool(handle_, prop::EXT_MEAS_EXISTS);
-}
-
-Measurements StaticVarCompensator::getMeasurements() const {
-    return Measurements(handle_, backend_);
 }
 
 } // namespace iidm

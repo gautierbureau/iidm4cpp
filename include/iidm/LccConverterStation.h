@@ -1,50 +1,17 @@
 #pragma once
 
-#include <iidm/HandleRef.h>
-#include <iidm/ObjectHandle.h>
-#include <iidm/Terminal.h>
-#include <string>
-#include <iidm/InjectionObservability.h>
-#include <iidm/Measurement.h>
+#include <iidm/HvdcConverterStation.h>
 
 namespace iidm {
 
-class BackendProvider;
-class HvdcLine;
-
-class LccConverterStation {
+class LccConverterStation : public HvdcConverterStation {
 public:
+    static constexpr int TYPE = prop::LCC_CONVERTER_STATION;
+
     LccConverterStation() = default;
-    explicit LccConverterStation(ObjectHandle handle, BackendProvider* backend);
+    explicit LccConverterStation(ObjectHandle handle, BackendProvider* backend) : HvdcConverterStation(handle, backend) {}
 
-    std::string getId() const;
-    std::string getName() const;
-
-    double getLossFactor() const;
     double getPowerFactor() const;
-
-    Terminal getTerminal() const;
-    HvdcLine getHvdcLine() const;
-
-    void connect();
-    void disconnect();
-    bool isConnected() const;
-
-    // ── State estimation extensions ──────────────────────────────────────
-    bool hasInjectionObservability() const;
-    InjectionObservability getInjectionObservability() const;
-
-    bool hasMeasurements() const;
-    Measurements getMeasurements() const;
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-
-    bool operator==(const LccConverterStation& other) const;
-    bool operator!=(const LccConverterStation& other) const;
-
-private:
-    HandleRef handle_;
-    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

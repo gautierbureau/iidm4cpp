@@ -1,6 +1,10 @@
 #pragma once
 
 #include <iidm/BackendProvider.h>
+#include <iidm/Branch.h>
+#include <iidm/Connectable.h>
+#include <iidm/HvdcConverterStation.h>
+#include <iidm/Identifiable.h>
 #include <iidm/Substation.h>
 #include <iidm/SubstationAdder.h>
 #include <iidm/VoltageLevel.h>
@@ -29,18 +33,16 @@ namespace iidm {
 
 class NetworkFactory;
 
-class Network {
+// A network (powsybl Network), created by NetworkFactory. It owns its backend session: it
+// cannot be copied, and the objects taken from it are valid while it lives.
+class Network : public Identifiable {
 public:
     ~Network();
     Network(Network&&) noexcept;
     Network& operator=(Network&&) noexcept;
 
-    // No copy: a Network owns its backend session
     Network(const Network&) = delete;
     Network& operator=(const Network&) = delete;
-
-    std::string getId() const;
-    std::string getName() const;
 
     // ISO-8601 date-time, e.g. "2026-01-31T12:00Z"
     std::string getCaseDate() const;
@@ -62,6 +64,10 @@ public:
     std::string saveToBytes(const std::string& filenameHint = "network.xiidm") const;
 
     // ── Iteration helpers ────────────────────────────────────────────────
+    std::vector<Identifiable>            getIdentifiables() const;
+    std::vector<Connectable>             getConnectables() const;
+    std::vector<Branch>                  getBranches() const;
+    std::vector<HvdcConverterStation>    getHvdcConverterStations() const;
     std::vector<Substation>              getSubstations() const;
     std::vector<VoltageLevel>            getVoltageLevels() const;
     std::vector<Battery>                 getBatteries() const;
@@ -77,7 +83,13 @@ public:
     std::vector<VscConverterStation>     getVscConverterStations() const;
     std::vector<LccConverterStation>     getLccConverterStations() const;
 
-    // ── Lookup by ID ─────────────────────────────────────────────────────
+    // ── Lookup by ID (or alias) ──────────────────────────────────────────
+    iidm::optional<Identifiable>            getIdentifiable(const std::string& id) const;
+    iidm::optional<Connectable>             getConnectable(const std::string& id) const;
+    iidm::optional<Branch>                  getBranch(const std::string& id) const;
+    iidm::optional<HvdcConverterStation>    getHvdcConverterStation(const std::string& id) const;
+    iidm::optional<Substation>              getSubstation(const std::string& id) const;
+    iidm::optional<VoltageLevel>            getVoltageLevel(const std::string& id) const;
     iidm::optional<Battery>                 getBattery(const std::string& id) const;
     iidm::optional<Generator>               getGenerator(const std::string& id) const;
     iidm::optional<Load>                    getLoad(const std::string& id) const;
@@ -104,8 +116,8 @@ public:
 private:
     friend class NetworkFactory;
     explicit Network(std::unique_ptr<BackendProvider> backend);
-    BackendProvider* backend() const;
-    std::unique_ptr<BackendProvider> backend_;
+
+    std::unique_ptr<BackendProvider> owned_;
 };
 
 } // namespace iidm
