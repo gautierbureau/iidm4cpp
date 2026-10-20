@@ -7,8 +7,9 @@ import com.powsybl.iidm.network.extensions.ActivePowerControl;
 import com.powsybl.iidm.network.extensions.CoordinatedReactiveControl;
 import com.powsybl.iidm.network.extensions.HvdcAngleDroopActivePowerControl;
 import com.powsybl.iidm.network.extensions.HvdcOperatorActivePowerRange;
-import com.powsybl.iidm.network.extensions.VoltagePerReactivePowerControl;
 import com.powsybl.iidm.network.extensions.SlackTerminal;
+import com.powsybl.iidm.network.regulation.RegulationMode;
+import com.powsybl.iidm.network.regulation.VoltageRegulation;
 import com.powsybl.iidmbridge.graalvm.NetworkRegistry;
 import java.util.Collection;
 
@@ -21,7 +22,13 @@ import static com.powsybl.iidmbridge.PropertyCodes.*;
  * Dispatches property get/set operations to the correct PowSyBl IIDM Java methods
  * based on integer property codes defined in {@link PropertyCodes}.
  *
- * Used by the GraalVM backend entry points and can also be reused from the JNI side.
+ * Every entry point comes in two flavours:
+ * <ul>
+ *   <li>a handle-based one ({@code long handle}), used by the GraalVM entry points — handles are
+ *       resolved through {@link NetworkRegistry};</li>
+ *   <li>an object-based one ({@code Object obj}), called directly by the C++ JNI backend for every
+ *       property code it does not hand-wire, so both backends share the same dispatch table.</li>
+ * </ul>
  */
 public final class PropertyDispatcher {
 
@@ -30,7 +37,10 @@ public final class PropertyDispatcher {
     // ── Double getters ────────────────────────────────────────────────────
 
     public static double getDouble(long handle, int property) {
-        Object obj = NetworkRegistry.lookup(handle);
+        return getDouble(NetworkRegistry.lookup(handle), property);
+    }
+
+    public static double getDouble(Object obj, int property) {
         return switch (property) {
             case GEN_TARGET_P  -> ((Generator) obj).getTargetP();
             case GEN_TARGET_Q  -> ((Generator) obj).getTargetQ();
@@ -63,12 +73,12 @@ public final class PropertyDispatcher {
             case HVDC_NOMINAL_V             -> ((HvdcLine) obj).getNominalV();
             case HVDC_ACTIVE_POWER_SETPOINT -> ((HvdcLine) obj).getActivePowerSetpoint();
             case HVDC_MAX_P                 -> ((HvdcLine) obj).getMaxP();
-            case DL_P0 -> ((DanglingLine) obj).getP0();
-            case DL_Q0 -> ((DanglingLine) obj).getQ0();
-            case DL_R  -> ((DanglingLine) obj).getR();
-            case DL_X  -> ((DanglingLine) obj).getX();
-            case DL_G  -> ((DanglingLine) obj).getG();
-            case DL_B  -> ((DanglingLine) obj).getB();
+            case DL_P0 -> ((BoundaryLine) obj).getP0();
+            case DL_Q0 -> ((BoundaryLine) obj).getQ0();
+            case DL_R  -> ((BoundaryLine) obj).getR();
+            case DL_X  -> ((BoundaryLine) obj).getX();
+            case DL_G  -> ((BoundaryLine) obj).getG();
+            case DL_B  -> ((BoundaryLine) obj).getB();
             case SHUNT_B_PER_SECTION -> ((ShuntCompensator) obj).getModel(ShuntCompensatorLinearModel.class).getBPerSection();
             case SHUNT_G_PER_SECTION -> ((ShuntCompensator) obj).getModel(ShuntCompensatorLinearModel.class).getGPerSection();
             case SVC_B_MIN                   -> ((StaticVarCompensator) obj).getBmin();
@@ -86,7 +96,7 @@ public final class PropertyDispatcher {
             case EXT_HADAPC_P0 -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).getP0();
             case EXT_HOAR_OPR_CS1_TO_CS2 -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class).getOprFromCS1toCS2();
             case EXT_HOAR_OPR_CS2_TO_CS1 -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class).getOprFromCS2toCS1();
-            case EXT_VPRC_SLOPE -> ((StaticVarCompensator) obj).getExtension(VoltagePerReactivePowerControl.class).getSlope();
+            case EXT_VPRC_SLOPE -> vprcRegulation(obj).getSlope();
             case TWO_WT_RTC_TARGET_V        -> ((TwoWindingsTransformer) obj).getRatioTapChanger().getTargetV();
             case TWO_WT_PTC_REG_VALUE       -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().getRegulationValue();
             case TWO_WT_RTC_TARGET_DEADBAND -> ((TwoWindingsTransformer) obj).getRatioTapChanger().getTargetDeadband();
@@ -174,7 +184,10 @@ public final class PropertyDispatcher {
     // ── Double setters ────────────────────────────────────────────────────
 
     public static void setDouble(long handle, int property, double value) {
-        Object obj = NetworkRegistry.lookup(handle);
+        setDouble(NetworkRegistry.lookup(handle), property, value);
+    }
+
+    public static void setDouble(Object obj, int property, double value) {
         switch (property) {
             case GEN_TARGET_P  -> ((Generator) obj).setTargetP(value);
             case GEN_TARGET_Q  -> ((Generator) obj).setTargetQ(value);
@@ -186,8 +199,8 @@ public final class PropertyDispatcher {
             case BUS_V         -> ((Bus) obj).setV(value);
             case BUS_ANGLE     -> ((Bus) obj).setAngle(value);
             case HVDC_ACTIVE_POWER_SETPOINT -> ((HvdcLine) obj).setActivePowerSetpoint(value);
-            case DL_P0 -> ((DanglingLine) obj).setP0(value);
-            case DL_Q0 -> ((DanglingLine) obj).setQ0(value);
+            case DL_P0 -> ((BoundaryLine) obj).setP0(value);
+            case DL_Q0 -> ((BoundaryLine) obj).setQ0(value);
             case SVC_VOLTAGE_SETPOINT        -> ((StaticVarCompensator) obj).setVoltageSetpoint(value);
             case SVC_REACTIVE_POWER_SETPOINT -> ((StaticVarCompensator) obj).setReactivePowerSetpoint(value);
             case VSC_VOLTAGE_SETPOINT        -> ((VscConverterStation) obj).setVoltageSetpoint(value);
@@ -198,7 +211,7 @@ public final class PropertyDispatcher {
             case EXT_HADAPC_P0 -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).setP0((float) value);
             case EXT_HOAR_OPR_CS1_TO_CS2 -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class).setOprFromCS1toCS2((float) value);
             case EXT_HOAR_OPR_CS2_TO_CS1 -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class).setOprFromCS2toCS1((float) value);
-            case EXT_VPRC_SLOPE -> ((StaticVarCompensator) obj).getExtension(VoltagePerReactivePowerControl.class).setSlope(value);
+            case EXT_VPRC_SLOPE -> vprcRegulation(obj).setSlope(value);
             case TWO_WT_RTC_TARGET_V  -> ((TwoWindingsTransformer) obj).getRatioTapChanger().setTargetV(value);
             case TWO_WT_PTC_REG_VALUE -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().setRegulationValue(value);
             case BAT_TARGET_P -> ((Battery) obj).setTargetP(value);
@@ -217,20 +230,16 @@ public final class PropertyDispatcher {
     // ── Int getters ───────────────────────────────────────────────────────
 
     public static int getInt(long handle, int property) {
-        Object obj = NetworkRegistry.lookup(handle);
+        return getInt(NetworkRegistry.lookup(handle), property);
+    }
+
+    public static int getInt(Object obj, int property) {
         return switch (property) {
             case GEN_ENERGY_SOURCE  -> ((Generator) obj).getEnergySource().ordinal();
             case LOAD_TYPE          -> ((Load) obj).getLoadType().ordinal();
             case VL_TOPOLOGY_KIND   -> ((VoltageLevel) obj).getTopologyKind().ordinal();
             case HVDC_CONVERTERS_MODE -> ((HvdcLine) obj).getConvertersMode().ordinal();
-            case SVC_REGULATION_MODE  -> {
-                // powsybl-core's RegulationMode enum has only VOLTAGE (0) and REACTIVE_POWER (1).
-                // The "off" state is carried by isRegulating(); map it to OFF (= 2) so that
-                // iidm4cpp's StaticVarCompensatorRegulationMode {VOLTAGE, REACTIVE_POWER, OFF}
-                // can faithfully report it.
-                StaticVarCompensator svc = (StaticVarCompensator) obj;
-                yield svc.isRegulating() ? svc.getRegulationMode().ordinal() : 2;
-            }
+            case SVC_REGULATION_MODE  -> svcRegulationModeToCode((StaticVarCompensator) obj);
             case SHUNT_SECTION_COUNT     -> ((ShuntCompensator) obj).getSectionCount();
             case SHUNT_MAX_SECTION_COUNT -> ((ShuntCompensator) obj).getMaximumSectionCount();
             case SW_KIND  -> ((Switch) obj).getKind().ordinal();
@@ -300,21 +309,14 @@ public final class PropertyDispatcher {
     // ── Int setters ───────────────────────────────────────────────────────
 
     public static void setInt(long handle, int property, int value) {
-        Object obj = NetworkRegistry.lookup(handle);
+        setInt(NetworkRegistry.lookup(handle), property, value);
+    }
+
+    public static void setInt(Object obj, int property, int value) {
         switch (property) {
             case HVDC_CONVERTERS_MODE ->
                 ((HvdcLine) obj).setConvertersMode(HvdcLine.ConvertersMode.values()[value]);
-            case SVC_REGULATION_MODE -> {
-                // 0=VOLTAGE, 1=REACTIVE_POWER, 2=OFF (iidm4cpp enum). powsybl-core no longer
-                // has OFF in its enum; map it through isRegulating() instead.
-                StaticVarCompensator svc = (StaticVarCompensator) obj;
-                if (value == 2) {
-                    svc.setRegulating(false);
-                } else {
-                    svc.setRegulationMode(StaticVarCompensator.RegulationMode.values()[value]);
-                    svc.setRegulating(true);
-                }
-            }
+            case SVC_REGULATION_MODE -> setSvcRegulationModeFromCode((StaticVarCompensator) obj, value);
             case SHUNT_SECTION_COUNT ->
                 ((ShuntCompensator) obj).setSectionCount(value);
             case TWO_WT_RTC_TAP_POSITION ->
@@ -352,8 +354,11 @@ public final class PropertyDispatcher {
     // ── Bool getters ──────────────────────────────────────────────────────
 
     public static int getBool(long handle, int property) {
-        Object obj = NetworkRegistry.lookup(handle);
-        boolean val = switch (property) {
+        return getBool(NetworkRegistry.lookup(handle), property) ? 1 : 0;
+    }
+
+    public static boolean getBool(Object obj, int property) {
+        return switch (property) {
             case GEN_VOLTAGE_REGULATOR_ON   -> ((Generator) obj).isVoltageRegulatorOn();
             case TERMINAL_CONNECTED         -> ((Terminal) obj).isConnected();
             case VSC_VOLTAGE_REGULATOR_ON   -> ((VscConverterStation) obj).isVoltageRegulatorOn();
@@ -373,7 +378,7 @@ public final class PropertyDispatcher {
             case EXT_HADAPC_EXISTS   -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class) != null;
             case EXT_HADAPC_ENABLED  -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).isEnabled();
             case EXT_HOAR_EXISTS     -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class) != null;
-            case EXT_VPRC_EXISTS     -> ((StaticVarCompensator) obj).getExtension(VoltagePerReactivePowerControl.class) != null;
+            case EXT_VPRC_EXISTS     -> isVoltagePerReactivePowerControl(obj);
             case EXT_ST_EXISTS       -> ((VoltageLevel) obj).getExtension(SlackTerminal.class) != null;
             // ThreeWT leg tap changer bools
             case THREE_WT_LEG1_RTC_EXISTS     -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger() != null;
@@ -396,14 +401,15 @@ public final class PropertyDispatcher {
             case THREE_WT_LEG3_RTC_LOAD_TAP_CAP -> ((ThreeWindingsTransformer) obj).getLeg3().getRatioTapChanger().hasLoadTapChangingCapabilities();
             default -> throw new IllegalArgumentException("Unknown bool property: " + property);
         };
-        return val ? 1 : 0;
     }
 
     // ── Bool setters ──────────────────────────────────────────────────────
 
     public static void setBool(long handle, int property, int value) {
-        Object obj = NetworkRegistry.lookup(handle);
-        boolean bval = value != 0;
+        setBool(NetworkRegistry.lookup(handle), property, value != 0);
+    }
+
+    public static void setBool(Object obj, int property, boolean bval) {
         switch (property) {
             case GEN_VOLTAGE_REGULATOR_ON -> ((Generator) obj).setVoltageRegulatorOn(bval);
             case TERMINAL_CONNECTED -> {
@@ -431,7 +437,10 @@ public final class PropertyDispatcher {
     // ── String getters ────────────────────────────────────────────────────
 
     public static String getString(long handle, int property) {
-        Object obj = NetworkRegistry.lookup(handle);
+        return getString(NetworkRegistry.lookup(handle), property);
+    }
+
+    public static String getString(Object obj, int property) {
         return switch (property) {
             case ID   -> ((Identifiable<?>) obj).getId();
             case NAME -> ((Identifiable<?>) obj).getNameOrId();
@@ -489,7 +498,10 @@ public final class PropertyDispatcher {
     // ── String setters ────────────────────────────────────────────────────
 
     public static void setString(long handle, int property, String value) {
-        Object obj = NetworkRegistry.lookup(handle);
+        setString(NetworkRegistry.lookup(handle), property, value);
+    }
+
+    public static void setString(Object obj, int property, String value) {
         switch (property) {
             case NAME    -> ((Identifiable<?>) obj).setName(value);
             case COUNTRY -> ((Substation) obj).setCountry(Country.valueOf(value));
@@ -500,8 +512,16 @@ public final class PropertyDispatcher {
     // ── Children (navigation) ─────────────────────────────────────────────
 
     public static long[] getChildren(long parentHandle, int childType) {
-        Object obj = NetworkRegistry.lookup(parentHandle);
-        Stream<?> children = switch (childType) {
+        return childStream(NetworkRegistry.lookup(parentHandle), childType)
+            .mapToLong(NetworkRegistry::register).toArray();
+    }
+
+    public static Object[] getChildObjects(Object obj, int childType) {
+        return childStream(obj, childType).toArray();
+    }
+
+    private static Stream<?> childStream(Object obj, int childType) {
+        return switch (childType) {
             case GENERATOR -> {
                 if (obj instanceof VoltageLevel vl) yield StreamSupport.stream(vl.getConnectables(Generator.class).spliterator(), false);
                 yield ((Network) obj).getGeneratorStream();
@@ -523,8 +543,8 @@ public final class PropertyDispatcher {
                 yield ((Network) obj).getStaticVarCompensatorStream();
             }
             case DANGLING_LINE -> {
-                if (obj instanceof VoltageLevel vl) yield StreamSupport.stream(vl.getConnectables(DanglingLine.class).spliterator(), false);
-                yield ((Network) obj).getDanglingLineStream();
+                if (obj instanceof VoltageLevel vl) yield StreamSupport.stream(vl.getConnectables(BoundaryLine.class).spliterator(), false);
+                yield ((Network) obj).getBoundaryLineStream();
             }
             case LCC_CONVERTER_STATION -> {
                 if (obj instanceof VoltageLevel vl) yield StreamSupport.stream(vl.getConnectables(LccConverterStation.class).spliterator(), false);
@@ -619,14 +639,16 @@ public final class PropertyDispatcher {
             case OLG_LEG3  -> ((ThreeWindingsTransformer) obj).getLeg3().getOperationalLimitsGroups().stream();
             default -> throw new IllegalArgumentException("Unknown child type: " + childType);
         };
-        return children.mapToLong(NetworkRegistry::register).toArray();
     }
 
     // ── Related object (navigation) ───────────────────────────────────────
 
     public static long getRelated(long handle, int relation) {
-        Object obj = NetworkRegistry.lookup(handle);
-        Object related = switch (relation) {
+        return registerOrZero(getRelatedObject(NetworkRegistry.lookup(handle), relation));
+    }
+
+    public static Object getRelatedObject(Object obj, int relation) {
+        return switch (relation) {
             case REL_TERMINAL  -> {
                 if (obj instanceof Injection<?> inj) yield inj.getTerminal();
                 throw new IllegalArgumentException("Object does not have a single terminal: " + obj);
@@ -674,7 +696,7 @@ public final class PropertyDispatcher {
             case REL_CURRENT_LIMITS1 -> {
                 if (obj instanceof ThreeWindingsTransformer twt)
                     yield twt.getLeg1().getCurrentLimits().orElse(null);
-                if (obj instanceof DanglingLine dl)
+                if (obj instanceof BoundaryLine dl)
                     yield dl.getCurrentLimits().orElse(null);
                 yield ((Branch<?>) obj).getCurrentLimits1().orElse(null);
             }
@@ -699,14 +721,19 @@ public final class PropertyDispatcher {
             case REL_CONNECTABLE -> ((Terminal) obj).getConnectable();
             default -> throw new IllegalArgumentException("Unknown relation: " + relation);
         };
-        if (related == null) return 0L; // INVALID_HANDLE
-        return NetworkRegistry.register(related);
+    }
+
+    private static long registerOrZero(Object obj) {
+        return obj == null ? 0L : NetworkRegistry.register(obj); // 0 = INVALID_HANDLE
     }
 
     // ── Int list (navigation) ─────────────────────────────────────────────
 
     public static int[] getIntList(long handle, int listCode) {
-        Object obj = NetworkRegistry.lookup(handle);
+        return getIntList(NetworkRegistry.lookup(handle), listCode);
+    }
+
+    public static int[] getIntList(Object obj, int listCode) {
         return switch (listCode) {
             case VL_NBV_NODES -> ((VoltageLevel) obj).getNodeBreakerView().getNodes();
             default -> throw new IllegalArgumentException("Unknown int list code: " + listCode);
@@ -716,41 +743,46 @@ public final class PropertyDispatcher {
     // ── Related by string key (navigation) ───────────────────────────────────
 
     public static long getRelatedByString(long handle, int relation, String key) {
-        Object obj = NetworkRegistry.lookup(handle);
-        Object related = switch (relation) {
+        return registerOrZero(getRelatedObjectByString(NetworkRegistry.lookup(handle), relation, key));
+    }
+
+    public static Object getRelatedObjectByString(Object obj, int relation, String key) {
+        return switch (relation) {
             case REL_VL_BBV_BUS1 -> ((VoltageLevel) obj).getBusBreakerView().getBus1(key);
             case REL_VL_BBV_BUS2 -> ((VoltageLevel) obj).getBusBreakerView().getBus2(key);
             default -> throw new IllegalArgumentException("Unknown keyed relation: " + relation);
         };
-        if (related == null) return 0L; // INVALID_HANDLE
-        return NetworkRegistry.register(related);
     }
 
     // ── Related by index (navigation) ─────────────────────────────────────
 
     public static long getRelatedByIndex(long handle, int relation, int index) {
-        Object obj = NetworkRegistry.lookup(handle);
-        Object related = switch (relation) {
+        return registerOrZero(getRelatedObjectByIndex(NetworkRegistry.lookup(handle), relation, index));
+    }
+
+    public static Object getRelatedObjectByIndex(Object obj, int relation, int index) {
+        return switch (relation) {
             case REL_NBV_TERMINAL_AT_NODE -> ((VoltageLevel) obj).getNodeBreakerView().getTerminal(index);
             default -> throw new IllegalArgumentException("Unknown indexed relation: " + relation);
         };
-        if (related == null) return 0L; // INVALID_HANDLE
-        return NetworkRegistry.register(related);
     }
 
     // ── Find by ID ────────────────────────────────────────────────────────
 
     public static long findById(long networkHandle, int objectType, String id) {
-        Object netObj = NetworkRegistry.lookup(networkHandle);
+        return registerOrZero(findObjectById(NetworkRegistry.lookup(networkHandle), objectType, id));
+    }
+
+    public static Object findObjectById(Object netObj, int objectType, String id) {
         Network network = (Network) netObj;
-        Object found = switch (objectType) {
+        return switch (objectType) {
             case GENERATOR                  -> network.getGenerator(id);
             case LOAD                       -> network.getLoad(id);
             case LINE                       -> network.getLine(id);
             case TWO_WINDINGS_TRANSFORMER   -> network.getTwoWindingsTransformer(id);
             case THREE_WINDINGS_TRANSFORMER -> network.getThreeWindingsTransformer(id);
             case HVDC_LINE                  -> network.getHvdcLine(id);
-            case DANGLING_LINE              -> network.getDanglingLine(id);
+            case DANGLING_LINE              -> network.getBoundaryLine(id);
             case SHUNT_COMPENSATOR          -> network.getShuntCompensator(id);
             case STATIC_VAR_COMPENSATOR     -> network.getStaticVarCompensator(id);
             case VSC_CONVERTER_STATION      -> network.getVscConverterStation(id);
@@ -762,7 +794,59 @@ public final class PropertyDispatcher {
             case SUBSTATION                 -> network.getSubstation(id);
             default -> throw new IllegalArgumentException("Unknown object type: " + objectType);
         };
-        if (found == null) return 0L; // INVALID_HANDLE
-        return NetworkRegistry.register(found);
+    }
+
+    // ── StaticVarCompensator regulation helpers ───────────────────────────
+    //
+    // iidm4cpp's StaticVarCompensatorRegulationMode is
+    //   {VOLTAGE = 0, REACTIVE_POWER = 1, OFF = 2, VOLTAGE_PER_REACTIVE_POWER = 3}.
+    // powsybl-core (>= 7.4) carries the mode on the core VoltageRegulation object and
+    // the "off" state through isRegulating(); OFF is reported when there is no
+    // regulation or when it is not regulating.
+
+    static final int SVC_MODE_OFF = 2;
+    static final int SVC_MODE_VOLTAGE_PER_REACTIVE_POWER = 3;
+
+    static int svcRegulationModeToCode(StaticVarCompensator svc) {
+        VoltageRegulation vr = svc.getVoltageRegulation();
+        if (vr == null || !vr.isRegulating() || vr.getMode() == null) {
+            return SVC_MODE_OFF;
+        }
+        return switch (vr.getMode()) {
+            case VOLTAGE -> 0;
+            case REACTIVE_POWER -> 1;
+            case VOLTAGE_PER_REACTIVE_POWER -> SVC_MODE_VOLTAGE_PER_REACTIVE_POWER;
+        };
+    }
+
+    static void setSvcRegulationModeFromCode(StaticVarCompensator svc, int code) {
+        RegulationMode mode = switch (code) {
+            case 0 -> RegulationMode.VOLTAGE;
+            case 1 -> RegulationMode.REACTIVE_POWER;
+            case SVC_MODE_OFF -> null;
+            case SVC_MODE_VOLTAGE_PER_REACTIVE_POWER -> RegulationMode.VOLTAGE_PER_REACTIVE_POWER;
+            default -> throw new IllegalArgumentException("Unknown SVC regulation mode code: " + code);
+        };
+        if (mode == null) {
+            svc.setRegulating(false);
+        } else {
+            svc.setRegulationMode(mode);
+            svc.setRegulating(true);
+        }
+    }
+
+    // The VoltagePerReactivePowerControl extension was removed in powsybl-core 7.4: the slope now
+    // lives on the core VoltageRegulation, in VOLTAGE_PER_REACTIVE_POWER mode. iidm4cpp keeps its
+    // VoltagePerReactivePowerControl wrapper and maps it onto that regulation.
+    static boolean isVoltagePerReactivePowerControl(Object obj) {
+        VoltageRegulation vr = ((StaticVarCompensator) obj).getVoltageRegulation();
+        return vr != null && vr.getMode() == RegulationMode.VOLTAGE_PER_REACTIVE_POWER;
+    }
+
+    static VoltageRegulation vprcRegulation(Object obj) {
+        if (!isVoltagePerReactivePowerControl(obj)) {
+            throw new IllegalStateException("VoltagePerReactivePowerControl not present");
+        }
+        return ((StaticVarCompensator) obj).getVoltageRegulation();
     }
 }

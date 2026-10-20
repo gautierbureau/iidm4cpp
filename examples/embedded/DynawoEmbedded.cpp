@@ -13,10 +13,10 @@
 #include <iidm/iidm.h>
 #include <jni.h>
 #include <iostream>
+#include <string>
 
-extern "C" {
-
-void runEmbedded(const char* networkId) {
+// Returns an empty string on success, the error message otherwise.
+static std::string runEmbedded(const char* networkId) {
     try {
         iidm::NetworkLoadOptions opts;
         opts.mode         = iidm::BackendMode::JNI;
@@ -78,26 +78,35 @@ void runEmbedded(const char* networkId) {
         }
 
         std::cout << "[C++] Simulation complete.\n";
+        return {};
 
-    } catch (const iidm::IidmException& ex) {
+    } catch (const std::exception& ex) {
         std::cerr << "[C++] Error: " << ex.what() << "\n";
+        return ex.what()[0] ? ex.what() : "unknown error";
     }
 }
 
-JNIEXPORT void JNICALL Java_com_powsybl_iidmbridge_JavaLauncher_runEmbedded(JNIEnv* env, jclass, jstring jNetworkId) {
+// Re-raise C++ failures as a Java RuntimeException so the launcher (and CI) fail loudly.
+static void runEmbeddedFromJava(JNIEnv* env, jstring jNetworkId) {
     const char* rawId = env->GetStringUTFChars(jNetworkId, nullptr);
     if (!rawId) return;
     std::string id(rawId);
     env->ReleaseStringUTFChars(jNetworkId, rawId);
-    runEmbedded(id.c_str());
+    std::string error = runEmbedded(id.c_str());
+    if (!error.empty()) {
+        jclass rte = env->FindClass("java/lang/RuntimeException");
+        if (rte) env->ThrowNew(rte, ("[C++] " + error).c_str());
+    }
+}
+
+extern "C" {
+
+JNIEXPORT void JNICALL Java_com_powsybl_iidmbridge_JavaLauncher_runEmbedded(JNIEnv* env, jclass, jstring jNetworkId) {
+    runEmbeddedFromJava(env, jNetworkId);
 }
 
 JNIEXPORT void JNICALL Java_JavaLauncher_runEmbedded(JNIEnv* env, jclass, jstring jNetworkId) {
-    const char* rawId = env->GetStringUTFChars(jNetworkId, nullptr);
-    if (!rawId) return;
-    std::string id(rawId);
-    env->ReleaseStringUTFChars(jNetworkId, rawId);
-    runEmbedded(id.c_str());
+    runEmbeddedFromJava(env, jNetworkId);
 }
 
 } // extern "C"

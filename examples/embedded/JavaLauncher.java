@@ -20,8 +20,9 @@ import com.powsybl.iidm.network.extensions.CoordinatedReactiveControl;
 import com.powsybl.iidm.network.extensions.CoordinatedReactiveControlAdder;
 import com.powsybl.iidm.network.extensions.HvdcAngleDroopActivePowerControl;
 import com.powsybl.iidm.network.extensions.HvdcOperatorActivePowerRange;
-import com.powsybl.iidm.network.extensions.VoltagePerReactivePowerControl;
 import com.powsybl.iidm.network.extensions.SlackTerminal;
+import com.powsybl.iidm.network.regulation.RegulationMode;
+import com.powsybl.iidm.network.regulation.VoltageRegulation;
 
 import java.nio.file.Path;
 
@@ -92,13 +93,12 @@ public class JavaLauncher {
                                   hvdc.getId(), hoar.getOprFromCS1toCS2(), hoar.getOprFromCS2toCS1());
         }
 
-        // Read back SVC extension values
+        // Read back SVC voltage-per-reactive-power slope (core VoltageRegulation since powsybl-core 7.4)
         for (StaticVarCompensator svc : network.getStaticVarCompensators()) {
-            VoltagePerReactivePowerControl vprc =
-                svc.getExtension(VoltagePerReactivePowerControl.class);
-            if (vprc != null)
+            VoltageRegulation vr = svc.getVoltageRegulation();
+            if (vr != null && vr.getMode() == RegulationMode.VOLTAGE_PER_REACTIVE_POWER)
                 System.out.printf("[Java] StaticVarCompensator %s vprc.slope=%.4f%n",
-                                  svc.getId(), vprc.getSlope());
+                                  svc.getId(), vr.getSlope());
         }
 
         // Read back SlackTerminal
