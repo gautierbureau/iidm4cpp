@@ -60,39 +60,46 @@ private:
 
     ObjectHandle networkHandle_ = INVALID_HANDLE;
 
+    // Throws the C++ exception matching a non-zero status of an entry point
+    // (the message is fetched with iidm_take_last_error).
+    void check(int status) const;
+    std::string takeString(char* raw) const;
+
     // ── C function pointer types resolved from the shared library ────────
+    // Every entry point that can fail returns a status (0 = success, else a BridgeErrorKind)
+    // and writes its result through an out-pointer.
     using FnCreateIsolate   = int(*)(void*, graal_isolate_t**, graal_isolatethread_t**);
     using FnTearDownIsolate = int(*)(graal_isolatethread_t*);
-    using FnLoadNetwork     = ObjectHandle(*)(graal_isolatethread_t*, const char*);
+    using FnTakeLastError   = char*(*)(graal_isolatethread_t*);
+    using FnFree            = void(*)(graal_isolatethread_t*, void*);
+    using FnLoadNetwork     = int(*)(graal_isolatethread_t*, const char*, ObjectHandle*);
     using FnSaveNetwork     = int(*)(graal_isolatethread_t*, ObjectHandle, const char*);
-    using FnLoadNetworkBytes = ObjectHandle(*)(graal_isolatethread_t*, const char*, int, const char*);
+    using FnLoadNetworkBytes = int(*)(graal_isolatethread_t*, const char*, int, const char*, ObjectHandle*);
     using FnSaveNetworkBytes = int(*)(graal_isolatethread_t*, ObjectHandle, const char*, char**, int*);
-    using FnFreeBytes        = void(*)(graal_isolatethread_t*, const char*);
-    using FnGetDouble       = double(*)(graal_isolatethread_t*, ObjectHandle, int);
-    using FnSetDouble       = void(*)(graal_isolatethread_t*, ObjectHandle, int, double);
-    using FnGetInt          = int(*)(graal_isolatethread_t*, ObjectHandle, int);
-    using FnSetInt          = void(*)(graal_isolatethread_t*, ObjectHandle, int, int);
-    using FnGetBool         = int(*)(graal_isolatethread_t*, ObjectHandle, int);
-    using FnSetBool         = void(*)(graal_isolatethread_t*, ObjectHandle, int, int);
-    using FnGetString       = const char*(*)(graal_isolatethread_t*, ObjectHandle, int);
-    using FnSetString       = void(*)(graal_isolatethread_t*, ObjectHandle, int, const char*);
-    using FnFreeString      = void(*)(graal_isolatethread_t*, const char*);
-    using FnGetChildren     = void(*)(graal_isolatethread_t*, ObjectHandle, int,
-                                      ObjectHandle*, int*);
-    using FnGetRelated        = ObjectHandle(*)(graal_isolatethread_t*, ObjectHandle, int);
-    using FnSetRelated        = void(*)(graal_isolatethread_t*, ObjectHandle, int, ObjectHandle);
-    using FnGetIntList        = void(*)(graal_isolatethread_t*, ObjectHandle, int, int*, int*);
-    using FnGetRelatedByIndex  = ObjectHandle(*)(graal_isolatethread_t*, ObjectHandle, int, int);
-    using FnGetRelatedByString = ObjectHandle(*)(graal_isolatethread_t*, ObjectHandle, int, const char*);
-    using FnFindById           = ObjectHandle(*)(graal_isolatethread_t*, long, int, const char*);
+    using FnGetDouble       = int(*)(graal_isolatethread_t*, ObjectHandle, int, double*);
+    using FnSetDouble       = int(*)(graal_isolatethread_t*, ObjectHandle, int, double);
+    using FnGetInt          = int(*)(graal_isolatethread_t*, ObjectHandle, int, int*);
+    using FnSetInt          = int(*)(graal_isolatethread_t*, ObjectHandle, int, int);
+    using FnGetBool         = int(*)(graal_isolatethread_t*, ObjectHandle, int, int*);
+    using FnSetBool         = int(*)(graal_isolatethread_t*, ObjectHandle, int, int);
+    using FnGetString       = int(*)(graal_isolatethread_t*, ObjectHandle, int, char**);
+    using FnSetString       = int(*)(graal_isolatethread_t*, ObjectHandle, int, const char*);
+    using FnGetChildren     = int(*)(graal_isolatethread_t*, ObjectHandle, int, ObjectHandle**, int*);
+    using FnGetRelated      = int(*)(graal_isolatethread_t*, ObjectHandle, int, ObjectHandle*);
+    using FnSetRelated      = int(*)(graal_isolatethread_t*, ObjectHandle, int, ObjectHandle);
+    using FnGetIntList      = int(*)(graal_isolatethread_t*, ObjectHandle, int, int**, int*);
+    using FnGetRelatedByIndex  = int(*)(graal_isolatethread_t*, ObjectHandle, int, int, ObjectHandle*);
+    using FnGetRelatedByString = int(*)(graal_isolatethread_t*, ObjectHandle, int, const char*, ObjectHandle*);
+    using FnFindById           = int(*)(graal_isolatethread_t*, ObjectHandle, int, const char*, ObjectHandle*);
 
     FnCreateIsolate   fnCreateIsolate_   = nullptr;
     FnTearDownIsolate fnTearDownIsolate_ = nullptr;
+    FnTakeLastError   fnTakeLastError_   = nullptr;
+    FnFree            fnFree_            = nullptr;
     FnLoadNetwork     fnLoadNetwork_     = nullptr;
     FnSaveNetwork     fnSaveNetwork_     = nullptr;
     FnLoadNetworkBytes fnLoadNetworkBytes_ = nullptr;
     FnSaveNetworkBytes fnSaveNetworkBytes_ = nullptr;
-    FnFreeBytes        fnFreeBytes_        = nullptr;
     FnGetDouble       fnGetDouble_       = nullptr;
     FnSetDouble       fnSetDouble_       = nullptr;
     FnGetInt          fnGetInt_          = nullptr;
@@ -101,7 +108,6 @@ private:
     FnSetBool         fnSetBool_         = nullptr;
     FnGetString       fnGetString_       = nullptr;
     FnSetString       fnSetString_       = nullptr;
-    FnFreeString      fnFreeString_      = nullptr;
     FnGetChildren     fnGetChildren_     = nullptr;
     FnGetRelated        fnGetRelated_        = nullptr;
     FnSetRelated        fnSetRelated_        = nullptr;

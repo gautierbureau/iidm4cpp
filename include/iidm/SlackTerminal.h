@@ -15,7 +15,7 @@ public:
 
     // Invalid Terminal when the slack terminal is unset for the current variant.
     Terminal getTerminal() const;
-    // The terminal must belong to the voltage level (powsybl-core rejects any other);
+    // The terminal must belong to the voltage level (ValidationException otherwise);
     // an invalid Terminal unsets it.
     SlackTerminal& setTerminal(const Terminal& terminal);
     // True when no variant has a slack terminal.

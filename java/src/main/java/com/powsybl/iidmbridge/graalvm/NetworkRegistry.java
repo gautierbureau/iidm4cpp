@@ -1,5 +1,7 @@
 package com.powsybl.iidmbridge.graalvm;
 
+import com.powsybl.iidmbridge.BridgeErrors;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -24,7 +26,9 @@ public final class NetworkRegistry {
     public static Object lookup(long handle) {
         Object obj = registry.get(handle);
         if (obj == null) {
-            throw new IllegalArgumentException("Unknown handle: " + handle);
+            throw new BridgeErrors.InvalidHandleException(handle == 0L
+                ? "Invalid handle 0 (default-constructed or unset object)"
+                : "Unknown handle: " + handle);
         }
         return obj;
     }
