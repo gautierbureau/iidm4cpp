@@ -36,7 +36,8 @@ final class StateEstimationDispatch {
     static <E extends Extension<?>> E extension(Object obj, Class<? super E> type) {
         E ext = findExtension(obj, type);
         if (ext == null) {
-            throw new IllegalStateException(type.getSimpleName() + " extension not present on " + obj);
+            throw new BridgeErrors.ExtensionNotFoundException(type.getSimpleName() + " extension not present on "
+                + (obj instanceof com.powsybl.iidm.network.Identifiable<?> i ? i.getId() : String.valueOf(obj)));
         }
         return ext;
     }
@@ -62,7 +63,7 @@ final class StateEstimationDispatch {
             case EXT_THREE_WT_TBE_PTC1 -> ext.shouldEstimatePhaseTapChanger1();
             case EXT_THREE_WT_TBE_PTC2 -> ext.shouldEstimatePhaseTapChanger2();
             case EXT_THREE_WT_TBE_PTC3 -> ext.shouldEstimatePhaseTapChanger3();
-            default -> throw new IllegalArgumentException("Unknown ToBeEstimated property: " + property);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown ToBeEstimated property: " + property);
         };
     }
 
@@ -84,7 +85,7 @@ final class StateEstimationDispatch {
             case EXT_THREE_WT_TBE_PTC1 -> ext.shouldEstimatePhaseTapChanger1(value);
             case EXT_THREE_WT_TBE_PTC2 -> ext.shouldEstimatePhaseTapChanger2(value);
             case EXT_THREE_WT_TBE_PTC3 -> ext.shouldEstimatePhaseTapChanger3(value);
-            default -> throw new IllegalArgumentException("Unknown ToBeEstimated property for set: " + property);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown ToBeEstimated property for set: " + property);
         }
     }
 
@@ -96,7 +97,7 @@ final class StateEstimationDispatch {
             case EXT_INJ_OBS_OBSERVABLE    -> ((InjectionObservability<?>) extension(obj, InjectionObservability.class)).isObservable();
             case EXT_BRANCH_OBS_EXISTS     -> findExtension(obj, BranchObservability.class) != null;
             case EXT_BRANCH_OBS_OBSERVABLE -> ((BranchObservability<?>) extension(obj, BranchObservability.class)).isObservable();
-            default -> throw new IllegalArgumentException("Unknown observability property: " + property);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown observability property: " + property);
         };
     }
 
@@ -104,7 +105,7 @@ final class StateEstimationDispatch {
         switch (property) {
             case EXT_INJ_OBS_OBSERVABLE    -> ((InjectionObservability<?>) extension(obj, InjectionObservability.class)).setObservable(value);
             case EXT_BRANCH_OBS_OBSERVABLE -> ((BranchObservability<?>) extension(obj, BranchObservability.class)).setObservable(value);
-            default -> throw new IllegalArgumentException("Unknown observability property for set: " + property);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown observability property for set: " + property);
         }
     }
 
@@ -122,14 +123,14 @@ final class StateEstimationDispatch {
             case EXT_BRANCH_OBS_QUALITY_P2 -> ((BranchObservability<?>) extension(obj, BranchObservability.class)).getNullableQualityP2();
             case EXT_BRANCH_OBS_QUALITY_Q1 -> ((BranchObservability<?>) extension(obj, BranchObservability.class)).getNullableQualityQ1();
             case EXT_BRANCH_OBS_QUALITY_Q2 -> ((BranchObservability<?>) extension(obj, BranchObservability.class)).getNullableQualityQ2();
-            default -> throw new IllegalArgumentException("Unknown observability quality property: " + base);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown observability quality property: " + base);
         };
     }
 
     private static ObservabilityQuality<?> quality(Object obj, int base) {
         ObservabilityQuality<?> q = findQuality(obj, base);
         if (q == null) {
-            throw new IllegalStateException("Observability quality not defined: " + base);
+            throw new BridgeErrors.PropertyNotFoundException("Observability quality not defined: " + base);
         }
         return q;
     }
@@ -158,7 +159,7 @@ final class StateEstimationDispatch {
             case EXT_BRANCH_OBS_QUALITY_P2 -> ((BranchObservability<?>) extension(obj, BranchObservability.class)).setQualityP2(standardDeviation);
             case EXT_BRANCH_OBS_QUALITY_Q1 -> ((BranchObservability<?>) extension(obj, BranchObservability.class)).setQualityQ1(standardDeviation);
             case EXT_BRANCH_OBS_QUALITY_Q2 -> ((BranchObservability<?>) extension(obj, BranchObservability.class)).setQualityQ2(standardDeviation);
-            default -> throw new IllegalArgumentException("Unknown observability quality property: " + property);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown observability quality property: " + property);
         }
     }
 

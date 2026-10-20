@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iidm:network xmlns:iidm="http://www.powsybl.org/schema/iidm/1_18" xmlns:apc="http://www.powsybl.org/schema/iidm/ext/active_power_control/1_2" xmlns:slt="http://www.powsybl.org/schema/iidm/ext/slack_terminal/1_5" id="backend_errors_test" caseDate="2026-01-01T00:00:00.000Z" forecastDistance="0" sourceFormat="test" minimumValidationLevel="STEADY_STATE_HYPOTHESIS">
+    <iidm:substation id="S">
+        <iidm:voltageLevel id="VL1" nominalV="400.0" topologyKind="BUS_BREAKER">
+            <iidm:busBreakerTopology>
+                <iidm:bus id="B1"/>
+            </iidm:busBreakerTopology>
+            <iidm:generator id="G" energySource="OTHER" minP="0.0" maxP="200.0" targetP="100.0" localTargetV="400.0" bus="B1" connectableBus="B1">
+                <iidm:minMaxReactiveLimits minQ="-1.7976931348623157E308" maxQ="1.7976931348623157E308"/>
+                <iidm:voltageRegulation mode="VOLTAGE" regulating="true"/>
+            </iidm:generator>
+            <iidm:generator id="G2" energySource="OTHER" minP="0.0" maxP="50.0" targetP="10.0" localTargetV="400.0" bus="B1" connectableBus="B1">
+                <iidm:minMaxReactiveLimits minQ="-1.7976931348623157E308" maxQ="1.7976931348623157E308"/>
+                <iidm:voltageRegulation mode="VOLTAGE" regulating="true"/>
+            </iidm:generator>
+            <iidm:load id="L" loadType="UNDEFINED" p0="10.0" q0="0.0" bus="B1" connectableBus="B1"/>
+        </iidm:voltageLevel>
+        <iidm:voltageLevel id="VL2" nominalV="225.0" topologyKind="BUS_BREAKER">
+            <iidm:busBreakerTopology>
+                <iidm:bus id="B2"/>
+            </iidm:busBreakerTopology>
+            <iidm:load id="L2" loadType="UNDEFINED" p0="10.0" q0="0.0" bus="B2" connectableBus="B2"/>
+        </iidm:voltageLevel>
+    </iidm:substation>
+    <iidm:extension id="G">
+        <apc:activePowerControl participate="true" droop="4.0" maxTargetP="150.0"/>
+    </iidm:extension>
+    <iidm:extension id="VL1">
+        <slt:slackTerminal id="G"/>
+    </iidm:extension>
+</iidm:network>

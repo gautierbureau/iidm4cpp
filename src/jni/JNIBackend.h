@@ -53,7 +53,8 @@ private:
     // Make a global reference to a Java object and return as ObjectHandle
     ObjectHandle makeHandle(jobject obj) const;
     // Cast ObjectHandle back to jobject (global ref)
-    jobject toObject(ObjectHandle h) const;
+    jobject toObject(ObjectHandle h) const;          // throws InvalidHandleException for 0
+    jobject toNullableObject(ObjectHandle h) const;  // INVALID_HANDLE → null
     // Wrap a Java Iterable/List into a vector of handles
     std::vector<ObjectHandle> collectionToHandles(jobject collection) const;
     // Wrap a Java Object[] into a vector of handles (deletes the local array ref)

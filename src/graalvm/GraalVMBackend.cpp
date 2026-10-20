@@ -1,4 +1,5 @@
 #include "GraalVMBackend.h"
+#include "../BridgeErrors.h"
 #include <iidm/IidmException.h>
 #include <cstdlib>
 #include <cstring>
@@ -84,11 +85,12 @@ void GraalVMBackend::init(const std::string& libPath) {
 void GraalVMBackend::resolveSymbols() {
     fnCreateIsolate_   = resolveSymbol<FnCreateIsolate>  (libHandle_, "graal_create_isolate");
     fnTearDownIsolate_ = resolveSymbol<FnTearDownIsolate>(libHandle_, "graal_tear_down_isolate");
+    fnTakeLastError_   = resolveSymbol<FnTakeLastError>  (libHandle_, "iidm_take_last_error");
+    fnFree_            = resolveSymbol<FnFree>           (libHandle_, "iidm_free");
     fnLoadNetwork_     = resolveSymbol<FnLoadNetwork>    (libHandle_, "iidm_load_network");
     fnSaveNetwork_     = resolveSymbol<FnSaveNetwork>    (libHandle_, "iidm_save_network");
     fnLoadNetworkBytes_ = resolveSymbol<FnLoadNetworkBytes>(libHandle_, "iidm_load_network_bytes");
     fnSaveNetworkBytes_ = resolveSymbol<FnSaveNetworkBytes>(libHandle_, "iidm_save_network_bytes");
-    fnFreeBytes_        = resolveSymbol<FnFreeBytes>      (libHandle_, "iidm_free_bytes");
     fnGetDouble_       = resolveSymbol<FnGetDouble>      (libHandle_, "iidm_get_double");
     fnSetDouble_       = resolveSymbol<FnSetDouble>      (libHandle_, "iidm_set_double");
     fnGetInt_          = resolveSymbol<FnGetInt>         (libHandle_, "iidm_get_int");
@@ -97,7 +99,6 @@ void GraalVMBackend::resolveSymbols() {
     fnSetBool_         = resolveSymbol<FnSetBool>        (libHandle_, "iidm_set_bool");
     fnGetString_       = resolveSymbol<FnGetString>      (libHandle_, "iidm_get_string");
     fnSetString_       = resolveSymbol<FnSetString>      (libHandle_, "iidm_set_string");
-    fnFreeString_      = resolveSymbol<FnFreeString>     (libHandle_, "iidm_free_string");
     fnGetChildren_     = resolveSymbol<FnGetChildren>    (libHandle_, "iidm_get_children");
     fnGetRelated_        = resolveSymbol<FnGetRelated>       (libHandle_, "iidm_get_related");
     fnSetRelated_        = resolveSymbol<FnSetRelated>       (libHandle_, "iidm_set_related");
@@ -107,41 +108,43 @@ void GraalVMBackend::resolveSymbols() {
     fnFindById_           = resolveSymbol<FnFindById>          (libHandle_, "iidm_find_by_id");
 }
 
+void GraalVMBackend::check(int status) const {
+    if (status == detail::BRIDGE_OK) return;
+    char* raw = fnTakeLastError_(thread_);
+    std::string message = raw ? std::string(raw) : std::string("unknown error in the GraalVM backend");
+    if (raw) fnFree_(thread_, raw);
+    detail::throwBridgeError(status, message);
+}
+
+std::string GraalVMBackend::takeString(char* raw) const {
+    std::string result(raw ? raw : "");
+    if (raw) fnFree_(thread_, raw);
+    return result;
+}
+
 void GraalVMBackend::loadNetwork(const std::string& filePath) {
-    networkHandle_ = fnLoadNetwork_(thread_, filePath.c_str());
-    if (networkHandle_ == INVALID_HANDLE) {
-        throw IidmException("Failed to load network from: " + filePath);
-    }
+    ObjectHandle h = INVALID_HANDLE;
+    check(fnLoadNetwork_(thread_, filePath.c_str(), &h));
+    networkHandle_ = h;
 }
 
 void GraalVMBackend::saveNetwork(const std::string& filePath) {
-    int rc = fnSaveNetwork_(thread_, networkHandle_, filePath.c_str());
-    if (rc != 0) {
-        throw IidmException("Failed to save network to: " + filePath);
-    }
+    check(fnSaveNetwork_(thread_, networkHandle_, filePath.c_str()));
 }
 
 void GraalVMBackend::loadNetworkBytes(const char* data, std::size_t length,
                                       const std::string& filenameHint) {
-    networkHandle_ = fnLoadNetworkBytes_(thread_, data, static_cast<int>(length),
-                                         filenameHint.c_str());
-    if (networkHandle_ == INVALID_HANDLE) {
-        throw IidmException("Failed to load network from bytes (hint: " + filenameHint + ")");
-    }
+    ObjectHandle h = INVALID_HANDLE;
+    check(fnLoadNetworkBytes_(thread_, data, static_cast<int>(length), filenameHint.c_str(), &h));
+    networkHandle_ = h;
 }
 
 std::string GraalVMBackend::saveNetworkBytes(const std::string& filenameHint) const {
     char* outData = nullptr;
     int   outLen  = 0;
-    int rc = fnSaveNetworkBytes_(thread_, networkHandle_, filenameHint.c_str(),
-                                 &outData, &outLen);
-    if (rc != 0) {
-        throw IidmException("Failed to save network to bytes (hint: " + filenameHint + ")");
-    }
+    check(fnSaveNetworkBytes_(thread_, networkHandle_, filenameHint.c_str(), &outData, &outLen));
     std::string result(outData ? outData : "", static_cast<std::size_t>(outLen));
-    if (outData) {
-        fnFreeBytes_(thread_, outData);
-    }
+    if (outData) fnFree_(thread_, outData);
     return result;
 }
 
@@ -162,87 +165,96 @@ ObjectHandle GraalVMBackend::getNetworkHandle() const {
 }
 
 double GraalVMBackend::getDouble(ObjectHandle h, int property) const {
-    return fnGetDouble_(thread_, h, property);
+    double value = 0.0;
+    check(fnGetDouble_(thread_, h, property, &value));
+    return value;
 }
 
 void GraalVMBackend::setDouble(ObjectHandle h, int property, double value) {
-    fnSetDouble_(thread_, h, property, value);
+    check(fnSetDouble_(thread_, h, property, value));
 }
 
 int GraalVMBackend::getInt(ObjectHandle h, int property) const {
-    return fnGetInt_(thread_, h, property);
+    int value = 0;
+    check(fnGetInt_(thread_, h, property, &value));
+    return value;
 }
 
 void GraalVMBackend::setInt(ObjectHandle h, int property, int value) {
-    fnSetInt_(thread_, h, property, value);
+    check(fnSetInt_(thread_, h, property, value));
 }
 
 bool GraalVMBackend::getBool(ObjectHandle h, int property) const {
-    return fnGetBool_(thread_, h, property) != 0;
+    int value = 0;
+    check(fnGetBool_(thread_, h, property, &value));
+    return value != 0;
 }
 
 void GraalVMBackend::setBool(ObjectHandle h, int property, bool value) {
-    fnSetBool_(thread_, h, property, value ? 1 : 0);
+    check(fnSetBool_(thread_, h, property, value ? 1 : 0));
 }
 
 std::string GraalVMBackend::getString(ObjectHandle h, int property) const {
-    const char* raw = fnGetString_(thread_, h, property);
-    std::string result(raw ? raw : "");
-    if (raw) {
-        fnFreeString_(thread_, raw);
-    }
-    return result;
+    char* raw = nullptr;
+    check(fnGetString_(thread_, h, property, &raw));
+    return takeString(raw);
 }
 
 void GraalVMBackend::setString(ObjectHandle h, int property, const std::string& value) {
-    fnSetString_(thread_, h, property, value.c_str());
+    check(fnSetString_(thread_, h, property, value.c_str()));
 }
 
 iidm::optional<double> GraalVMBackend::getOptDouble(ObjectHandle h, int property) const {
-    double val = fnGetDouble_(thread_, h, property);
+    double val = getDouble(h, property);
     // NaN signals "undefined"
     if (val != val) return {};  // NaN check
     return val;
 }
 
 std::vector<ObjectHandle> GraalVMBackend::getChildren(ObjectHandle h, int childType) const {
-    // First call with nullptr to get count
+    ObjectHandle* raw = nullptr;
     int count = 0;
-    fnGetChildren_(thread_, h, childType, nullptr, &count);
-    if (count == 0) return {};
-
-    std::vector<ObjectHandle> handles(static_cast<size_t>(count));
-    fnGetChildren_(thread_, h, childType, handles.data(), &count);
+    check(fnGetChildren_(thread_, h, childType, &raw, &count));
+    std::vector<ObjectHandle> handles(raw, raw + (raw ? count : 0));
+    if (raw) fnFree_(thread_, raw);
     return handles;
 }
 
 ObjectHandle GraalVMBackend::getRelated(ObjectHandle h, int relation) const {
-    return fnGetRelated_(thread_, h, relation);
+    ObjectHandle related = INVALID_HANDLE;
+    check(fnGetRelated_(thread_, h, relation, &related));
+    return related;
 }
 
 void GraalVMBackend::setRelated(ObjectHandle h, int relation, ObjectHandle value) {
-    fnSetRelated_(thread_, h, relation, value);
+    check(fnSetRelated_(thread_, h, relation, value));
 }
 
 std::vector<int> GraalVMBackend::getIntList(ObjectHandle h, int listCode) const {
+    int* raw = nullptr;
     int count = 0;
-    fnGetIntList_(thread_, h, listCode, nullptr, &count);
-    if (count == 0) return {};
-    std::vector<int> values(static_cast<size_t>(count));
-    fnGetIntList_(thread_, h, listCode, values.data(), &count);
+    check(fnGetIntList_(thread_, h, listCode, &raw, &count));
+    std::vector<int> values(raw, raw + (raw ? count : 0));
+    if (raw) fnFree_(thread_, raw);
     return values;
 }
 
 ObjectHandle GraalVMBackend::getRelatedByIndex(ObjectHandle h, int relation, int index) const {
-    return fnGetRelatedByIndex_(thread_, h, relation, index);
+    ObjectHandle related = INVALID_HANDLE;
+    check(fnGetRelatedByIndex_(thread_, h, relation, index, &related));
+    return related;
 }
 
 ObjectHandle GraalVMBackend::getRelatedByString(ObjectHandle h, int relation, const std::string& key) const {
-    return fnGetRelatedByString_(thread_, h, relation, key.c_str());
+    ObjectHandle related = INVALID_HANDLE;
+    check(fnGetRelatedByString_(thread_, h, relation, key.c_str(), &related));
+    return related;
 }
 
 ObjectHandle GraalVMBackend::findById(int objectType, const std::string& id) const {
-    return fnFindById_(thread_, networkHandle_, objectType, id.c_str());
+    ObjectHandle found = INVALID_HANDLE;
+    check(fnFindById_(thread_, networkHandle_, objectType, id.c_str(), &found));
+    return found;
 }
 
 } // namespace iidm
