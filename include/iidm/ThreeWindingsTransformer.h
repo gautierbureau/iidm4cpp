@@ -53,7 +53,7 @@ public:
 
     private:
         ObjectHandle     handle_          = INVALID_HANDLE;
-        BackendProvider* backend_         = nullptr;
+        BackendProvider* backend_         = detail::nullBackend();
         int              legBase_         = 0;
         int              relTerminal_     = 0;
         int              rtcStepChildType_ = 0;
@@ -99,7 +99,7 @@ public:
 
 private:
     ObjectHandle    handle_  = INVALID_HANDLE;
-    BackendProvider* backend_ = nullptr;
+    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

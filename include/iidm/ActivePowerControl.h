@@ -45,7 +45,7 @@ private:
     int code(int generatorCode) const;
 
     ObjectHandle     handle_   = INVALID_HANDLE;
-    BackendProvider* backend_  = nullptr;
+    BackendProvider* backend_  = detail::nullBackend();
     int              codeBase_ = 0;
 };
 

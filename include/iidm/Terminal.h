@@ -26,7 +26,7 @@ public:
 
     private:
         ObjectHandle     handle_  = INVALID_HANDLE;
-        BackendProvider* backend_ = nullptr;
+        BackendProvider* backend_ = detail::nullBackend();
     };
 
     // ── NodeBreakerView ──────────────────────────────────────────────────────
@@ -41,7 +41,7 @@ public:
 
     private:
         ObjectHandle     handle_  = INVALID_HANDLE;
-        BackendProvider* backend_ = nullptr;
+        BackendProvider* backend_ = detail::nullBackend();
     };
 
     // ── Terminal ─────────────────────────────────────────────────────────────
@@ -78,7 +78,7 @@ private:
     friend class SlackTerminal; // passes the terminal handle to setRelated
 
     ObjectHandle    handle_  = INVALID_HANDLE;
-    BackendProvider* backend_ = nullptr;
+    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

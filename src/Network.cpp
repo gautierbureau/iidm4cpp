@@ -17,33 +17,37 @@ Network::~Network() {
 }
 
 Network::Network(Network&&) noexcept = default;
+
+BackendProvider* Network::backend() const {
+    return backend_ ? backend_.get() : detail::nullBackend(); // moved-from Network
+}
 Network& Network::operator=(Network&&) noexcept = default;
 
 std::string Network::getId() const {
-    return backend_->getString(backend_->getNetworkHandle(), prop::ID);
+    return backend()->getString(backend()->getNetworkHandle(), prop::ID);
 }
 
 std::string Network::getName() const {
-    return backend_->getString(backend_->getNetworkHandle(), prop::NAME);
+    return backend()->getString(backend()->getNetworkHandle(), prop::NAME);
 }
 
 BackendProvider& Network::getBackend() {
-    return *backend_;
+    return *backend();
 }
 
 void Network::save(const std::string& filePath) const {
-    backend_->saveNetwork(filePath);
+    backend()->saveNetwork(filePath);
 }
 
 void Network::save(std::ostream& out, const std::string& filenameHint) const {
-    const std::string bytes = backend_->saveNetworkBytes(filenameHint);
+    const std::string bytes = backend()->saveNetworkBytes(filenameHint);
     if (!bytes.empty()) {
         out.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
     }
 }
 
 std::string Network::saveToBytes(const std::string& filenameHint) const {
-    return backend_->saveNetworkBytes(filenameHint);
+    return backend()->saveNetworkBytes(filenameHint);
 }
 
 // ── Helper: build vector of component objects from handles ────────────────────
@@ -69,117 +73,117 @@ static iidm::optional<T> findById(BackendProvider* backend, int objectType, cons
 // ── Iteration helpers ────────────────────────────────────────────────────────
 
 std::vector<Substation> Network::getSubstations() const {
-    return buildList<Substation>(backend_.get(), prop::SUBSTATION);
+    return buildList<Substation>(backend(), prop::SUBSTATION);
 }
 
 std::vector<VoltageLevel> Network::getVoltageLevels() const {
-    return buildList<VoltageLevel>(backend_.get(), prop::VOLTAGE_LEVEL);
+    return buildList<VoltageLevel>(backend(), prop::VOLTAGE_LEVEL);
 }
 
 std::vector<Battery> Network::getBatteries() const {
-    return buildList<Battery>(backend_.get(), prop::BATTERY);
+    return buildList<Battery>(backend(), prop::BATTERY);
 }
 
 std::vector<Generator> Network::getGenerators() const {
-    return buildList<Generator>(backend_.get(), prop::GENERATOR);
+    return buildList<Generator>(backend(), prop::GENERATOR);
 }
 
 std::vector<Load> Network::getLoads() const {
-    return buildList<Load>(backend_.get(), prop::LOAD);
+    return buildList<Load>(backend(), prop::LOAD);
 }
 
 std::vector<Line> Network::getLines() const {
-    return buildList<Line>(backend_.get(), prop::LINE);
+    return buildList<Line>(backend(), prop::LINE);
 }
 
 std::vector<TwoWindingsTransformer> Network::getTwoWindingsTransformers() const {
-    return buildList<TwoWindingsTransformer>(backend_.get(), prop::TWO_WINDINGS_TRANSFORMER);
+    return buildList<TwoWindingsTransformer>(backend(), prop::TWO_WINDINGS_TRANSFORMER);
 }
 
 std::vector<ThreeWindingsTransformer> Network::getThreeWindingsTransformers() const {
-    return buildList<ThreeWindingsTransformer>(backend_.get(), prop::THREE_WINDINGS_TRANSFORMER);
+    return buildList<ThreeWindingsTransformer>(backend(), prop::THREE_WINDINGS_TRANSFORMER);
 }
 
 std::vector<HvdcLine> Network::getHvdcLines() const {
-    return buildList<HvdcLine>(backend_.get(), prop::HVDC_LINE);
+    return buildList<HvdcLine>(backend(), prop::HVDC_LINE);
 }
 
 std::vector<ShuntCompensator> Network::getShuntCompensators() const {
-    return buildList<ShuntCompensator>(backend_.get(), prop::SHUNT_COMPENSATOR);
+    return buildList<ShuntCompensator>(backend(), prop::SHUNT_COMPENSATOR);
 }
 
 std::vector<StaticVarCompensator> Network::getStaticVarCompensators() const {
-    return buildList<StaticVarCompensator>(backend_.get(), prop::STATIC_VAR_COMPENSATOR);
+    return buildList<StaticVarCompensator>(backend(), prop::STATIC_VAR_COMPENSATOR);
 }
 
 std::vector<DanglingLine> Network::getDanglingLines() const {
-    return buildList<DanglingLine>(backend_.get(), prop::DANGLING_LINE);
+    return buildList<DanglingLine>(backend(), prop::DANGLING_LINE);
 }
 
 std::vector<VscConverterStation> Network::getVscConverterStations() const {
-    return buildList<VscConverterStation>(backend_.get(), prop::VSC_CONVERTER_STATION);
+    return buildList<VscConverterStation>(backend(), prop::VSC_CONVERTER_STATION);
 }
 
 std::vector<LccConverterStation> Network::getLccConverterStations() const {
-    return buildList<LccConverterStation>(backend_.get(), prop::LCC_CONVERTER_STATION);
+    return buildList<LccConverterStation>(backend(), prop::LCC_CONVERTER_STATION);
 }
 
 // ── Lookup by ID ─────────────────────────────────────────────────────────────
 
 iidm::optional<Battery> Network::getBattery(const std::string& id) const {
-    return findById<Battery>(backend_.get(), prop::BATTERY, id);
+    return findById<Battery>(backend(), prop::BATTERY, id);
 }
 
 iidm::optional<Generator> Network::getGenerator(const std::string& id) const {
-    return findById<Generator>(backend_.get(), prop::GENERATOR, id);
+    return findById<Generator>(backend(), prop::GENERATOR, id);
 }
 
 iidm::optional<Load> Network::getLoad(const std::string& id) const {
-    return findById<Load>(backend_.get(), prop::LOAD, id);
+    return findById<Load>(backend(), prop::LOAD, id);
 }
 
 iidm::optional<Line> Network::getLine(const std::string& id) const {
-    return findById<Line>(backend_.get(), prop::LINE, id);
+    return findById<Line>(backend(), prop::LINE, id);
 }
 
 iidm::optional<TwoWindingsTransformer> Network::getTwoWindingsTransformer(const std::string& id) const {
-    return findById<TwoWindingsTransformer>(backend_.get(), prop::TWO_WINDINGS_TRANSFORMER, id);
+    return findById<TwoWindingsTransformer>(backend(), prop::TWO_WINDINGS_TRANSFORMER, id);
 }
 
 iidm::optional<ThreeWindingsTransformer> Network::getThreeWindingsTransformer(const std::string& id) const {
-    return findById<ThreeWindingsTransformer>(backend_.get(), prop::THREE_WINDINGS_TRANSFORMER, id);
+    return findById<ThreeWindingsTransformer>(backend(), prop::THREE_WINDINGS_TRANSFORMER, id);
 }
 
 iidm::optional<HvdcLine> Network::getHvdcLine(const std::string& id) const {
-    return findById<HvdcLine>(backend_.get(), prop::HVDC_LINE, id);
+    return findById<HvdcLine>(backend(), prop::HVDC_LINE, id);
 }
 
 iidm::optional<DanglingLine> Network::getDanglingLine(const std::string& id) const {
-    return findById<DanglingLine>(backend_.get(), prop::DANGLING_LINE, id);
+    return findById<DanglingLine>(backend(), prop::DANGLING_LINE, id);
 }
 
 iidm::optional<ShuntCompensator> Network::getShuntCompensator(const std::string& id) const {
-    return findById<ShuntCompensator>(backend_.get(), prop::SHUNT_COMPENSATOR, id);
+    return findById<ShuntCompensator>(backend(), prop::SHUNT_COMPENSATOR, id);
 }
 
 iidm::optional<StaticVarCompensator> Network::getStaticVarCompensator(const std::string& id) const {
-    return findById<StaticVarCompensator>(backend_.get(), prop::STATIC_VAR_COMPENSATOR, id);
+    return findById<StaticVarCompensator>(backend(), prop::STATIC_VAR_COMPENSATOR, id);
 }
 
 iidm::optional<VscConverterStation> Network::getVscConverterStation(const std::string& id) const {
-    return findById<VscConverterStation>(backend_.get(), prop::VSC_CONVERTER_STATION, id);
+    return findById<VscConverterStation>(backend(), prop::VSC_CONVERTER_STATION, id);
 }
 
 iidm::optional<LccConverterStation> Network::getLccConverterStation(const std::string& id) const {
-    return findById<LccConverterStation>(backend_.get(), prop::LCC_CONVERTER_STATION, id);
+    return findById<LccConverterStation>(backend(), prop::LCC_CONVERTER_STATION, id);
 }
 
 iidm::optional<Switch> Network::getSwitch(const std::string& id) const {
-    return findById<Switch>(backend_.get(), prop::SWITCH, id);
+    return findById<Switch>(backend(), prop::SWITCH, id);
 }
 
 iidm::optional<BusbarSection> Network::getBusbarSection(const std::string& id) const {
-    return findById<BusbarSection>(backend_.get(), prop::BUSBAR_SECTION, id);
+    return findById<BusbarSection>(backend(), prop::BUSBAR_SECTION, id);
 }
 
 } // namespace iidm
