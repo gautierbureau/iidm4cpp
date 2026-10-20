@@ -49,7 +49,7 @@ bool Battery::hasActivePowerControl() const {
 }
 
 ActivePowerControl Battery::getActivePowerControl() const {
-    return ActivePowerControl(handle_, backend_, prop::EXT_BAT_APC_DROOP, prop::EXT_BAT_APC_PARTICIPATE);
+    return ActivePowerControl(handle_, backend_, prop::EXT_BAT_APC_EXISTS);
 }
 
 bool Battery::hasMinMaxReactiveLimits() const {

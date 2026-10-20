@@ -187,6 +187,11 @@ public final class IidmEntryPoints {
         return PropertyDispatcher.getRelated(handle, relation);
     }
 
+    @CEntryPoint(name = "iidm_set_related")
+    public static void setRelated(IsolateThread thread, long handle, int relation, long valueHandle) {
+        PropertyDispatcher.setRelated(handle, relation, valueHandle);
+    }
+
     @CEntryPoint(name = "iidm_get_int_list")
     public static void getIntList(IsolateThread thread,
                                   long handle,

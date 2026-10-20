@@ -8,6 +8,7 @@
 namespace iidm {
 
 class BackendProvider;
+class SlackTerminal;
 class VoltageLevel;
 
 class Terminal {
@@ -74,6 +75,8 @@ public:
     bool operator!=(const Terminal& other) const;
 
 private:
+    friend class SlackTerminal; // passes the terminal handle to setRelated
+
     ObjectHandle    handle_  = INVALID_HANDLE;
     BackendProvider* backend_ = nullptr;
 };

@@ -83,7 +83,7 @@ bool Generator::hasActivePowerControl() const {
 }
 
 ActivePowerControl Generator::getActivePowerControl() const {
-    return ActivePowerControl(handle_, backend_, prop::EXT_APC_DROOP, prop::EXT_APC_PARTICIPATE);
+    return ActivePowerControl(handle_, backend_, prop::EXT_APC_EXISTS);
 }
 
 bool Generator::hasCoordinatedReactiveControl() const {

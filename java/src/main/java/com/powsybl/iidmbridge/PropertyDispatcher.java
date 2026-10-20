@@ -96,6 +96,9 @@ public final class PropertyDispatcher {
             case LCC_LOSS_FACTOR  -> ((LccConverterStation) obj).getLossFactor();
             case LCC_POWER_FACTOR -> ((LccConverterStation) obj).getPowerFactor();
             case EXT_APC_DROOP -> ((Generator) obj).getExtension(ActivePowerControl.class).getDroop();
+            case EXT_APC_PARTICIPATION_FACTOR, EXT_BAT_APC_PARTICIPATION_FACTOR -> activePowerControl(obj).getParticipationFactor();
+            case EXT_APC_MIN_TARGET_P, EXT_BAT_APC_MIN_TARGET_P -> activePowerControl(obj).getMinTargetP().orElse(Double.NaN);
+            case EXT_APC_MAX_TARGET_P, EXT_BAT_APC_MAX_TARGET_P -> activePowerControl(obj).getMaxTargetP().orElse(Double.NaN);
             case EXT_CRC_Q_PERCENT -> ((Generator) obj).getExtension(CoordinatedReactiveControl.class).getQPercent();
             case EXT_HADAPC_DROOP -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).getDroop();
             case EXT_HADAPC_P0 -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).getP0();
@@ -222,6 +225,9 @@ public final class PropertyDispatcher {
             case VSC_VOLTAGE_SETPOINT        -> ((VscConverterStation) obj).setVoltageSetpoint(value);
             case VSC_REACTIVE_POWER_SETPOINT -> ((VscConverterStation) obj).setReactivePowerSetpoint(value);
             case EXT_APC_DROOP -> ((Generator) obj).getExtension(ActivePowerControl.class).setDroop(value);
+            case EXT_APC_PARTICIPATION_FACTOR, EXT_BAT_APC_PARTICIPATION_FACTOR -> activePowerControl(obj).setParticipationFactor(value);
+            case EXT_APC_MIN_TARGET_P, EXT_BAT_APC_MIN_TARGET_P -> activePowerControl(obj).setMinTargetP(value);
+            case EXT_APC_MAX_TARGET_P, EXT_BAT_APC_MAX_TARGET_P -> activePowerControl(obj).setMaxTargetP(value);
             case EXT_CRC_Q_PERCENT -> ((Generator) obj).getExtension(CoordinatedReactiveControl.class).setQPercent(value);
             case EXT_HADAPC_DROOP -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).setDroop((float) value);
             case EXT_HADAPC_P0 -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).setP0((float) value);
@@ -432,6 +438,7 @@ public final class PropertyDispatcher {
             case EXT_HOAR_EXISTS     -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class) != null;
             case EXT_VPRC_EXISTS     -> isVoltagePerReactivePowerControl(obj);
             case EXT_ST_EXISTS       -> ((VoltageLevel) obj).getExtension(SlackTerminal.class) != null;
+            case EXT_ST_EMPTY        -> slackTerminal(obj).isEmpty();
             // ThreeWT leg tap changer bools
             case THREE_WT_LEG1_RTC_EXISTS     -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger() != null;
             case THREE_WT_LEG1_RTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().isRegulating();
@@ -815,6 +822,21 @@ public final class PropertyDispatcher {
         };
     }
 
+    // ── Related object setter (navigation) ────────────────────────────────
+
+    /** {@code valueHandle} 0 (INVALID_HANDLE) stands for null. */
+    public static void setRelated(long handle, int relation, long valueHandle) {
+        Object value = valueHandle == 0L ? null : NetworkRegistry.lookup(valueHandle);
+        setRelatedObject(NetworkRegistry.lookup(handle), relation, value);
+    }
+
+    public static void setRelatedObject(Object obj, int relation, Object value) {
+        switch (relation) {
+            case REL_SLACK_TERMINAL -> slackTerminal(obj).setTerminal((Terminal) value);
+            default -> throw new IllegalArgumentException("Unknown relation for set: " + relation);
+        }
+    }
+
     private static long registerOrZero(Object obj) {
         return obj == null ? 0L : NetworkRegistry.register(obj); // 0 = INVALID_HANDLE
     }
@@ -891,6 +913,17 @@ public final class PropertyDispatcher {
             case SUBSTATION                 -> network.getSubstation(id);
             default -> throw new IllegalArgumentException("Unknown object type: " + objectType);
         };
+    }
+
+    // ── Extension helpers ─────────────────────────────────────────────────
+
+    /** ActivePowerControl of any injection (Generator, Battery...). */
+    static ActivePowerControl<?> activePowerControl(Object obj) {
+        return StateEstimationDispatch.extension(obj, ActivePowerControl.class);
+    }
+
+    static SlackTerminal slackTerminal(Object obj) {
+        return StateEstimationDispatch.extension(obj, SlackTerminal.class);
     }
 
     // ── StaticVarCompensator regulation helpers ───────────────────────────

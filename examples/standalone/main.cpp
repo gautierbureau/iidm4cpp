@@ -13,6 +13,7 @@
  *   ./example_standalone path/to/network.xiidm
  */
 #include <iidm/iidm.h>
+#include "../ExtensionEdits.h"
 #include "../StateEstimationReport.h"
 #include <iidm/RatioTapChanger.h>
 #include <iostream>
@@ -204,6 +205,8 @@ int main(int argc, char* argv[]) {
 
         iidm::Network network = iidm::NetworkFactory::load(argv[1], opts);
         printNetwork(network);
+        std::cout << "\nActivePowerControl / SlackTerminal edits:\n";
+        example::editActivePowerControlAndSlackTerminal(network, "  ");
         std::cout << "\nState estimation extensions:\n";
         example::reportStateEstimation(network, "  ");
 

@@ -94,6 +94,8 @@ void JNIBackend::cacheMethodIds() {
         "(Ljava/lang/Object;I)[Ljava/lang/Object;");
     cache_.disp_getRelatedObject = env_->GetStaticMethodID(cache_.dispatcherClass, "getRelatedObject",
         "(Ljava/lang/Object;I)Ljava/lang/Object;");
+    cache_.disp_setRelatedObject = env_->GetStaticMethodID(cache_.dispatcherClass, "setRelatedObject",
+        "(Ljava/lang/Object;ILjava/lang/Object;)V");
     cache_.disp_getRelatedObjectByIndex = env_->GetStaticMethodID(cache_.dispatcherClass, "getRelatedObjectByIndex",
         "(Ljava/lang/Object;II)Ljava/lang/Object;");
     cache_.disp_getRelatedObjectByString = env_->GetStaticMethodID(cache_.dispatcherClass, "getRelatedObjectByString",
@@ -2452,6 +2454,12 @@ ObjectHandle JNIBackend::findById(int objectType, const std::string& id) const {
     ObjectHandle handle = makeHandle(result);
     if (result) env_->DeleteLocalRef(result);
     return handle;
+}
+
+void JNIBackend::setRelated(ObjectHandle h, int relation, ObjectHandle value) {
+    env_->CallStaticVoidMethod(cache_.dispatcherClass, cache_.disp_setRelatedObject,
+                               toObject(h), static_cast<jint>(relation), toObject(value));
+    checkJNIException(env_);
 }
 
 std::vector<int> JNIBackend::getIntList(ObjectHandle h, int listCode) const {

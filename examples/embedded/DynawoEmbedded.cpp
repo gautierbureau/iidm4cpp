@@ -11,6 +11,7 @@
  * extensions_test.xiidm (no generators).
  */
 #include <iidm/iidm.h>
+#include "../ExtensionEdits.h"
 #include "../StateEstimationReport.h"
 #include <jni.h>
 #include <iostream>
@@ -77,6 +78,9 @@ static std::string runEmbedded(const char* networkId) {
                           << " slackTerminal.busId="
                           << vl.getSlackTerminal().getTerminal().getBusId() << "\n";
         }
+
+        // ActivePowerControl (all fields) and SlackTerminal.setTerminal
+        example::editActivePowerControlAndSlackTerminal(network, "[C++] ");
 
         // State estimation extensions (measurements, observability, toBeEstimated, areas)
         example::reportStateEstimation(network, "[C++] ");

@@ -30,6 +30,7 @@ public:
 
     std::vector<ObjectHandle> getChildren(ObjectHandle h, int childType) const override;
     ObjectHandle              getRelated(ObjectHandle h, int relation) const override;
+    void                      setRelated(ObjectHandle h, int relation, ObjectHandle value) override;
     std::vector<int>          getIntList(ObjectHandle h, int listCode) const override;
     ObjectHandle              getRelatedByIndex(ObjectHandle h, int relation, int index) const override;
     ObjectHandle              getRelatedByString(ObjectHandle h, int relation, const std::string& key) const override;

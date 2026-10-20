@@ -260,6 +260,9 @@ constexpr int SW_NODE2                    = 1504;
 constexpr int EXT_APC_EXISTS              = 3000;
 constexpr int EXT_APC_DROOP              = 3001;
 constexpr int EXT_APC_PARTICIPATE        = 3002;
+constexpr int EXT_APC_PARTICIPATION_FACTOR = 3003; // double
+constexpr int EXT_APC_MIN_TARGET_P       = 3004; // double, NaN = undefined (setting NaN unsets it)
+constexpr int EXT_APC_MAX_TARGET_P       = 3005; // double, NaN = undefined (setting NaN unsets it)
 
 // ── Extension: CoordinatedReactiveControl ─────────────────────────────────────
 constexpr int EXT_CRC_EXISTS    = 3100;
@@ -282,11 +285,15 @@ constexpr int EXT_VPRC_SLOPE  = 3401;
 
 // ── Extension: SlackTerminal ──────────────────────────────────────────────────
 constexpr int EXT_ST_EXISTS = 3500;
+constexpr int EXT_ST_EMPTY  = 3501; // bool: no terminal in any variant
 
 // ── Extension: ActivePowerControl (Battery) ───────────────────────────────────
 constexpr int EXT_BAT_APC_EXISTS      = 3600;
 constexpr int EXT_BAT_APC_DROOP       = 3601;
 constexpr int EXT_BAT_APC_PARTICIPATE = 3602;
+constexpr int EXT_BAT_APC_PARTICIPATION_FACTOR = 3603; // same layout as EXT_APC_*
+constexpr int EXT_BAT_APC_MIN_TARGET_P = 3604;
+constexpr int EXT_BAT_APC_MAX_TARGET_P = 3605;
 
 // ── CurrentLimits ─────────────────────────────────────────────────────────────
 constexpr int CL_PERMANENT_LIMIT          = 1970;
@@ -308,7 +315,7 @@ constexpr int REL_TERMINAL                = 2002;
 constexpr int REL_BUS                     = 2003;
 constexpr int REL_VOLTAGE_LEVEL           = 2004;
 constexpr int REL_SUBSTATION              = 2005;
-constexpr int REL_SLACK_TERMINAL          = 2006;
+constexpr int REL_SLACK_TERMINAL          = 2006; // VL → slack terminal (also settable via setRelated)
 constexpr int REL_CONNECTABLE_BUS         = 2007; // bus-breaker topology bus (may differ from bus view)
 constexpr int REL_REGULATING_TERMINAL     = 2008;
 constexpr int REL_CURRENT_LIMITS1         = 2009; // Branch side 1, or ThreeWT leg 1

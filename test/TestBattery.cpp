@@ -127,3 +127,18 @@ TEST_F(BatteryTest, GetActivePowerControlDroop) {
     EXPECT_DOUBLE_EQ(apc.getDroop(), 2.5);
     EXPECT_TRUE(apc.isParticipate());
 }
+
+TEST_F(BatteryTest, ActivePowerControlNewFieldsUseBatteryCodes) {
+    backend.bools  [{BAT_HANDLE, prop::EXT_BAT_APC_EXISTS}]               = true;
+    backend.doubles[{BAT_HANDLE, prop::EXT_BAT_APC_PARTICIPATION_FACTOR}] = 0.4;
+    backend.doubles[{BAT_HANDLE, prop::EXT_BAT_APC_MIN_TARGET_P}]         = -50.0;
+    Battery bat(BAT_HANDLE, &backend);
+    auto apc = bat.getActivePowerControl();
+    EXPECT_DOUBLE_EQ(apc.getParticipationFactor(), 0.4);
+    ASSERT_TRUE(apc.getMinTargetP().has_value());
+    EXPECT_DOUBLE_EQ(*apc.getMinTargetP(), -50.0);
+    EXPECT_FALSE(apc.getMaxTargetP().has_value());
+    apc.setMaxTargetP(50.0);
+    EXPECT_DOUBLE_EQ((backend.doubles[{BAT_HANDLE, prop::EXT_BAT_APC_MAX_TARGET_P}]), 50.0);
+    EXPECT_EQ(backend.doubles.count({BAT_HANDLE, prop::EXT_APC_MAX_TARGET_P}), 0u);
+}
