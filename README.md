@@ -1158,30 +1158,59 @@ matches the contract of the Java IIDM objects themselves.
 
 ## 9. Error Handling
 
-All errors are reported via exceptions. The hierarchy is:
+All errors are reported via C++ exceptions, with the **same exception type on both
+backends**. A Java-side failure never aborts the process: it surfaces as one of these
+exceptions and the backend stays usable.
 
 ```cpp
 // include/iidm/IidmException.h
 namespace iidm {
 
-class IidmException : public std::runtime_error {
-public:
-    explicit IidmException(const std::string& message)
-        : std::runtime_error(message) {}
-};
+class IidmException : public std::runtime_error { /* … */ };            // base of all
 
 class BackendNotAvailableException : public IidmException { /* … */ };
-class InvalidHandleException       : public IidmException { /* … */ };
-class PropertyNotFoundException    : public IidmException { /* … */ };
+class InvalidHandleException       : public IidmException { /* … */ };  // handle 0 / unknown
+class PropertyNotFoundException    : public IidmException { /* … */ };  // code unknown or not
+                                                                         // applicable, optional part absent
+class ExtensionNotFoundException   : public PropertyNotFoundException { /* … */ };
+class ValidationException          : public IidmException { /* … */ };  // the model rejected the change
 class NetworkNotFoundException     : public IidmException { /* … */ };
 
 } // namespace iidm
 ```
 
-Java exceptions thrown within GraalVM entry points are caught in Java,
-converted to an error code (integer), stored in a thread-local on the
-isolate, and translated to a C++ exception on the C++ side. This keeps the
-C ABI clean (no `setjmp`/`longjmp` across the boundary).
+```cpp
+try {
+    gen.getActivePowerControl().setMaxTargetP(500.0);   // outside [minP, maxP]
+} catch (const iidm::ValidationException& e) {
+    // e.what(): "maxTargetP value (500.0) is not between minP and maxP for component G"
+}
+```
+
+| Java failure | C++ exception |
+|---|---|
+| `BridgeErrors.InvalidHandleException` | `InvalidHandleException` |
+| `BridgeErrors.PropertyNotFoundException`, `ClassCastException`, `NullPointerException` | `PropertyNotFoundException` |
+| `BridgeErrors.ExtensionNotFoundException` | `ExtensionNotFoundException` |
+| `PowsyblException` (incl. `ValidationException`), `IllegalArgumentException`, `UnsupportedOperationException` | `ValidationException` |
+| `BridgeErrors.NetworkNotFoundException` | `NetworkNotFoundException` |
+| anything else | `IidmException` (message prefixed with the Java class) |
+
+The classification lives in one place, `BridgeErrors.java`
+(`kindOf(Throwable)` / `message(Throwable)`), and is used by both backends:
+
+- **GraalVM** — an exception escaping a `@CEntryPoint` would abort the process, so every
+  entry point catches `Throwable`, stores it in a thread-local and returns its kind as a
+  status (0 = success; results go through out-pointers). On a non-zero status
+  `GraalVMBackend::check()` fetches the message with `iidm_take_last_error` and throws via
+  `detail::throwBridgeError` (`src/BridgeErrors.h`). Successful calls cost nothing extra.
+- **JNI** — `checkJNIException()` classifies the pending Java exception with the same
+  `BridgeErrors` methods and throws via `detail::throwBridgeError`. A null receiver
+  (handle 0) is rejected in C++ before any JNI call.
+
+`test/TestBackendErrors.cpp` runs the same failure scenarios against the real GraalVM
+library (`IIDM_BRIDGE_GRAALVM_LIB`) and against a JVM created in-process
+(`IIDM_BRIDGE_JAR`).
 
 ---
 

@@ -41,6 +41,9 @@ Network NetworkFactory::wrap(const std::string& networkId, const NetworkLoadOpti
     }
     auto backend = selectBackend(jniOptions);
     // In wrap mode, the network is already loaded in the JVM — no loadNetwork call needed.
+    if (backend->getNetworkHandle() == INVALID_HANDLE) {
+        throw NetworkNotFoundException("No network registered with id: " + jniOptions.jniNetworkId);
+    }
     return Network(std::move(backend));
 }
 

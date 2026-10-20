@@ -42,6 +42,8 @@ set(TEST_SOURCES
     TestEnums.cpp
     TestNetworkFactory.cpp
     TestNetworkStream.cpp
+    TestBridgeErrors.cpp
+    TestBackendErrors.cpp
 )
 
 add_executable(iidmbridge_tests ${TEST_SOURCES})
@@ -50,6 +52,16 @@ target_include_directories(iidmbridge_tests PRIVATE
     ${CMAKE_SOURCE_DIR}/include
     ${CMAKE_SOURCE_DIR}/src
 )
+
+# The backend macros are PRIVATE to iidmbridge: repeat them so that backend-specific
+# tests (TestIntegration, TestBackendErrors, BackendSelector stub tests) are compiled in.
+target_compile_definitions(iidmbridge_tests PRIVATE
+    $<$<BOOL:${IIDM_BRIDGE_ENABLE_GRAALVM}>:IIDM_BRIDGE_GRAALVM_ENABLED>
+    $<$<BOOL:${IIDM_BRIDGE_ENABLE_JNI}>:IIDM_BRIDGE_JNI_ENABLED>
+)
+if(IIDM_BRIDGE_ENABLE_JNI)
+    target_include_directories(iidmbridge_tests PRIVATE ${JNI_INCLUDE_DIRS})
+endif()
 
 target_link_libraries(iidmbridge_tests
     PRIVATE

@@ -27,7 +27,7 @@ public:
     ActivePowerControl& setParticipationFactor(double participationFactor);
 
     // Limits of the active power target used when the injection participates; empty when
-    // undefined. powsybl-core rejects a value outside [minP, maxP], or min > max.
+    // undefined. A value outside [minP, maxP], or min > max, throws ValidationException.
     iidm::optional<double> getMinTargetP() const;
     ActivePowerControl& setMinTargetP(double minTargetP);
     ActivePowerControl& unsetMinTargetP();
