@@ -14,8 +14,9 @@ and architecture notes.
 
 ## Key rules
 
-- Keep `include/iidm/PropertyCodes.h` and `java/.../PropertyCodes.java` in sync
-  (same integer constants in both files).
+- Property codes are defined once, in `include/iidm/PropertyCodes.def`
+  (`IIDM_CODE(NAME, value)`); `PropertyCodes.h` and the generated Java
+  `PropertyCodes` both come from it — never hand-write a code elsewhere.
 - Setters must return `*this` for fluent chaining.
 - Component objects are move-only; never add copy constructors.
 - All C++ code lives in `namespace iidm`.
