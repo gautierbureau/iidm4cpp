@@ -7,7 +7,7 @@ namespace iidm {
 // ── ObservabilityArea::AreaCharacteristics ────────────────────────────────────
 
 ObservabilityArea::AreaCharacteristics::AreaCharacteristics(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(backend) {}
+    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
 
 int ObservabilityArea::AreaCharacteristics::getAreaNumber() const {
     return backend_->getInt(handle_, prop::OBS_AREA_NUMBER);
@@ -49,7 +49,7 @@ iidm::optional<ObservabilityArea::AreaCharacteristics> toArea(ObjectHandle h, Ba
 } // namespace
 
 ObservabilityArea::ObservabilityArea(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(backend) {}
+    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
 
 bool ObservabilityArea::isConsistentWithTopology() const {
     return backend_->getBool(handle_, prop::EXT_OBS_AREA_CONSISTENT);

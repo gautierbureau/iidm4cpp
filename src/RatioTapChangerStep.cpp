@@ -5,7 +5,7 @@
 namespace iidm {
 
 RatioTapChangerStep::RatioTapChangerStep(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(backend) {}
+    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
 
 RatioTapChangerStep::RatioTapChangerStep(double rho, double r, double x, double g, double b)
     : standalone_(true), rho_(rho), r_(r), x_(x), g_(g), b_(b) {}

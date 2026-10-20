@@ -5,7 +5,7 @@ namespace iidm {
 
 MinMaxReactiveLimits::MinMaxReactiveLimits(ObjectHandle handle, BackendProvider* backend,
                                             int minQProp, int maxQProp)
-    : handle_(handle), backend_(backend), minQProp_(minQProp), maxQProp_(maxQProp) {}
+    : handle_(handle), backend_(detail::orNullBackend(backend)), minQProp_(minQProp), maxQProp_(maxQProp) {}
 
 double MinMaxReactiveLimits::getMinQ() const {
     return backend_->getDouble(handle_, minQProp_);

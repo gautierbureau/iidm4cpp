@@ -36,7 +36,7 @@ public:
 
     private:
         ObjectHandle     handle_  = INVALID_HANDLE;
-        BackendProvider* backend_ = nullptr;
+        BackendProvider* backend_ = detail::nullBackend();
     };
 
     ObservabilityArea() = default;
@@ -60,7 +60,7 @@ public:
 
 private:
     ObjectHandle     handle_  = INVALID_HANDLE;
-    BackendProvider* backend_ = nullptr;
+    BackendProvider* backend_ = detail::nullBackend();
 };
 
 } // namespace iidm

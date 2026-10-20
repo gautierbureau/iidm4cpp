@@ -22,7 +22,7 @@ public:
 
 private:
     ObjectHandle     handle_   = INVALID_HANDLE;
-    BackendProvider* backend_  = nullptr;
+    BackendProvider* backend_  = detail::nullBackend();
     int              minQProp_ = 0;
     int              maxQProp_ = 0;
 };

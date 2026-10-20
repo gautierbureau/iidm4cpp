@@ -5,7 +5,7 @@
 namespace iidm {
 
 BusbarSection::BusbarSection(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(backend) {}
+    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
 
 std::string BusbarSection::getId() const {
     return backend_->getString(handle_, prop::ID);
