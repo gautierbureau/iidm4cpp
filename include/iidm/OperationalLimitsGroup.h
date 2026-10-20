@@ -1,4 +1,5 @@
 #pragma once
+#include <iidm/HandleRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/CurrentLimits.h>
 #include <iidm/stdcxx/optional.hpp>
@@ -15,7 +16,7 @@ public:
     iidm::optional<CurrentLimits> getCurrentLimits() const;
     bool isValid() const { return handle_ != INVALID_HANDLE; }
 private:
-    ObjectHandle handle_ = INVALID_HANDLE;
+    HandleRef handle_;
     BackendProvider* backend_ = detail::nullBackend();
 };
 } // namespace iidm

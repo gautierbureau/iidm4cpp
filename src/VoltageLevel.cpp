@@ -22,7 +22,7 @@ namespace iidm {
 // ── NodeBreakerView ───────────────────────────────────────────────────────────
 
 VoltageLevel::NodeBreakerView::NodeBreakerView(ObjectHandle h, BackendProvider* b)
-    : handle_(h), backend_(detail::orNullBackend(b)) {}
+    : handle_(h, b), backend_(detail::orNullBackend(b)) {}
 
 std::vector<Switch> VoltageLevel::NodeBreakerView::getSwitches() const {
     auto handles = backend_->getChildren(handle_, prop::SWITCH);
@@ -66,7 +66,7 @@ Terminal VoltageLevel::NodeBreakerView::getTerminal(int node) const {
 // ── BusBreakerView ────────────────────────────────────────────────────────────
 
 VoltageLevel::BusBreakerView::BusBreakerView(ObjectHandle h, BackendProvider* b)
-    : handle_(h), backend_(detail::orNullBackend(b)) {}
+    : handle_(h, b), backend_(detail::orNullBackend(b)) {}
 
 std::vector<Bus> VoltageLevel::BusBreakerView::getBuses() const {
     auto handles = backend_->getChildren(handle_, prop::BUS);
@@ -95,7 +95,7 @@ Bus VoltageLevel::BusBreakerView::getBus2(const std::string& switchId) const {
 // ── VoltageLevel ──────────────────────────────────────────────────────────────
 
 VoltageLevel::VoltageLevel(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
+    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
 
 std::string VoltageLevel::getId() const {
     return backend_->getString(handle_, prop::ID);

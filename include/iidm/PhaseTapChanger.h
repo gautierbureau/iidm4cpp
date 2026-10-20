@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iidm/HandleRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/Enums.h>
 #include <iidm/PhaseTapChangerStep.h>
@@ -57,7 +58,7 @@ public:
     bool operator!=(const PhaseTapChanger& other) const;
 
 private:
-    ObjectHandle          handle_  = INVALID_HANDLE;
+    HandleRef       handle_;
     BackendProvider*      backend_ = detail::nullBackend();
     PhaseTapChangerConfig cfg_     = {};
 };

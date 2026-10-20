@@ -4,7 +4,7 @@
 
 namespace iidm {
 OperationalLimitsGroup::OperationalLimitsGroup(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
+    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
 
 std::string OperationalLimitsGroup::getId() const {
     return backend_->getString(handle_, prop::OLG_ID);

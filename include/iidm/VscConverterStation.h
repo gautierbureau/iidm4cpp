@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iidm/HandleRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/MinMaxReactiveLimits.h>
 #include <iidm/ReactiveCapabilityCurve.h>
@@ -59,7 +60,7 @@ public:
     bool operator!=(const VscConverterStation& other) const;
 
 private:
-    ObjectHandle    handle_  = INVALID_HANDLE;
+    HandleRef handle_;
     BackendProvider* backend_ = detail::nullBackend();
 };
 

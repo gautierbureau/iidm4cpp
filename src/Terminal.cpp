@@ -9,7 +9,7 @@ namespace iidm {
 // ── BusBreakerView ────────────────────────────────────────────────────────────
 
 Terminal::BusBreakerView::BusBreakerView(ObjectHandle h, BackendProvider* b)
-    : handle_(h), backend_(detail::orNullBackend(b)) {}
+    : handle_(h, b), backend_(detail::orNullBackend(b)) {}
 
 Bus Terminal::BusBreakerView::getBus() const {
     return Bus(backend_->getRelated(handle_, prop::REL_BUS), backend_);
@@ -22,7 +22,7 @@ Bus Terminal::BusBreakerView::getConnectableBus() const {
 // ── NodeBreakerView ───────────────────────────────────────────────────────────
 
 Terminal::NodeBreakerView::NodeBreakerView(ObjectHandle h, BackendProvider* b)
-    : handle_(h), backend_(detail::orNullBackend(b)) {}
+    : handle_(h, b), backend_(detail::orNullBackend(b)) {}
 
 int Terminal::NodeBreakerView::getNode() const {
     return backend_->getInt(handle_, prop::TERMINAL_NODE);
@@ -31,7 +31,7 @@ int Terminal::NodeBreakerView::getNode() const {
 // ── Terminal ──────────────────────────────────────────────────────────────────
 
 Terminal::Terminal(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
+    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
 
 double Terminal::getP() const {
     return backend_->getDouble(handle_, prop::TERMINAL_P);

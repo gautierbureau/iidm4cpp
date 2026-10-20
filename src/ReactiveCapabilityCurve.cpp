@@ -5,7 +5,7 @@
 namespace iidm {
 
 ReactiveCapabilityCurve::ReactiveCapabilityCurve(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
+    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
 
 std::vector<ReactiveCapabilityCurve::Point> ReactiveCapabilityCurve::getPoints() const {
     auto handles = backend_->getChildren(handle_, prop::REACTIVE_CURVE_POINT);

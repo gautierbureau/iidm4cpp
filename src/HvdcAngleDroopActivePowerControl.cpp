@@ -5,7 +5,7 @@
 namespace iidm {
 
 HvdcAngleDroopActivePowerControl::HvdcAngleDroopActivePowerControl(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
+    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
 
 double HvdcAngleDroopActivePowerControl::getDroop() const {
     return backend_->getDouble(handle_, prop::EXT_HADAPC_DROOP);

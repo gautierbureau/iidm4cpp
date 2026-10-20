@@ -5,7 +5,7 @@
 namespace iidm {
 
 HvdcOperatorActivePowerRange::HvdcOperatorActivePowerRange(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
+    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
 
 double HvdcOperatorActivePowerRange::getOprFromCS1toCS2() const {
     return backend_->getDouble(handle_, prop::EXT_HOAR_OPR_CS1_TO_CS2);

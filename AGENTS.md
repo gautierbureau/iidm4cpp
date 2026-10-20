@@ -178,16 +178,17 @@ lookups by id, a `getRelatedByString` relation.
 
 - **GraalVM**: the `@CEntryPoint` functions delegate every property code to
   the handle-based `PropertyDispatcher` methods.
-- **JNI**: `JNIBackend` hand-wires only hot core properties; every code it does
-  not handle falls back (in its `default:` branches) to the object-based
+- **JNI**: every `JNIBackend` operation is one static JNI call to the object-based
   `PropertyDispatcher` overloads — `getDouble(Object, int)`,
-  `getChildObjects(Object, int)`, `getRelatedObject(Object, int)`, … — in one
-  static JNI call. Do **not** hand-wire extension codes in `JNIBackend.cpp`.
+  `getChildObjects(Object, int)`, `getRelatedObject(Object, int)`, … Do **not** add
+  per-property JNI calls to `JNIBackend.cpp`: the dispatcher is the only dispatch table.
 
-If you do hand-wire a JNI call (hot path only), its `GetMethodID` signature
-must match the pinned powsybl-core version exactly: a single mismatch makes
-`cacheMethodIds()` throw and the whole JNI backend unusable. Check the
-signature with `javap -s` against the powsybl jar.
+#### Handles
+
+Wrappers store their handle in a `HandleRef` member (`HandleRef handle_;`, constructed
+with `handle_(handle, backend)`), which releases the Java-side reference when the last
+wrapper using it is destroyed. A new wrapper class must follow the same pattern; a
+sub-wrapper built from the parent's handle shares the count automatically.
 
 #### Errors
 

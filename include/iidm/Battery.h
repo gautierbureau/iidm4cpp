@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iidm/HandleRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/ActivePowerControl.h>
 #include <iidm/MinMaxReactiveLimits.h>
@@ -58,7 +59,7 @@ public:
     bool operator!=(const Battery& other) const;
 
 private:
-    ObjectHandle     handle_  = INVALID_HANDLE;
+    HandleRef  handle_;
     BackendProvider* backend_ = detail::nullBackend();
 };
 

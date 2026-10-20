@@ -2,6 +2,7 @@
 
 #include <iidm/Bus.h>
 #include <iidm/Enums.h>
+#include <iidm/HandleRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/Terminal.h>
 #include <iidm/stdcxx/optional.hpp>
@@ -35,7 +36,7 @@ public:
         bool isValid() const { return handle_ != INVALID_HANDLE; }
 
     private:
-        ObjectHandle     handle_  = INVALID_HANDLE;
+        HandleRef  handle_;
         BackendProvider* backend_ = detail::nullBackend();
     };
 
@@ -59,7 +60,7 @@ public:
     bool operator!=(const ObservabilityArea& other) const;
 
 private:
-    ObjectHandle     handle_  = INVALID_HANDLE;
+    HandleRef  handle_;
     BackendProvider* backend_ = detail::nullBackend();
 };
 

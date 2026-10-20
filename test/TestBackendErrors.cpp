@@ -87,6 +87,23 @@ void checkBackendErrors(BackendProvider& b) {
     EXPECT_THROW(b.loadNetworkBytes(garbage.data(), garbage.size(), "network.xiidm"), IidmException);
 }
 
+// Wrappers created and dropped in a loop must not accumulate Java-side references.
+void checkHandlesAreReleased(BackendProvider& b) {
+    std::string xiidm = readTestNetwork();
+    b.loadNetworkBytes(xiidm.data(), xiidm.size(), "network.xiidm");
+    Generator gen(b.findById(prop::GENERATOR, "G"), &b);
+    VoltageLevel vl(b.findById(prop::VOLTAGE_LEVEL, "VL1"), &b);
+    const std::size_t baseline = b.liveHandleCount();
+    double sum = 0.0;
+    for (int i = 0; i < 20000; ++i) {
+        sum += gen.getTerminal().getP();                       // new terminal handle each time
+        sum += static_cast<double>(vl.getGenerators().size()); // new generator handles
+        sum += gen.getActivePowerControl().getDroop();         // shares the generator handle
+    }
+    EXPECT_EQ(b.liveHandleCount(), baseline);
+    (void)sum;
+}
+
 } // namespace
 
 #ifdef IIDM_BRIDGE_GRAALVM_ENABLED
@@ -96,29 +113,53 @@ TEST(BackendErrorsTest, GraalVM) {
     GraalVMBackend backend(lib);
     checkBackendErrors(backend);
 }
+
+TEST(BackendHandlesTest, GraalVM) {
+    const char* lib = std::getenv("IIDM_BRIDGE_GRAALVM_LIB");
+    if (!lib || !lib[0]) GTEST_SKIP() << "IIDM_BRIDGE_GRAALVM_LIB not set";
+    GraalVMBackend backend(lib);
+    checkHandlesAreReleased(backend);
+    // The Java-side registry does not grow either (network + a few live wrappers)
+    EXPECT_LT(backend.javaHandleCount(), 100);
+}
 #endif
 
 #ifdef IIDM_BRIDGE_JNI_ENABLED
-TEST(BackendErrorsTest, JNI) {
-    const char* jar = std::getenv("IIDM_BRIDGE_JAR");
-    if (!jar || !jar[0]) GTEST_SKIP() << "IIDM_BRIDGE_JAR not set";
+namespace {
 
+// Creates the JVM once per process (class path from IIDM_BRIDGE_JAR); false when not configured.
+bool ensureJvm() {
+    const char* jar = std::getenv("IIDM_BRIDGE_JAR");
+    if (!jar || !jar[0]) return false;
     JavaVM* jvm = nullptr;
     jsize count = 0;
-    if (JNI_GetCreatedJavaVMs(&jvm, 1, &count) != JNI_OK || count == 0) {
-        std::string classPath = std::string("-Djava.class.path=") + jar;
-        std::vector<JavaVMOption> options(1);
-        options[0].optionString = const_cast<char*>(classPath.c_str());
-        options[0].extraInfo = nullptr;
-        JavaVMInitArgs args;
-        args.version = JNI_VERSION_1_8;
-        args.nOptions = static_cast<jint>(options.size());
-        args.options = options.data();
-        args.ignoreUnrecognized = JNI_FALSE;
-        JNIEnv* env = nullptr;
-        ASSERT_EQ(JNI_CreateJavaVM(&jvm, reinterpret_cast<void**>(&env), &args), JNI_OK);
-    }
+    if (JNI_GetCreatedJavaVMs(&jvm, 1, &count) == JNI_OK && count > 0) return true;
+    std::string classPath = std::string("-Djava.class.path=") + jar;
+    std::vector<JavaVMOption> options(2);
+    options[0].optionString = const_cast<char*>(classPath.c_str());
+    options[0].extraInfo = nullptr;
+    options[1].optionString = const_cast<char*>("-Xcheck:jni"); // catches invalid JNI reference use
+    options[1].extraInfo = nullptr;
+    JavaVMInitArgs args;
+    args.version = JNI_VERSION_1_8;
+    args.nOptions = static_cast<jint>(options.size());
+    args.options = options.data();
+    args.ignoreUnrecognized = JNI_FALSE;
+    JNIEnv* env = nullptr;
+    return JNI_CreateJavaVM(&jvm, reinterpret_cast<void**>(&env), &args) == JNI_OK;
+}
+
+} // namespace
+
+TEST(BackendErrorsTest, JNI) {
+    if (!ensureJvm()) GTEST_SKIP() << "IIDM_BRIDGE_JAR not set";
     JNIBackend backend("backend_errors_test");
     checkBackendErrors(backend);
+}
+
+TEST(BackendHandlesTest, JNI) {
+    if (!ensureJvm()) GTEST_SKIP() << "IIDM_BRIDGE_JAR not set";
+    JNIBackend backend("backend_handles_test");
+    checkHandlesAreReleased(backend);
 }
 #endif

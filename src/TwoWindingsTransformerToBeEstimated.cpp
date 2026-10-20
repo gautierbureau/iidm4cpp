@@ -5,7 +5,7 @@
 namespace iidm {
 
 TwoWindingsTransformerToBeEstimated::TwoWindingsTransformerToBeEstimated(ObjectHandle handle, BackendProvider* backend)
-    : handle_(handle), backend_(detail::orNullBackend(backend)) {}
+    : handle_(handle, backend), backend_(detail::orNullBackend(backend)) {}
 
 bool TwoWindingsTransformerToBeEstimated::shouldEstimateRatioTapChanger() const {
     return backend_->getBool(handle_, prop::EXT_TWO_WT_TBE_RTC);

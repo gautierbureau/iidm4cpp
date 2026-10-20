@@ -8,7 +8,7 @@ namespace iidm {
 
 RatioTapChanger::RatioTapChanger(ObjectHandle handle, BackendProvider* backend,
                                    const RatioTapChangerConfig& cfg)
-    : handle_(handle), backend_(detail::orNullBackend(backend)), cfg_(cfg) {}
+    : handle_(handle, backend), backend_(detail::orNullBackend(backend)), cfg_(cfg) {}
 
 int RatioTapChanger::getTapPosition() const {
     return backend_->getInt(handle_, cfg_.tapPosition);

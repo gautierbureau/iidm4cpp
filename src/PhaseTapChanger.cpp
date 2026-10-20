@@ -6,7 +6,7 @@ namespace iidm {
 
 PhaseTapChanger::PhaseTapChanger(ObjectHandle handle, BackendProvider* backend,
                                    const PhaseTapChangerConfig& cfg)
-    : handle_(handle), backend_(detail::orNullBackend(backend)), cfg_(cfg) {}
+    : handle_(handle, backend), backend_(detail::orNullBackend(backend)), cfg_(cfg) {}
 
 int PhaseTapChanger::getTapPosition() const {
     return backend_->getInt(handle_, cfg_.tapPosition);

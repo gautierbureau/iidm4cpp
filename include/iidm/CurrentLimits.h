@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iidm/HandleRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/TemporaryLimit.h>
 #include <vector>
@@ -19,7 +20,7 @@ public:
     bool isValid() const { return handle_ != INVALID_HANDLE; }
 
 private:
-    ObjectHandle     handle_  = INVALID_HANDLE;
+    HandleRef  handle_;
     BackendProvider* backend_ = detail::nullBackend();
 };
 

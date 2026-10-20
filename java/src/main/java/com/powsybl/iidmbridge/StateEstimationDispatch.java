@@ -214,7 +214,10 @@ final class StateEstimationDispatch {
         VoltageLevel vl = (VoltageLevel) obj;
         ObservabilityArea ext = vl.getExtension(ObservabilityArea.class);
         return ext == null ? Stream.empty()
-            : ext.getObservabilityAreas().stream().map(area -> new ObservabilityAreaRef(vl, area));
+            : ext.getObservabilityAreas().stream()
+                // powsybl returns them in no particular order
+                .sorted(java.util.Comparator.comparingInt(ObservabilityArea.AreaCharacteristics::getAreaNumber))
+                .map(area -> new ObservabilityAreaRef(vl, area));
     }
 
     static Object observabilityAreaByNode(Object obj, int node) {
