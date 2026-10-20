@@ -95,15 +95,15 @@ public final class PropertyDispatcher {
             case VSC_REACTIVE_POWER_SETPOINT -> ((VscConverterStation) obj).getReactivePowerSetpoint();
             case LCC_LOSS_FACTOR  -> ((LccConverterStation) obj).getLossFactor();
             case LCC_POWER_FACTOR -> ((LccConverterStation) obj).getPowerFactor();
-            case EXT_APC_DROOP -> ((Generator) obj).getExtension(ActivePowerControl.class).getDroop();
+            case EXT_APC_DROOP -> ext(obj, ActivePowerControl.class).getDroop();
             case EXT_APC_PARTICIPATION_FACTOR, EXT_BAT_APC_PARTICIPATION_FACTOR -> activePowerControl(obj).getParticipationFactor();
             case EXT_APC_MIN_TARGET_P, EXT_BAT_APC_MIN_TARGET_P -> activePowerControl(obj).getMinTargetP().orElse(Double.NaN);
             case EXT_APC_MAX_TARGET_P, EXT_BAT_APC_MAX_TARGET_P -> activePowerControl(obj).getMaxTargetP().orElse(Double.NaN);
-            case EXT_CRC_Q_PERCENT -> ((Generator) obj).getExtension(CoordinatedReactiveControl.class).getQPercent();
-            case EXT_HADAPC_DROOP -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).getDroop();
-            case EXT_HADAPC_P0 -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).getP0();
-            case EXT_HOAR_OPR_CS1_TO_CS2 -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class).getOprFromCS1toCS2();
-            case EXT_HOAR_OPR_CS2_TO_CS1 -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class).getOprFromCS2toCS1();
+            case EXT_CRC_Q_PERCENT -> ext(obj, CoordinatedReactiveControl.class).getQPercent();
+            case EXT_HADAPC_DROOP -> ext(obj, HvdcAngleDroopActivePowerControl.class).getDroop();
+            case EXT_HADAPC_P0 -> ext(obj, HvdcAngleDroopActivePowerControl.class).getP0();
+            case EXT_HOAR_OPR_CS1_TO_CS2 -> ext(obj, HvdcOperatorActivePowerRange.class).getOprFromCS1toCS2();
+            case EXT_HOAR_OPR_CS2_TO_CS1 -> ext(obj, HvdcOperatorActivePowerRange.class).getOprFromCS2toCS1();
             case EXT_VPRC_SLOPE -> vprcRegulation(obj).getSlope();
             case TWO_WT_RTC_TARGET_V        -> ((TwoWindingsTransformer) obj).getRatioTapChanger().getTargetV();
             case TWO_WT_PTC_REG_VALUE       -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().getRegulationValue();
@@ -118,7 +118,7 @@ public final class PropertyDispatcher {
             case BAT_MAX_P    -> ((Battery) obj).getMaxP();
             case BAT_MIN_Q    -> ((Battery) obj).getReactiveLimits(MinMaxReactiveLimits.class).getMinQ();
             case BAT_MAX_Q    -> ((Battery) obj).getReactiveLimits(MinMaxReactiveLimits.class).getMaxQ();
-            case EXT_BAT_APC_DROOP -> ((Battery) obj).getExtension(ActivePowerControl.class).getDroop();
+            case EXT_BAT_APC_DROOP -> ext(obj, ActivePowerControl.class).getDroop();
             // ShuntCompensator total B for current section count
             case SHUNT_B -> ((ShuntCompensator) obj).getB();
             // Generator reactive limits (min-max kind)
@@ -196,7 +196,7 @@ public final class PropertyDispatcher {
                 -> StateEstimationDispatch.getQualityStandardDeviation(obj, property);
             case MEAS_VALUE   -> ((Measurement) obj).getValue();
             case MEAS_STD_DEV -> ((Measurement) obj).getStandardDeviation();
-            default -> throw new IllegalArgumentException("Unknown double property: " + property);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown double property: " + property);
         };
     }
 
@@ -224,21 +224,21 @@ public final class PropertyDispatcher {
             case SVC_REACTIVE_POWER_SETPOINT -> ((StaticVarCompensator) obj).setReactivePowerSetpoint(value);
             case VSC_VOLTAGE_SETPOINT        -> ((VscConverterStation) obj).setVoltageSetpoint(value);
             case VSC_REACTIVE_POWER_SETPOINT -> ((VscConverterStation) obj).setReactivePowerSetpoint(value);
-            case EXT_APC_DROOP -> ((Generator) obj).getExtension(ActivePowerControl.class).setDroop(value);
+            case EXT_APC_DROOP -> ext(obj, ActivePowerControl.class).setDroop(value);
             case EXT_APC_PARTICIPATION_FACTOR, EXT_BAT_APC_PARTICIPATION_FACTOR -> activePowerControl(obj).setParticipationFactor(value);
             case EXT_APC_MIN_TARGET_P, EXT_BAT_APC_MIN_TARGET_P -> activePowerControl(obj).setMinTargetP(value);
             case EXT_APC_MAX_TARGET_P, EXT_BAT_APC_MAX_TARGET_P -> activePowerControl(obj).setMaxTargetP(value);
-            case EXT_CRC_Q_PERCENT -> ((Generator) obj).getExtension(CoordinatedReactiveControl.class).setQPercent(value);
-            case EXT_HADAPC_DROOP -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).setDroop((float) value);
-            case EXT_HADAPC_P0 -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).setP0((float) value);
-            case EXT_HOAR_OPR_CS1_TO_CS2 -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class).setOprFromCS1toCS2((float) value);
-            case EXT_HOAR_OPR_CS2_TO_CS1 -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class).setOprFromCS2toCS1((float) value);
+            case EXT_CRC_Q_PERCENT -> ext(obj, CoordinatedReactiveControl.class).setQPercent(value);
+            case EXT_HADAPC_DROOP -> ext(obj, HvdcAngleDroopActivePowerControl.class).setDroop((float) value);
+            case EXT_HADAPC_P0 -> ext(obj, HvdcAngleDroopActivePowerControl.class).setP0((float) value);
+            case EXT_HOAR_OPR_CS1_TO_CS2 -> ext(obj, HvdcOperatorActivePowerRange.class).setOprFromCS1toCS2((float) value);
+            case EXT_HOAR_OPR_CS2_TO_CS1 -> ext(obj, HvdcOperatorActivePowerRange.class).setOprFromCS2toCS1((float) value);
             case EXT_VPRC_SLOPE -> vprcRegulation(obj).setSlope(value);
             case TWO_WT_RTC_TARGET_V  -> ((TwoWindingsTransformer) obj).getRatioTapChanger().setTargetV(value);
             case TWO_WT_PTC_REG_VALUE -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().setRegulationValue(value);
             case BAT_TARGET_P -> ((Battery) obj).setTargetP(value);
             case BAT_TARGET_Q -> ((Battery) obj).setTargetQ(value);
-            case EXT_BAT_APC_DROOP -> ((Battery) obj).getExtension(ActivePowerControl.class).setDroop(value);
+            case EXT_BAT_APC_DROOP -> ext(obj, ActivePowerControl.class).setDroop(value);
             case THREE_WT_LEG1_RTC_TARGET_V  -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().setTargetV(value);
             case THREE_WT_LEG1_PTC_REG_VALUE -> ((ThreeWindingsTransformer) obj).getLeg1().getPhaseTapChanger().setRegulationValue(value);
             case THREE_WT_LEG2_RTC_TARGET_V  -> ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger().setTargetV(value);
@@ -255,7 +255,7 @@ public final class PropertyDispatcher {
                 -> StateEstimationDispatch.setQualityStandardDeviation(obj, property, value);
             case MEAS_VALUE   -> ((Measurement) obj).setValue(value);
             case MEAS_STD_DEV -> ((Measurement) obj).setStandardDeviation(value);
-            default -> throw new IllegalArgumentException("Unknown double property for set: " + property);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown double property for set: " + property);
         }
     }
 
@@ -351,7 +351,7 @@ public final class PropertyDispatcher {
             case DMEAS_VALUE_INT    -> ((DiscreteMeasurement) obj).getValueAsInt();
             case OBS_AREA_NUMBER    -> ((StateEstimationDispatch.ObservabilityAreaRef) obj).area().getAreaNumber();
             case OBS_AREA_STATUS    -> ((StateEstimationDispatch.ObservabilityAreaRef) obj).area().getStatus().ordinal();
-            default -> throw new IllegalArgumentException("Unknown int property: " + property);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown int property: " + property);
         };
     }
 
@@ -405,7 +405,7 @@ public final class PropertyDispatcher {
                  EXT_BRANCH_OBS_QUALITY_Q2 + OBS_QUALITY_REDUNDANT_OFF
                 -> StateEstimationDispatch.setQualityRedundant(obj, property, value);
             case DMEAS_VALUE_INT -> ((DiscreteMeasurement) obj).setValue(value);
-            default -> throw new IllegalArgumentException("Unknown int property for set: " + property);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown int property for set: " + property);
         }
     }
 
@@ -429,12 +429,12 @@ public final class PropertyDispatcher {
             case TWO_WT_PTC_EXISTS     -> ((TwoWindingsTransformer) obj).getPhaseTapChanger() != null;
             case TWO_WT_PTC_REGULATING -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().isRegulating();
             case EXT_APC_EXISTS      -> ((Generator) obj).getExtension(ActivePowerControl.class) != null;
-            case EXT_APC_PARTICIPATE -> ((Generator) obj).getExtension(ActivePowerControl.class).isParticipate();
+            case EXT_APC_PARTICIPATE -> ext(obj, ActivePowerControl.class).isParticipate();
             case EXT_BAT_APC_EXISTS      -> ((Battery) obj).getExtension(ActivePowerControl.class) != null;
-            case EXT_BAT_APC_PARTICIPATE -> ((Battery) obj).getExtension(ActivePowerControl.class).isParticipate();
+            case EXT_BAT_APC_PARTICIPATE -> ext(obj, ActivePowerControl.class).isParticipate();
             case EXT_CRC_EXISTS      -> ((Generator) obj).getExtension(CoordinatedReactiveControl.class) != null;
             case EXT_HADAPC_EXISTS   -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class) != null;
-            case EXT_HADAPC_ENABLED  -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).isEnabled();
+            case EXT_HADAPC_ENABLED  -> ext(obj, HvdcAngleDroopActivePowerControl.class).isEnabled();
             case EXT_HOAR_EXISTS     -> ((HvdcLine) obj).getExtension(HvdcOperatorActivePowerRange.class) != null;
             case EXT_VPRC_EXISTS     -> isVoltagePerReactivePowerControl(obj);
             case EXT_ST_EXISTS       -> ((VoltageLevel) obj).getExtension(SlackTerminal.class) != null;
@@ -481,7 +481,7 @@ public final class PropertyDispatcher {
             case EXT_OBS_AREA_EXISTS     -> ((VoltageLevel) obj).getExtension(ObservabilityArea.class) != null;
             case EXT_OBS_AREA_CONSISTENT -> StateEstimationDispatch.extension(obj, ObservabilityArea.class) instanceof ObservabilityArea oa
                                             && oa.isConsistentWithTopology();
-            default -> throw new IllegalArgumentException("Unknown bool property: " + property);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown bool property: " + property);
         };
     }
 
@@ -503,9 +503,9 @@ public final class PropertyDispatcher {
             case SW_RETAINED -> ((Switch) obj).setRetained(bval);
             case TWO_WT_RTC_REGULATING -> ((TwoWindingsTransformer) obj).getRatioTapChanger().setRegulating(bval);
             case TWO_WT_PTC_REGULATING -> ((TwoWindingsTransformer) obj).getPhaseTapChanger().setRegulating(bval);
-            case EXT_APC_PARTICIPATE     -> ((Generator) obj).getExtension(ActivePowerControl.class).setParticipate(bval);
-            case EXT_BAT_APC_PARTICIPATE -> ((Battery) obj).getExtension(ActivePowerControl.class).setParticipate(bval);
-            case EXT_HADAPC_ENABLED  -> ((HvdcLine) obj).getExtension(HvdcAngleDroopActivePowerControl.class).setEnabled(bval);
+            case EXT_APC_PARTICIPATE     -> ext(obj, ActivePowerControl.class).setParticipate(bval);
+            case EXT_BAT_APC_PARTICIPATE -> ext(obj, ActivePowerControl.class).setParticipate(bval);
+            case EXT_HADAPC_ENABLED  -> ext(obj, HvdcAngleDroopActivePowerControl.class).setEnabled(bval);
             case THREE_WT_LEG1_RTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg1().getRatioTapChanger().setRegulating(bval);
             case THREE_WT_LEG1_PTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg1().getPhaseTapChanger().setRegulating(bval);
             case THREE_WT_LEG2_RTC_REGULATING -> ((ThreeWindingsTransformer) obj).getLeg2().getRatioTapChanger().setRegulating(bval);
@@ -520,7 +520,7 @@ public final class PropertyDispatcher {
             case MEAS_VALID       -> ((Measurement) obj).setValid(bval);
             case DMEAS_VALUE_BOOL -> ((DiscreteMeasurement) obj).setValue(bval);
             case DMEAS_VALID      -> ((DiscreteMeasurement) obj).setValid(bval);
-            default -> throw new IllegalArgumentException("Unknown bool property for set: " + property);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown bool property for set: " + property);
         }
     }
 
@@ -584,7 +584,7 @@ public final class PropertyDispatcher {
             case MEAS_ID            -> ((Measurement) obj).getId();
             case DMEAS_ID           -> ((DiscreteMeasurement) obj).getId();
             case DMEAS_VALUE_STRING -> ((DiscreteMeasurement) obj).getValueAsString();
-            default -> throw new IllegalArgumentException("Unknown string property: " + property);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown string property: " + property);
         };
     }
 
@@ -599,7 +599,7 @@ public final class PropertyDispatcher {
             case NAME    -> ((Identifiable<?>) obj).setName(value);
             case COUNTRY -> ((Substation) obj).setCountry(Country.valueOf(value));
             case DMEAS_VALUE_STRING -> ((DiscreteMeasurement) obj).setValue(value);
-            default -> throw new IllegalArgumentException("Unknown string property for set: " + property);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown string property for set: " + property);
         }
     }
 
@@ -736,7 +736,7 @@ public final class PropertyDispatcher {
             case OBSERVABILITY_AREA   -> StateEstimationDispatch.observabilityAreas(obj);
             case OBS_AREA_TERMINALS   -> StateEstimationDispatch.observabilityAreaTerminals(obj);
             case OBS_AREA_BUSES       -> StateEstimationDispatch.observabilityAreaBuses(obj);
-            default -> throw new IllegalArgumentException("Unknown child type: " + childType);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown child type: " + childType);
         };
     }
 
@@ -750,15 +750,15 @@ public final class PropertyDispatcher {
         return switch (relation) {
             case REL_TERMINAL  -> {
                 if (obj instanceof Injection<?> inj) yield inj.getTerminal();
-                throw new IllegalArgumentException("Object does not have a single terminal: " + obj);
+                throw new BridgeErrors.PropertyNotFoundException("Object does not have a single terminal: " + obj);
             }
             case REL_TERMINAL1 -> {
                 if (obj instanceof Branch<?> br) yield br.getTerminal1();
-                throw new IllegalArgumentException("Object does not have terminal1: " + obj);
+                throw new BridgeErrors.PropertyNotFoundException("Object does not have terminal1: " + obj);
             }
             case REL_TERMINAL2 -> {
                 if (obj instanceof Branch<?> br) yield br.getTerminal2();
-                throw new IllegalArgumentException("Object does not have terminal2: " + obj);
+                throw new BridgeErrors.PropertyNotFoundException("Object does not have terminal2: " + obj);
             }
             case REL_BUS -> {
                 Terminal t = (Terminal) obj;
@@ -781,7 +781,7 @@ public final class PropertyDispatcher {
             case REL_SLACK_TERMINAL -> {
                 VoltageLevel vl = (VoltageLevel) obj;
                 SlackTerminal st = vl.getExtension(SlackTerminal.class);
-                if (st == null) throw new IllegalStateException("SlackTerminal extension not present");
+                if (st == null) throw new BridgeErrors.ExtensionNotFoundException("SlackTerminal extension not present on " + vl.getId());
                 yield st.getTerminal();
             }
             case REL_CONNECTABLE_BUS -> ((Terminal) obj).getBusBreakerView().getConnectableBus();
@@ -790,7 +790,7 @@ public final class PropertyDispatcher {
                 if (obj instanceof StaticVarCompensator svc) yield svc.getRegulatingTerminal();
                 if (obj instanceof Generator gen) yield gen.getRegulatingTerminal();
                 if (obj instanceof VscConverterStation vsc) yield vsc.getRegulatingTerminal();
-                throw new IllegalArgumentException("Object does not have a regulating terminal: " + obj);
+                throw new BridgeErrors.PropertyNotFoundException("Object does not have a regulating terminal: " + obj);
             }
             case REL_CURRENT_LIMITS1 -> {
                 if (obj instanceof ThreeWindingsTransformer twt)
@@ -818,7 +818,7 @@ public final class PropertyDispatcher {
             case REL_SELECTED_OLG3 -> ((ThreeWindingsTransformer) obj).getLeg3().getSelectedOperationalLimitsGroup().orElse(null);
             case REL_OLG_CURRENT_LIMITS -> ((OperationalLimitsGroup) obj).getCurrentLimits().orElse(null);
             case REL_CONNECTABLE -> ((Terminal) obj).getConnectable();
-            default -> throw new IllegalArgumentException("Unknown relation: " + relation);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown relation: " + relation);
         };
     }
 
@@ -833,7 +833,7 @@ public final class PropertyDispatcher {
     public static void setRelatedObject(Object obj, int relation, Object value) {
         switch (relation) {
             case REL_SLACK_TERMINAL -> slackTerminal(obj).setTerminal((Terminal) value);
-            default -> throw new IllegalArgumentException("Unknown relation for set: " + relation);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown relation for set: " + relation);
         }
     }
 
@@ -851,7 +851,7 @@ public final class PropertyDispatcher {
         return switch (listCode) {
             case VL_NBV_NODES -> ((VoltageLevel) obj).getNodeBreakerView().getNodes();
             case OBS_AREA_NODES -> StateEstimationDispatch.observabilityAreaNodes(obj);
-            default -> throw new IllegalArgumentException("Unknown int list code: " + listCode);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown int list code: " + listCode);
         };
     }
 
@@ -868,7 +868,7 @@ public final class PropertyDispatcher {
             case REL_MEASUREMENT_BY_ID          -> StateEstimationDispatch.measurementById(obj, key);
             case REL_DISCRETE_MEASUREMENT_BY_ID -> StateEstimationDispatch.discreteMeasurementById(obj, key);
             case REL_OBS_AREA_BY_BUS, REL_OBS_AREA_BY_BBV_BUS -> StateEstimationDispatch.observabilityAreaByBus(obj, relation, key);
-            default -> throw new IllegalArgumentException("Unknown keyed relation: " + relation);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown keyed relation: " + relation);
         };
     }
 
@@ -882,7 +882,7 @@ public final class PropertyDispatcher {
         return switch (relation) {
             case REL_NBV_TERMINAL_AT_NODE -> ((VoltageLevel) obj).getNodeBreakerView().getTerminal(index);
             case REL_OBS_AREA_BY_NODE -> StateEstimationDispatch.observabilityAreaByNode(obj, index);
-            default -> throw new IllegalArgumentException("Unknown indexed relation: " + relation);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown indexed relation: " + relation);
         };
     }
 
@@ -911,11 +911,16 @@ public final class PropertyDispatcher {
             case BATTERY                    -> network.getBattery(id);
             case VOLTAGE_LEVEL              -> network.getVoltageLevel(id);
             case SUBSTATION                 -> network.getSubstation(id);
-            default -> throw new IllegalArgumentException("Unknown object type: " + objectType);
+            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown object type: " + objectType);
         };
     }
 
     // ── Extension helpers ─────────────────────────────────────────────────
+
+    /** Extension of any extendable object; ExtensionNotFoundException when absent. */
+    static <E extends com.powsybl.commons.extensions.Extension<?>> E ext(Object obj, Class<? super E> type) {
+        return StateEstimationDispatch.extension(obj, type);
+    }
 
     /** ActivePowerControl of any injection (Generator, Battery...). */
     static ActivePowerControl<?> activePowerControl(Object obj) {
@@ -975,7 +980,7 @@ public final class PropertyDispatcher {
 
     static VoltageRegulation vprcRegulation(Object obj) {
         if (!isVoltagePerReactivePowerControl(obj)) {
-            throw new IllegalStateException("VoltagePerReactivePowerControl not present");
+            throw new BridgeErrors.ExtensionNotFoundException("VoltagePerReactivePowerControl not present on " + ((StaticVarCompensator) obj).getId());
         }
         return ((StaticVarCompensator) obj).getVoltageRegulation();
     }

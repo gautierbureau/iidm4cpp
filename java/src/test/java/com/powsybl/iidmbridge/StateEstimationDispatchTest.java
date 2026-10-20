@@ -229,11 +229,11 @@ class StateEstimationDispatchTest {
 
     @Test void injectionObservabilityUndefinedQualityThrows() {
         long h = reg(network.getGenerator("G1"));
-        assertThrows(IllegalStateException.class,
+        assertThrows(BridgeErrors.PropertyNotFoundException.class,
             () -> PropertyDispatcher.getDouble(h, EXT_INJ_OBS_QUALITY_V + OBS_QUALITY_STD_DEV_OFF));
         long load = reg(network.getLoad("L2"));
         assertEquals(0, PropertyDispatcher.getBool(load, EXT_INJ_OBS_EXISTS));
-        assertThrows(IllegalStateException.class, () -> PropertyDispatcher.getBool(load, EXT_INJ_OBS_OBSERVABLE));
+        assertThrows(BridgeErrors.ExtensionNotFoundException.class, () -> PropertyDispatcher.getBool(load, EXT_INJ_OBS_OBSERVABLE));
     }
 
     @Test void branchObservability() {

@@ -1,38 +1,47 @@
 #pragma once
 
+#include "../BridgeErrors.h"
 #include <iidm/IidmException.h>
 #include <jni.h>
 #include <string>
 
 namespace iidm {
 
-// Checks if a Java exception is pending. If so, clears it and throws
-// a C++ IidmException containing the Java exception's message.
+// Checks if a Java exception is pending. If so, clears it and throws the C++ exception
+// matching its kind (com.powsybl.iidmbridge.BridgeErrors — the classification shared with
+// the GraalVM backend), with the Java exception's message.
 inline void checkJNIException(JNIEnv* env) {
-    if (env->ExceptionCheck()) {
-        jthrowable exc = env->ExceptionOccurred();
-        env->ExceptionClear();
+    if (!env->ExceptionCheck()) return;
 
-        // Try to get the message from the exception
-        jclass throwableClass = env->FindClass("java/lang/Throwable");
-        jmethodID getMessage  = env->GetMethodID(throwableClass, "getMessage",
-                                                  "()Ljava/lang/String;");
-        jstring msg = static_cast<jstring>(env->CallObjectMethod(exc, getMessage));
+    jthrowable exc = env->ExceptionOccurred();
+    env->ExceptionClear();
 
-        std::string cppMsg = "Java exception";
-        if (msg) {
-            const char* chars = env->GetStringUTFChars(msg, nullptr);
-            if (chars) {
-                cppMsg = chars;
-                env->ReleaseStringUTFChars(msg, chars);
+    int kind = detail::BRIDGE_GENERIC;
+    std::string message = "Java exception";
+    jclass errorsClass = env->FindClass("com/powsybl/iidmbridge/BridgeErrors");
+    if (errorsClass) {
+        jmethodID kindOf  = env->GetStaticMethodID(errorsClass, "kindOf", "(Ljava/lang/Throwable;)I");
+        jmethodID messageOf = env->GetStaticMethodID(errorsClass, "message",
+                                                     "(Ljava/lang/Throwable;)Ljava/lang/String;");
+        if (kindOf && messageOf) {
+            kind = env->CallStaticIntMethod(errorsClass, kindOf, exc);
+            jstring msg = static_cast<jstring>(env->CallStaticObjectMethod(errorsClass, messageOf, exc));
+            if (msg) {
+                const char* chars = env->GetStringUTFChars(msg, nullptr);
+                if (chars) {
+                    message = chars;
+                    env->ReleaseStringUTFChars(msg, chars);
+                }
+                env->DeleteLocalRef(msg);
             }
-            env->DeleteLocalRef(msg);
         }
-        env->DeleteLocalRef(exc);
-        env->DeleteLocalRef(throwableClass);
-
-        throw IidmException(cppMsg);
+        env->DeleteLocalRef(errorsClass);
     }
+    // Never leave an exception pending (e.g. BridgeErrors missing from the class path)
+    if (env->ExceptionCheck()) env->ExceptionClear();
+    env->DeleteLocalRef(exc);
+
+    detail::throwBridgeError(kind, message);
 }
 
 } // namespace iidm

@@ -189,6 +189,14 @@ must match the pinned powsybl-core version exactly: a single mismatch makes
 `cacheMethodIds()` throw and the whole JNI backend unusable. Check the
 signature with `javap -s` against the powsybl jar.
 
+#### Errors
+
+Throw from Java with the `BridgeErrors` exception types
+(`PropertyNotFoundException` for unknown codes, `ExtensionNotFoundException` for an
+absent extension — use the `ext(obj, Foo.class)` helper rather than
+`getExtension(Foo.class).getX()`). Both backends turn them into the matching C++
+exception (README §9); never let a GraalVM `@CEntryPoint` throw.
+
 #### Checking the JNI path end to end
 
 `examples/embedded` runs C++ inside a real JVM through JNI and fails (non-zero

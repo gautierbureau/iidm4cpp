@@ -2,6 +2,7 @@ package com.powsybl.iidmbridge.jni;
 
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.serde.NetworkSerDe;
+import com.powsybl.iidmbridge.BridgeErrors;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -61,7 +62,7 @@ public final class IidmBridgeRegistry {
     public static Network get(String id) {
         Network n = networks.get(id);
         if (n == null) {
-            throw new IllegalStateException("No network registered with id: " + id);
+            throw new BridgeErrors.NetworkNotFoundException("No network registered with id: " + id);
         }
         return n;
     }

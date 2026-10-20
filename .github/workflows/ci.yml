@@ -208,6 +208,7 @@ jobs:
         run: |
           export ${{ matrix.lib_path_env }}="${{ github.workspace }}/build-graalvm/graalvm-native"
           IIDM_BRIDGE_GRAALVM_LIB="${{ github.workspace }}/build-graalvm/graalvm-native/${{ matrix.native_lib }}" \
+          IIDM_BRIDGE_JAR="${{ github.workspace }}/java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar" \
           IIDM_IEEE14_NETWORK_PATH="${{ github.workspace }}/examples/IEEE14.xiidm" \
           ctest --test-dir build-graalvm --output-on-failure --parallel 4
 
