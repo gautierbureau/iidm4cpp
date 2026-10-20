@@ -56,8 +56,8 @@ public final class BridgeErrors {
         if (t instanceof PropertyNotFoundException || t instanceof ClassCastException
                 || t instanceof NullPointerException) {
             // ClassCastException: the code exists but does not apply to this type of object.
-            // NullPointerException: an optional part of the object is absent (tap changer,
-            // reactive limits model...), e.g. getRatioTapChanger().getTargetV().
+            // NullPointerException: an optional part of the object is absent (reactive limits
+            // model, extension...).
             return PROPERTY_NOT_FOUND;
         }
         if (t instanceof ExtensionNotFoundException) {

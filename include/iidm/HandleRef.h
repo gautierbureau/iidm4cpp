@@ -15,9 +15,9 @@ class HandleTracker;
 //
 // Every handle returned by a backend holds a Java-side reference (a JNI global ref, or a
 // GraalVM registry entry). HandleRef counts the wrappers using a handle, across copies and
-// across sub-wrappers built from the same handle (extensions, transformer legs, views), and
-// asks the backend to release it when the last one is destroyed. Converts implicitly to
-// ObjectHandle, so wrappers use it as a plain handle.
+// across sub-wrappers built from the same handle (extensions and views read through their
+// host), and asks the backend to release it when the last one is destroyed. Converts
+// implicitly to ObjectHandle, so wrappers use it as a plain handle.
 class HandleRef {
 public:
     HandleRef() = default;

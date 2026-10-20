@@ -1,63 +1,43 @@
 #pragma once
 
-#include <iidm/ObjectRef.h>
-#include <iidm/ObjectHandle.h>
 #include <iidm/Enums.h>
+#include <iidm/ObjectRef.h>
 #include <iidm/PhaseTapChangerStep.h>
+#include <iidm/PropertiesHolder.h>
+#include <iidm/PropertyCodes.h>
+#include <iidm/TapChanger.h>
+#include <iidm/Terminal.h>
 #include <iidm/stdcxx/optional.hpp>
-#include <string>
-#include <vector>
 
 namespace iidm {
 
-class BackendProvider;
-
-struct PhaseTapChangerConfig {
-    int exists;
-    int tapPosition;
-    int lowTap;
-    int highTap;
-    int regulating;
-    int regulationMode;
-    int regulationValue;
-    int stepChildType;
-    int targetDeadband;
-    int regulationTerminalId;
-};
-
-class PhaseTapChanger : public detail::ObjectRef {
+// The phase tap changer of a two windings transformer or of a three windings transformer leg: it
+// limits the current, or controls the active power, at its regulation terminal.
+class PhaseTapChanger : public detail::ObjectRef,
+                        public detail::PropertiesHolder<PhaseTapChanger>,
+                        public detail::TapChangerMethods<PhaseTapChanger, PhaseTapChangerStep> {
 public:
+    static constexpr int TYPE = prop::PHASE_TAP_CHANGER;
+
     PhaseTapChanger() = default;
-    explicit PhaseTapChanger(ObjectHandle handle, BackendProvider* backend,
-                              const PhaseTapChangerConfig& cfg);
+    explicit PhaseTapChanger(ObjectHandle handle, BackendProvider* backend) : ObjectRef(handle, backend) {}
 
-    int getTapPosition() const;
-    PhaseTapChanger& setTapPosition(int pos);
-
-    int getLowTapPosition()  const;
-    int getHighTapPosition() const;
-
-    bool isRegulating() const;
-    PhaseTapChanger& setRegulating(bool reg);
+    PhaseTapChanger& setRegulating(bool regulating);
 
     PhaseTapChangerRegulationMode getRegulationMode() const;
-    PhaseTapChanger& setRegulationMode(PhaseTapChangerRegulationMode mode);
+    PhaseTapChanger& setRegulationMode(PhaseTapChangerRegulationMode regulationMode);
 
+    // Current (A) or active power (MW) target, after the regulation mode
     double getRegulationValue() const;
-    PhaseTapChanger& setRegulationValue(double val);
+    PhaseTapChanger& setRegulationValue(double regulationValue);
 
-    iidm::optional<double> getTargetDeadband() const;
-    std::string getRegulationTerminalId() const;
+    // NaN when undefined
+    double getTargetDeadband() const;
+    PhaseTapChanger& setTargetDeadband(double targetDeadband);
 
-    std::vector<PhaseTapChangerStep> getAllSteps() const;
-    PhaseTapChangerStep getCurrentStep() const;
-
-    // Same transformer and same tap changer
-    bool operator==(const PhaseTapChanger& other) const;
-    bool operator!=(const PhaseTapChanger& other) const { return !(*this == other); }
-
-private:
-    PhaseTapChangerConfig cfg_     = {};
+    // Empty when it has none
+    iidm::optional<Terminal> getRegulationTerminal() const;
+    PhaseTapChanger& setRegulationTerminal(const Terminal& regulationTerminal);
 };
 
 } // namespace iidm

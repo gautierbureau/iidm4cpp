@@ -1,30 +1,24 @@
 #pragma once
 
 #include <iidm/ObjectRef.h>
-#include <iidm/ObjectHandle.h>
+#include <iidm/PropertiesHolder.h>
+#include <iidm/PropertyCodes.h>
+#include <iidm/TapChangerStep.h>
 
 namespace iidm {
 
-class BackendProvider;
-
-class PhaseTapChangerStep : public detail::ObjectRef {
+class PhaseTapChangerStep : public detail::ObjectRef,
+                            public detail::PropertiesHolder<PhaseTapChangerStep>,
+                            public detail::TapChangerStepMethods<PhaseTapChangerStep> {
 public:
+    static constexpr int TYPE = prop::PHASE_TAP_CHANGER_STEP;
+
     PhaseTapChangerStep() = default;
-    explicit PhaseTapChangerStep(ObjectHandle handle, BackendProvider* backend);
-    PhaseTapChangerStep(double alpha, double rho, double r, double x, double g, double b);
+    explicit PhaseTapChangerStep(ObjectHandle handle, BackendProvider* backend) : ObjectRef(handle, backend) {}
 
+    // Phase shift (degrees)
     double getAlpha() const;
-    double getRho()   const;
-    double getR()     const;
-    double getX()     const;
-    double getG()     const;
-    double getB()     const;
-
-    bool isValid() const { return standalone_ || handle_ != INVALID_HANDLE; }
-
-private:
-    bool             standalone_ = false;
-    double           alpha_ = 0.0, rho_ = 0.0, r_ = 0.0, x_ = 0.0, g_ = 0.0, b_ = 0.0;
+    PhaseTapChangerStep& setAlpha(double alpha);
 };
 
 } // namespace iidm

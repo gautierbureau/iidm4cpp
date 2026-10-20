@@ -30,7 +30,8 @@
 // PropertyCodes.def, each accessor must produce the same outcome on both backends: the same
 // value, the same number of children, the same null / non-null related object (then visited in
 // turn), or an exception of the same C++ type. Keyed and indexed lookups (getRelatedByString,
-// getRelatedByIndex, findById) are tried with every id and node number met during the walk.
+// getRelatedByIndex, findById) are tried with every id met during the walk, and with the object's
+// int values (node numbers, tap positions) and sides.
 // invoke(object, TYPE), which starts an adder and changes nothing, is compared the same way. Every
 // value read is then written back with the matching setter: both backends must accept or reject it
 // alike, and read back the same value. Both networks must then save to the same XIIDM; last, every
@@ -56,7 +57,7 @@ struct Code {
     int value;
 };
 
-// Every code of PropertyCodes.def, once per value (the 3WT leg offsets reuse small values).
+// Every code of PropertyCodes.def, once per value (the observability quality offsets reuse small values).
 std::vector<Code> allCodes() {
     static const Code defined[] = {
 #define IIDM_CODE(name, value) {#name, value},
@@ -235,7 +236,7 @@ struct Twin {
     std::string link;  // the accessor and code that led to it: objects reached through the same link have the same type
     bool identifiable = false;
     std::vector<std::pair<int, int>> readable; // (read, code) of the scalar reads that returned a value
-    std::vector<int> indices;                  // values of its int lists (node numbers): getRelatedByIndex keys
+    std::set<int> indices;                     // its int values (node numbers, tap positions...): getRelatedByIndex keys
     std::map<int, std::set<std::string>> lists; // values of its string lists (property names, aliases), by list code
     std::vector<Related> related;
 };
@@ -398,7 +399,11 @@ private:
         ++values;
         fingerprint += link + " " + g.value + "\n";
         switch (read) {
-        case GET_DOUBLE: case GET_INT: case GET_BOOL:
+        case GET_INT:
+            twin.readable.push_back(std::make_pair(read, code.value));
+            twin.indices.insert(std::stoi(g.value));
+            break;
+        case GET_DOUBLE: case GET_BOOL:
             twin.readable.push_back(std::make_pair(read, code.value));
             break;
         case GET_STRING: {
@@ -410,7 +415,7 @@ private:
             break;
         }
         case GET_INT_LIST:
-            for (int value : g_.getIntList(twin.g, code.value)) twin.indices.push_back(value);
+            for (int value : g_.getIntList(twin.g, code.value)) twin.indices.insert(value);
             break;
         case GET_STRING_LIST:
             for (const std::string& value : g_.getStringList(twin.g, code.value)) twin.lists[code.value].insert(value);
@@ -460,8 +465,9 @@ private:
     }
 
     // getRelatedByString with every id read during the walk as key, getRelatedByIndex with the
-    // object's int list values (node numbers) as index. Like reads, every code is tried on the
-    // first object of each link (with key "" and index -1), then only the codes that exist.
+    // object's int values (node numbers, tap positions) and the sides (0, 1, 2) as index. Like
+    // reads, every code is tried on the first object of each link (with key "" and index -1), then
+    // only the codes that exist.
     void lookUp(Twin& twin) {
         std::vector<std::set<int>>& known = codesByLink_[twin.link];
         const bool firstOfItsType = lookedUpLinks_.insert(twin.link).second;
@@ -484,7 +490,9 @@ private:
                         if (!found.threw() && found.value != "empty") keys.insert(found.value.substr(1, found.value.size() - 2));
                     }
                 } else {
-                    for (int index : twin.indices) lookUp(twin, lookup, code, "", index);
+                    std::set<int> indices = twin.indices;
+                    indices.insert({0, 1, 2});
+                    for (int index : indices) lookUp(twin, lookup, code, "", index);
                 }
             }
         }
@@ -743,6 +751,10 @@ TEST(BackendConformanceTest, StateEstimation) {
 
 TEST(BackendConformanceTest, BackendErrors) {
     checkConformance("data/backend_errors_test.xiidm");
+}
+
+TEST(BackendConformanceTest, Transformers) {
+    checkConformance("data/transformers_test.xiidm");
 }
 
 TEST(BackendConformanceTest, CreatedFromScratch) {

@@ -1,75 +1,48 @@
 #include <iidm/PhaseTapChanger.h>
 #include <iidm/BackendProvider.h>
-#include <cmath>
+#include "Wrap.h"
 
 namespace iidm {
 
-PhaseTapChanger::PhaseTapChanger(ObjectHandle handle, BackendProvider* backend,
-                                   const PhaseTapChangerConfig& cfg)
-    : ObjectRef(handle, backend), cfg_(cfg) {}
-
-int PhaseTapChanger::getTapPosition() const {
-    return backend_->getInt(handle_, cfg_.tapPosition);
-}
-PhaseTapChanger& PhaseTapChanger::setTapPosition(int pos) {
-    backend_->setInt(handle_, cfg_.tapPosition, pos);
+PhaseTapChanger& PhaseTapChanger::setRegulating(bool regulating) {
+    backend_->setBool(handle_, prop::REGULATING, regulating);
     return *this;
 }
-int PhaseTapChanger::getLowTapPosition()  const { return backend_->getInt(handle_, cfg_.lowTap);  }
-int PhaseTapChanger::getHighTapPosition() const { return backend_->getInt(handle_, cfg_.highTap); }
 
-bool PhaseTapChanger::isRegulating() const {
-    return backend_->getBool(handle_, cfg_.regulating);
-}
-PhaseTapChanger& PhaseTapChanger::setRegulating(bool reg) {
-    backend_->setBool(handle_, cfg_.regulating, reg);
-    return *this;
-}
 PhaseTapChangerRegulationMode PhaseTapChanger::getRegulationMode() const {
-    return static_cast<PhaseTapChangerRegulationMode>(
-        backend_->getInt(handle_, cfg_.regulationMode));
+    return static_cast<PhaseTapChangerRegulationMode>(backend_->getInt(handle_, prop::PTC_REGULATION_MODE));
 }
-PhaseTapChanger& PhaseTapChanger::setRegulationMode(PhaseTapChangerRegulationMode mode) {
-    backend_->setInt(handle_, cfg_.regulationMode, static_cast<int>(mode));
+
+PhaseTapChanger& PhaseTapChanger::setRegulationMode(PhaseTapChangerRegulationMode regulationMode) {
+    backend_->setInt(handle_, prop::PTC_REGULATION_MODE, static_cast<int>(regulationMode));
     return *this;
 }
+
 double PhaseTapChanger::getRegulationValue() const {
-    return backend_->getDouble(handle_, cfg_.regulationValue);
+    return backend_->getDouble(handle_, prop::PTC_REGULATION_VALUE);
 }
-PhaseTapChanger& PhaseTapChanger::setRegulationValue(double val) {
-    backend_->setDouble(handle_, cfg_.regulationValue, val);
+
+PhaseTapChanger& PhaseTapChanger::setRegulationValue(double regulationValue) {
+    backend_->setDouble(handle_, prop::PTC_REGULATION_VALUE, regulationValue);
     return *this;
 }
 
-iidm::optional<double> PhaseTapChanger::getTargetDeadband() const {
-    double v = backend_->getDouble(handle_, cfg_.targetDeadband);
-    if (std::isnan(v)) return {};
-    return v;
+double PhaseTapChanger::getTargetDeadband() const {
+    return backend_->getDouble(handle_, prop::PTC_TARGET_DEADBAND);
 }
 
-std::string PhaseTapChanger::getRegulationTerminalId() const {
-    return backend_->getString(handle_, cfg_.regulationTerminalId);
+PhaseTapChanger& PhaseTapChanger::setTargetDeadband(double targetDeadband) {
+    backend_->setDouble(handle_, prop::PTC_TARGET_DEADBAND, targetDeadband);
+    return *this;
 }
 
-std::vector<PhaseTapChangerStep> PhaseTapChanger::getAllSteps() const {
-    auto handles = backend_->getChildren(handle_, cfg_.stepChildType);
-    std::vector<PhaseTapChangerStep> steps;
-    steps.reserve(handles.size());
-    for (auto h : handles) steps.emplace_back(h, backend_);
-    return steps;
+iidm::optional<Terminal> PhaseTapChanger::getRegulationTerminal() const {
+    return detail::wrapOptional<Terminal>(backend_->getRelated(handle_, prop::REL_REGULATION_TERMINAL), backend_);
 }
 
-PhaseTapChangerStep PhaseTapChanger::getCurrentStep() const {
-    auto handles = backend_->getChildren(handle_, cfg_.stepChildType);
-    int idx = getTapPosition() - getLowTapPosition();
-    if (idx >= 0 && static_cast<std::size_t>(idx) < handles.size())
-        return PhaseTapChangerStep(handles[idx], backend_);
-    return PhaseTapChangerStep();
-}
-
-// The tap changers of the legs of a three windings transformer share its handle
-bool PhaseTapChanger::operator==(const PhaseTapChanger& other) const {
-    return ObjectRef::operator==(other) && cfg_.exists == other.cfg_.exists;
+PhaseTapChanger& PhaseTapChanger::setRegulationTerminal(const Terminal& regulationTerminal) {
+    backend_->setRelated(handle_, prop::REL_REGULATION_TERMINAL, detail::Access::handle(regulationTerminal));
+    return *this;
 }
 
 } // namespace iidm

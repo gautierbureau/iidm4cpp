@@ -98,13 +98,8 @@ class BridgeErrorsTest {
     }
 
     @Test void absentOptionalPartIsPropertyNotFound() {
-        Substation s = network.getSubstation("S");
-        TwoWindingsTransformer t = s.newTwoWindingsTransformer().setId("T")
-            .setVoltageLevel1("VL1").setBus1("B1").setVoltageLevel2("VL2").setBus2("B2")
-            .setR(1).setX(10).setG(0).setB(0).setRatedU1(400).setRatedU2(225).add();
-        long h = reg(t);
-        // getRatioTapChanger() is null → NullPointerException
-        assertEquals(BridgeErrors.PROPERTY_NOT_FOUND, kindOfFailure(() -> PropertyDispatcher.getDouble(h, TWO_WT_RTC_TARGET_V)));
+        // A code read through an absent part of its object: getReactiveLimits(...).getMinQ()...
+        assertEquals(BridgeErrors.PROPERTY_NOT_FOUND, BridgeErrors.kindOf(new NullPointerException()));
     }
 
     @Test void rejectedValues() {

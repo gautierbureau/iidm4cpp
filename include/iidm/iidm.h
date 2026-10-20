@@ -34,6 +34,14 @@
 #include <iidm/Generator.h>
 #include <iidm/Load.h>
 #include <iidm/Line.h>
+#include <iidm/FlowsLimitsHolder.h>
+#include <iidm/TapChangerStep.h>
+#include <iidm/RatioTapChangerStep.h>
+#include <iidm/PhaseTapChangerStep.h>
+#include <iidm/TapChanger.h>
+#include <iidm/RatioTapChanger.h>
+#include <iidm/PhaseTapChanger.h>
+#include <iidm/TapChangerHolder.h>
 #include <iidm/TwoWindingsTransformer.h>
 #include <iidm/ThreeWindingsTransformer.h>
 #include <iidm/HvdcLine.h>

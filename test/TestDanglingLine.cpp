@@ -35,12 +35,27 @@ TEST_F(DanglingLineTest, GetCurrentLimitsAbsent) {
 }
 
 TEST_F(DanglingLineTest, GetCurrentLimitsPresent) {
-    backend.related[{DL_HANDLE, prop::REL_CURRENT_LIMITS1}] = CL_HANDLE;
-    backend.doubles[{CL_HANDLE, prop::CL_PERMANENT_LIMIT}]  = 300.0;
+    backend.related[{DL_HANDLE, prop::CURRENT_LIMITS}]     = CL_HANDLE;
+    backend.doubles[{CL_HANDLE, prop::CL_PERMANENT_LIMIT}] = 300.0;
     DanglingLine dl(DL_HANDLE, &backend);
     auto cl = dl.getCurrentLimits();
     ASSERT_TRUE(cl.has_value());
     EXPECT_DOUBLE_EQ(cl->getPermanentLimit(), 300.0);
+}
+
+// Its limits are those of a flows limits holder: one set of groups
+TEST_F(DanglingLineTest, OperationalLimitsGroups) {
+    static constexpr ObjectHandle OLG_HANDLE = 12;
+    backend.children[{DL_HANDLE, prop::OPERATIONAL_LIMITS_GROUP}] = {OLG_HANDLE};
+    backend.related [{DL_HANDLE, prop::REL_SELECTED_OLG}]         = OLG_HANDLE;
+    backend.strings [{OLG_HANDLE, prop::OLG_ID}]                  = "DEFAULT";
+    DanglingLine dl(DL_HANDLE, &backend);
+    auto groups = dl.getOperationalLimitsGroups();
+    ASSERT_EQ(groups.size(), 1u);
+    EXPECT_EQ(groups[0].getId(), "DEFAULT");
+    auto selected = dl.getSelectedOperationalLimitsGroup();
+    ASSERT_TRUE(selected.has_value());
+    EXPECT_EQ(*selected, groups[0]);
 }
 
 TEST_F(DanglingLineTest, GetName) {

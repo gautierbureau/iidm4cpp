@@ -1,0 +1,35 @@
+#pragma once
+
+#include <iidm/ObjectRef.h>
+#include <iidm/PhaseTapChanger.h>
+#include <iidm/RatioTapChanger.h>
+#include <iidm/stdcxx/optional.hpp>
+
+namespace iidm {
+namespace detail {
+
+// What may have a ratio and a phase tap changer (powsybl RatioTapChangerHolder and
+// PhaseTapChangerHolder): two windings transformers, and the legs of three windings transformers.
+template <class Self>
+class TapChangerHolderMethods {
+public:
+    bool hasRatioTapChanger() const;
+    // Empty when it has none
+    iidm::optional<RatioTapChanger> getRatioTapChanger() const;
+
+    bool hasPhaseTapChanger() const;
+    // Empty when it has none
+    iidm::optional<PhaseTapChanger> getPhaseTapChanger() const;
+
+protected:
+    TapChangerHolderMethods() = default;
+    ~TapChangerHolderMethods() = default;
+
+private:
+    const Self& self() const { return static_cast<const Self&>(*this); }
+    ObjectHandle handle() const { return Access::handle(self()); }
+    BackendProvider* backend() const { return Access::backend(self()); }
+};
+
+} // namespace detail
+} // namespace iidm

@@ -2,6 +2,7 @@
 #include <iidm/BackendProvider.h>
 #include <iidm/Battery.h>
 #include <iidm/Generator.h>
+#include <iidm/RatioTapChanger.h>
 #include <iidm/ShuntCompensator.h>
 #include <iidm/StaticVarCompensator.h>
 #include <iidm/VscConverterStation.h>
@@ -105,5 +106,6 @@ template class VoltageRegulationHolderMethods<Battery>;
 template class VoltageRegulationHolderMethods<StaticVarCompensator>;
 template class VoltageRegulationHolderMethods<ShuntCompensator>;
 template class VoltageRegulationHolderMethods<VscConverterStation>;
+template class VoltageRegulationHolderMethods<RatioTapChanger>;
 
 } } // namespace iidm::detail

@@ -13,8 +13,7 @@
     <description>Java-side support module for iidm-bridge-cpp</description>
 
     <properties>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
+        <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <powsybl.core.version>7.4.0</powsybl.core.version>
         <graalvm.version>23.1.0</graalvm.version>
@@ -125,6 +124,18 @@ public final class PropertyCodes {
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <!-- Only the current powsybl APIs are ported: a call to a deprecated one fails the build -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <compilerArgs>
+                        <arg>-Xlint:deprecation</arg>
+                        <arg>-Werror</arg>
+                    </compilerArgs>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

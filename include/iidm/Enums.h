@@ -24,7 +24,7 @@ enum class Country {
 };
 enum class HvdcConverterStationMode { RECTIFIER, INVERTER };
 enum class SwitchKind { BREAKER, DISCONNECTOR, LOAD_BREAK_SWITCH };
-enum class PhaseTapChangerRegulationMode { CURRENT_LIMITER, ACTIVE_POWER_CONTROL, FIXED_TAP };
+enum class PhaseTapChangerRegulationMode { CURRENT_LIMITER, ACTIVE_POWER_CONTROL };
 enum class HvdcOperatorActivePowerRangeSide { SIDE1, SIDE2 };
 enum class TwoSides { ONE, TWO };
 enum class ThreeSides { ONE, TWO, THREE };
