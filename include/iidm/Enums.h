@@ -37,6 +37,8 @@ enum class IdentifiableType {
 };
 // Technology of an HVDC converter station
 enum class HvdcType { VSC, LCC };
+// Kind of reactive limits (powsybl ReactiveLimitsKind)
+enum class ReactiveLimitsKind { MIN_MAX, CURVE, SHAPE };
 // Mode of a VoltageRegulation (powsybl 7.4 regulation.RegulationMode)
 enum class RegulationMode { VOLTAGE, REACTIVE_POWER, VOLTAGE_PER_REACTIVE_POWER };
 

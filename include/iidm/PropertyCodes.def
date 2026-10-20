@@ -35,6 +35,11 @@ IIDM_CODE(PHASE_TAP_CHANGER,           21)
 IIDM_CODE(RATIO_TAP_CHANGER_STEP,      22)
 IIDM_CODE(PHASE_TAP_CHANGER_STEP,      23)
 IIDM_CODE(THREE_WINDINGS_TRANSFORMER_LEG, 24)
+IIDM_CODE(REACTIVE_LIMITS,             25)
+IIDM_CODE(MIN_MAX_REACTIVE_LIMITS,     26)
+IIDM_CODE(REACTIVE_CAPABILITY_CURVE,   27)
+IIDM_CODE(REACTIVE_CAPABILITY_SHAPE,   35)
+IIDM_CODE(REACTIVE_CAPABILITY_SHAPE_PLANE, 36)
 IIDM_CODE(SHUNT_SECTION,               28)
 IIDM_CODE(INTERNAL_CONNECTION,         29)
 IIDM_CODE(CURRENT_LIMITS,              30)
@@ -86,9 +91,6 @@ IIDM_CODE(GEN_TARGET_P,                200)
 IIDM_CODE(GEN_MIN_P,                   203)
 IIDM_CODE(GEN_MAX_P,                   204)
 IIDM_CODE(GEN_ENERGY_SOURCE,           206)
-IIDM_CODE(GEN_REACTIVE_LIMITS_KIND,    207) // 0=NONE 1=MIN_MAX 2=CURVE
-IIDM_CODE(GEN_MIN_Q,                   208)
-IIDM_CODE(GEN_MAX_Q,                   209)
 IIDM_CODE(GEN_RATED_S,                 210)
 IIDM_CODE(GEN_CONDENSER,               211) // bool
 
@@ -209,11 +211,6 @@ IIDM_CODE(SHUNT_SOLVED_SECTION_COUNT,  1111) // optional int
 IIDM_CODE(SVC_B_MIN,                   1200)
 IIDM_CODE(SVC_B_MAX,                   1201)
 
-// ── VscConverterStation ──────────────────────────────────────────────────────
-IIDM_CODE(VSC_REACTIVE_LIMITS_KIND,    1304) // 0=NONE 1=MIN_MAX 2=CURVE
-IIDM_CODE(VSC_MIN_Q,                   1305)
-IIDM_CODE(VSC_MAX_Q,                   1306)
-
 // ── LccConverterStation ──────────────────────────────────────────────────────
 IIDM_CODE(LCC_POWER_FACTOR,            1401)
 
@@ -227,14 +224,30 @@ IIDM_CODE(IC_NODE2,                    1611)
 IIDM_CODE(BAT_TARGET_P,                1700)
 IIDM_CODE(BAT_MIN_P,                   1702)
 IIDM_CODE(BAT_MAX_P,                   1703)
-IIDM_CODE(BAT_REACTIVE_LIMITS_KIND,    1704) // 0=NONE 1=MIN_MAX 2=CURVE
-IIDM_CODE(BAT_MIN_Q,                   1705)
-IIDM_CODE(BAT_MAX_Q,                   1706)
 
-// ── ReactiveCapabilityCurve point properties ──────────────────────────────────
-IIDM_CODE(POINT_P,                     1800)
-IIDM_CODE(POINT_MIN_Q,                 1801)
-IIDM_CODE(POINT_MAX_Q,                 1802)
+// ── Reactive limits (of generators, batteries, VSC converter stations) ────────
+// REACTIVE_LIMITS is their type code: getRelated(holder, REACTIVE_LIMITS) gives the reactive limits
+// of a generator, battery or VSC converter station; getRelated(holder, MIN_MAX_REACTIVE_LIMITS /
+// REACTIVE_CAPABILITY_CURVE / REACTIVE_CAPABILITY_SHAPE) the same, when they are of that kind
+// (ValidationException otherwise). The points of a curve: getChildren(curve, REACTIVE_CURVE_POINT),
+// by increasing p; the planes of a shape: getChildren(shape, REACTIVE_CAPABILITY_SHAPE_PLANE).
+IIDM_CODE(RL_KIND,                     1810) // int: ReactiveLimitsKind ordinal
+IIDM_CODE(RL_MIN_Q,                    1811) // double: MinMaxReactiveLimits.getMinQ(); evaluate {p}: getMinQ(p) of
+                                             // any kind, {p, extrapolateReactiveLimitSlope} of a curve, {p, v} of a shape
+IIDM_CODE(RL_MAX_Q,                    1812) // double: the same for getMaxQ
+IIDM_CODE(CURVE_MIN_P,                 1813) // double
+IIDM_CODE(CURVE_MAX_P,                 1814) // double
+IIDM_CODE(CURVE_POINT_COUNT,           1815) // int
+IIDM_CODE(SHAPE_IS_INSIDE,             1816) // evaluate {p, q, v}: 1 when the point is inside the shape, else 0
+IIDM_CODE(POINT_P,                     1800) // double, on a curve point
+IIDM_CODE(POINT_MIN_Q,                 1801) // double, on a curve point
+IIDM_CODE(POINT_MAX_Q,                 1802) // double, on a curve point
+IIDM_CODE(PLANE_ALPHA,                 1820) // double, on a shape plane
+IIDM_CODE(PLANE_BETA,                  1821) // double
+IIDM_CODE(PLANE_GAMMA,                 1822) // double
+IIDM_CODE(PLANE_DELTA,                 1823) // double
+IIDM_CODE(PLANE_LESS_OR_EQUAL,         1824) // bool
+IIDM_CODE(PLANE_GREATER_OR_EQUAL,      1825) // bool
 
 // ── Switch ───────────────────────────────────────────────────────────────────
 IIDM_CODE(SW_OPEN,                     1500)

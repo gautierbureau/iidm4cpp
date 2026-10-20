@@ -72,6 +72,14 @@ public:
         throw IidmException("setKeyedString not supported by this backend (property " + std::to_string(property) + ")");
     }
 
+    // ── Methods that take arguments ──────────────────────────────────────
+    // The result of a method of the object that takes numeric arguments (ints, bools and enum
+    // ordinals are passed as doubles): evaluate(limits, prop::RL_MIN_Q, {p}) is the powsybl
+    // getMinQ(p) of reactive limits. A bool result is 1 or 0.
+    virtual double evaluate(ObjectHandle /*h*/, int code, const std::vector<double>& /*args*/) const {
+        throw IidmException("evaluate not supported by this backend (code " + std::to_string(code) + ")");
+    }
+
     // ── Identity ─────────────────────────────────────────────────────────
     // Whether two handles stand for the same object: each lookup returns a new handle.
     virtual bool isSameObject(ObjectHandle h, ObjectHandle other) const {

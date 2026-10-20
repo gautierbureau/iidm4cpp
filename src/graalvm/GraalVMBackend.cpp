@@ -117,6 +117,7 @@ void GraalVMBackend::resolveSymbols() {
     fnGetKeyedString_     = resolveSymbol<FnGetKeyedString>    (libHandle_, "iidm_get_keyed_string");
     fnSetKeyedString_     = resolveSymbol<FnSetKeyedString>    (libHandle_, "iidm_set_keyed_string");
     fnIsSameObject_       = resolveSymbol<FnIsSameObject>      (libHandle_, "iidm_is_same_object");
+    fnEvaluate_           = resolveSymbol<FnEvaluate>          (libHandle_, "iidm_evaluate");
 }
 
 void GraalVMBackend::check(int status) const {
@@ -326,6 +327,12 @@ std::vector<int> GraalVMBackend::getIntList(ObjectHandle h, int listCode) const 
     std::vector<int> values(raw, raw + (raw ? count : 0));
     if (raw) fnFree_(thread_, raw);
     return values;
+}
+
+double GraalVMBackend::evaluate(ObjectHandle h, int code, const std::vector<double>& args) const {
+    double result = 0.0;
+    check(fnEvaluate_(thread_, h, code, args.empty() ? nullptr : args.data(), static_cast<int>(args.size()), &result));
+    return result;
 }
 
 ObjectHandle GraalVMBackend::getRelatedByIndex(ObjectHandle h, int relation, int index) const {

@@ -31,7 +31,7 @@
 // value, the same number of children, the same null / non-null related object (then visited in
 // turn), or an exception of the same C++ type. Keyed and indexed lookups (getRelatedByString,
 // getRelatedByIndex, findById) are tried with every id met during the walk, and with the object's
-// int values (node numbers, tap positions) and sides.
+// int values (node numbers, tap positions) and sides; evaluate with a set of argument lists.
 // invoke(object, TYPE), which starts an adder and changes nothing, is compared the same way. Every
 // value read is then written back with the matching setter: both backends must accept or reject it
 // alike, and read back the same value. Both networks must then save to the same XIIDM; last, every
@@ -194,7 +194,22 @@ const Read kReads[READ_COUNT] = {
     }},
 };
 
-// Reads that also take a key (getRelatedByString, getKeyedString) or an index (getRelatedByIndex).
+// Arguments evaluate is tried with (an active power, then also a bool or a voltage...)
+const std::vector<double> kArgumentSets[] = {
+    {0}, {50}, {-100}, {1e6},
+    {0, 0}, {50, 1}, {150, 0}, {150, 1}, {100, 400},
+    {0, 0, 400}, {100, 50, 400}, {300, 200, 63},
+};
+const int kArgumentSetCount = static_cast<int>(sizeof kArgumentSets / sizeof kArgumentSets[0]);
+
+std::string show(const std::vector<double>& args) {
+    std::string text = "{";
+    for (std::size_t i = 0; i < args.size(); ++i) text += (i ? ", " : "") + show(args[i]);
+    return text + "}";
+}
+
+// Reads that also take a key (getRelatedByString, getKeyedString), an index (getRelatedByIndex), or
+// arguments (evaluate: index -1 for no arguments, else the index of an argument set).
 typedef std::string (*LookupFn)(BackendProvider&, ObjectHandle, int code, const std::string& key, int index,
                                 std::vector<ObjectHandle>& objects);
 
@@ -203,7 +218,7 @@ struct Lookup {
     LookupFn call;
 };
 
-enum LookupIndex { BY_STRING, BY_KEY, BY_INDEX, LOOKUP_COUNT };
+enum LookupIndex { BY_STRING, BY_KEY, BY_INDEX, BY_ARGUMENTS, LOOKUP_COUNT };
 
 const Lookup kLookups[LOOKUP_COUNT] = {
     {"getRelatedByString", [](BackendProvider& b, ObjectHandle h, int code, const std::string& key, int,
@@ -218,6 +233,10 @@ const Lookup kLookups[LOOKUP_COUNT] = {
     {"getRelatedByIndex", [](BackendProvider& b, ObjectHandle h, int code, const std::string&, int index,
                              std::vector<ObjectHandle>& objects) -> std::string {
         return show(b.getRelatedByIndex(h, code, index), objects);
+    }},
+    {"evaluate", [](BackendProvider& b, ObjectHandle h, int code, const std::string&, int index,
+                    std::vector<ObjectHandle>&) -> std::string {
+        return show(b.evaluate(h, code, index < 0 ? std::vector<double>() : kArgumentSets[index]));
     }},
 };
 
@@ -465,9 +484,9 @@ private:
     }
 
     // getRelatedByString with every id read during the walk as key, getRelatedByIndex with the
-    // object's int values (node numbers, tap positions) and the sides (0, 1, 2) as index. Like
-    // reads, every code is tried on the first object of each link (with key "" and index -1), then
-    // only the codes that exist.
+    // object's int values (node numbers, tap positions) and the sides (0, 1, 2) as index, evaluate
+    // with every argument set. Like reads, every code is tried on the first object of each link
+    // (with key "", index -1, no arguments), then only the codes that exist.
     void lookUp(Twin& twin) {
         std::vector<std::set<int>>& known = codesByLink_[twin.link];
         const bool firstOfItsType = lookedUpLinks_.insert(twin.link).second;
@@ -489,10 +508,12 @@ private:
                         Outcome found = lookUp(twin, lookup, code, key, -1);
                         if (!found.threw() && found.value != "empty") keys.insert(found.value.substr(1, found.value.size() - 2));
                     }
-                } else {
+                } else if (lookup == BY_INDEX) {
                     std::set<int> indices = twin.indices;
                     indices.insert({0, 1, 2});
                     for (int index : indices) lookUp(twin, lookup, code, "", index);
+                } else {
+                    for (int set = 0; set < kArgumentSetCount; ++set) lookUp(twin, lookup, code, "", set);
                 }
             }
         }
@@ -503,10 +524,12 @@ private:
         Outcome g = attempt([&] { return kLookups[lookup].call(g_, twin.g, code.value, key, index, objectsG); });
         Outcome j = attempt([&] { return kLookups[lookup].call(j_, twin.j, code.value, key, index, objectsJ); });
         const std::string link = std::string(kLookups[lookup].name) + "(" + code.name + ")";
-        std::vector<Twin> targets = twins(twin, link + (lookup == BY_STRING ? " \"" + key + "\"" : " " + std::to_string(index)),
-                                          false, objectsG, objectsJ);
+        const std::string what = lookup == BY_STRING ? " \"" + key + "\""
+                               : lookup == BY_ARGUMENTS ? " " + show(index < 0 ? std::vector<double>() : kArgumentSets[index])
+                               : " " + std::to_string(index);
+        std::vector<Twin> targets = twins(twin, link + what, false, objectsG, objectsJ);
         for (Twin& target : targets) target.link = link;
-        if (compare(kLookups[lookup].name, twin.path, code.name, g, j) && !g.threw()) {
+        if (compare(kLookups[lookup].name, twin.path + what, code.name, g, j) && !g.threw()) {
             ++values;
             for (const Twin& target : targets) pending_.push_back(target);
         }
@@ -755,6 +778,10 @@ TEST(BackendConformanceTest, BackendErrors) {
 
 TEST(BackendConformanceTest, Transformers) {
     checkConformance("data/transformers_test.xiidm");
+}
+
+TEST(BackendConformanceTest, ReactiveLimits) {
+    checkConformance("data/reactive_limits_test.xiidm");
 }
 
 TEST(BackendConformanceTest, CreatedFromScratch) {

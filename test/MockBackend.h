@@ -48,6 +48,7 @@ public:
     std::map<std::pair<ObjectHandle,int>, std::string> optStrings;
     std::map<std::pair<ObjectHandle,int>, std::vector<std::string>> stringLists;
     std::map<std::tuple<ObjectHandle,int,std::string>, std::string>  keyedStrings;
+    std::map<std::tuple<ObjectHandle,int,std::vector<double>>, double> evaluations; // absent: NaN
     ObjectHandle networkHandle = 1;
     bool closed = false;
     std::string lastSavedPath;
@@ -120,6 +121,12 @@ public:
     void setKeyedString(ObjectHandle h, int p, const std::string& key, const iidm::optional<std::string>& value) override {
         if (value) keyedStrings[std::make_tuple(h, p, key)] = *value;
         else keyedStrings.erase(std::make_tuple(h, p, key));
+    }
+
+    double evaluate(ObjectHandle h, int code, const std::vector<double>& args) const override {
+        auto it = evaluations.find(std::make_tuple(h, code, args));
+        if (it == evaluations.end()) return std::numeric_limits<double>::quiet_NaN();
+        return it->second;
     }
 
     std::vector<ObjectHandle> getChildren(ObjectHandle h, int childType) const override {

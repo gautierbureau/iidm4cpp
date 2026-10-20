@@ -3,15 +3,16 @@
 #include <iidm/CoordinatedReactiveControl.h>
 #include <iidm/Enums.h>
 #include <iidm/Injection.h>
-#include <iidm/MinMaxReactiveLimits.h>
-#include <iidm/ReactiveCapabilityCurve.h>
+#include <iidm/ReactiveLimitsHolder.h>
 #include <iidm/Terminal.h>
 #include <iidm/VoltageRegulationHolder.h>
 #include <iidm/stdcxx/optional.hpp>
 
 namespace iidm {
 
-class Generator : public Injection, public detail::VoltageRegulationHolderMethods<Generator> {
+class Generator : public Injection,
+                  public detail::VoltageRegulationHolderMethods<Generator>,
+                  public detail::ReactiveLimitsHolderMethods<Generator> {
 public:
     static constexpr int TYPE = prop::GENERATOR;
 
@@ -34,13 +35,6 @@ public:
 
     EnergySource getEnergySource() const;
     Generator& setEnergySource(EnergySource energySource);
-
-    // ── Reactive limits ──────────────────────────────────────────────────
-    bool hasMinMaxReactiveLimits() const;
-    MinMaxReactiveLimits getMinMaxReactiveLimits() const;
-
-    bool hasReactiveCapabilityCurve() const;
-    ReactiveCapabilityCurve getReactiveCapabilityCurve() const;
 
     // ── Extensions ───────────────────────────────────────────────────────
     bool hasCoordinatedReactiveControl() const;

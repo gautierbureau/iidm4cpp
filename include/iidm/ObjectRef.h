@@ -1,7 +1,10 @@
 #pragma once
 
+#include <iidm/BackendProvider.h>
 #include <iidm/HandleRef.h>
+#include <iidm/IidmException.h>
 #include <iidm/ObjectHandle.h>
+#include <string>
 
 namespace iidm {
 namespace detail {
@@ -20,6 +23,18 @@ public:
     // returns a new handle. Objects that are not valid are all equal.
     bool operator==(const ObjectRef& other) const;
     bool operator!=(const ObjectRef& other) const { return !(*this == other); }
+
+    // Whether the object is a T (Java instanceof): identifiable.is<Generator>(),
+    // limits.is<ReactiveCapabilityCurve>()...
+    template <class T> bool is() const { return backend_->getBool(handle_, T::TYPE); }
+    // This object as a T; PropertyNotFoundException when it is not one
+    template <class T> T as() const {
+        if (!is<T>()) {
+            throw PropertyNotFoundException("The object is not of the requested type (type code "
+                                            + std::to_string(T::TYPE) + ")");
+        }
+        return T(handle_, backend_);
+    }
 
 protected:
     ObjectRef() = default;

@@ -13,14 +13,17 @@ protected:
     static constexpr ObjectHandle VSC_H  = 10;
     static constexpr ObjectHandle TERM_H = 20;
     static constexpr ObjectHandle HVDC_H = 30;
+    static constexpr ObjectHandle LIMITS_H = 40;
 
     void SetUp() override {
         backend.strings[{VSC_H, prop::ID}]                     = "VSC1";
         backend.strings[{VSC_H, prop::NAME}]                    = "VSC Station 1";
         backend.doubles[{VSC_H, prop::CONVERTER_STATION_LOSS_FACTOR}]         = 0.011f;
-        backend.ints   [{VSC_H, prop::VSC_REACTIVE_LIMITS_KIND}] = 1; // MIN_MAX
-        backend.doubles[{VSC_H, prop::VSC_MIN_Q}]               = -200.0;
-        backend.doubles[{VSC_H, prop::VSC_MAX_Q}]               = 200.0;
+        backend.related[{VSC_H, prop::REACTIVE_LIMITS}]         = LIMITS_H;
+        backend.related[{VSC_H, prop::MIN_MAX_REACTIVE_LIMITS}] = LIMITS_H;
+        backend.doubles[{LIMITS_H, prop::RL_MIN_Q}]             = -200.0;
+        backend.doubles[{LIMITS_H, prop::RL_MAX_Q}]             = 200.0;
+        backend.bools  [{LIMITS_H, prop::MIN_MAX_REACTIVE_LIMITS}] = true;
         backend.related[{VSC_H, prop::REL_TERMINAL}]            = TERM_H;
         backend.related[{VSC_H, prop::REL_HVDC_LINE}]           = HVDC_H;
         backend.related[{VSC_H, prop::REL_REGULATING_TERMINAL}] = TERM_H;
@@ -41,11 +44,11 @@ TEST_F(VscConverterStationTest, GetLossFactor) {
 
 TEST_F(VscConverterStationTest, MinMaxReactiveLimits) {
     VscConverterStation vsc(VSC_H, &backend);
-    EXPECT_TRUE(vsc.hasMinMaxReactiveLimits());
-    EXPECT_FALSE(vsc.hasReactiveCapabilityCurve());
-    auto limits = vsc.getMinMaxReactiveLimits();
-    EXPECT_DOUBLE_EQ(limits.getMinQ(), -200.0);
-    EXPECT_DOUBLE_EQ(limits.getMaxQ(), 200.0);
+    ReactiveLimits limits = vsc.getReactiveLimits();
+    EXPECT_TRUE(limits.is<MinMaxReactiveLimits>());
+    EXPECT_FALSE(limits.is<ReactiveCapabilityCurve>());
+    EXPECT_DOUBLE_EQ(limits.as<MinMaxReactiveLimits>().getMinQ(), -200.0);
+    EXPECT_DOUBLE_EQ(vsc.getReactiveLimits<MinMaxReactiveLimits>().getMaxQ(), 200.0);
 }
 
 TEST_F(VscConverterStationTest, GetTerminalAndHvdcLine) {
