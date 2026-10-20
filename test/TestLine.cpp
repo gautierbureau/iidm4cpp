@@ -152,7 +152,7 @@ TEST_F(LineTest, GetSelectedOperationalLimitsGroup1) {
 TEST_F(LineTest, GetCurrentLimitsFromOLG) {
     backend.related[{LINE_HANDLE, prop::REL_SELECTED_OLG1}] = OLG1_HANDLE;
     backend.strings[{OLG1_HANDLE, prop::OLG_ID}]              = "DEFAULT";
-    backend.related[{OLG1_HANDLE, prop::REL_OLG_CURRENT_LIMITS}] = CL1_HANDLE;
+    backend.related[{OLG1_HANDLE, prop::CURRENT_LIMITS}]         = CL1_HANDLE;
     backend.doubles[{CL1_HANDLE, prop::CL_PERMANENT_LIMIT}]   = 1000.0;
     Line line(LINE_HANDLE, &backend);
     auto olg = line.getSelectedOperationalLimitsGroup1();

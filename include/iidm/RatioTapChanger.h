@@ -1,64 +1,29 @@
 #pragma once
 
 #include <iidm/ObjectRef.h>
-#include <iidm/ObjectHandle.h>
+#include <iidm/PropertiesHolder.h>
+#include <iidm/PropertyCodes.h>
 #include <iidm/RatioTapChangerStep.h>
-#include <iidm/Terminal.h>
-#include <iidm/stdcxx/optional.hpp>
-#include <string>
-#include <vector>
+#include <iidm/TapChanger.h>
+#include <iidm/VoltageRegulationHolder.h>
 
 namespace iidm {
 
-class BackendProvider;
-
-struct RatioTapChangerConfig {
-    int exists;
-    int tapPosition;
-    int lowTap;
-    int highTap;
-    int regulating;
-    int targetV;
-    int stepChildType;
-    int targetDeadband;
-    int regulationTerminalId;
-    int regulationTerminalRelation;
-    int loadTapChangingCapabilities; // bool property code
-};
-
-class RatioTapChanger : public detail::ObjectRef {
+// The ratio tap changer of a two windings transformer or of a three windings transformer leg. It
+// regulates the voltage (or the reactive power) as every regulation holder, through its
+// VoltageRegulation (powsybl 7.4).
+class RatioTapChanger : public detail::ObjectRef,
+                        public detail::PropertiesHolder<RatioTapChanger>,
+                        public detail::TapChangerMethods<RatioTapChanger, RatioTapChangerStep>,
+                        public detail::VoltageRegulationHolderMethods<RatioTapChanger> {
 public:
+    static constexpr int TYPE = prop::RATIO_TAP_CHANGER;
+
     RatioTapChanger() = default;
-    explicit RatioTapChanger(ObjectHandle handle, BackendProvider* backend,
-                              const RatioTapChangerConfig& cfg);
+    explicit RatioTapChanger(ObjectHandle handle, BackendProvider* backend) : ObjectRef(handle, backend) {}
 
-    int getTapPosition() const;
-    RatioTapChanger& setTapPosition(int pos);
-
-    int getLowTapPosition()  const;
-    int getHighTapPosition() const;
-
-    bool isRegulating() const;
-    RatioTapChanger& setRegulating(bool reg);
-
-    double getTargetV() const;
-    RatioTapChanger& setTargetV(double v);
-
-    iidm::optional<double> getTargetDeadband() const;
-    std::string getRegulationTerminalId() const;
-    Terminal getRegulationTerminal() const;
-
-    bool hasLoadTapChangingCapabilities() const;
-
-    std::vector<RatioTapChangerStep> getAllSteps() const;
-    RatioTapChangerStep getCurrentStep() const;
-
-    // Same transformer and same tap changer
-    bool operator==(const RatioTapChanger& other) const;
-    bool operator!=(const RatioTapChanger& other) const { return !(*this == other); }
-
-private:
-    RatioTapChangerConfig cfg_     = {};
+    // The same method in both powsybl interfaces
+    using detail::TapChangerMethods<RatioTapChanger, RatioTapChangerStep>::isRegulating;
 };
 
 } // namespace iidm

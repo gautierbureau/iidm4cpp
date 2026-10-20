@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iidm:network xmlns:iidm="http://www.powsybl.org/schema/iidm/1_18" id="transformers_test" caseDate="2026-01-31T12:00:00.000Z" forecastDistance="0" sourceFormat="test" minimumValidationLevel="STEADY_STATE_HYPOTHESIS">
+    <iidm:substation id="S" country="FR">
+        <iidm:voltageLevel id="VL1" nominalV="400.0" topologyKind="BUS_BREAKER">
+            <iidm:busBreakerTopology>
+                <iidm:bus id="B1"/>
+            </iidm:busBreakerTopology>
+            <iidm:generator id="G" energySource="OTHER" minP="0.0" maxP="500.0" targetP="200.0" localTargetV="400.0" bus="B1" connectableBus="B1">
+                <iidm:minMaxReactiveLimits minQ="-1.7976931348623157E308" maxQ="1.7976931348623157E308"/>
+                <iidm:voltageRegulation mode="VOLTAGE" regulating="true"/>
+            </iidm:generator>
+            <iidm:boundaryLine id="DL" p0="10.0" q0="5.0" r="1.0" x="10.0" bus="B1" connectableBus="B1" selectedOperationalLimitsGroupIds="DEFAULT">
+                <iidm:operationalLimitsGroup id="DEFAULT">
+                    <iidm:currentLimits detectionKind="HIGH" permanentLimit="1000.0"/>
+                </iidm:operationalLimitsGroup>
+            </iidm:boundaryLine>
+        </iidm:voltageLevel>
+        <iidm:voltageLevel id="VL2" nominalV="225.0" topologyKind="BUS_BREAKER">
+            <iidm:busBreakerTopology>
+                <iidm:bus id="B2"/>
+            </iidm:busBreakerTopology>
+            <iidm:load id="L2" loadType="UNDEFINED" p0="100.0" q0="20.0" bus="B2" connectableBus="B2"/>
+        </iidm:voltageLevel>
+        <iidm:voltageLevel id="VL3" nominalV="63.0" topologyKind="BUS_BREAKER">
+            <iidm:busBreakerTopology>
+                <iidm:bus id="B3"/>
+            </iidm:busBreakerTopology>
+            <iidm:load id="L3" loadType="UNDEFINED" p0="50.0" q0="10.0" bus="B3" connectableBus="B3"/>
+        </iidm:voltageLevel>
+        <iidm:twoWindingsTransformer id="T2" r="0.5" x="20.0" ratedU1="400.0" ratedU2="225.0" ratedS="300.0" voltageLevelId1="VL1" bus1="B1" connectableBus1="B1" voltageLevelId2="VL2" bus2="B2" connectableBus2="B2" selectedOperationalLimitsGroupIds1="DEFAULT">
+            <iidm:ratioTapChanger lowTapPosition="-1" tapPosition="0" solvedTapPosition="1" loadTapChangingCapabilities="true">
+                <iidm:property name="maker" value="ACME"/>
+                <iidm:step r="1.0" x="2.0" rho="0.95"/>
+                <iidm:step rho="1.0"/>
+                <iidm:step r="-1.0" x="-2.0" rho="1.05"/>
+                <iidm:voltageRegulation targetValue="226.0" targetDeadband="2.0" mode="VOLTAGE" regulating="true">
+                    <iidm:terminalRef id="T2" side="TWO"/>
+                </iidm:voltageRegulation>
+            </iidm:ratioTapChanger>
+            <iidm:phaseTapChanger regulating="false" tapPosition="1" targetDeadband="10.0" loadTapChangingCapabilities="true" regulationMode="CURRENT_LIMITER" regulationValue="500.0">
+                <iidm:terminalRef id="T2" side="ONE"/>
+                <iidm:step rho="1.0" alpha="-5.0"/>
+                <iidm:step rho="1.0" alpha="0.0"/>
+                <iidm:step rho="1.0" alpha="5.0"/>
+            </iidm:phaseTapChanger>
+            <iidm:operationalLimitsGroup1 id="DEFAULT">
+                <iidm:currentLimits detectionKind="HIGH" permanentLimit="800.0"/>
+            </iidm:operationalLimitsGroup1>
+        </iidm:twoWindingsTransformer>
+        <iidm:threeWindingsTransformer id="T3" r1="0.1" x1="5.0" ratedU1="400.0" ratedS1="200.0" r2="0.2" x2="6.0" ratedU2="225.0" r3="0.3" x3="7.0" ratedU3="63.0" ratedU0="400.0" voltageLevelId1="VL1" bus1="B1" connectableBus1="B1" voltageLevelId2="VL2" bus2="B2" connectableBus2="B2" voltageLevelId3="VL3" bus3="B3" connectableBus3="B3" selectedOperationalLimitsGroupIds1="WINTER">
+            <iidm:phaseTapChanger1 regulating="true" lowTapPosition="-2" tapPosition="0" targetDeadband="5.0" loadTapChangingCapabilities="true" regulationMode="ACTIVE_POWER_CONTROL" regulationValue="80.0">
+                <iidm:terminalRef id="T3" side="ONE"/>
+                <iidm:step rho="1.0" alpha="-10.0"/>
+                <iidm:step rho="1.0" alpha="-5.0"/>
+                <iidm:step rho="1.0" alpha="0.0"/>
+            </iidm:phaseTapChanger1>
+            <iidm:ratioTapChanger2 lowTapPosition="1" tapPosition="2" loadTapChangingCapabilities="false">
+                <iidm:step rho="0.98"/>
+                <iidm:step rho="1.02"/>
+            </iidm:ratioTapChanger2>
+            <iidm:ratioTapChanger3 tapPosition="0" loadTapChangingCapabilities="true">
+                <iidm:step rho="1.0"/>
+                <iidm:step rho="1.01"/>
+                <iidm:voltageRegulation targetValue="64.0" targetDeadband="1.0" mode="VOLTAGE" regulating="false">
+                    <iidm:terminalRef id="T3" side="THREE"/>
+                </iidm:voltageRegulation>
+            </iidm:ratioTapChanger3>
+            <iidm:operationalLimitsGroup1 id="WINTER">
+                <iidm:currentLimits detectionKind="HIGH" permanentLimit="400.0">
+                    <iidm:temporaryLimit name="TL20" acceptableDuration="1200" value="500.0"/>
+                </iidm:currentLimits>
+            </iidm:operationalLimitsGroup1>
+            <iidm:operationalLimitsGroup1 id="SUMMER">
+                <iidm:currentLimits detectionKind="HIGH" permanentLimit="350.0"/>
+            </iidm:operationalLimitsGroup1>
+            <iidm:operationalLimitsGroup3 id="ONLY">
+                <iidm:currentLimits detectionKind="HIGH" permanentLimit="900.0"/>
+            </iidm:operationalLimitsGroup3>
+        </iidm:threeWindingsTransformer>
+    </iidm:substation>
+</iidm:network>

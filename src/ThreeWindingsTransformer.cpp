@@ -1,105 +1,77 @@
 #include <iidm/ThreeWindingsTransformer.h>
 #include <iidm/BackendProvider.h>
-#include <iidm/CurrentLimits.h>
-#include <iidm/IidmException.h>
-#include <iidm/OperationalLimitsGroup.h>
 #include <iidm/PropertyCodes.h>
 #include <iidm/Substation.h>
+#include "Wrap.h"
 
 namespace iidm {
 
 // ── Leg ──────────────────────────────────────────────────────────────────────
 
-ThreeWindingsTransformer::Leg::Leg(ObjectHandle twtHandle, BackendProvider* backend,
-                                    int legBase, int relTerminal,
-                                    int rtcStepChildType, int ptcStepChildType)
-    : ObjectRef(twtHandle, backend), legBase_(legBase),
-      relTerminal_(relTerminal),
-      rtcStepChildType_(rtcStepChildType), ptcStepChildType_(ptcStepChildType) {}
+Terminal ThreeWindingsTransformer::Leg::getTerminal() const {
+    return Terminal(backend_->getRelated(handle_, prop::REL_TERMINAL), backend_);
+}
+
+ThreeSides ThreeWindingsTransformer::Leg::getSide() const {
+    return static_cast<ThreeSides>(backend_->getInt(handle_, prop::LEG_SIDE));
+}
+
+ThreeWindingsTransformer ThreeWindingsTransformer::Leg::getTransformer() const {
+    return ThreeWindingsTransformer(backend_->getRelated(handle_, prop::THREE_WINDINGS_TRANSFORMER), backend_);
+}
 
 double ThreeWindingsTransformer::Leg::getR() const {
-    return backend_->getDouble(handle_, legBase_ + prop::THREE_WT_LEG_R_OFF);
+    return backend_->getDouble(handle_, prop::LEG_R);
 }
+
+ThreeWindingsTransformer::Leg& ThreeWindingsTransformer::Leg::setR(double r) {
+    backend_->setDouble(handle_, prop::LEG_R, r);
+    return *this;
+}
+
 double ThreeWindingsTransformer::Leg::getX() const {
-    return backend_->getDouble(handle_, legBase_ + prop::THREE_WT_LEG_X_OFF);
+    return backend_->getDouble(handle_, prop::LEG_X);
 }
+
+ThreeWindingsTransformer::Leg& ThreeWindingsTransformer::Leg::setX(double x) {
+    backend_->setDouble(handle_, prop::LEG_X, x);
+    return *this;
+}
+
 double ThreeWindingsTransformer::Leg::getG() const {
-    return backend_->getDouble(handle_, legBase_ + prop::THREE_WT_LEG_G_OFF);
+    return backend_->getDouble(handle_, prop::LEG_G);
 }
+
+ThreeWindingsTransformer::Leg& ThreeWindingsTransformer::Leg::setG(double g) {
+    backend_->setDouble(handle_, prop::LEG_G, g);
+    return *this;
+}
+
 double ThreeWindingsTransformer::Leg::getB() const {
-    return backend_->getDouble(handle_, legBase_ + prop::THREE_WT_LEG_B_OFF);
+    return backend_->getDouble(handle_, prop::LEG_B);
 }
+
+ThreeWindingsTransformer::Leg& ThreeWindingsTransformer::Leg::setB(double b) {
+    backend_->setDouble(handle_, prop::LEG_B, b);
+    return *this;
+}
+
 double ThreeWindingsTransformer::Leg::getRatedU() const {
-    return backend_->getDouble(handle_, legBase_ + prop::THREE_WT_LEG_RATED_U_OFF);
+    return backend_->getDouble(handle_, prop::LEG_RATED_U);
 }
+
+ThreeWindingsTransformer::Leg& ThreeWindingsTransformer::Leg::setRatedU(double ratedU) {
+    backend_->setDouble(handle_, prop::LEG_RATED_U, ratedU);
+    return *this;
+}
+
 iidm::optional<double> ThreeWindingsTransformer::Leg::getRatedS() const {
-    return backend_->getOptDouble(handle_, legBase_ + prop::THREE_WT_LEG_RATED_S_OFF);
+    return backend_->getOptDouble(handle_, prop::LEG_RATED_S);
 }
 
-bool ThreeWindingsTransformer::Leg::hasRatioTapChanger() const {
-    return backend_->getBool(handle_, legBase_ + prop::THREE_WT_LEG_RTC_EXISTS_OFF);
-}
-RatioTapChanger ThreeWindingsTransformer::Leg::getRatioTapChanger() const {
-    int legIdx = (legBase_ - prop::THREE_WT_LEG1_BASE) / 20;
-    return RatioTapChanger(handle_, backend_, RatioTapChangerConfig{
-        legBase_ + prop::THREE_WT_LEG_RTC_EXISTS_OFF,
-        legBase_ + prop::THREE_WT_LEG_RTC_TAP_POS_OFF,
-        legBase_ + prop::THREE_WT_LEG_RTC_LOW_TAP_OFF,
-        legBase_ + prop::THREE_WT_LEG_RTC_HIGH_TAP_OFF,
-        legBase_ + prop::THREE_WT_LEG_RTC_REGULATING_OFF,
-        legBase_ + prop::THREE_WT_LEG_RTC_TARGET_V_OFF,
-        rtcStepChildType_,
-        prop::THREE_WT_LEG1_RTC_TARGET_DEADBAND + legIdx * 2,
-        prop::THREE_WT_LEG1_RTC_REG_TERMINAL_ID + legIdx * 2,
-        prop::REL_THREE_WT_LEG1_RTC_REG_TERMINAL + legIdx,
-        legBase_ + prop::THREE_WT_LEG_RTC_LOAD_TAP_CAP_OFF
-    });
-}
-
-bool ThreeWindingsTransformer::Leg::hasPhaseTapChanger() const {
-    return backend_->getBool(handle_, legBase_ + prop::THREE_WT_LEG_PTC_EXISTS_OFF);
-}
-PhaseTapChanger ThreeWindingsTransformer::Leg::getPhaseTapChanger() const {
-    int legIdx = (legBase_ - prop::THREE_WT_LEG1_BASE) / 20;
-    return PhaseTapChanger(handle_, backend_, PhaseTapChangerConfig{
-        legBase_ + prop::THREE_WT_LEG_PTC_EXISTS_OFF,
-        legBase_ + prop::THREE_WT_LEG_PTC_TAP_POS_OFF,
-        legBase_ + prop::THREE_WT_LEG_PTC_LOW_TAP_OFF,
-        legBase_ + prop::THREE_WT_LEG_PTC_HIGH_TAP_OFF,
-        legBase_ + prop::THREE_WT_LEG_PTC_REGULATING_OFF,
-        legBase_ + prop::THREE_WT_LEG_PTC_REG_MODE_OFF,
-        legBase_ + prop::THREE_WT_LEG_PTC_REG_VALUE_OFF,
-        ptcStepChildType_,
-        prop::THREE_WT_LEG1_PTC_TARGET_DEADBAND + legIdx * 2,
-        prop::THREE_WT_LEG1_PTC_REG_TERMINAL_ID + legIdx * 2
-    });
-}
-
-Terminal ThreeWindingsTransformer::Leg::getTerminal() const {
-    return Terminal(backend_->getRelated(handle_, relTerminal_), backend_);
-}
-
-iidm::optional<CurrentLimits> ThreeWindingsTransformer::Leg::getCurrentLimits() const {
-    int legIdx = (legBase_ - prop::THREE_WT_LEG1_BASE) / 20; // 0, 1, or 2
-    ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS1 + legIdx);
-    if (h == INVALID_HANDLE) return {};
-    return CurrentLimits(h, backend_);
-}
-
-std::vector<OperationalLimitsGroup> ThreeWindingsTransformer::Leg::getOperationalLimitsGroups() const {
-    int legIdx = (legBase_ - prop::THREE_WT_LEG1_BASE) / 20;
-    auto handles = backend_->getChildren(handle_, prop::OLG_LEG1 + legIdx);
-    std::vector<OperationalLimitsGroup> result;
-    result.reserve(handles.size());
-    for (auto h : handles) result.emplace_back(h, backend_);
-    return result;
-}
-
-iidm::optional<OperationalLimitsGroup> ThreeWindingsTransformer::Leg::getSelectedOperationalLimitsGroup() const {
-    int legIdx = (legBase_ - prop::THREE_WT_LEG1_BASE) / 20;
-    ObjectHandle h = backend_->getRelated(handle_, prop::REL_SELECTED_OLG1 + legIdx);
-    if (h == INVALID_HANDLE) return {};
-    return OperationalLimitsGroup(h, backend_);
+ThreeWindingsTransformer::Leg& ThreeWindingsTransformer::Leg::setRatedS(double ratedS) {
+    backend_->setDouble(handle_, prop::LEG_RATED_S, ratedS);
+    return *this;
 }
 
 // ── ThreeWindingsTransformer ──────────────────────────────────────────────────
@@ -113,29 +85,31 @@ Substation ThreeWindingsTransformer::getSubstation() const {
 }
 
 ThreeWindingsTransformer::Leg ThreeWindingsTransformer::getLeg1() const {
-    return Leg(handle_, backend_, prop::THREE_WT_LEG1_BASE,
-               prop::REL_TERMINAL1,
-               prop::THREE_WT_LEG1_RTC_STEP, prop::THREE_WT_LEG1_PTC_STEP);
-}
-ThreeWindingsTransformer::Leg ThreeWindingsTransformer::getLeg2() const {
-    return Leg(handle_, backend_, prop::THREE_WT_LEG2_BASE,
-               prop::REL_TERMINAL2,
-               prop::THREE_WT_LEG2_RTC_STEP, prop::THREE_WT_LEG2_PTC_STEP);
-}
-ThreeWindingsTransformer::Leg ThreeWindingsTransformer::getLeg3() const {
-    return Leg(handle_, backend_, prop::THREE_WT_LEG3_BASE,
-               prop::REL_TERMINAL,
-               prop::THREE_WT_LEG3_RTC_STEP, prop::THREE_WT_LEG3_PTC_STEP);
+    return getLeg(ThreeSides::ONE);
 }
 
-Terminal ThreeWindingsTransformer::getTerminal1() const {
-    return Terminal(backend_->getRelated(handle_, prop::REL_TERMINAL1), backend_);
+ThreeWindingsTransformer::Leg ThreeWindingsTransformer::getLeg2() const {
+    return getLeg(ThreeSides::TWO);
 }
-Terminal ThreeWindingsTransformer::getTerminal2() const {
-    return Terminal(backend_->getRelated(handle_, prop::REL_TERMINAL2), backend_);
+
+ThreeWindingsTransformer::Leg ThreeWindingsTransformer::getLeg3() const {
+    return getLeg(ThreeSides::THREE);
 }
-Terminal ThreeWindingsTransformer::getTerminal3() const {
-    return Terminal(backend_->getRelated(handle_, prop::REL_TERMINAL), backend_);
+
+ThreeWindingsTransformer::Leg ThreeWindingsTransformer::getLeg(ThreeSides side) const {
+    return Leg(backend_->getRelatedByIndex(handle_, Leg::TYPE, static_cast<int>(side)), backend_);
+}
+
+std::vector<ThreeWindingsTransformer::Leg> ThreeWindingsTransformer::getLegs() const {
+    return detail::wrapAll<Leg>(backend_->getChildren(handle_, Leg::TYPE), backend_);
+}
+
+Terminal ThreeWindingsTransformer::getTerminal(ThreeSides side) const {
+    return Terminal(backend_->getRelatedByIndex(handle_, prop::REL_TERMINAL, static_cast<int>(side)), backend_);
+}
+
+Terminal ThreeWindingsTransformer::getTerminal(const std::string& voltageLevelId) const {
+    return Terminal(backend_->getRelatedByString(handle_, prop::REL_TERMINAL, voltageLevelId), backend_);
 }
 
 // ── Extensions ───────────────────────────────────────────────────────────────

@@ -86,10 +86,15 @@ public:
   re-declare a base-class method in a derived class.
 - A powsybl interface that unrelated types share (`Branch`: lines and transformers, but also tie
   lines, which are not connectables; `VoltageRegulationHolder`: generators, batteries, SVCs,
-  shunts, VSC stations, ratio tap changers) is a CRTP mixin `detail::XMethods<Self>`, defined in
-  `src/X.cpp` and explicitly instantiated there for each class that uses it; plus a class `X` for
-  results of that type when there are some, which every implementing class converts to (see
-  `Branch.h`).
+  shunts, VSC stations, ratio tap changers; `TapChanger`, `TapChangerStep`, the tap changer
+  holders, `FlowsLimitsHolder`: legs and dangling lines) is a CRTP mixin `detail::XMethods<Self>`,
+  defined in `src/X.cpp` and explicitly instantiated there for each class that uses it; plus a
+  class `X` for results of that type when there are some, which every implementing class converts
+  to (see `Branch.h`). Two mixins with the same method: a `using` picks one (`RatioTapChanger`).
+- Sub-objects are objects with their own handle, as in powsybl (a 3WT leg, a tap changer, a step),
+  reached from their parent by a relation (`getRelated(holder, RATIO_TAP_CHANGER)`), children
+  (`getChildren(transformer, THREE_WINDINGS_TRANSFORMER_LEG)`) or an indexed relation (a step by
+  tap position, a leg by side). Never encode the parent's side or kind in property codes.
 - Every identifiable class has `static constexpr int TYPE = prop::<ITS_TYPE_CODE>;`:
   `is<T>()` / `as<T>()` and the network lists use it.
 - `==` is the identity of the Java object (`isSameObject`), never a handle comparison.
@@ -231,7 +236,8 @@ stays powsybl's. A change that takes several values at once goes the same way: s
 
 Only current powsybl APIs are ported: never a method marked `@Deprecated`, nor an extension
 from `extensions.removed` (e.g. voltage regulation goes through the 7.4 `VoltageRegulation`
-object, not `setVoltageRegulatorOn` / `setTargetV`).
+object, not `setVoltageRegulatorOn` / `setTargetV`). The Java build enforces it: `java/pom.xml`
+compiles with `-Xlint:deprecation -Werror`, so a call to a deprecated powsybl method fails it.
 
 #### Handles
 

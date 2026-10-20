@@ -107,10 +107,11 @@ public final class Creation {
         };
     }
 
-    /** Removes an identifiable from its network. */
+    /** Removes an identifiable from its network, or a tap changer from its transformer. */
     static void remove(Object obj) {
         switch (obj) {
             case Connectable<?> connectable -> connectable.remove();
+            case TapChanger<?, ?, ?, ?> tapChanger -> tapChanger.remove();
             case VoltageLevel voltageLevel -> voltageLevel.remove();
             case Substation substation -> substation.remove();
             case HvdcLine hvdcLine -> hvdcLine.remove();

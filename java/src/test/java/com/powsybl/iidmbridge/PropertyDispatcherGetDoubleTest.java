@@ -342,25 +342,18 @@ class PropertyDispatcherGetDoubleTest {
         assertDoesNotThrow(() -> PropertyDispatcher.getDouble(reg(twt3), THREE_WT_RATED_U0));
     }
 
-    @Test void threeWT_leg1_params() {
+    @Test void threeWT_leg_params() {
         ThreeWindingsTransformer twt3 = buildThreeWT();
-        assertEquals(1.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG1_BASE + THREE_WT_LEG_R_OFF));
-        assertEquals(10.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG1_BASE + THREE_WT_LEG_X_OFF));
-        assertEquals(400.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG1_BASE + THREE_WT_LEG_RATED_U_OFF));
-    }
-
-    @Test void threeWT_leg2_params() {
-        ThreeWindingsTransformer twt3 = buildThreeWT();
-        assertEquals(2.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG2_BASE + THREE_WT_LEG_R_OFF));
-        assertEquals(20.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG2_BASE + THREE_WT_LEG_X_OFF));
-        assertEquals(220.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG2_BASE + THREE_WT_LEG_RATED_U_OFF));
-    }
-
-    @Test void threeWT_leg3_params() {
-        ThreeWindingsTransformer twt3 = buildThreeWT();
-        assertEquals(3.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG3_BASE + THREE_WT_LEG_R_OFF));
-        assertEquals(30.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG3_BASE + THREE_WT_LEG_X_OFF));
-        assertEquals(20.0, PropertyDispatcher.getDouble(reg(twt3), THREE_WT_LEG3_BASE + THREE_WT_LEG_RATED_U_OFF));
+        long[] legs = PropertyDispatcher.getChildren(reg(twt3), THREE_WINDINGS_TRANSFORMER_LEG);
+        assertEquals(3, legs.length);
+        assertEquals(1.0, PropertyDispatcher.getDouble(legs[0], LEG_R));
+        assertEquals(10.0, PropertyDispatcher.getDouble(legs[0], LEG_X));
+        assertEquals(400.0, PropertyDispatcher.getDouble(legs[0], LEG_RATED_U));
+        assertEquals(2.0, PropertyDispatcher.getDouble(legs[1], LEG_R));
+        assertEquals(220.0, PropertyDispatcher.getDouble(legs[1], LEG_RATED_U));
+        assertEquals(30.0, PropertyDispatcher.getDouble(legs[2], LEG_X));
+        assertEquals(20.0, PropertyDispatcher.getDouble(legs[2], LEG_RATED_U));
+        assertTrue(Double.isNaN(PropertyDispatcher.getDouble(legs[2], LEG_RATED_S)));
     }
 
     // ── CurrentLimits ─────────────────────────────────────────────────────────
@@ -402,7 +395,7 @@ class PropertyDispatcherGetDoubleTest {
                 .beginStep().setRho(1.0).setR(0).setX(0).setG(0).setB(0).endStep()
                 .add();
         RatioTapChangerStep step = twt.getRatioTapChanger().getStep(0);
-        assertEquals(1.0, PropertyDispatcher.getDouble(reg(step), RTC_STEP_RHO));
+        assertEquals(1.0, PropertyDispatcher.getDouble(reg(step), STEP_RHO));
     }
 
     // ── Unknown property throws ───────────────────────────────────────────────

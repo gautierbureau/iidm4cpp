@@ -198,8 +198,12 @@ Identifiable              getId(), getNameOrId(), getOptionalName(), setName(), 
     ├── Line, TwoWindingsTransformer   + the Branch methods: getTerminal1/2(),
     │                                    getTerminal(side or voltage level id), limits and
     │                                    operational limits groups of each side
-    └── ThreeWindingsTransformer
+    └── ThreeWindingsTransformer   getLegs(), getLeg(side), getTerminal(side or voltage level id)
 Branch                    any Line or TwoWindingsTransformer: both convert to a Branch
+
+Objects that are not identifiables: ThreeWindingsTransformer::Leg, RatioTapChanger,
+PhaseTapChanger and their steps, Terminal, VoltageRegulation, OperationalLimitsGroup,
+CurrentLimits, the extensions...
 ```
 
 - **Base classes, as in powsybl.** A `Generator` is an `Injection`, a `Connectable` and an
@@ -218,8 +222,11 @@ Branch                    any Line or TwoWindingsTransformer: both convert to a 
 - **Extensions on their powsybl host type.** ActivePowerControl and InjectionObservability are on
   `Injection`, Measurements on `Connectable`, DiscreteMeasurements on `Identifiable`,
   BranchObservability on the branches.
+- **Sub-objects are objects.** A leg of a three windings transformer, a tap changer and its steps
+  are objects of their own, as in powsybl: `twt.getLeg2().getRatioTapChanger()->getStep(-1)`.
 - **Only current powsybl APIs** (powsybl 7.4): `getNameOrId()` / `getOptionalName()` rather than a
-  `getName()`, `connect()` returning powsybl's result, the generator's `VoltageRegulation` object.
+  `getName()`, `connect()` returning powsybl's result, the `VoltageRegulation` object of
+  generators and of ratio tap changers.
 
 ```cpp
 for (const Connectable& c : network.getVoltageLevel("VL1")->getConnectables()) {
@@ -246,7 +253,7 @@ Generator
 └── + the voltage regulation holder methods (below)
 
 Voltage regulation holders: Generator, Battery, StaticVarCompensator, ShuntCompensator,
-VscConverterStation (powsybl 7.4 VoltageRegulationHolder)
+VscConverterStation, RatioTapChanger (powsybl 7.4 VoltageRegulationHolder)
 ├── getLocalTargetV() / getLocalTargetQ() → double                (+ setters)
 ├── getVoltageRegulation() → optional<VoltageRegulation>
 ├── newVoltageRegulation() / removeVoltageRegulation()
@@ -260,6 +267,29 @@ VoltageRegulation (powsybl 7.4 core model)
 ├── isRegulating() → bool                      setRegulating(bool)
 ├── getTargetValue() / getTargetDeadband() / getSlope() → double (+ setters)
 └── getTerminal() → optional<Terminal>         setTerminal(Terminal, targetValue)
+
+Tap changers: RatioTapChanger and PhaseTapChanger, of a TwoWindingsTransformer or of a
+ThreeWindingsTransformer::Leg (getRatioTapChanger() / getPhaseTapChanger() → optional)
+├── getLowTapPosition() (+ setter) / getHighTapPosition() / getStepCount() → int
+├── getTapPosition() → int (fails when unset)   findTapPosition() → optional<int>
+│   setTapPosition(int) / unsetTapPosition()
+├── getSolvedTapPosition() → optional<int>      setSolvedTapPosition(int) / unsetSolvedTapPosition()
+├── getStep(tapPosition) → step                 getAllSteps() → std::map<int, step> (by tap position)
+├── getCurrentStep() / getSolvedCurrentStep() / getNeutralStep() → optional<step>
+├── isRegulating() / hasLoadTapChangingCapabilities() → bool (+ setter)
+├── applySolvedValues() / setTapPositionToSolvedTapPosition() / remove()
+├── RatioTapChanger: + the voltage regulation holder methods (it regulates through its
+│   VoltageRegulation)
+└── PhaseTapChanger: getRegulationMode() / getRegulationValue() / getTargetDeadband() /
+    getRegulationTerminal() (+ setters), setRegulating(bool)
+Steps: getRho() / getR() / getX() / getG() / getB() (+ setters), PhaseTapChangerStep::getAlpha()
+
+ThreeWindingsTransformer::Leg
+├── getTerminal() / getSide() / getTransformer()
+├── getR() / getX() / getG() / getB() / getRatedU() → double, getRatedS() → optional (+ setters)
+├── its tap changers, as a TwoWindingsTransformer
+└── its limits, as a DanglingLine (flows limits holders): getOperationalLimitsGroups(),
+    getSelectedOperationalLimitsGroup(), getCurrentLimits()
 
 Load
 ├── getP0() → double             setP0(double)
@@ -422,6 +452,7 @@ enum class TopologyKind { NODE_BREAKER, BUS_BREAKER };
 enum class Country { FR, DE, ES, IT, BE, NL, GB, /* … */ };
 enum class HvdcConverterStationMode { RECTIFIER, INVERTER };
 enum class RegulationMode { VOLTAGE, REACTIVE_POWER, VOLTAGE_PER_REACTIVE_POWER };
+enum class PhaseTapChangerRegulationMode { CURRENT_LIMITER, ACTIVE_POWER_CONTROL };
 enum class SwitchKind { BREAKER, DISCONNECTOR, LOAD_BREAK_SWITCH };
 
 } // namespace iidm
@@ -1106,7 +1137,7 @@ DynawoLauncher.run(simulationParameters);
 Every handle returned by a backend holds a Java-side reference (a JNI global reference, or
 an entry of the GraalVM `NetworkRegistry`). Wrappers hold it through `HandleRef`, which
 counts the wrappers using a handle — across copies, and across sub-wrappers built from the
-same handle (extensions, transformer legs, views) — and calls
+same handle (the extensions and views read through their host) — and calls
 `BackendProvider::releaseHandle()` when the last one is destroyed. So a loop like
 
 ```cpp
@@ -1501,8 +1532,9 @@ and walks every object reachable from the network root in lockstep. For every ob
 code of `PropertyCodes.def` and every accessor, both backends must return the same value, the
 same children / related objects (visited in turn) or the same C++ exception type. Keyed and
 indexed lookups and `findById` are tried with every id and node number met on the way, keyed
-strings with the object's property names and aliases; an identifiable looked up again by id
-must be the same object (`isSameObject`). Every value read is then written back through its
+strings with the object's property names and aliases (indexed lookups also with its int values,
+such as tap positions, and the sides); an identifiable looked up again by id must be the same
+object (`isSameObject`). Every value read is then written back through its
 setter (same acceptance, same value read back), properties and aliases are removed and added
 back, terminals and connectables disconnected and connected, and both networks must save to the
 same XIIDM. One network is built through the C++ adders, with properties, aliases and names out

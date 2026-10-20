@@ -1,13 +1,13 @@
 #pragma once
 
 #include <iidm/Connectable.h>
-#include <iidm/CurrentLimits.h>
-#include <iidm/OperationalLimitsGroup.h>
-#include <iidm/PhaseTapChanger.h>
-#include <iidm/RatioTapChanger.h>
+#include <iidm/Enums.h>
+#include <iidm/FlowsLimitsHolder.h>
+#include <iidm/TapChangerHolder.h>
 #include <iidm/Terminal.h>
 #include <iidm/ThreeWindingsTransformerToBeEstimated.h>
 #include <iidm/stdcxx/optional.hpp>
+#include <string>
 #include <vector>
 
 namespace iidm {
@@ -16,42 +16,39 @@ class Substation;
 
 class ThreeWindingsTransformer : public Connectable {
 public:
-    // ── Leg ──────────────────────────────────────────────────────────────────
-    class Leg : public detail::ObjectRef {
+    // One of its windings, with its terminal, tap changers and limits
+    class Leg : public detail::ObjectRef,
+                public detail::TapChangerHolderMethods<Leg>,
+                public detail::FlowsLimitsHolderMethods<Leg> {
     public:
+        static constexpr int TYPE = prop::THREE_WINDINGS_TRANSFORMER_LEG;
+
         Leg() = default;
-        explicit Leg(ObjectHandle twtHandle, BackendProvider* backend,
-                     int legBase, int relTerminal,
-                     int rtcStepChildType, int ptcStepChildType);
-
-        double getR() const;
-        double getX() const;
-        double getG() const;
-        double getB() const;
-        double getRatedU() const;
-        iidm::optional<double> getRatedS() const;
-
-        bool hasRatioTapChanger() const;
-        RatioTapChanger getRatioTapChanger() const;
-
-        bool hasPhaseTapChanger() const;
-        PhaseTapChanger getPhaseTapChanger() const;
+        explicit Leg(ObjectHandle handle, BackendProvider* backend) : ObjectRef(handle, backend) {}
 
         Terminal getTerminal() const;
+        ThreeSides getSide() const;
+        ThreeWindingsTransformer getTransformer() const;
 
-        iidm::optional<CurrentLimits> getCurrentLimits() const;
+        double getR() const;
+        Leg& setR(double r);
 
-        std::vector<OperationalLimitsGroup> getOperationalLimitsGroups() const;
-        iidm::optional<OperationalLimitsGroup> getSelectedOperationalLimitsGroup() const;
+        double getX() const;
+        Leg& setX(double x);
 
-    private:
-        int              legBase_         = 0;
-        int              relTerminal_     = 0;
-        int              rtcStepChildType_ = 0;
-        int              ptcStepChildType_ = 0;
+        double getG() const;
+        Leg& setG(double g);
+
+        double getB() const;
+        Leg& setB(double b);
+
+        double getRatedU() const;
+        Leg& setRatedU(double ratedU);
+
+        iidm::optional<double> getRatedS() const;
+        Leg& setRatedS(double ratedS);
     };
 
-    // ── ThreeWindingsTransformer ──────────────────────────────────────────────
     static constexpr int TYPE = prop::THREE_WINDINGS_TRANSFORMER;
 
     ThreeWindingsTransformer() = default;
@@ -63,10 +60,13 @@ public:
     Leg getLeg1() const;
     Leg getLeg2() const;
     Leg getLeg3() const;
+    Leg getLeg(ThreeSides side) const;
+    // Leg 1, 2, 3
+    std::vector<Leg> getLegs() const;
 
-    Terminal getTerminal1() const;
-    Terminal getTerminal2() const;
-    Terminal getTerminal3() const;
+    Terminal getTerminal(ThreeSides side) const;
+    // The terminal in this voltage level
+    Terminal getTerminal(const std::string& voltageLevelId) const;
 
     // ── Extensions ───────────────────────────────────────────────────────
     bool hasThreeWindingsTransformerToBeEstimated() const;

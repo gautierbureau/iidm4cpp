@@ -30,23 +30,18 @@ IIDM_CODE(SWITCH,                      16)
 IIDM_CODE(BUSBAR_SECTION,              17)
 IIDM_CODE(BATTERY,                     18)
 IIDM_CODE(REACTIVE_CURVE_POINT,        19)
-IIDM_CODE(TWO_WT_RTC_STEP,             20)
-IIDM_CODE(TWO_WT_PTC_STEP,             21)
-IIDM_CODE(THREE_WT_LEG1_RTC_STEP,      22)
-IIDM_CODE(THREE_WT_LEG2_RTC_STEP,      23)
-IIDM_CODE(THREE_WT_LEG3_RTC_STEP,      24)
-IIDM_CODE(THREE_WT_LEG1_PTC_STEP,      25)
-IIDM_CODE(THREE_WT_LEG2_PTC_STEP,      26)
-IIDM_CODE(THREE_WT_LEG3_PTC_STEP,      27)
+IIDM_CODE(RATIO_TAP_CHANGER,           20)
+IIDM_CODE(PHASE_TAP_CHANGER,           21)
+IIDM_CODE(RATIO_TAP_CHANGER_STEP,      22)
+IIDM_CODE(PHASE_TAP_CHANGER_STEP,      23)
+IIDM_CODE(THREE_WINDINGS_TRANSFORMER_LEG, 24)
 IIDM_CODE(SHUNT_SECTION,               28)
 IIDM_CODE(INTERNAL_CONNECTION,         29)
 IIDM_CODE(CURRENT_LIMITS,              30)
 IIDM_CODE(TEMPORARY_LIMIT,             31)
 IIDM_CODE(OLG_SIDE1,                   32) // all OperationalLimitsGroups for Branch side 1
 IIDM_CODE(OLG_SIDE2,                   33) // all OperationalLimitsGroups for Branch side 2
-IIDM_CODE(OLG_LEG1,                    34) // all OperationalLimitsGroups for ThreeWT leg 1
-IIDM_CODE(OLG_LEG2,                    35) // all OperationalLimitsGroups for ThreeWT leg 2
-IIDM_CODE(OLG_LEG3,                    36) // all OperationalLimitsGroups for ThreeWT leg 3
+IIDM_CODE(OPERATIONAL_LIMITS_GROUP,    34) // the groups of a flows limits holder (3WT leg, dangling line)
 // Abstract types (Java interfaces)
 IIDM_CODE(IDENTIFIABLE,                43)
 IIDM_CODE(CONNECTABLE,                 44)
@@ -131,36 +126,8 @@ IIDM_CODE(LINE_B1,                     703)
 IIDM_CODE(LINE_G2,                     704)
 IIDM_CODE(LINE_B2,                     705)
 
-// ── ThreeWindingsTransformer legs ─────────────────────────────────────────────
-// Each leg uses a 20-code block: legBase + offset below.
-// Leg1 base=820, Leg2 base=840, Leg3 base=860.
-IIDM_CODE(THREE_WT_LEG1_BASE,          820)
-IIDM_CODE(THREE_WT_LEG2_BASE,          840)
-IIDM_CODE(THREE_WT_LEG3_BASE,          860)
-IIDM_CODE(THREE_WT_LEG_BLOCK_SIZE,     20)  // codes per leg block
-// Leg property offsets (add to LEG*_BASE)
-IIDM_CODE(THREE_WT_LEG_R_OFF,              0)
-IIDM_CODE(THREE_WT_LEG_X_OFF,              1)
-IIDM_CODE(THREE_WT_LEG_G_OFF,              2)
-IIDM_CODE(THREE_WT_LEG_B_OFF,              3)
-IIDM_CODE(THREE_WT_LEG_RATED_U_OFF,        4)
-IIDM_CODE(THREE_WT_LEG_RATED_S_OFF,        5)
-IIDM_CODE(THREE_WT_LEG_RTC_EXISTS_OFF,     6)
-IIDM_CODE(THREE_WT_LEG_RTC_TAP_POS_OFF,    7)
-IIDM_CODE(THREE_WT_LEG_RTC_LOW_TAP_OFF,    8)
-IIDM_CODE(THREE_WT_LEG_RTC_HIGH_TAP_OFF,   9)
-IIDM_CODE(THREE_WT_LEG_RTC_REGULATING_OFF, 10)
-IIDM_CODE(THREE_WT_LEG_RTC_TARGET_V_OFF,   11)
-IIDM_CODE(THREE_WT_LEG_PTC_EXISTS_OFF,     12)
-IIDM_CODE(THREE_WT_LEG_PTC_TAP_POS_OFF,    13)
-IIDM_CODE(THREE_WT_LEG_PTC_LOW_TAP_OFF,    14)
-IIDM_CODE(THREE_WT_LEG_PTC_HIGH_TAP_OFF,   15)
-IIDM_CODE(THREE_WT_LEG_PTC_REGULATING_OFF, 16)
-IIDM_CODE(THREE_WT_LEG_PTC_REG_MODE_OFF,       17)
-IIDM_CODE(THREE_WT_LEG_PTC_REG_VALUE_OFF,      18)
-IIDM_CODE(THREE_WT_LEG_RTC_LOAD_TAP_CAP_OFF,   19) // bool: hasLoadTapChangingCapabilities
-
 // ── TwoWindingsTransformer ───────────────────────────────────────────────────
+// Its tap changers: getRelated(transformer, RATIO_TAP_CHANGER / PHASE_TAP_CHANGER).
 IIDM_CODE(TWO_WT_R,                    800)
 IIDM_CODE(TWO_WT_X,                    801)
 IIDM_CODE(TWO_WT_G,                    802)
@@ -168,58 +135,49 @@ IIDM_CODE(TWO_WT_B,                    803)
 IIDM_CODE(TWO_WT_RATED_U1,             804)
 IIDM_CODE(TWO_WT_RATED_U2,             805)
 IIDM_CODE(TWO_WT_RATED_S,              806)
-IIDM_CODE(TWO_WT_RTC_EXISTS,           807)
-IIDM_CODE(TWO_WT_RTC_TAP_POSITION,     808)
-IIDM_CODE(TWO_WT_RTC_LOW_TAP,          809)
-IIDM_CODE(TWO_WT_RTC_HIGH_TAP,         810)
-IIDM_CODE(TWO_WT_RTC_REGULATING,       811)
-IIDM_CODE(TWO_WT_RTC_TARGET_V,         812)
-IIDM_CODE(TWO_WT_PTC_EXISTS,           813)
-IIDM_CODE(TWO_WT_PTC_TAP_POSITION,     814)
-IIDM_CODE(TWO_WT_PTC_LOW_TAP,          815)
-IIDM_CODE(TWO_WT_PTC_HIGH_TAP,         816)
-IIDM_CODE(TWO_WT_PTC_REGULATING,       817)
-IIDM_CODE(TWO_WT_PTC_REG_MODE,         818)
-IIDM_CODE(TWO_WT_PTC_REG_VALUE,        819)
 
-// ── ThreeWindingsTransformer (top-level, outside leg blocks) ─────────────────
+// ── ThreeWindingsTransformer and its legs ────────────────────────────────────
+// THREE_WINDINGS_TRANSFORMER_LEG is the legs' type code: getChildren(transformer, <it>) gives the
+// three legs, getRelatedByIndex(transformer, <it>, side) one of them (ThreeSides ordinal), and
+// getRelatedByIndex(transformer, REL_TERMINAL, side) the terminal of a side. On a leg,
+// getRelated(leg, REL_TERMINAL) is its terminal, getRelated(leg, THREE_WINDINGS_TRANSFORMER) its
+// transformer, getRelated(leg, RATIO_TAP_CHANGER / PHASE_TAP_CHANGER) its tap changers, and its limits
+// are those of a flows limits holder (OPERATIONAL_LIMITS_GROUP children, REL_SELECTED_OLG,
+// CURRENT_LIMITS).
+IIDM_CODE(LEG_R,                       820) // double
+IIDM_CODE(LEG_X,                       821) // double
+IIDM_CODE(LEG_G,                       822) // double
+IIDM_CODE(LEG_B,                       823) // double
+IIDM_CODE(LEG_RATED_U,                 824) // double
+IIDM_CODE(LEG_RATED_S,                 825) // double, NaN = undefined (optional double)
+IIDM_CODE(LEG_SIDE,                    826) // int, read-only: ThreeSides ordinal
 IIDM_CODE(THREE_WT_RATED_U0,           880) // double: ratedU0 (star-point voltage, kV)
 
-// ── TapChangerStep properties (shared by RTC and PTC step handles) ────────────
-IIDM_CODE(RTC_STEP_RHO,                1900)
-IIDM_CODE(RTC_STEP_R,                  1901)
-IIDM_CODE(RTC_STEP_X,                  1902)
-IIDM_CODE(RTC_STEP_G,                  1903)
-IIDM_CODE(RTC_STEP_B,                  1904)
-IIDM_CODE(PTC_STEP_ALPHA,              1910)
-IIDM_CODE(PTC_STEP_RHO,                1911)
-IIDM_CODE(PTC_STEP_R,                  1912)
-IIDM_CODE(PTC_STEP_X,                  1913)
-IIDM_CODE(PTC_STEP_G,                  1914)
-IIDM_CODE(PTC_STEP_B,                  1915)
-
-// ── TwoWT tap changer additional properties ───────────────────────────────────
-IIDM_CODE(TWO_WT_RTC_TARGET_DEADBAND,  1920)
-IIDM_CODE(TWO_WT_RTC_REG_TERMINAL_ID,  1921)
-IIDM_CODE(TWO_WT_PTC_TARGET_DEADBAND,  1922)
-IIDM_CODE(TWO_WT_PTC_REG_TERMINAL_ID,  1923)
-IIDM_CODE(TWO_WT_RTC_LOAD_TAP_CAP,     1924) // bool: RatioTapChanger.hasLoadTapChangingCapabilities()
-
-// ── ThreeWT leg tap changer additional properties (legIdx=0,1,2) ──────────────
-// RTC: 1950 + legIdx*2 + 0/1 (deadband / regTermId)
-// PTC: 1956 + legIdx*2 + 0/1
-IIDM_CODE(THREE_WT_LEG1_RTC_TARGET_DEADBAND, 1950)
-IIDM_CODE(THREE_WT_LEG1_RTC_REG_TERMINAL_ID, 1951)
-IIDM_CODE(THREE_WT_LEG2_RTC_TARGET_DEADBAND, 1952)
-IIDM_CODE(THREE_WT_LEG2_RTC_REG_TERMINAL_ID, 1953)
-IIDM_CODE(THREE_WT_LEG3_RTC_TARGET_DEADBAND, 1954)
-IIDM_CODE(THREE_WT_LEG3_RTC_REG_TERMINAL_ID, 1955)
-IIDM_CODE(THREE_WT_LEG1_PTC_TARGET_DEADBAND, 1956)
-IIDM_CODE(THREE_WT_LEG1_PTC_REG_TERMINAL_ID, 1957)
-IIDM_CODE(THREE_WT_LEG2_PTC_TARGET_DEADBAND, 1958)
-IIDM_CODE(THREE_WT_LEG2_PTC_REG_TERMINAL_ID, 1959)
-IIDM_CODE(THREE_WT_LEG3_PTC_TARGET_DEADBAND, 1960)
-IIDM_CODE(THREE_WT_LEG3_PTC_REG_TERMINAL_ID, 1961)
+// ── Tap changers (RatioTapChanger and PhaseTapChanger) ───────────────────────
+// RATIO_TAP_CHANGER / PHASE_TAP_CHANGER are their type codes: getRelated(holder, RATIO_TAP_CHANGER)
+// gives the ratio tap changer of a two windings transformer or of a three windings transformer leg
+// (INVALID_HANDLE when it has none). invoke(tap changer, ACT_REMOVE) removes it.
+// Their steps: getChildren(tap changer, RATIO_TAP_CHANGER_STEP / PHASE_TAP_CHANGER_STEP), from the
+// low to the high tap position; getRelatedByIndex(tap changer, <step type>, tap position): one of
+// them. A ratio tap changer regulates as every regulation holder (VoltageRegulation, REGULATING...);
+// a phase tap changer with the PTC_* codes, REGULATING and REL_REGULATION_TERMINAL.
+IIDM_CODE(TC_LOW_TAP_POSITION,         1900) // int
+IIDM_CODE(TC_HIGH_TAP_POSITION,        1901) // int, read-only
+IIDM_CODE(TC_TAP_POSITION,             1902) // int (optional: none when unset); unset: ACT_UNSET_TAP_POSITION
+IIDM_CODE(TC_SOLVED_TAP_POSITION,      1903) // int (optional: none when unset); unset: ACT_UNSET_SOLVED_TAP_POSITION
+IIDM_CODE(TC_STEP_COUNT,               1904) // int, read-only
+IIDM_CODE(TC_NEUTRAL_POSITION,         1905) // optional int, read-only: position of the neutral step (rho 1, alpha 0)
+IIDM_CODE(TC_LOAD_TAP_CHANGING_CAPABILITIES, 1906) // bool
+IIDM_CODE(PTC_REGULATION_MODE,         1910) // int: PhaseTapChangerRegulationMode ordinal
+IIDM_CODE(PTC_REGULATION_VALUE,        1911) // double
+IIDM_CODE(PTC_TARGET_DEADBAND,         1912) // double, NaN = undefined
+// Steps of both kinds
+IIDM_CODE(STEP_RHO,                    1920) // double
+IIDM_CODE(STEP_R,                      1921) // double
+IIDM_CODE(STEP_X,                      1922) // double
+IIDM_CODE(STEP_G,                      1923) // double
+IIDM_CODE(STEP_B,                      1924) // double
+IIDM_CODE(PTC_STEP_ALPHA,              1925) // double: phase tap changer steps only
 
 // ── HvdcLine ─────────────────────────────────────────────────────────────────
 IIDM_CODE(HVDC_R,                      900)
@@ -339,18 +297,17 @@ IIDM_CODE(REL_SUBSTATION,              2005)
 IIDM_CODE(REL_SLACK_TERMINAL,          2006) // VL → slack terminal (also settable via setRelated)
 IIDM_CODE(REL_CONNECTABLE_BUS,         2007) // bus-breaker topology bus (may differ from bus view)
 IIDM_CODE(REL_REGULATING_TERMINAL,     2008) // regulation holder → terminal of a remote regulation, else its own
-IIDM_CODE(REL_CURRENT_LIMITS1,         2009) // Branch side 1, or ThreeWT leg 1
-IIDM_CODE(REL_CURRENT_LIMITS2,         2010) // Branch side 2, or ThreeWT leg 2
-IIDM_CODE(REL_CURRENT_LIMITS3,         2011) // ThreeWT leg 3
-IIDM_CODE(REL_SELECTED_OLG1,           2012) // Branch side 1 or ThreeWT leg 1 → selected OLG
-IIDM_CODE(REL_SELECTED_OLG2,           2013) // Branch side 2 or ThreeWT leg 2 → selected OLG
-IIDM_CODE(REL_SELECTED_OLG3,           2014) // ThreeWT leg 3 → selected OLG
-IIDM_CODE(REL_OLG_CURRENT_LIMITS,      2015) // OLG → its CurrentLimits
+IIDM_CODE(REL_CURRENT_LIMITS1,         2009) // Branch side 1 → current limits of its selected OLG
+IIDM_CODE(REL_CURRENT_LIMITS2,         2010) // Branch side 2 → current limits of its selected OLG
+IIDM_CODE(REL_SELECTED_OLG1,           2012) // Branch side 1 → selected OLG
+IIDM_CODE(REL_SELECTED_OLG2,           2013) // Branch side 2 → selected OLG
+IIDM_CODE(REL_SELECTED_OLG,            2014) // flows limits holder (3WT leg, dangling line) → selected OLG
+// getRelated(flows limits holder or OLG, CURRENT_LIMITS): the current limits of its selected OLG (of the OLG)
 IIDM_CODE(REL_HVDC_LINE,               2016) // converter station → its HvdcLine (none when not in an HVDC line)
-IIDM_CODE(REL_TWO_WT_RTC_REG_TERMINAL,        2017) // TwoWT → RTC regulating terminal
-IIDM_CODE(REL_THREE_WT_LEG1_RTC_REG_TERMINAL, 2018) // ThreeWT Leg1 → RTC regulating terminal
-IIDM_CODE(REL_THREE_WT_LEG2_RTC_REG_TERMINAL, 2019) // ThreeWT Leg2 → RTC regulating terminal
-IIDM_CODE(REL_THREE_WT_LEG3_RTC_REG_TERMINAL, 2020) // ThreeWT Leg3 → RTC regulating terminal
+IIDM_CODE(REL_CURRENT_STEP,            2017) // tap changer → step at its tap position (none when unset)
+IIDM_CODE(REL_SOLVED_CURRENT_STEP,     2018) // tap changer → step at its solved tap position (none when unset)
+IIDM_CODE(REL_NEUTRAL_STEP,            2019) // tap changer → its neutral step (none without one)
+IIDM_CODE(REL_REGULATION_TERMINAL,     2020) // phase tap changer → regulation terminal (none); set: setRelated
 IIDM_CODE(REL_NBV_TERMINAL_AT_NODE,    2021) // NodeBreakerView: terminal at node (use getRelatedByIndex)
 IIDM_CODE(REL_CONNECTABLE,             2022) // Terminal → its Connectable
 IIDM_CODE(REL_CONVERTER_STATION1,      2030) // HvdcLine → converter station 1
@@ -377,21 +334,23 @@ IIDM_CODE(VR_WITH_TERMINAL,            2206) // bool: a regulated terminal is se
 // Methods of every regulation holder
 IIDM_CODE(LOCAL_TARGET_V,              2210) // double
 IIDM_CODE(LOCAL_TARGET_Q,              2211) // double
-IIDM_CODE(REGULATING,                  2212) // bool, read-only: has a regulation, and it is regulating
+IIDM_CODE(REGULATING,                  2212) // bool: has a regulation, and it is regulating (a tap changer: isRegulating);
+                                            // set: PhaseTapChanger.setRegulating (the others regulate through their VoltageRegulation)
 IIDM_CODE(REGULATING_TARGET_V,         2213) // double, read-only: regulation target if it regulates V remotely, else local target V
 IIDM_CODE(REGULATING_TARGET_Q,         2214) // double, read-only: same for Q
 IIDM_CODE(REGULATING_MODES,            2215) // int list: the modes m for which isRegulatingWithMode(m)
 IIDM_CODE(WITH_MODES,                  2216) // int list: the modes m for which isWithMode(m)
 IIDM_CODE(HAS_REGULATING_TERMINAL,     2217) // bool: the regulation has a terminal
-// Holders: Generator, Battery, StaticVarCompensator, ShuntCompensator, VscConverterStation; the
-// regulating terminal is REL_REGULATING_TERMINAL; actions ACT_SET_TARGET_Q_TO_Q, ACT_SET_TARGET_V_TO_V
+// Holders: Generator, Battery, StaticVarCompensator, ShuntCompensator, VscConverterStation,
+// RatioTapChanger; the regulating terminal is REL_REGULATING_TERMINAL; actions ACT_SET_TARGET_Q_TO_Q,
+// ACT_SET_TARGET_V_TO_V
 
 // ── Actions (invoke) ─────────────────────────────────────────────────────────
 // invoke(parent, <type code>) starts a new object: it returns an adder, on which the setters
 // take the object's own property codes (setDouble(adder, GEN_TARGET_P, 100)); nothing changes
 // in the network until invoke(adder, ACT_ADD).
 IIDM_CODE(ACT_ADD,                     5000) // invoke(adder): adds the object, returns it (INVALID_HANDLE for nested adders)
-IIDM_CODE(ACT_REMOVE,                  5001) // invoke(identifiable): removes it from the network
+IIDM_CODE(ACT_REMOVE,                  5001) // invoke(identifiable): removes it from the network; invoke(tap changer): removes it
 // invoke(terminal or connectable, ACT_CONNECT / ACT_DISCONNECT): connects / disconnects it (every
 // terminal of a connectable); returns the object when this changed it, INVALID_HANDLE when it could
 // not, or already was.
@@ -399,6 +358,10 @@ IIDM_CODE(ACT_CONNECT,                 5002)
 IIDM_CODE(ACT_DISCONNECT,              5003)
 IIDM_CODE(ACT_SET_TARGET_Q_TO_Q,       5004) // invoke(regulation holder): targets Q from the solved Q
 IIDM_CODE(ACT_SET_TARGET_V_TO_V,       5005) // invoke(regulation holder): targets V from the solved V
+IIDM_CODE(ACT_UNSET_TAP_POSITION,      5006) // invoke(tap changer)
+IIDM_CODE(ACT_UNSET_SOLVED_TAP_POSITION, 5007) // invoke(tap changer)
+IIDM_CODE(ACT_APPLY_SOLVED_VALUES,     5008) // invoke(tap changer): its solved values become its values
+IIDM_CODE(ACT_SET_TAP_POSITION_TO_SOLVED_TAP_POSITION, 5009) // invoke(tap changer)
 
 // ── Extension: TwoWindingsTransformerToBeEstimated (on TwoWT) ────────────────
 IIDM_CODE(EXT_TWO_WT_TBE_EXISTS,          3700) // bool

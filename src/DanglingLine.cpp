@@ -1,7 +1,5 @@
 #include <iidm/DanglingLine.h>
 #include <iidm/BackendProvider.h>
-#include <iidm/CurrentLimits.h>
-#include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
 
 namespace iidm {
@@ -38,12 +36,6 @@ double DanglingLine::getG() const {
 
 double DanglingLine::getB() const {
     return backend_->getDouble(handle_, prop::DL_B);
-}
-
-iidm::optional<CurrentLimits> DanglingLine::getCurrentLimits() const {
-    ObjectHandle h = backend_->getRelated(handle_, prop::REL_CURRENT_LIMITS1);
-    if (h == INVALID_HANDLE) return {};
-    return CurrentLimits(h, backend_);
 }
 
 } // namespace iidm

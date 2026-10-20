@@ -4,9 +4,9 @@ set(TEST_SOURCES
     TestNetwork.cpp
     TestBattery.cpp
     TestReactiveLimits.cpp
-    TestTapChangerObjects.cpp
-    TestThreeWindingsTransformerLeg.cpp
+    TestTapChanger.cpp
     TestThreeWindingsTransformer.cpp
+    TestTransformers.cpp
     TestTopologyViews.cpp
     TestGenerator.cpp
     TestActivePowerControl.cpp
@@ -24,7 +24,6 @@ set(TEST_SOURCES
     TestLine.cpp
     TestSwitch.cpp
     TestTwoWindingsTransformer.cpp
-    TestTwoWindingsTransformerTapChanger.cpp
     TestBusbarSection.cpp
     TestConnect.cpp
     TestIdentifiable.cpp

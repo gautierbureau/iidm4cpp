@@ -1,12 +1,11 @@
 #pragma once
 
-#include <iidm/CurrentLimits.h>
+#include <iidm/FlowsLimitsHolder.h>
 #include <iidm/Injection.h>
-#include <iidm/stdcxx/optional.hpp>
 
 namespace iidm {
 
-class DanglingLine : public Injection {
+class DanglingLine : public Injection, public detail::FlowsLimitsHolderMethods<DanglingLine> {
 public:
     static constexpr int TYPE = prop::DANGLING_LINE;
 
@@ -23,8 +22,6 @@ public:
     double getX() const;
     double getG() const;
     double getB() const;
-
-    iidm::optional<CurrentLimits> getCurrentLimits() const;
 };
 
 } // namespace iidm

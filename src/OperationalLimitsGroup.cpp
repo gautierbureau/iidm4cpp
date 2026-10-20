@@ -1,6 +1,7 @@
 #include <iidm/OperationalLimitsGroup.h>
 #include <iidm/BackendProvider.h>
 #include <iidm/PropertyCodes.h>
+#include "Wrap.h"
 
 namespace iidm {
 OperationalLimitsGroup::OperationalLimitsGroup(ObjectHandle handle, BackendProvider* backend)
@@ -13,8 +14,6 @@ bool OperationalLimitsGroup::isEmpty() const {
     return backend_->getBool(handle_, prop::OLG_EMPTY);
 }
 iidm::optional<CurrentLimits> OperationalLimitsGroup::getCurrentLimits() const {
-    ObjectHandle h = backend_->getRelated(handle_, prop::REL_OLG_CURRENT_LIMITS);
-    if (h == INVALID_HANDLE) return {};
-    return CurrentLimits(h, backend_);
+    return detail::wrapOptional<CurrentLimits>(backend_->getRelated(handle_, prop::CURRENT_LIMITS), backend_);
 }
 } // namespace iidm

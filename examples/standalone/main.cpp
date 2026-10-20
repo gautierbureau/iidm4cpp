@@ -85,10 +85,10 @@ static void printNetwork(iidm::Network& network) {
             std::cout << "    " << name
                       << ": R=" << leg.getR() << " X=" << leg.getX()
                       << " ratedU=" << leg.getRatedU() << " kV\n";
-            if (leg.hasRatioTapChanger()) {
-                iidm::RatioTapChanger rtc = leg.getRatioTapChanger();
-                std::cout << "      ratioTapChanger: tap=" << rtc.getTapPosition()
-                          << " steps=" << rtc.getAllSteps().size() << "\n";
+            iidm::optional<iidm::RatioTapChanger> rtc = leg.getRatioTapChanger();
+            if (rtc) {
+                std::cout << "      ratioTapChanger: tap=" << rtc->getTapPosition()
+                          << " steps=" << rtc->getAllSteps().size() << "\n";
             }
         };
         printLeg("leg1", twt.getLeg1());
