@@ -348,6 +348,11 @@ class StateEstimationDispatchTest {
         assertEquals("T3", PropertyDispatcher.getString(terminals[0], TERMINAL_CONNECTABLE_ID));
         assertEquals(0L, PropertyDispatcher.getRelatedByString(vl1, REL_OBS_AREA_BY_BBV_BUS, "UNKNOWN"));
 
+        // Sorted by connectable id, so the same on every run (powsybl gives them as a HashSet)
+        long observable = PropertyDispatcher.getRelatedByString(vl1, REL_OBS_AREA_BY_BBV_BUS, "B1");
+        assertEquals(java.util.List.of("G1", "LINE1", "T2"), Arrays.stream(PropertyDispatcher.getChildren(observable, OBS_AREA_TERMINALS))
+            .mapToObj(t -> PropertyDispatcher.getString(t, TERMINAL_CONNECTABLE_ID)).toList());
+
         long vl2 = reg(network.getVoltageLevel("VL2"));
         assertEquals(0, PropertyDispatcher.getBool(vl2, EXT_OBS_AREA_EXISTS));
         assertEquals(0, PropertyDispatcher.getChildren(vl2, OBSERVABILITY_AREA).length);

@@ -5,6 +5,7 @@ import com.powsybl.commons.extensions.Extension;
 import com.powsybl.iidm.network.*;
 import com.powsybl.iidm.network.extensions.*;
 
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.stream.Stream;
 
@@ -216,7 +217,7 @@ final class StateEstimationDispatch {
         return ext == null ? Stream.empty()
             : ext.getObservabilityAreas().stream()
                 // powsybl returns them in no particular order
-                .sorted(java.util.Comparator.comparingInt(ObservabilityArea.AreaCharacteristics::getAreaNumber))
+                .sorted(Comparator.comparingInt(ObservabilityArea.AreaCharacteristics::getAreaNumber))
                 .map(area -> new ObservabilityAreaRef(vl, area));
     }
 
@@ -264,9 +265,16 @@ final class StateEstimationDispatch {
             return ref.area().getNodeBreakerData().getNodes().stream().sorted()
                 .map(view::getTerminal).filter(Objects::nonNull);
         }
+        // getTerminals() is a HashSet: sorted, or the order would change from run to run
         return ref.area().getTerminals().stream()
-            .filter(t -> t.getVoltageLevel() == ref.voltageLevel());
+            .filter(t -> t.getVoltageLevel() == ref.voltageLevel())
+            .sorted(TERMINAL_ORDER);
     }
+
+    /** By connectable id, then by rank among the connectable's terminals (side). */
+    private static final Comparator<Terminal> TERMINAL_ORDER = Comparator
+        .comparing((Terminal t) -> t.getConnectable().getId())
+        .thenComparingInt(t -> t.getConnectable().getTerminals().indexOf(t));
 
     /** Bus-breaker view buses of a bus-breaker area, sorted by id; empty for a node-breaker area. */
     static Stream<?> observabilityAreaBuses(Object obj) {
