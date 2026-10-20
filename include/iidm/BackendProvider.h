@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iidm/IidmException.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/stdcxx/optional.hpp>
 #include <cstddef>
@@ -36,6 +37,12 @@ public:
     virtual std::vector<int>          getIntList(ObjectHandle h, int listCode) const = 0;
     virtual ObjectHandle              getRelatedByIndex(ObjectHandle h, int relation, int index) const = 0;
     virtual ObjectHandle              getRelatedByString(ObjectHandle h, int relation, const std::string& key) const = 0;
+
+    // Sets an object-valued property (e.g. REL_SLACK_TERMINAL); INVALID_HANDLE stands for null.
+    // Not pure so that existing BackendProvider implementations keep compiling.
+    virtual void setRelated(ObjectHandle /*h*/, int relation, ObjectHandle /*value*/) {
+        throw IidmException("setRelated not supported by this backend (relation " + std::to_string(relation) + ")");
+    }
 
     // ── Lookup by ID ─────────────────────────────────────────────────────
     virtual ObjectHandle findById(int objectType, const std::string& id) const = 0;

@@ -116,6 +116,10 @@ public:
         return it->second;
     }
 
+    void setRelated(ObjectHandle h, int relation, ObjectHandle value) override {
+        related[{h, relation}] = value;
+    }
+
     ObjectHandle findById(int type, const std::string& id) const override {
         auto it = byId.find({type, id});
         if (it == byId.end()) return INVALID_HANDLE;

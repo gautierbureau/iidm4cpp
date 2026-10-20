@@ -306,6 +306,9 @@ public final class PropertyCodes {
     public static final int EXT_APC_EXISTS      = 3000;
     public static final int EXT_APC_DROOP       = 3001;
     public static final int EXT_APC_PARTICIPATE = 3002;
+    public static final int EXT_APC_PARTICIPATION_FACTOR = 3003; // double
+    public static final int EXT_APC_MIN_TARGET_P       = 3004; // double, NaN = undefined (setting NaN unsets it)
+    public static final int EXT_APC_MAX_TARGET_P       = 3005; // double, NaN = undefined (setting NaN unsets it)
 
     // ── Extension: CoordinatedReactiveControl ─────────────────────────────
     public static final int EXT_CRC_EXISTS    = 3100;
@@ -328,11 +331,15 @@ public final class PropertyCodes {
 
     // ── Extension: SlackTerminal ──────────────────────────────────────────
     public static final int EXT_ST_EXISTS = 3500;
+    public static final int EXT_ST_EMPTY  = 3501; // bool: no terminal in any variant
 
     // ── Extension: ActivePowerControl (Battery) ───────────────────────────
     public static final int EXT_BAT_APC_EXISTS      = 3600;
     public static final int EXT_BAT_APC_DROOP       = 3601;
     public static final int EXT_BAT_APC_PARTICIPATE = 3602;
+    public static final int EXT_BAT_APC_PARTICIPATION_FACTOR = 3603; // same layout as EXT_APC_*
+    public static final int EXT_BAT_APC_MIN_TARGET_P = 3604;
+    public static final int EXT_BAT_APC_MAX_TARGET_P = 3605;
 
     // ── CurrentLimits ─────────────────────────────────────────────────────
     public static final int CL_PERMANENT_LIMIT    = 1970;

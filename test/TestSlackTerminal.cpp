@@ -58,3 +58,26 @@ TEST_F(SlackTerminalTest, Equality) {
     EXPECT_EQ(st1, st2);
     EXPECT_NE(st1, st3);
 }
+
+TEST_F(SlackTerminalTest, SetTerminal) {
+    constexpr ObjectHandle OTHER_TERM = 52;
+    VoltageLevel vl(VL_HANDLE, &backend);
+    SlackTerminal st = vl.getSlackTerminal();
+    st.setTerminal(Terminal(OTHER_TERM, &backend));
+    EXPECT_EQ((backend.related[{VL_HANDLE, prop::REL_SLACK_TERMINAL}]), OTHER_TERM);
+    EXPECT_EQ(st.getTerminal(), Terminal(OTHER_TERM, &backend));
+}
+
+TEST_F(SlackTerminalTest, SetInvalidTerminalUnsetsIt) {
+    SlackTerminal st = VoltageLevel(VL_HANDLE, &backend).getSlackTerminal();
+    st.setTerminal(Terminal());
+    EXPECT_EQ((backend.related[{VL_HANDLE, prop::REL_SLACK_TERMINAL}]), INVALID_HANDLE);
+    EXPECT_FALSE(st.getTerminal().isValid());
+}
+
+TEST_F(SlackTerminalTest, IsEmpty) {
+    SlackTerminal st = VoltageLevel(VL_HANDLE, &backend).getSlackTerminal();
+    EXPECT_FALSE(st.isEmpty());
+    backend.bools[{VL_HANDLE, prop::EXT_ST_EMPTY}] = true;
+    EXPECT_TRUE(st.isEmpty());
+}

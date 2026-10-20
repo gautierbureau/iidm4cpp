@@ -75,8 +75,11 @@ public class JavaLauncher {
 
         if (gen3 != null) {
             ActivePowerControl apc = gen3.getExtension(ActivePowerControl.class);
-            if (apc != null)
+            if (apc != null) {
                 System.out.println("[Java] _GEN____3_SM activePowerControl.droop=" + apc.getDroop());
+                System.out.println("[Java] _GEN____3_SM activePowerControl.participationFactor=" + apc.getParticipationFactor()
+                    + " maxTargetP=" + apc.getMaxTargetP());
+            }
             CoordinatedReactiveControl crc = gen3.getExtension(CoordinatedReactiveControl.class);
             if (crc != null)
                 System.out.println("[Java] _GEN____3_SM coordinatedReactiveControl.qPercent=" + crc.getQPercent());
@@ -110,8 +113,9 @@ public class JavaLauncher {
             if (st != null) {
                 Terminal term = st.getTerminal();
                 Bus bus = term.getBusView().getConnectableBus();
-                System.out.printf("[Java] VoltageLevel %s slackTerminal.busId=%s%n",
-                                  vl.getId(), bus != null ? bus.getId() : "(unknown)");
+                System.out.printf("[Java] VoltageLevel %s slackTerminal.busId=%s connectable=%s%n",
+                                  vl.getId(), bus != null ? bus.getId() : "(unknown)",
+                                  term.getConnectable().getId());
             }
         }
 

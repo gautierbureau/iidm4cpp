@@ -12,6 +12,15 @@ Terminal SlackTerminal::getTerminal() const {
     return Terminal(termHandle, backend_);
 }
 
+SlackTerminal& SlackTerminal::setTerminal(const Terminal& terminal) {
+    backend_->setRelated(handle_, prop::REL_SLACK_TERMINAL, terminal.handle_);
+    return *this;
+}
+
+bool SlackTerminal::isEmpty() const {
+    return backend_->getBool(handle_, prop::EXT_ST_EMPTY);
+}
+
 bool SlackTerminal::operator==(const SlackTerminal& other) const {
     return handle_ == other.handle_;
 }

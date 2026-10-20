@@ -100,6 +100,7 @@ void GraalVMBackend::resolveSymbols() {
     fnFreeString_      = resolveSymbol<FnFreeString>     (libHandle_, "iidm_free_string");
     fnGetChildren_     = resolveSymbol<FnGetChildren>    (libHandle_, "iidm_get_children");
     fnGetRelated_        = resolveSymbol<FnGetRelated>       (libHandle_, "iidm_get_related");
+    fnSetRelated_        = resolveSymbol<FnSetRelated>       (libHandle_, "iidm_set_related");
     fnGetIntList_        = resolveSymbol<FnGetIntList>       (libHandle_, "iidm_get_int_list");
     fnGetRelatedByIndex_  = resolveSymbol<FnGetRelatedByIndex> (libHandle_, "iidm_get_related_by_index");
     fnGetRelatedByString_ = resolveSymbol<FnGetRelatedByString>(libHandle_, "iidm_get_related_by_string");
@@ -217,6 +218,10 @@ std::vector<ObjectHandle> GraalVMBackend::getChildren(ObjectHandle h, int childT
 
 ObjectHandle GraalVMBackend::getRelated(ObjectHandle h, int relation) const {
     return fnGetRelated_(thread_, h, relation);
+}
+
+void GraalVMBackend::setRelated(ObjectHandle h, int relation, ObjectHandle value) {
+    fnSetRelated_(thread_, h, relation, value);
 }
 
 std::vector<int> GraalVMBackend::getIntList(ObjectHandle h, int listCode) const {

@@ -38,6 +38,7 @@ struct JNIMethodCache {
     jmethodID disp_setString                 = nullptr;
     jmethodID disp_getChildObjects           = nullptr;
     jmethodID disp_getRelatedObject          = nullptr;
+    jmethodID disp_setRelatedObject          = nullptr;
     jmethodID disp_getRelatedObjectByIndex   = nullptr;
     jmethodID disp_getRelatedObjectByString  = nullptr;
     jmethodID disp_getIntList                = nullptr;

@@ -34,6 +34,7 @@ public:
 
     std::vector<ObjectHandle> getChildren(ObjectHandle h, int childType) const override;
     ObjectHandle              getRelated(ObjectHandle h, int relation) const override;
+    void                      setRelated(ObjectHandle h, int relation, ObjectHandle value) override;
     std::vector<int>          getIntList(ObjectHandle h, int listCode) const override;
     ObjectHandle              getRelatedByIndex(ObjectHandle h, int relation, int index) const override;
     ObjectHandle              getRelatedByString(ObjectHandle h, int relation, const std::string& key) const override;
@@ -79,6 +80,7 @@ private:
     using FnGetChildren     = void(*)(graal_isolatethread_t*, ObjectHandle, int,
                                       ObjectHandle*, int*);
     using FnGetRelated        = ObjectHandle(*)(graal_isolatethread_t*, ObjectHandle, int);
+    using FnSetRelated        = void(*)(graal_isolatethread_t*, ObjectHandle, int, ObjectHandle);
     using FnGetIntList        = void(*)(graal_isolatethread_t*, ObjectHandle, int, int*, int*);
     using FnGetRelatedByIndex  = ObjectHandle(*)(graal_isolatethread_t*, ObjectHandle, int, int);
     using FnGetRelatedByString = ObjectHandle(*)(graal_isolatethread_t*, ObjectHandle, int, const char*);
@@ -102,6 +104,7 @@ private:
     FnFreeString      fnFreeString_      = nullptr;
     FnGetChildren     fnGetChildren_     = nullptr;
     FnGetRelated        fnGetRelated_        = nullptr;
+    FnSetRelated        fnSetRelated_        = nullptr;
     FnGetIntList        fnGetIntList_        = nullptr;
     FnGetRelatedByIndex  fnGetRelatedByIndex_  = nullptr;
     FnGetRelatedByString fnGetRelatedByString_ = nullptr;
