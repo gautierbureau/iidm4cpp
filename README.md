@@ -805,80 +805,61 @@ case EXT_APC_PARTICIPATE -> ((Generator) obj).getExtension(ActivePowerControl.cl
 
 No C++ changes are needed in the GraalVM backend.
 
-#### JNI backend — explicit wiring
+#### JNI backend — shared dispatcher fallback
 
-The JNI backend calls Java methods directly and must explicitly handle every
-property code. Each extension requires work in two files:
-
-**`src/jni/JNIMethodCache.h`** — cache the extension interface class and its
-method IDs:
-
-```cpp
-jclass    activePowerControlClass      = nullptr;
-jmethodID generator_getExtensionByName = nullptr;
-jmethodID apc_getDroop                 = nullptr;
-jmethodID apc_setDroop                 = nullptr;
-jmethodID apc_isParticipate            = nullptr;
-jmethodID apc_setParticipate           = nullptr;
-```
-
-**`src/jni/JNIBackend.cpp`** — initialise the cache, add a helper, and add
-switch cases:
+The JNI backend hand-wires the hot core properties (generator set-points,
+terminal flows, …) as direct JNI calls. **Every other code** — and therefore
+every extension — falls through its `default:` branches to the object-based
+overloads of `PropertyDispatcher` (`getDouble(Object, int)`,
+`getChildObjects(Object, int)`, `getRelatedObject(Object, int)`, …) in a
+single static JNI call:
 
 ```cpp
-// In cacheMethodIds():
-cacheClass(cache_.activePowerControlClass,
-    "com/powsybl/iidm/network/extensions/ActivePowerControl");
-cache_.generator_getExtensionByName = env_->GetMethodID(cache_.generatorClass,
-    "getExtensionByName",
-    "(Ljava/lang/String;)Lcom/powsybl/commons/extensions/Extension;");
-cache_.apc_getDroop      = env_->GetMethodID(cache_.activePowerControlClass, "getDroop",      "()D");
-cache_.apc_setDroop      = env_->GetMethodID(cache_.activePowerControlClass, "setDroop",      "(D)V");
-cache_.apc_isParticipate = env_->GetMethodID(cache_.activePowerControlClass, "isParticipate", "()Z");
-cache_.apc_setParticipate= env_->GetMethodID(cache_.activePowerControlClass, "setParticipate","(Z)V");
-
-// Private helper (returns a local JNI ref; caller must DeleteLocalRef):
-jobject JNIBackend::fetchApcExtension(jobject gen) const {
-    jstring name = env_->NewStringUTF("activePowerControl");
-    jobject ext  = env_->CallObjectMethod(gen, cache_.generator_getExtensionByName, name);
-    env_->DeleteLocalRef(name);
-    checkJNIException(env_);
-    return ext;
-}
-
-// In getBool():
-case prop::EXT_APC_EXISTS: {
-    jobject apc = fetchApcExtension(obj);
-    result = (apc != nullptr) ? JNI_TRUE : JNI_FALSE;
-    if (apc) env_->DeleteLocalRef(apc);
-    break;
-}
-case prop::EXT_APC_PARTICIPATE: {
-    jobject apc = fetchApcExtension(obj);
-    if (!apc) throw PropertyNotFoundException("ActivePowerControl extension not present");
-    result = env_->CallBooleanMethod(apc, cache_.apc_isParticipate);
-    env_->DeleteLocalRef(apc);
-    break;
-}
+// src/jni/JNIBackend.cpp — getDouble()
+default:
+    result = env_->CallStaticDoubleMethod(cache_.dispatcherClass, cache_.disp_getDouble,
+                                          obj, static_cast<jint>(property));
 ```
 
-> **Key asymmetry**: because the GraalVM backend routes all codes through
-> `PropertyDispatcher`, a new extension only needs Java-side changes for that
-> path. The JNI backend must also receive explicit JNI method lookups and
-> switch cases — omitting this causes `PropertyNotFoundException` at runtime
-> with the JNI backend while the GraalVM backend continues to work.
+So both backends share one Java dispatch table, and a new extension only needs
+`PropertyDispatcher` cases. Hand-wire a code in `JNIBackend.cpp` only when it is
+on a hot path; any `GetMethodID` signature must then match the pinned
+powsybl-core version exactly, or `JNIBackend` construction fails.
+
+#### Supported extensions
+
+| Extension | Hosts | Codes |
+|---|---|---|
+| `ActivePowerControl` | Generator, Battery | `EXT_APC_*`, `EXT_BAT_APC_*` |
+| `CoordinatedReactiveControl` | Generator | `EXT_CRC_*` |
+| `HvdcAngleDroopActivePowerControl` | HvdcLine | `EXT_HADAPC_*` |
+| `HvdcOperatorActivePowerRange` | HvdcLine | `EXT_HOAR_*` |
+| `VoltagePerReactivePowerControl`¹ | StaticVarCompensator | `EXT_VPRC_*` |
+| `SlackTerminal` | VoltageLevel | `EXT_ST_*` |
+| `Measurements` | all connectables | `EXT_MEAS_*`, `MEAS_*` |
+| `DiscreteMeasurements` | Switch, ShuntCompensator, 2WT, 3WT | `EXT_DMEAS_*`, `DMEAS_*` |
+| `InjectionObservability` | all injections incl. BusbarSection | `EXT_INJ_OBS_*` |
+| `BranchObservability` | Line, 2WT | `EXT_BRANCH_OBS_*` |
+| `TwoWindingsTransformerToBeEstimated` | 2WT | `EXT_TWO_WT_TBE_*` |
+| `ThreeWindingsTransformerToBeEstimated` | 3WT | `EXT_THREE_WT_TBE_*` |
+| `ObservabilityArea` | VoltageLevel (read-only) | `EXT_OBS_AREA_*`, `OBS_AREA_*` |
+
+¹ Removed from powsybl-core 7.4: the wrapper now maps onto the SVC's core
+`VoltageRegulation` in `VOLTAGE_PER_REACTIVE_POWER` mode.
+
+The state estimation extensions are exercised end to end by
+`examples/state_estimation_test.xiidm` (see `examples/StateEstimationReport.h`).
 
 #### Checklist for adding a new extension
 
-| Step | File(s) | GraalVM | JNI |
-|---|---|---|---|
-| `EXT_*` property constants | `PropertyCodes.h` + `PropertyCodes.java` | required | required |
-| C++ extension wrapper | `include/iidm/MyExt.h` + `src/MyExt.cpp` | required | required |
-| Host component accessors | e.g. `Generator.h` / `Generator.cpp` | required | required |
-| `PropertyDispatcher` cases | `PropertyDispatcher.java` | required | not needed |
-| Method-ID cache fields | `JNIMethodCache.h` | — | required |
-| Cache init + switch cases | `JNIBackend.cpp` | — | required |
-| Unit tests | `test/TestMyExt.cpp` | required | required |
+| Step | File(s) |
+|---|---|
+| `EXT_*` property constants | `PropertyCodes.h` + `PropertyCodes.java` (same values) |
+| C++ extension wrapper | `include/iidm/MyExt.h` + `src/MyExt.cpp` (+ `CMakeLists.txt`, `iidm.h`) |
+| Host component accessors | e.g. `Generator.h` / `Generator.cpp` |
+| `PropertyDispatcher` cases | `PropertyDispatcher.java` — serves **both** backends |
+| C++ unit tests | `test/TestMyExt.cpp` with `MockBackend` |
+| Java dispatcher tests | `java/src/test/...` (covers the handle and object APIs) |
 
 ### 5.5 Backend Selection Strategy
 

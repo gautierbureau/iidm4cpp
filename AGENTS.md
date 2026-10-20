@@ -129,8 +129,9 @@ cmake/          CMake helper modules (FindGraalVM.cmake, etc.)
 ### Adding a new extension
 
 IIDM extensions (e.g. `ActivePowerControl`) are optional property bags
-attached to network components. The two backends handle them differently —
-**read this section in full before touching extension code**.
+attached to network components. Both backends dispatch them through
+`PropertyDispatcher.java` — **read this section in full before touching
+extension code**. The supported extensions are listed in README §5.4.
 
 #### Steps common to both backends
 
@@ -140,9 +141,9 @@ attached to network components. The two backends handle them differently —
 
    ```cpp
    // include/iidm/PropertyCodes.h
-   constexpr int EXT_FOO_EXISTS  = 4000;  // bool
-   constexpr int EXT_FOO_SOME_D  = 4001;  // double getter/setter
-   constexpr int EXT_FOO_SOME_B  = 4002;  // bool getter/setter
+   constexpr int EXT_FOO_EXISTS  = 9000;  // bool (pick the next free block)
+   constexpr int EXT_FOO_SOME_D  = 9001;  // double getter/setter
+   constexpr int EXT_FOO_SOME_B  = 9002;  // bool getter/setter
    ```
 
 2. **C++ extension class** — add `include/iidm/FooExtension.h` and
@@ -165,92 +166,42 @@ attached to network components. The two backends handle them differently —
    case EXT_FOO_SOME_B  -> ((Generator) obj).getExtension(FooExtension.class).isSomeB();
    ```
 
-5. **Unit tests** — `test/TestFooExtension.cpp` using `MockBackend`.
+5. **Unit tests** — `test/TestFooExtension.cpp` using `MockBackend`, plus a
+   Java test of the dispatcher cases (see `StateEstimationDispatchTest`).
 
-#### GraalVM backend — no extra work
+Larger extensions can keep their Java logic in a helper class called from the
+dispatcher cases (e.g. `StateEstimationDispatch.java`). Child objects of an
+extension (e.g. `Measurement`) get a child-type code (`getChildren`) and, for
+lookups by id, a `getRelatedByString` relation.
 
-The GraalVM backend delegates every property code to `PropertyDispatcher`
-through the `@CEntryPoint` functions. Once you add the Java cases above, the
-GraalVM path works automatically.
+#### Both backends — no extra C++ backend work
 
-#### JNI backend — explicit wiring required
+- **GraalVM**: the `@CEntryPoint` functions delegate every property code to
+  the handle-based `PropertyDispatcher` methods.
+- **JNI**: `JNIBackend` hand-wires only hot core properties; every code it does
+  not handle falls back (in its `default:` branches) to the object-based
+  `PropertyDispatcher` overloads — `getDouble(Object, int)`,
+  `getChildObjects(Object, int)`, `getRelatedObject(Object, int)`, … — in one
+  static JNI call. Do **not** hand-wire extension codes in `JNIBackend.cpp`.
 
-The JNI backend calls Java methods directly and bypasses `PropertyDispatcher`.
-You must wire each extension property code by hand:
+If you do hand-wire a JNI call (hot path only), its `GetMethodID` signature
+must match the pinned powsybl-core version exactly: a single mismatch makes
+`cacheMethodIds()` throw and the whole JNI backend unusable. Check the
+signature with `javap -s` against the powsybl jar.
 
-1. **`src/jni/JNIMethodCache.h`** — add a `jclass` for the extension
-   interface and a `jmethodID` for each getter/setter you need, plus one for
-   `getExtensionByName` on the host class:
+#### Checking the JNI path end to end
 
-   ```cpp
-   jclass    fooExtensionClass        = nullptr;
-   jmethodID generator_getExtByName   = nullptr;  // shared if already cached
-   jmethodID foo_getSomeD             = nullptr;
-   jmethodID foo_setSomeD             = nullptr;
-   jmethodID foo_isSomeB              = nullptr;
-   jmethodID foo_setSomeB             = nullptr;
-   ```
+`examples/embedded` runs C++ inside a real JVM through JNI and fails (non-zero
+exit) on any C++ exception:
 
-2. **`src/jni/JNIBackend.cpp` — `cacheMethodIds()`** — initialise the new
-   fields. Use `getExtensionByName(String)` (not `getExtension(Class)`) to
-   avoid passing a class object through JNI:
-
-   ```cpp
-   cacheClass(cache_.fooExtensionClass,
-       "com/powsybl/iidm/network/extensions/FooExtension");
-   cache_.generator_getExtByName = env_->GetMethodID(cache_.generatorClass,
-       "getExtensionByName",
-       "(Ljava/lang/String;)Lcom/powsybl/commons/extensions/Extension;");
-   cache_.foo_getSomeD = env_->GetMethodID(cache_.fooExtensionClass, "getSomeD", "()D");
-   cache_.foo_setSomeD = env_->GetMethodID(cache_.fooExtensionClass, "setSomeD", "(D)V");
-   cache_.foo_isSomeB  = env_->GetMethodID(cache_.fooExtensionClass, "isSomeB",  "()Z");
-   cache_.foo_setSomeB = env_->GetMethodID(cache_.fooExtensionClass, "setSomeB", "(Z)V");
-   checkJNIException(env_);
-   ```
-
-3. **Private helper** — add a `fetchFooExtension(jobject)` method (returns a
-   local JNI ref; caller must `DeleteLocalRef`):
-
-   ```cpp
-   jobject JNIBackend::fetchFooExtension(jobject host) const {
-       jstring name = env_->NewStringUTF("fooExtension");  // the NAME constant
-       jobject ext  = env_->CallObjectMethod(host, cache_.generator_getExtByName, name);
-       env_->DeleteLocalRef(name);
-       checkJNIException(env_);
-       return ext;
-   }
-   ```
-
-4. **Switch cases** — add to `getDouble`, `setDouble`, `getBool`, `setBool`:
-
-   ```cpp
-   case prop::EXT_FOO_EXISTS: {
-       jobject ext = fetchFooExtension(obj);
-       result = (ext != nullptr) ? JNI_TRUE : JNI_FALSE;
-       if (ext) env_->DeleteLocalRef(ext);
-       break;
-   }
-   case prop::EXT_FOO_SOME_D: {
-       jobject ext = fetchFooExtension(obj);
-       if (!ext) throw PropertyNotFoundException("FooExtension not present");
-       result = env_->CallDoubleMethod(ext, cache_.foo_getSomeD);
-       env_->DeleteLocalRef(ext);
-       break;
-   }
-   ```
-
-#### Asymmetry summary
-
-| What to change | GraalVM | JNI |
-|---|---|---|
-| `PropertyCodes.h` + `.java` | required | required |
-| C++ extension class + host accessor | required | required |
-| `PropertyDispatcher.java` cases | required | not required |
-| `JNIMethodCache.h` fields | — | required |
-| `JNIBackend.cpp` cache init + switch cases | — | required |
-
-Forgetting the JNI half causes `PropertyNotFoundException` at runtime when
-the JNI backend is active, while the GraalVM backend continues to work.
+```bash
+javac -proc:none -cp java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar \
+      examples/embedded/JavaLauncher.java -d build/java-classes
+LD_LIBRARY_PATH=build:build/examples/embedded \
+java -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar:build/java-classes" \
+     -Djava.library.path=build/examples/embedded \
+     JavaLauncher examples/state_estimation_test.xiidm
+```
 
 ---
 
