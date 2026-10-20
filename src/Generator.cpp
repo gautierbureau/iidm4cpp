@@ -29,61 +29,121 @@ Generator& Generator::setTargetP(double targetP) {
     return *this;
 }
 
-double Generator::getTargetQ() const {
-    return backend_->getDouble(handle_, prop::GEN_TARGET_Q);
-}
-
-Generator& Generator::setTargetQ(double targetQ) {
-    backend_->setDouble(handle_, prop::GEN_TARGET_Q, targetQ);
-    return *this;
-}
-
-double Generator::getTargetV() const {
-    return backend_->getDouble(handle_, prop::GEN_TARGET_V);
-}
-
-Generator& Generator::setTargetV(double targetV) {
-    backend_->setDouble(handle_, prop::GEN_TARGET_V, targetV);
-    return *this;
-}
-
 double Generator::getMinP() const {
     return backend_->getDouble(handle_, prop::GEN_MIN_P);
+}
+
+Generator& Generator::setMinP(double minP) {
+    backend_->setDouble(handle_, prop::GEN_MIN_P, minP);
+    return *this;
 }
 
 double Generator::getMaxP() const {
     return backend_->getDouble(handle_, prop::GEN_MAX_P);
 }
 
-bool Generator::isVoltageRegulatorOn() const {
-    return backend_->getBool(handle_, prop::GEN_VOLTAGE_REGULATOR_ON);
+Generator& Generator::setMaxP(double maxP) {
+    backend_->setDouble(handle_, prop::GEN_MAX_P, maxP);
+    return *this;
 }
 
-Generator& Generator::setVoltageRegulatorOn(bool on) {
-    backend_->setBool(handle_, prop::GEN_VOLTAGE_REGULATOR_ON, on);
+double Generator::getRatedS() const {
+    return backend_->getDouble(handle_, prop::GEN_RATED_S);
+}
+
+Generator& Generator::setRatedS(double ratedS) {
+    backend_->setDouble(handle_, prop::GEN_RATED_S, ratedS);
     return *this;
+}
+
+bool Generator::isCondenser() const {
+    return backend_->getBool(handle_, prop::GEN_CONDENSER);
 }
 
 EnergySource Generator::getEnergySource() const {
     return static_cast<EnergySource>(backend_->getInt(handle_, prop::GEN_ENERGY_SOURCE));
 }
 
-Terminal Generator::getTerminal() const {
-    ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_TERMINAL);
-    return Terminal(termHandle, backend_);
+Generator& Generator::setEnergySource(EnergySource energySource) {
+    backend_->setInt(handle_, prop::GEN_ENERGY_SOURCE, static_cast<int>(energySource));
+    return *this;
+}
+
+// ── Voltage regulation ───────────────────────────────────────────────────────
+
+double Generator::getLocalTargetV() const {
+    return backend_->getDouble(handle_, prop::LOCAL_TARGET_V);
+}
+
+Generator& Generator::setLocalTargetV(double localTargetV) {
+    backend_->setDouble(handle_, prop::LOCAL_TARGET_V, localTargetV);
+    return *this;
+}
+
+double Generator::getLocalTargetQ() const {
+    return backend_->getDouble(handle_, prop::LOCAL_TARGET_Q);
+}
+
+Generator& Generator::setLocalTargetQ(double localTargetQ) {
+    backend_->setDouble(handle_, prop::LOCAL_TARGET_Q, localTargetQ);
+    return *this;
+}
+
+iidm::optional<VoltageRegulation> Generator::getVoltageRegulation() const {
+    ObjectHandle regulation = backend_->getRelated(handle_, prop::VOLTAGE_REGULATION);
+    if (regulation == INVALID_HANDLE) return {};
+    return VoltageRegulation(regulation, backend_);
+}
+
+VoltageRegulationBuilder Generator::newVoltageRegulation() {
+    return VoltageRegulationBuilder(backend_->invoke(handle_, prop::VOLTAGE_REGULATION), backend_);
+}
+
+void Generator::removeVoltageRegulation() {
+    backend_->setRelated(handle_, prop::VOLTAGE_REGULATION, INVALID_HANDLE);
+}
+
+bool Generator::isRegulating() const {
+    return backend_->getBool(handle_, prop::REGULATING);
+}
+
+double Generator::getRegulatingTargetV() const {
+    return backend_->getDouble(handle_, prop::REGULATING_TARGET_V);
+}
+
+double Generator::getRegulatingTargetQ() const {
+    return backend_->getDouble(handle_, prop::REGULATING_TARGET_Q);
 }
 
 Terminal Generator::getRegulatingTerminal() const {
-    ObjectHandle termHandle = backend_->getRelated(handle_, prop::REL_REGULATING_TERMINAL);
-    return Terminal(termHandle, backend_);
+    return Terminal(backend_->getRelated(handle_, prop::REL_REGULATING_TERMINAL), backend_);
 }
 
+Terminal Generator::getTerminal() const {
+    return Terminal(backend_->getRelated(handle_, prop::REL_TERMINAL), backend_);
+}
+
+// ── Extensions ───────────────────────────────────────────────────────────────
+
 bool Generator::hasActivePowerControl() const {
-    return backend_->getBool(handle_, prop::EXT_APC_EXISTS);
+    HandleRef extension(backend_->getRelated(handle_, prop::ACTIVE_POWER_CONTROL), backend_);
+    return extension != INVALID_HANDLE;
 }
 
 ActivePowerControl Generator::getActivePowerControl() const {
-    return ActivePowerControl(handle_, backend_, prop::EXT_APC_EXISTS);
+    ObjectHandle extension = backend_->getRelated(handle_, prop::ACTIVE_POWER_CONTROL);
+    if (extension == INVALID_HANDLE) {
+        throw ExtensionNotFoundException("ActivePowerControl extension not present on " + getId());
+    }
+    return ActivePowerControl(extension, backend_);
+}
+
+ActivePowerControlAdder Generator::newActivePowerControl() {
+    return ActivePowerControlAdder(backend_->invoke(handle_, prop::ACTIVE_POWER_CONTROL), backend_);
+}
+
+void Generator::removeActivePowerControl() {
+    backend_->setRelated(handle_, prop::ACTIVE_POWER_CONTROL, INVALID_HANDLE);
 }
 
 bool Generator::hasCoordinatedReactiveControl() const {
@@ -120,6 +180,10 @@ void Generator::disconnect() {
 
 bool Generator::isConnected() const {
     return getTerminal().isConnected();
+}
+
+void Generator::remove() {
+    backend_->invoke(handle_, prop::ACT_REMOVE);
 }
 
 bool Generator::operator==(const Generator& other) const {

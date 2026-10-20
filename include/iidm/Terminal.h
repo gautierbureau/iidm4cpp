@@ -11,6 +11,10 @@ namespace iidm {
 class BackendProvider;
 class SlackTerminal;
 class VoltageLevel;
+class VoltageRegulation;
+namespace detail {
+template <class Self> class VoltageRegulationFields;
+}
 
 class Terminal {
 public:
@@ -76,7 +80,10 @@ public:
     bool operator!=(const Terminal& other) const;
 
 private:
-    friend class SlackTerminal; // passes the terminal handle to setRelated
+    // pass the terminal handle to setRelated
+    friend class SlackTerminal;
+    friend class VoltageRegulation;
+    template <class Self> friend class detail::VoltageRegulationFields;
 
     HandleRef handle_;
     BackendProvider* backend_ = detail::nullBackend();

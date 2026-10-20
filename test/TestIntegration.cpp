@@ -57,7 +57,7 @@ TEST_F(IntegrationTest, Generator1Properties) {
     EXPECT_NEAR(gen->getTargetP(), 232.3463, 1e-3);
     EXPECT_NEAR(gen->getMinP(),   -9999.0,   1e-1);
     EXPECT_NEAR(gen->getMaxP(),    9999.0,   1e-1);
-    EXPECT_TRUE(gen->isVoltageRegulatorOn());
+    EXPECT_TRUE(gen->isRegulating());
 }
 
 TEST_F(IntegrationTest, Load10Properties) {

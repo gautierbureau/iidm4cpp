@@ -23,11 +23,10 @@ protected:
         backend.strings[{GEN_HANDLE, prop::ID}]   = "GEN1";
         backend.strings[{GEN_HANDLE, prop::NAME}]  = "Generator 1";
         backend.doubles[{GEN_HANDLE, prop::GEN_TARGET_P}]          = 100.0;
-        backend.doubles[{GEN_HANDLE, prop::GEN_TARGET_Q}]          = 0.0;
-        backend.doubles[{GEN_HANDLE, prop::GEN_TARGET_V}]          = 225.0;
+        backend.doubles[{GEN_HANDLE, prop::LOCAL_TARGET_Q}]        = 0.0;
+        backend.doubles[{GEN_HANDLE, prop::LOCAL_TARGET_V}]        = 225.0;
         backend.doubles[{GEN_HANDLE, prop::GEN_MIN_P}]             = 0.0;
         backend.doubles[{GEN_HANDLE, prop::GEN_MAX_P}]             = 200.0;
-        backend.bools  [{GEN_HANDLE, prop::GEN_VOLTAGE_REGULATOR_ON}] = true;
         backend.ints   [{GEN_HANDLE, prop::GEN_ENERGY_SOURCE}]     = 0;
         backend.ints   [{GEN_HANDLE, prop::GEN_REACTIVE_LIMITS_KIND}] = 1; // MIN_MAX
         backend.doubles[{GEN_HANDLE, prop::GEN_MIN_Q}]             = -150.0;

@@ -31,6 +31,36 @@ std::string Network::getName() const {
     return backend()->getString(backend()->getNetworkHandle(), prop::NAME);
 }
 
+SubstationAdder Network::newSubstation() {
+    return SubstationAdder(backend()->invoke(backend()->getNetworkHandle(), prop::SUBSTATION), backend());
+}
+
+VoltageLevelAdder Network::newVoltageLevel() {
+    return VoltageLevelAdder(backend()->invoke(backend()->getNetworkHandle(), prop::VOLTAGE_LEVEL), backend());
+}
+
+std::string Network::getCaseDate() const {
+    return backend()->getString(backend()->getNetworkHandle(), prop::NETWORK_CASE_DATE);
+}
+
+Network& Network::setCaseDate(const std::string& caseDate) {
+    backend()->setString(backend()->getNetworkHandle(), prop::NETWORK_CASE_DATE, caseDate);
+    return *this;
+}
+
+int Network::getForecastDistance() const {
+    return backend()->getInt(backend()->getNetworkHandle(), prop::NETWORK_FORECAST_DISTANCE);
+}
+
+Network& Network::setForecastDistance(int forecastDistance) {
+    backend()->setInt(backend()->getNetworkHandle(), prop::NETWORK_FORECAST_DISTANCE, forecastDistance);
+    return *this;
+}
+
+std::string Network::getSourceFormat() const {
+    return backend()->getString(backend()->getNetworkHandle(), prop::NETWORK_SOURCE_FORMAT);
+}
+
 BackendProvider& Network::getBackend() {
     return *backend();
 }

@@ -2,6 +2,7 @@ package com.powsybl.iidmbridge;
 
 import com.powsybl.iidm.network.*;
 import com.powsybl.iidm.network.extensions.*;
+import com.powsybl.iidm.network.regulation.RegulationMode;
 import com.powsybl.iidmbridge.graalvm.NetworkRegistry;
 import org.junit.jupiter.api.*;
 
@@ -54,7 +55,8 @@ class StateEstimationDispatchTest {
         vl3.getBusBreakerView().newBus().setId("B4").add();
 
         Generator g1 = vl1.newGenerator().setId("G1").setBus("B1").setConnectableBus("B1")
-            .setMinP(0).setMaxP(500).setTargetP(100).setTargetV(400).setVoltageRegulatorOn(true).add();
+            .setMinP(0).setMaxP(500).setTargetP(100)
+            .setLocalTargetV(400).newVoltageRegulation().withMode(RegulationMode.VOLTAGE).withRegulating(true).add().add();
         vl2.newLoad().setId("L2").setBus("B3").setConnectableBus("B3").setP0(80).setQ0(10).add();
 
         TwoWindingsTransformer t2 = s1.newTwoWindingsTransformer().setId("T2")

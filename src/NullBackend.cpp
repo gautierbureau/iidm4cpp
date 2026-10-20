@@ -28,10 +28,13 @@ public:
     ObjectHandle              getRelatedByIndex(ObjectHandle, int, int) const override { fail(); }
     ObjectHandle              getRelatedByString(ObjectHandle, int, const std::string&) const override { fail(); }
 
+    ObjectHandle invoke(ObjectHandle, int) override { fail(); }
+
     ObjectHandle findById(int, const std::string&) const override { fail(); }
     ObjectHandle getNetworkHandle() const override { fail(); }
 
     void loadNetwork(const std::string&) override { fail(); }
+    void createNetwork(const std::string&) override { fail(); }
     void saveNetwork(const std::string&) override { fail(); }
     void loadNetworkBytes(const char*, std::size_t, const std::string&) override { fail(); }
     std::string saveNetworkBytes(const std::string&) const override { fail(); }

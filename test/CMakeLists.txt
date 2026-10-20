@@ -45,6 +45,8 @@ set(TEST_SOURCES
     TestBridgeErrors.cpp
     TestBackendErrors.cpp
     TestBackendConformance.cpp
+    TestAdders.cpp
+    TestCreation.cpp
     TestNullBackend.cpp
     TestHandleRef.cpp
 )

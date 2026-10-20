@@ -92,6 +92,10 @@ Bus VoltageLevel::BusBreakerView::getBus2(const std::string& switchId) const {
     return Bus(backend_->getRelatedByString(handle_, prop::REL_VL_BBV_BUS2, switchId), backend_);
 }
 
+BusAdder VoltageLevel::BusBreakerView::newBus() {
+    return BusAdder(backend_->invoke(handle_, prop::BUS), backend_);
+}
+
 // ── VoltageLevel ──────────────────────────────────────────────────────────────
 
 VoltageLevel::VoltageLevel(ObjectHandle handle, BackendProvider* backend)
@@ -215,6 +219,18 @@ std::vector<VscConverterStation> VoltageLevel::getVscConverterStations() const {
 
 VoltageLevel::NodeBreakerView VoltageLevel::getNodeBreakerView() const {
     return NodeBreakerView(handle_, backend_);
+}
+
+GeneratorAdder VoltageLevel::newGenerator() {
+    return GeneratorAdder(backend_->invoke(handle_, prop::GENERATOR), backend_);
+}
+
+LoadAdder VoltageLevel::newLoad() {
+    return LoadAdder(backend_->invoke(handle_, prop::LOAD), backend_);
+}
+
+void VoltageLevel::remove() {
+    backend_->invoke(handle_, prop::ACT_REMOVE);
 }
 
 VoltageLevel::BusBreakerView VoltageLevel::getBusBreakerView() const {

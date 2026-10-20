@@ -12,6 +12,7 @@ struct JNIMethodCache {
     jmethodID registry_save          = nullptr;
     jmethodID registry_loadFromBytes = nullptr;
     jmethodID registry_saveToBytes   = nullptr;
+    jmethodID registry_createNetwork = nullptr;
 
     // ── PropertyDispatcher (object API): every property, child and relation ──
     // The same dispatch table as the GraalVM backend.
@@ -31,6 +32,7 @@ struct JNIMethodCache {
     jmethodID disp_getRelatedObjectByString = nullptr;
     jmethodID disp_getIntList               = nullptr;
     jmethodID disp_findObjectById           = nullptr;
+    jmethodID disp_invokeObject             = nullptr;
 };
 
 } // namespace iidm

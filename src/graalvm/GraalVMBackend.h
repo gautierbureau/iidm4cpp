@@ -39,10 +39,13 @@ public:
     ObjectHandle              getRelatedByIndex(ObjectHandle h, int relation, int index) const override;
     ObjectHandle              getRelatedByString(ObjectHandle h, int relation, const std::string& key) const override;
 
+    ObjectHandle invoke(ObjectHandle h, int code) override;
+
     ObjectHandle findById(int objectType, const std::string& id) const override;
     ObjectHandle getNetworkHandle() const override;
 
     void loadNetwork(const std::string& filePath) override;
+    void createNetwork(const std::string& id) override;
     void saveNetwork(const std::string& filePath) override;
     void loadNetworkBytes(const char* data, std::size_t length,
                           const std::string& filenameHint) override;
@@ -80,6 +83,7 @@ private:
     using FnReleaseHandle   = void(*)(graal_isolatethread_t*, ObjectHandle);
     using FnHandleCount     = int(*)(graal_isolatethread_t*);
     using FnLoadNetwork     = int(*)(graal_isolatethread_t*, const char*, ObjectHandle*);
+    using FnCreateNetwork   = int(*)(graal_isolatethread_t*, const char*, ObjectHandle*);
     using FnSaveNetwork     = int(*)(graal_isolatethread_t*, ObjectHandle, const char*);
     using FnLoadNetworkBytes = int(*)(graal_isolatethread_t*, const char*, int, const char*, ObjectHandle*);
     using FnSaveNetworkBytes = int(*)(graal_isolatethread_t*, ObjectHandle, const char*, char**, int*);
@@ -98,6 +102,7 @@ private:
     using FnGetRelatedByIndex  = int(*)(graal_isolatethread_t*, ObjectHandle, int, int, ObjectHandle*);
     using FnGetRelatedByString = int(*)(graal_isolatethread_t*, ObjectHandle, int, const char*, ObjectHandle*);
     using FnFindById           = int(*)(graal_isolatethread_t*, ObjectHandle, int, const char*, ObjectHandle*);
+    using FnInvoke             = int(*)(graal_isolatethread_t*, ObjectHandle, int, ObjectHandle*);
 
     FnCreateIsolate   fnCreateIsolate_   = nullptr;
     FnTearDownIsolate fnTearDownIsolate_ = nullptr;
@@ -106,6 +111,7 @@ private:
     FnReleaseHandle   fnReleaseHandle_   = nullptr;
     FnHandleCount     fnHandleCount_     = nullptr;
     FnLoadNetwork     fnLoadNetwork_     = nullptr;
+    FnCreateNetwork   fnCreateNetwork_   = nullptr;
     FnSaveNetwork     fnSaveNetwork_     = nullptr;
     FnLoadNetworkBytes fnLoadNetworkBytes_ = nullptr;
     FnSaveNetworkBytes fnSaveNetworkBytes_ = nullptr;
@@ -124,6 +130,7 @@ private:
     FnGetRelatedByIndex  fnGetRelatedByIndex_  = nullptr;
     FnGetRelatedByString fnGetRelatedByString_ = nullptr;
     FnFindById           fnFindById_           = nullptr;
+    FnInvoke             fnInvoke_             = nullptr;
 };
 
 } // namespace iidm

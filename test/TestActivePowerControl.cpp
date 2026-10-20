@@ -12,11 +12,12 @@ class ActivePowerControlTest : public ::testing::Test {
 protected:
     MockBackend backend;
     static constexpr ObjectHandle GEN_HANDLE = 10;
+    static constexpr ObjectHandle APC_HANDLE = 11; // the extension object
 
     void SetUp() override {
-        backend.bools  [{GEN_HANDLE, prop::EXT_APC_EXISTS}]      = true;
-        backend.doubles[{GEN_HANDLE, prop::EXT_APC_DROOP}]       = 4.0;
-        backend.bools  [{GEN_HANDLE, prop::EXT_APC_PARTICIPATE}]  = true;
+        backend.related[{GEN_HANDLE, prop::ACTIVE_POWER_CONTROL}] = APC_HANDLE;
+        backend.doubles[{APC_HANDLE, prop::EXT_APC_DROOP}]       = 4.0;
+        backend.bools  [{APC_HANDLE, prop::EXT_APC_PARTICIPATE}]  = true;
     }
 };
 
@@ -39,7 +40,7 @@ TEST_F(ActivePowerControlTest, GetDroop) {
 TEST_F(ActivePowerControlTest, SetDroop) {
     Generator gen(GEN_HANDLE, &backend);
     gen.getActivePowerControl().setDroop(6.0);
-    EXPECT_DOUBLE_EQ((backend.doubles[{GEN_HANDLE, prop::EXT_APC_DROOP}]), 6.0);
+    EXPECT_DOUBLE_EQ((backend.doubles[{APC_HANDLE, prop::EXT_APC_DROOP}]), 6.0);
 }
 
 TEST_F(ActivePowerControlTest, IsParticipate) {
@@ -50,37 +51,37 @@ TEST_F(ActivePowerControlTest, IsParticipate) {
 TEST_F(ActivePowerControlTest, SetParticipate) {
     Generator gen(GEN_HANDLE, &backend);
     gen.getActivePowerControl().setParticipate(false);
-    EXPECT_FALSE((backend.bools[{GEN_HANDLE, prop::EXT_APC_PARTICIPATE}]));
+    EXPECT_FALSE((backend.bools[{APC_HANDLE, prop::EXT_APC_PARTICIPATE}]));
 }
 
 TEST_F(ActivePowerControlTest, MethodChaining) {
     Generator gen(GEN_HANDLE, &backend);
     gen.getActivePowerControl().setDroop(8.0).setParticipate(false);
-    EXPECT_DOUBLE_EQ((backend.doubles[{GEN_HANDLE, prop::EXT_APC_DROOP}]), 8.0);
-    EXPECT_FALSE((backend.bools[{GEN_HANDLE, prop::EXT_APC_PARTICIPATE}]));
+    EXPECT_DOUBLE_EQ((backend.doubles[{APC_HANDLE, prop::EXT_APC_DROOP}]), 8.0);
+    EXPECT_FALSE((backend.bools[{APC_HANDLE, prop::EXT_APC_PARTICIPATE}]));
 }
 
 TEST_F(ActivePowerControlTest, IsValid) {
-    ActivePowerControl valid(GEN_HANDLE, &backend, prop::EXT_APC_DROOP, prop::EXT_APC_PARTICIPATE);
+    ActivePowerControl valid(APC_HANDLE, &backend);
     ActivePowerControl invalid;
     EXPECT_TRUE(valid.isValid());
     EXPECT_FALSE(invalid.isValid());
 }
 
 TEST_F(ActivePowerControlTest, Equality) {
-    ActivePowerControl apc1(GEN_HANDLE, &backend, prop::EXT_APC_DROOP, prop::EXT_APC_PARTICIPATE);
-    ActivePowerControl apc2(GEN_HANDLE, &backend, prop::EXT_APC_DROOP, prop::EXT_APC_PARTICIPATE);
-    ActivePowerControl apc3(99, &backend, prop::EXT_APC_DROOP, prop::EXT_APC_PARTICIPATE);
+    ActivePowerControl apc1(APC_HANDLE, &backend);
+    ActivePowerControl apc2(APC_HANDLE, &backend);
+    ActivePowerControl apc3(99, &backend);
     EXPECT_EQ(apc1, apc2);
     EXPECT_NE(apc1, apc3);
 }
 
 TEST_F(ActivePowerControlTest, ParticipationFactor) {
-    backend.doubles[{GEN_HANDLE, prop::EXT_APC_PARTICIPATION_FACTOR}] = 0.25;
+    backend.doubles[{APC_HANDLE, prop::EXT_APC_PARTICIPATION_FACTOR}] = 0.25;
     auto apc = Generator(GEN_HANDLE, &backend).getActivePowerControl();
     EXPECT_DOUBLE_EQ(apc.getParticipationFactor(), 0.25);
     apc.setParticipationFactor(0.5);
-    EXPECT_DOUBLE_EQ((backend.doubles[{GEN_HANDLE, prop::EXT_APC_PARTICIPATION_FACTOR}]), 0.5);
+    EXPECT_DOUBLE_EQ((backend.doubles[{APC_HANDLE, prop::EXT_APC_PARTICIPATION_FACTOR}]), 0.5);
 }
 
 TEST_F(ActivePowerControlTest, TargetPLimits) {
@@ -96,15 +97,36 @@ TEST_F(ActivePowerControlTest, TargetPLimits) {
     EXPECT_DOUBLE_EQ(*apc.getMaxTargetP(), 90.0);
 
     apc.unsetMinTargetP().unsetMaxTargetP();
-    EXPECT_TRUE(std::isnan((backend.doubles[{GEN_HANDLE, prop::EXT_APC_MIN_TARGET_P}])));
-    EXPECT_TRUE(std::isnan((backend.doubles[{GEN_HANDLE, prop::EXT_APC_MAX_TARGET_P}])));
+    EXPECT_TRUE(std::isnan((backend.doubles[{APC_HANDLE, prop::EXT_APC_MIN_TARGET_P}])));
+    EXPECT_TRUE(std::isnan((backend.doubles[{APC_HANDLE, prop::EXT_APC_MAX_TARGET_P}])));
     EXPECT_FALSE(apc.getMinTargetP().has_value());
 }
 
-// The former (droopCode, participateCode) constructor maps the new fields onto the same block.
-TEST_F(ActivePowerControlTest, LegacyConstructorUsesSameCodeBlock) {
-    ActivePowerControl apc(GEN_HANDLE, &backend, prop::EXT_BAT_APC_DROOP, prop::EXT_BAT_APC_PARTICIPATE);
-    apc.setParticipationFactor(0.7).setMinTargetP(1.0);
-    EXPECT_DOUBLE_EQ((backend.doubles[{GEN_HANDLE, prop::EXT_BAT_APC_PARTICIPATION_FACTOR}]), 0.7);
-    EXPECT_DOUBLE_EQ((backend.doubles[{GEN_HANDLE, prop::EXT_BAT_APC_MIN_TARGET_P}]), 1.0);
+TEST_F(ActivePowerControlTest, AbsentThrows) {
+    MockBackend empty;
+    Generator gen(GEN_HANDLE, &empty);
+    EXPECT_THROW(gen.getActivePowerControl(), ExtensionNotFoundException);
+}
+
+TEST_F(ActivePowerControlTest, NewAndRemove) {
+    MockBackend b;
+    static constexpr ObjectHandle NEW_APC = 12;
+    Generator gen(GEN_HANDLE, &b);
+    ActivePowerControlAdder adder = gen.newActivePowerControl();
+    ASSERT_EQ(b.invocations.size(), 1u);
+    EXPECT_EQ(b.invocations[0], std::make_pair(static_cast<ObjectHandle>(GEN_HANDLE), prop::ACTIVE_POWER_CONTROL));
+    const ObjectHandle adderHandle = b.lastAdder;
+    b.addResults[adderHandle] = NEW_APC;
+    ActivePowerControl apc = adder.withDroop(5.0).withParticipate(true).withParticipationFactor(0.4)
+                                  .withMinTargetP(1.0).withMaxTargetP(9.0).add();
+    EXPECT_DOUBLE_EQ((b.doubles[{adderHandle, prop::EXT_APC_DROOP}]), 5.0);
+    EXPECT_TRUE((b.bools[{adderHandle, prop::EXT_APC_PARTICIPATE}]));
+    EXPECT_DOUBLE_EQ((b.doubles[{adderHandle, prop::EXT_APC_PARTICIPATION_FACTOR}]), 0.4);
+    EXPECT_DOUBLE_EQ((b.doubles[{adderHandle, prop::EXT_APC_MIN_TARGET_P}]), 1.0);
+    EXPECT_DOUBLE_EQ((b.doubles[{adderHandle, prop::EXT_APC_MAX_TARGET_P}]), 9.0);
+    EXPECT_EQ(b.invocations.back(), std::make_pair(adderHandle, prop::ACT_ADD));
+    EXPECT_EQ(apc, ActivePowerControl(NEW_APC, &b));
+
+    gen.removeActivePowerControl();
+    EXPECT_EQ((b.related[{GEN_HANDLE, prop::ACTIVE_POWER_CONTROL}]), INVALID_HANDLE);
 }

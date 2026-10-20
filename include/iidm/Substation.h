@@ -4,6 +4,7 @@
 #include <iidm/ObjectHandle.h>
 #include <iidm/Enums.h>
 #include <iidm/VoltageLevel.h>
+#include <iidm/VoltageLevelAdder.h>
 #include <iidm/stdcxx/optional.hpp>
 #include <string>
 #include <vector>
@@ -22,7 +23,15 @@ public:
 
     iidm::optional<Country> getCountry() const;
 
+    // Empty when undefined
+    std::string getTso() const;
+    Substation& setTso(const std::string& tso);
+
     std::vector<VoltageLevel> getVoltageLevels() const;
+    VoltageLevelAdder newVoltageLevel();
+
+    // Removes the substation, its voltage levels and everything connected to them
+    void remove();
 
     bool isValid() const { return handle_ != INVALID_HANDLE; }
 

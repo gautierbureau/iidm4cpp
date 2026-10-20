@@ -35,6 +35,9 @@ public:
     void disconnect();
     bool isConnected() const;
 
+    // Removes the load from the network
+    void remove();
+
     // ── State estimation extensions ──────────────────────────────────────
     bool hasInjectionObservability() const;
     InjectionObservability getInjectionObservability() const;

@@ -3,6 +3,7 @@
 #include <iidm/HandleRef.h>
 #include <iidm/ObjectHandle.h>
 #include <iidm/ActivePowerControl.h>
+#include <iidm/ActivePowerControlAdder.h>
 #include <iidm/MinMaxReactiveLimits.h>
 #include <iidm/ReactiveCapabilityCurve.h>
 #include <iidm/Terminal.h>
@@ -32,7 +33,10 @@ public:
     double getMaxP() const;
 
     bool hasActivePowerControl() const;
+    // ExtensionNotFoundException when absent
     ActivePowerControl getActivePowerControl() const;
+    ActivePowerControlAdder newActivePowerControl();
+    void removeActivePowerControl();
 
     bool hasMinMaxReactiveLimits() const;
     MinMaxReactiveLimits getMinMaxReactiveLimits() const;

@@ -14,6 +14,7 @@ protected:
     MockBackend backend;
     static constexpr ObjectHandle BAT_HANDLE      = 30;
     static constexpr ObjectHandle TERM_HANDLE     = 31;
+    static constexpr ObjectHandle BAT_APC_HANDLE  = 32; // ActivePowerControl extension object
 
     void SetUp() override {
         backend.strings[{BAT_HANDLE, prop::ID}]    = "BAT1";
@@ -113,32 +114,34 @@ TEST_F(BatteryTest, HasActivePowerControlFalse) {
 }
 
 TEST_F(BatteryTest, HasActivePowerControlTrue) {
-    backend.bools[{BAT_HANDLE, prop::EXT_BAT_APC_EXISTS}] = true;
+    backend.related[{BAT_HANDLE, prop::ACTIVE_POWER_CONTROL}] = BAT_APC_HANDLE;
     Battery bat(BAT_HANDLE, &backend);
     EXPECT_TRUE(bat.hasActivePowerControl());
 }
 
-TEST_F(BatteryTest, GetActivePowerControlDroop) {
-    backend.bools  [{BAT_HANDLE, prop::EXT_BAT_APC_EXISTS}]      = true;
-    backend.doubles[{BAT_HANDLE, prop::EXT_BAT_APC_DROOP}]       = 2.5;
-    backend.bools  [{BAT_HANDLE, prop::EXT_BAT_APC_PARTICIPATE}] = true;
+// Same extension object, and same codes, as on a generator
+TEST_F(BatteryTest, GetActivePowerControl) {
+    backend.related[{BAT_HANDLE, prop::ACTIVE_POWER_CONTROL}]       = BAT_APC_HANDLE;
+    backend.doubles[{BAT_APC_HANDLE, prop::EXT_APC_DROOP}]          = 2.5;
+    backend.bools  [{BAT_APC_HANDLE, prop::EXT_APC_PARTICIPATE}]    = true;
+    backend.doubles[{BAT_APC_HANDLE, prop::EXT_APC_MIN_TARGET_P}]   = -50.0;
     Battery bat(BAT_HANDLE, &backend);
     auto apc = bat.getActivePowerControl();
     EXPECT_DOUBLE_EQ(apc.getDroop(), 2.5);
     EXPECT_TRUE(apc.isParticipate());
-}
-
-TEST_F(BatteryTest, ActivePowerControlNewFieldsUseBatteryCodes) {
-    backend.bools  [{BAT_HANDLE, prop::EXT_BAT_APC_EXISTS}]               = true;
-    backend.doubles[{BAT_HANDLE, prop::EXT_BAT_APC_PARTICIPATION_FACTOR}] = 0.4;
-    backend.doubles[{BAT_HANDLE, prop::EXT_BAT_APC_MIN_TARGET_P}]         = -50.0;
-    Battery bat(BAT_HANDLE, &backend);
-    auto apc = bat.getActivePowerControl();
-    EXPECT_DOUBLE_EQ(apc.getParticipationFactor(), 0.4);
     ASSERT_TRUE(apc.getMinTargetP().has_value());
     EXPECT_DOUBLE_EQ(*apc.getMinTargetP(), -50.0);
     EXPECT_FALSE(apc.getMaxTargetP().has_value());
     apc.setMaxTargetP(50.0);
-    EXPECT_DOUBLE_EQ((backend.doubles[{BAT_HANDLE, prop::EXT_BAT_APC_MAX_TARGET_P}]), 50.0);
-    EXPECT_EQ(backend.doubles.count({BAT_HANDLE, prop::EXT_APC_MAX_TARGET_P}), 0u);
+    EXPECT_DOUBLE_EQ((backend.doubles[{BAT_APC_HANDLE, prop::EXT_APC_MAX_TARGET_P}]), 50.0);
+}
+
+TEST_F(BatteryTest, NewAndRemoveActivePowerControl) {
+    Battery bat(BAT_HANDLE, &backend);
+    bat.newActivePowerControl().withDroop(1.0).add();
+    ASSERT_EQ(backend.invocations.size(), 2u);
+    EXPECT_EQ(backend.invocations[0], std::make_pair(static_cast<ObjectHandle>(BAT_HANDLE), prop::ACTIVE_POWER_CONTROL));
+    EXPECT_EQ(backend.invocations[1], std::make_pair(backend.lastAdder, prop::ACT_ADD));
+    bat.removeActivePowerControl();
+    EXPECT_EQ((backend.related[{BAT_HANDLE, prop::ACTIVE_POWER_CONTROL}]), INVALID_HANDLE);
 }

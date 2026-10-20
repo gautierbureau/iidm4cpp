@@ -56,6 +56,8 @@ void JNIBackend::cacheMethodIds() {
         "loadFromBytes", "(Ljava/lang/String;[BLjava/lang/String;)V");
     cache_.registry_saveToBytes = env_->GetStaticMethodID(cache_.iidmRegistryClass,
         "saveToBytes", "(Ljava/lang/String;Ljava/lang/String;)[B");
+    cache_.registry_createNetwork = env_->GetStaticMethodID(cache_.iidmRegistryClass,
+        "createNetwork", "(Ljava/lang/String;Ljava/lang/String;)V");
     checkJNIException(env_);
 
     cacheClass(cache_.dispatcherClass, "com/powsybl/iidmbridge/PropertyDispatcher");
@@ -81,6 +83,7 @@ void JNIBackend::cacheMethodIds() {
     cache_.disp_getIntList = env_->GetStaticMethodID(d, "getIntList", "(Ljava/lang/Object;I)[I");
     cache_.disp_findObjectById = env_->GetStaticMethodID(d, "findObjectById",
         "(Ljava/lang/Object;ILjava/lang/String;)Ljava/lang/Object;");
+    cache_.disp_invokeObject = env_->GetStaticMethodID(d, "invokeObject", "(Ljava/lang/Object;I)Ljava/lang/Object;");
     checkJNIException(env_);
 }
 
@@ -138,7 +141,20 @@ void JNIBackend::loadNetworkBytes(const char* data, std::size_t length,
     env_->DeleteLocalRef(jId);
     env_->DeleteLocalRef(arr);
     checkJNIException(env_);
+    rebindNetwork("loadFromBytes");
+}
 
+void JNIBackend::createNetwork(const std::string& id) {
+    jstring jId        = env_->NewStringUTF(networkId_.c_str());
+    jstring jNetworkId = env_->NewStringUTF(id.c_str());
+    env_->CallStaticVoidMethod(cache_.iidmRegistryClass, cache_.registry_createNetwork, jId, jNetworkId);
+    env_->DeleteLocalRef(jNetworkId);
+    env_->DeleteLocalRef(jId);
+    checkJNIException(env_);
+    rebindNetwork("createNetwork");
+}
+
+void JNIBackend::rebindNetwork(const char* operation) {
     // The newly registered network replaces any previous reference held here.
     if (networkRef_) {
         env_->DeleteGlobalRef(networkRef_);
@@ -146,7 +162,7 @@ void JNIBackend::loadNetworkBytes(const char* data, std::size_t length,
     }
     bindRegisteredNetwork();
     if (!networkRef_) {
-        throw NetworkNotFoundException("Network missing after loadFromBytes: " + networkId_);
+        throw NetworkNotFoundException(std::string("Network missing after ") + operation + ": " + networkId_);
     }
 }
 
@@ -317,6 +333,13 @@ ObjectHandle JNIBackend::getRelated(ObjectHandle h, int relation) const {
                                                    toObject(h), static_cast<jint>(relation));
     checkJNIException(env_);
     return toHandle(related);
+}
+
+ObjectHandle JNIBackend::invoke(ObjectHandle h, int code) {
+    jobject result = env_->CallStaticObjectMethod(cache_.dispatcherClass, cache_.disp_invokeObject,
+                                                  toObject(h), static_cast<jint>(code));
+    checkJNIException(env_);
+    return toHandle(result);
 }
 
 void JNIBackend::setRelated(ObjectHandle h, int relation, ObjectHandle value) {

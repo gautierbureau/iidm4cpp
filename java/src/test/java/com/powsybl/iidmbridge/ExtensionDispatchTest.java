@@ -3,6 +3,7 @@ package com.powsybl.iidmbridge;
 import com.powsybl.commons.PowsyblException;
 import com.powsybl.iidm.network.*;
 import com.powsybl.iidm.network.extensions.*;
+import com.powsybl.iidm.network.regulation.RegulationMode;
 import com.powsybl.iidmbridge.graalvm.NetworkRegistry;
 import org.junit.jupiter.api.*;
 
@@ -32,7 +33,8 @@ class ExtensionDispatchTest {
         vl2 = s.newVoltageLevel().setId("VL2").setNominalV(225).setTopologyKind(TopologyKind.BUS_BREAKER).add();
         vl2.getBusBreakerView().newBus().setId("B2").add();
         gen = vl1.newGenerator().setId("G").setBus("B1").setConnectableBus("B1")
-            .setMinP(0).setMaxP(200).setTargetP(100).setTargetV(400).setVoltageRegulatorOn(true).add();
+            .setMinP(0).setMaxP(200).setTargetP(100)
+            .setLocalTargetV(400).newVoltageRegulation().withMode(RegulationMode.VOLTAGE).withRegulating(true).add().add();
         bat = vl1.newBattery().setId("BAT").setBus("B1").setConnectableBus("B1")
             .setMinP(-50).setMaxP(50).setTargetP(0).setTargetQ(0).add();
         load = vl1.newLoad().setId("L").setBus("B1").setConnectableBus("B1").setP0(10).setQ0(0).add();
@@ -59,7 +61,7 @@ class ExtensionDispatchTest {
     // ── ActivePowerControl ────────────────────────────────────────────────
 
     @Test void generatorActivePowerControlFields() {
-        long h = reg(gen);
+        long h = PropertyDispatcher.getRelated(reg(gen), ACTIVE_POWER_CONTROL);
         assertEquals(0.3, PropertyDispatcher.getDouble(h, EXT_APC_PARTICIPATION_FACTOR));
         assertEquals(20.0, PropertyDispatcher.getDouble(h, EXT_APC_MIN_TARGET_P));
         assertTrue(Double.isNaN(PropertyDispatcher.getDouble(h, EXT_APC_MAX_TARGET_P)));
@@ -76,22 +78,25 @@ class ExtensionDispatchTest {
     }
 
     @Test void batteryActivePowerControlFields() {
-        long h = reg(bat);
-        assertEquals(0.6, PropertyDispatcher.getDouble(h, EXT_BAT_APC_PARTICIPATION_FACTOR));
-        assertEquals(-40.0, PropertyDispatcher.getDouble(h, EXT_BAT_APC_MIN_TARGET_P));
-        assertEquals(40.0, PropertyDispatcher.getDouble(h, EXT_BAT_APC_MAX_TARGET_P));
-        PropertyDispatcher.setDouble(h, EXT_BAT_APC_MAX_TARGET_P, 30);
+        // Same extension type, same codes as on a generator
+        long h = PropertyDispatcher.getRelated(reg(bat), ACTIVE_POWER_CONTROL);
+        assertEquals(0.6, PropertyDispatcher.getDouble(h, EXT_APC_PARTICIPATION_FACTOR));
+        assertEquals(-40.0, PropertyDispatcher.getDouble(h, EXT_APC_MIN_TARGET_P));
+        assertEquals(40.0, PropertyDispatcher.getDouble(h, EXT_APC_MAX_TARGET_P));
+        PropertyDispatcher.setDouble(h, EXT_APC_MAX_TARGET_P, 30);
         assertEquals(30.0, ((ActivePowerControl<?>) bat.getExtension(ActivePowerControl.class)).getMaxTargetP().orElseThrow());
     }
 
     @Test void targetPLimitOutsideMinMaxPThrows() {
-        long h = reg(gen);
+        long h = PropertyDispatcher.getRelated(reg(gen), ACTIVE_POWER_CONTROL);
         assertThrows(PowsyblException.class, () -> PropertyDispatcher.setDouble(h, EXT_APC_MAX_TARGET_P, 500));
     }
 
-    @Test void activePowerControlAbsentThrows() {
+    @Test void activePowerControlAbsent() {
         long h = reg(load);
-        assertThrows(IllegalStateException.class, () -> PropertyDispatcher.getDouble(h, EXT_APC_PARTICIPATION_FACTOR));
+        assertEquals(0L, PropertyDispatcher.getRelated(h, ACTIVE_POWER_CONTROL));
+        // The extension's codes apply to the extension object only
+        assertThrows(ClassCastException.class, () -> PropertyDispatcher.getDouble(reg(gen), EXT_APC_PARTICIPATION_FACTOR));
     }
 
     // ── SlackTerminal ─────────────────────────────────────────────────────
@@ -125,6 +130,6 @@ class ExtensionDispatchTest {
 
     @Test void unknownRelationForSetThrows() {
         assertThrows(IllegalArgumentException.class,
-            () -> PropertyDispatcher.setRelatedObject(vl1, REL_TERMINAL, gen.getTerminal()));
+            () -> PropertyDispatcher.setRelatedObject(vl1, REL_BUS, gen.getTerminal()));
     }
 }

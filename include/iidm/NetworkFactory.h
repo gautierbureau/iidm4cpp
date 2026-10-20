@@ -45,6 +45,10 @@ public:
                                  const NetworkLoadOptions& options = {});
 
     // Save a network to an XIIDM file.
+    // A new, empty network (the backend is chosen as for load)
+    static Network create(const std::string& id,
+                          const NetworkLoadOptions& options = {});
+
     static void save(const Network& network, const std::string& filePath);
 
     // Embedded mode only: wrap a network that is already in the JVM without

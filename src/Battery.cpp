@@ -3,6 +3,7 @@
 #include <iidm/MinMaxReactiveLimits.h>
 #include <iidm/ReactiveCapabilityCurve.h>
 #include <iidm/BackendProvider.h>
+#include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
 
 namespace iidm {
@@ -45,11 +46,24 @@ double Battery::getMaxP() const {
 }
 
 bool Battery::hasActivePowerControl() const {
-    return backend_->getBool(handle_, prop::EXT_BAT_APC_EXISTS);
+    HandleRef extension(backend_->getRelated(handle_, prop::ACTIVE_POWER_CONTROL), backend_);
+    return extension != INVALID_HANDLE;
 }
 
 ActivePowerControl Battery::getActivePowerControl() const {
-    return ActivePowerControl(handle_, backend_, prop::EXT_BAT_APC_EXISTS);
+    ObjectHandle extension = backend_->getRelated(handle_, prop::ACTIVE_POWER_CONTROL);
+    if (extension == INVALID_HANDLE) {
+        throw ExtensionNotFoundException("ActivePowerControl extension not present on " + getId());
+    }
+    return ActivePowerControl(extension, backend_);
+}
+
+ActivePowerControlAdder Battery::newActivePowerControl() {
+    return ActivePowerControlAdder(backend_->invoke(handle_, prop::ACTIVE_POWER_CONTROL), backend_);
+}
+
+void Battery::removeActivePowerControl() {
+    backend_->setRelated(handle_, prop::ACTIVE_POWER_CONTROL, INVALID_HANDLE);
 }
 
 bool Battery::hasMinMaxReactiveLimits() const {
