@@ -26,6 +26,23 @@ struct JNIMethodCache {
     jclass iidmRegistryClass    = nullptr;
     jclass listClass            = nullptr;
 
+    // ── PropertyDispatcher (fallback for codes not hand-wired in JNIBackend) ──
+    jclass    dispatcherClass                = nullptr;
+    jmethodID disp_getDouble                 = nullptr;
+    jmethodID disp_setDouble                 = nullptr;
+    jmethodID disp_getInt                    = nullptr;
+    jmethodID disp_setInt                    = nullptr;
+    jmethodID disp_getBool                   = nullptr;
+    jmethodID disp_setBool                   = nullptr;
+    jmethodID disp_getString                 = nullptr;
+    jmethodID disp_setString                 = nullptr;
+    jmethodID disp_getChildObjects           = nullptr;
+    jmethodID disp_getRelatedObject          = nullptr;
+    jmethodID disp_getRelatedObjectByIndex   = nullptr;
+    jmethodID disp_getRelatedObjectByString  = nullptr;
+    jmethodID disp_getIntList                = nullptr;
+    jmethodID disp_findObjectById            = nullptr;
+
     // ── Network methods ──────────────────────────────────────────────────
     jmethodID network_getId             = nullptr;
     jmethodID network_getName           = nullptr;
@@ -97,6 +114,8 @@ struct JNIMethodCache {
     jmethodID substation_getName           = nullptr;
     jmethodID substation_getCountry        = nullptr;
     jmethodID substation_getVoltageLevels  = nullptr;
+    jmethodID substation_getTwoWT          = nullptr;
+    jmethodID substation_getThreeWT        = nullptr;
 
     // ── VoltageLevel methods ─────────────────────────────────────────────
     jmethodID vl_getId               = nullptr;
@@ -154,7 +173,8 @@ struct JNIMethodCache {
     jmethodID tc_getLowTapPosition         = nullptr;
     jmethodID tc_getHighTapPosition        = nullptr;
     jmethodID tc_isRegulating              = nullptr;
-    jmethodID tc_setRegulating             = nullptr;
+    jmethodID rtc_setRegulating            = nullptr;
+    jmethodID ptc_setRegulating            = nullptr;
     jmethodID rtc_getTargetV               = nullptr;
     jmethodID rtc_setTargetV               = nullptr;
     jmethodID ptc_getRegulationMode        = nullptr;
@@ -245,10 +265,12 @@ struct JNIMethodCache {
     jmethodID hoar_getOprFromCS2toCS1           = nullptr;
     jmethodID hoar_setOprFromCS2toCS1           = nullptr;
 
-    // ── VoltagePerReactivePowerControl extension (on StaticVarCompensator) ────
-    jclass    voltagePerReactivePowerControlClass = nullptr;
-    jmethodID vprc_getSlope                       = nullptr;
-    jmethodID vprc_setSlope                       = nullptr;
+    // ── Core VoltageRegulation (backs VoltagePerReactivePowerControl since 7.4) ──
+    jclass    voltageRegulationClass              = nullptr;
+    jmethodID vrHolder_getVoltageRegulation       = nullptr;
+    jmethodID vr_getMode                          = nullptr;
+    jmethodID vr_getSlope                         = nullptr;
+    jmethodID vr_setSlope                         = nullptr;
 
     // ── SlackTerminal extension (on VoltageLevel) ─────────────────────────────
     jclass    slackTerminalClass   = nullptr;
@@ -324,8 +346,10 @@ struct JNIMethodCache {
     jmethodID cs_getHvdcLine             = nullptr;
 
     // ── TapChanger: targetDeadband, regulationTerminal, hasLoadTapChangingCap ───
-    jmethodID tc_getTargetDeadband        = nullptr;
-    jmethodID tc_getRegulationTerminal    = nullptr;
+    jmethodID rtc_getTargetDeadband       = nullptr;
+    jmethodID ptc_getTargetDeadband       = nullptr;
+    jmethodID rtc_getRegulationTerminal   = nullptr;
+    jmethodID ptc_getRegulationTerminal   = nullptr;
     jmethodID rtc_hasLoadTapChangingCap   = nullptr; // RatioTapChanger.hasLoadTapChangingCapabilities()
 
     // ── Terminal navigation ───────────────────────────────────────────────────
@@ -343,7 +367,7 @@ struct JNIMethodCache {
     jclass    shuntNLModelClass          = nullptr;
     jclass    shuntSectionClass          = nullptr;
     jmethodID shunt_getModelType         = nullptr;
-    jmethodID shunt_getNonLinearModel    = nullptr;
+    jmethodID shunt_getNonLinearModel    = nullptr; // ShuntCompensator.getModel()
     jmethodID shuntNLModel_getAllSections = nullptr;
     jmethodID shuntSection_getB          = nullptr;
     jmethodID shuntSection_getG          = nullptr;
@@ -355,7 +379,7 @@ struct JNIMethodCache {
     jmethodID shuntLM_getGPerSection     = nullptr;
 
     // ── StaticVarCompensator regulation mode + isRegulating ──────────────────
-    jclass    svcRegulationModeClass     = nullptr; // StaticVarCompensator$RegulationMode
+    jclass    svcRegulationModeClass     = nullptr; // regulation.RegulationMode
     jmethodID svc_getRegulationMode      = nullptr;
     jmethodID svc_setRegulationMode      = nullptr;
     jmethodID svc_isRegulating           = nullptr;

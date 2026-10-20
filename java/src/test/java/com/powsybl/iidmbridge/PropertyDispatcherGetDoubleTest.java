@@ -2,6 +2,7 @@ package com.powsybl.iidmbridge;
 
 import com.powsybl.iidm.network.*;
 import com.powsybl.iidm.network.ShuntCompensatorNonLinearModel;
+import com.powsybl.iidm.network.regulation.RegulationMode;
 import com.powsybl.iidmbridge.graalvm.NetworkRegistry;
 import org.junit.jupiter.api.*;
 
@@ -207,7 +208,7 @@ class PropertyDispatcherGetDoubleTest {
                 .setBus(b.getId()).setConnectableBus(b.getId())
                 .setBmin(-1e-4).setBmax(1e-4)
                 .setVoltageSetpoint(400).setReactivePowerSetpoint(0)
-                .setRegulationMode(StaticVarCompensator.RegulationMode.VOLTAGE)
+                .setRegulationMode(RegulationMode.VOLTAGE)
                 .setRegulatingTerminal(refLoad.getTerminal())
                 .setRegulating(true)
                 .add();
@@ -230,7 +231,7 @@ class PropertyDispatcherGetDoubleTest {
                 .setBus(b.getId()).setConnectableBus(b.getId())
                 .setBmin(-1e-4).setBmax(1e-4)
                 .setVoltageSetpoint(400).setReactivePowerSetpoint(0)
-                .setRegulationMode(StaticVarCompensator.RegulationMode.REACTIVE_POWER)
+                .setRegulationMode(RegulationMode.REACTIVE_POWER)
                 .setRegulatingTerminal(refLoad.getTerminal())
                 .setRegulating(false)
                 .add();
@@ -241,7 +242,7 @@ class PropertyDispatcherGetDoubleTest {
         // Flipping back to regulating exposes the real mode.
         svc.setRegulating(true);
         assertEquals(1, PropertyDispatcher.getInt(h, SVC_REGULATION_MODE));
-        svc.setRegulationMode(StaticVarCompensator.RegulationMode.VOLTAGE);
+        svc.setRegulationMode(RegulationMode.VOLTAGE);
         assertEquals(0, PropertyDispatcher.getInt(h, SVC_REGULATION_MODE));
 
         // Setter: writing 2 (OFF) must turn isRegulating() off; writing 0/1 must turn it on.
@@ -249,16 +250,48 @@ class PropertyDispatcherGetDoubleTest {
         assertFalse(svc.isRegulating());
         PropertyDispatcher.setInt(h, SVC_REGULATION_MODE, 1);
         assertTrue(svc.isRegulating());
-        assertEquals(StaticVarCompensator.RegulationMode.REACTIVE_POWER, svc.getRegulationMode());
+        assertEquals(RegulationMode.REACTIVE_POWER, svc.getRegulationMode());
+
+        // VOLTAGE_PER_REACTIVE_POWER (powsybl-core >= 7.4) maps to code 3.
+        svc.getVoltageRegulation().setSlope(0.01);
+        PropertyDispatcher.setInt(h, SVC_REGULATION_MODE, 3);
+        assertEquals(RegulationMode.VOLTAGE_PER_REACTIVE_POWER, svc.getRegulationMode());
+        assertEquals(3, PropertyDispatcher.getInt(h, SVC_REGULATION_MODE));
     }
 
-    // ── DanglingLine ─────────────────────────────────────────────────────────
+    // The VoltagePerReactivePowerControl extension was removed in powsybl-core 7.4; the bridge
+    // maps EXT_VPRC_* onto the core VoltageRegulation in VOLTAGE_PER_REACTIVE_POWER mode.
+    @Test void svc_voltagePerReactivePowerControl_mapsToVoltageRegulation() {
+        Substation s = addSubstation();
+        VoltageLevel vl = addVoltageLevel(s, 400);
+        Bus b = addBus(vl);
+        StaticVarCompensator svc = vl.newStaticVarCompensator().setId("SVC3")
+                .setBus(b.getId()).setConnectableBus(b.getId())
+                .setBmin(-1e-4).setBmax(1e-4)
+                .setVoltageSetpoint(400).setReactivePowerSetpoint(0)
+                .setRegulationMode(RegulationMode.VOLTAGE)
+                .setRegulating(true)
+                .add();
+        long h = reg(svc);
+        assertEquals(0, PropertyDispatcher.getBool(h, EXT_VPRC_EXISTS));
+        assertThrows(IllegalStateException.class, () -> PropertyDispatcher.getDouble(h, EXT_VPRC_SLOPE));
+
+        svc.getVoltageRegulation().setSlope(0.02);
+        svc.getVoltageRegulation().setMode(RegulationMode.VOLTAGE_PER_REACTIVE_POWER);
+        assertEquals(1, PropertyDispatcher.getBool(h, EXT_VPRC_EXISTS));
+        assertEquals(0.02, PropertyDispatcher.getDouble(h, EXT_VPRC_SLOPE), 1e-12);
+
+        PropertyDispatcher.setDouble(h, EXT_VPRC_SLOPE, 0.05);
+        assertEquals(0.05, svc.getVoltageRegulation().getSlope(), 1e-12);
+    }
+
+    // ── DanglingLine (BoundaryLine in powsybl-core >= 7.4) ───────────────────────────────────────────────────────────────────────────
 
     @Test void danglingLine_params() {
         Substation s = addSubstation();
         VoltageLevel vl = addVoltageLevel(s, 400);
         Bus b = addBus(vl);
-        DanglingLine dl = vl.newDanglingLine().setId("DL")
+        BoundaryLine dl = vl.newBoundaryLine().setId("DL")
                 .setBus(b.getId()).setConnectableBus(b.getId())
                 .setP0(10).setQ0(5).setR(1).setX(5).setG(0).setB(1e-5).add();
         assertEquals(10.0, PropertyDispatcher.getDouble(reg(dl), DL_P0));

@@ -69,6 +69,16 @@ TEST_F(StaticVarCompensatorTest, RegulationModeOffRoundTrip) {
     EXPECT_EQ((backend.ints[{SVC_H, prop::SVC_REGULATION_MODE}]), 2);
 }
 
+// powsybl-core 7.4 adds VOLTAGE_PER_REACTIVE_POWER; the backends map it to code 3.
+TEST_F(StaticVarCompensatorTest, RegulationModeVoltagePerReactivePowerRoundTrip) {
+    backend.ints[{SVC_H, prop::SVC_REGULATION_MODE}] = 3;
+    StaticVarCompensator svc(SVC_H, &backend);
+    EXPECT_EQ(svc.getRegulationMode(), StaticVarCompensatorRegulationMode::VOLTAGE_PER_REACTIVE_POWER);
+    svc.setRegulationMode(StaticVarCompensatorRegulationMode::REACTIVE_POWER);
+    svc.setRegulationMode(StaticVarCompensatorRegulationMode::VOLTAGE_PER_REACTIVE_POWER);
+    EXPECT_EQ((backend.ints[{SVC_H, prop::SVC_REGULATION_MODE}]), 3);
+}
+
 TEST_F(StaticVarCompensatorTest, GetTerminal) {
     backend.doubles[{TERM_H, prop::TERMINAL_P}] = 10.0;
     StaticVarCompensator svc(SVC_H, &backend);

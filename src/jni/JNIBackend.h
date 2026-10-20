@@ -55,7 +55,9 @@ private:
     jobject toObject(ObjectHandle h) const;
     // Wrap a Java Iterable/List into a vector of handles
     std::vector<ObjectHandle> collectionToHandles(jobject collection) const;
-    // Wrap a java.util.SortedMap's values() into a vector of handles
+    // Wrap a Java Object[] into a vector of handles (deletes the local array ref)
+    std::vector<ObjectHandle> objectArrayToHandles(jobjectArray arr) const;
+    // Wrap a java.util.Map's values() into a vector of handles
     std::vector<ObjectHandle> sortedMapValuesToHandles(jobject sortedMap) const;
     // Return a local ref to the ActivePowerControl extension of a generator (may be null)
     jobject fetchApcExtension(jobject gen) const;
@@ -64,6 +66,7 @@ private:
     jobject fetchCrcExtension(jobject gen) const;
     jobject fetchHadapcExtension(jobject hvdc) const;
     jobject fetchHoarExtension(jobject hvdc) const;
+    // VoltageRegulation of an SVC in VOLTAGE_PER_REACTIVE_POWER mode (may be null)
     jobject fetchVprcExtension(jobject svc) const;
     jobject fetchStExtension(jobject vl) const;
 
