@@ -3,6 +3,7 @@ package com.powsybl.iidmbridge.graalvm;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.serde.NetworkSerDe;
 import com.powsybl.iidmbridge.BridgeErrors;
+import com.powsybl.iidmbridge.Creation;
 import com.powsybl.iidmbridge.PropertyDispatcher;
 import org.graalvm.nativeimage.IsolateThread;
 import org.graalvm.nativeimage.UnmanagedMemory;
@@ -91,6 +92,16 @@ public final class IidmEntryPoints {
         try {
             Network network = Network.read(Path.of(CTypeConversion.toJavaString(filePath)));
             outHandle.write(NetworkRegistry.register(network));
+            return BridgeErrors.OK;
+        } catch (Throwable t) {
+            return fail(t);
+        }
+    }
+
+    @CEntryPoint(name = "iidm_create_network")
+    public static int createNetwork(IsolateThread thread, CCharPointer id, CLongPointer outHandle) {
+        try {
+            outHandle.write(NetworkRegistry.register(Creation.createNetwork(CTypeConversion.toJavaString(id))));
             return BridgeErrors.OK;
         } catch (Throwable t) {
             return fail(t);
@@ -304,6 +315,16 @@ public final class IidmEntryPoints {
     public static int setRelated(IsolateThread thread, long handle, int relation, long valueHandle) {
         try {
             PropertyDispatcher.setRelated(handle, relation, valueHandle);
+            return BridgeErrors.OK;
+        } catch (Throwable t) {
+            return fail(t);
+        }
+    }
+
+    @CEntryPoint(name = "iidm_invoke")
+    public static int invoke(IsolateThread thread, long handle, int code, CLongPointer out) {
+        try {
+            out.write(PropertyDispatcher.invoke(handle, code));
             return BridgeErrors.OK;
         } catch (Throwable t) {
             return fail(t);

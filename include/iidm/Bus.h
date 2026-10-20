@@ -25,6 +25,9 @@ public:
 
     VoltageLevel getVoltageLevel() const;
 
+    // Removes a bus-breaker bus that nothing is connected to (else ValidationException)
+    void remove();
+
     bool isValid() const { return handle_ != INVALID_HANDLE; }
 
     bool operator==(const Bus& other) const;

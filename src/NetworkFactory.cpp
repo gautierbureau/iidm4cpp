@@ -33,6 +33,12 @@ Network NetworkFactory::loadFromBytes(const std::string& bytes,
     return loadFromBytes(bytes.data(), bytes.size(), options);
 }
 
+Network NetworkFactory::create(const std::string& id, const NetworkLoadOptions& options) {
+    auto backend = selectBackend(options);
+    backend->createNetwork(id);
+    return Network(std::move(backend));
+}
+
 Network NetworkFactory::wrap(const std::string& networkId, const NetworkLoadOptions& options) {
     NetworkLoadOptions jniOptions = options;
     jniOptions.mode = BackendMode::JNI;

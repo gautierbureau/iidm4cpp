@@ -30,6 +30,8 @@ enum class SwitchKind { BREAKER, DISCONNECTOR, LOAD_BREAK_SWITCH };
 enum class PhaseTapChangerRegulationMode { CURRENT_LIMITER, ACTIVE_POWER_CONTROL, FIXED_TAP };
 enum class HvdcOperatorActivePowerRangeSide { SIDE1, SIDE2 };
 enum class ThreeSides { ONE, TWO, THREE };
+// Mode of a VoltageRegulation (powsybl 7.4 regulation.RegulationMode)
+enum class RegulationMode { VOLTAGE, REACTIVE_POWER, VOLTAGE_PER_REACTIVE_POWER };
 
 // ── State estimation extensions (same order as the powsybl-core enums) ──────
 enum class MeasurementType {

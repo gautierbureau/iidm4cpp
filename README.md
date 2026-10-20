@@ -94,7 +94,7 @@ already there.
 
 | Goal | Rationale |
 |---|---|
-| Expose getters and setters only | Dynawo does not need topology mutation or network creation |
+| Expose the current IIDM API from C++: reading, changing, creating and removing objects | The C++ code uses IIDM as Java code would; deprecated powsybl APIs are not ported |
 | Single C++ API surface for both modes | Dynawo code has zero `#ifdef STANDALONE` branches |
 | Delegate all business logic to Java | Correctness, extensions, and future IIDM revisions are free |
 | Zero-copy in embedded mode | The JVM already owns the data; the C++ layer only borrows references |
@@ -103,10 +103,10 @@ already there.
 
 ### Non-Goals
 
-- **Network creation or topology modification** from C++. Dynawo is a
-  consumer, not a builder.
 - **A full IIDM reimplementation**. That is explicitly what we are moving
-  away from.
+  away from: validation, defaults and id checks stay in powsybl, including
+  when objects are created from C++ (the C++ adders forward to powsybl's
+  adders).
 - **Python or other language bindings**. This library targets C++ consumers
   only. pypowsybl covers Python.
 - **Replacing the Java serialization layer**. File I/O remains Java's
@@ -217,14 +217,21 @@ VoltageLevel
 
 Generator
 ├── getId() / getName()
-├── getTargetP() → double        setTargetP(double)
-├── getTargetQ() → double        setTargetQ(double)
-├── getTargetV() → double        setTargetV(double)
-├── getMinP() → double
-├── getMaxP() → double
-├── isVoltageRegulatorOn() → bool  setVoltageRegulatorOn(bool)
+├── getTargetP() / getMinP() / getMaxP() / getRatedS() → double   (+ setters)
+├── getLocalTargetV() / getLocalTargetQ() → double                (+ setters)
+├── getVoltageRegulation() → optional<VoltageRegulation>
+├── newVoltageRegulation() / removeVoltageRegulation()
+├── isRegulating() / getRegulatingTargetV() / getRegulatingTargetQ() / getRegulatingTerminal()
+├── getEnergySource() → EnergySource                               (+ setter)
+├── isCondenser() → bool
 ├── getTerminal() → Terminal
-└── getEnergySource() → EnergySource
+└── remove()
+
+VoltageRegulation (powsybl 7.4 core model)
+├── getMode() → optional<RegulationMode>       setMode(RegulationMode)
+├── isRegulating() → bool                      setRegulating(bool)
+├── getTargetValue() / getTargetDeadband() / getSlope() → double (+ setters)
+└── getTerminal() → optional<Terminal>         setTerminal(Terminal, targetValue)
 
 Load
 ├── getId() / getName()
@@ -285,17 +292,13 @@ public:
     double getTargetP() const;
     Generator& setTargetP(double targetP);
 
-    double getTargetQ() const;
-    Generator& setTargetQ(double targetQ);
-
-    double getTargetV() const;
-    Generator& setTargetV(double targetV);
+    double getLocalTargetQ() const;
+    Generator& setLocalTargetQ(double localTargetQ);
 
     double getMinP() const;
     double getMaxP() const;
 
-    bool isVoltageRegulatorOn() const;
-    Generator& setVoltageRegulatorOn(bool on);
+    iidm::optional<VoltageRegulation> getVoltageRegulation() const;
 
     EnergySource getEnergySource() const;
 
@@ -433,6 +436,45 @@ values rather than sentinel values, providing a cleaner API than the Java
 
 ---
 
+### 4.5 Creating and Removing Objects
+
+Objects are created with adders shaped like powsybl's, and removed with `remove()`:
+
+```cpp
+Network network = NetworkFactory::create("demo");          // or load an existing one
+Substation s = network.newSubstation().setId("S").setCountry(Country::FR).add();
+VoltageLevel vl = s.newVoltageLevel().setId("VL").setNominalV(400)
+                   .setTopologyKind(TopologyKind::BUS_BREAKER).add();
+vl.getBusBreakerView().newBus().setId("B").add();
+Generator g = vl.newGenerator().setId("G").setBus("B")
+                .setMinP(0).setMaxP(200).setTargetP(100).setLocalTargetV(400)
+                .newVoltageRegulation().withMode(RegulationMode::VOLTAGE).withRegulating(true).add()
+                .add();
+g.newActivePowerControl().withDroop(4).withParticipate(true).add();
+Load load = vl.newLoad().setId("L").setBus("B").setP0(80).setQ0(10).add();
+
+load.remove();
+g.removeActivePowerControl();
+```
+
+- **Validation is powsybl's.** A missing or invalid field, a duplicate id or an unknown bus throws
+  `ValidationException` from `add()`, and nothing is created.
+- **Only current APIs.** The generator's voltage regulation follows powsybl 7.4: a nested
+  `newVoltageRegulation()` adder, local targets on the generator (`setLocalTargetV/Q`). Without a
+  terminal the regulation is local and its target value is NaN; `VoltageRegulation::setTerminal(terminal,
+  targetValue)` switches to remote regulation (both change together).
+- **Removal.** `remove()` removes the object from the network (a voltage level or substation with its
+  equipment). powsybl refuses some removals, e.g. a voltage level that branches still connect:
+  `ValidationException`. A removed object's wrapper keeps its handle: powsybl decides what using it
+  does (changes are rejected with `ValidationException`).
+- **Available so far:** network, substation, voltage level (with or without substation), bus-breaker
+  bus, generator, load, generator voltage regulation, ActivePowerControl (generator, battery).
+
+Underneath, there is one backend primitive, `invoke(handle, code)` (§5.1): `invoke(parent, TYPE)`
+returns a Java adder, the adder's fields are set with the usual setters and the object's own
+property codes (`setDouble(adder, GEN_TARGET_P, 100)`), and `invoke(adder, ACT_ADD)` adds the
+object. The Java side (`Creation.java`) maps each field to the powsybl adder method.
+
 ## 5. Backend Abstraction Layer
 
 ### 5.1 BackendProvider Interface
@@ -466,6 +508,12 @@ public:
     // ── Navigation (children, terminals, etc.) ───────────────────────────
     virtual std::vector<ObjectHandle> getChildren(ObjectHandle h, int childType) const = 0;
     virtual ObjectHandle              getRelated(ObjectHandle h, int relation) const = 0;
+    virtual void setRelated(ObjectHandle h, int relation, ObjectHandle value);
+
+    // ── Creation and removal ─────────────────────────────────────────────
+    // invoke(parent, TYPE) → adder; invoke(adder, ACT_ADD) → new object;
+    // invoke(object, ACT_REMOVE) removes it
+    virtual ObjectHandle invoke(ObjectHandle h, int code);
 
     // ── Lookup by ID ─────────────────────────────────────────────────────
     virtual ObjectHandle findById(int objectType, const std::string& id) const = 0;
@@ -475,6 +523,7 @@ public:
 
     // ── Lifecycle ────────────────────────────────────────────────────────
     virtual void loadNetwork(const std::string& filePath) = 0;
+    virtual void createNetwork(const std::string& id);
     virtual void close() = 0;
 };
 
@@ -496,49 +545,14 @@ IIDM_CODE(GENERATOR,                   3)
 // …
 
 // Shared properties (applicable to many types)
-constexpr int ID                       = 100;
-constexpr int NAME                     = 101;
+IIDM_CODE(ID,                          100)
+IIDM_CODE(NAME,                        101)
 
 // Generator-specific
-constexpr int GEN_TARGET_P             = 200;
-constexpr int GEN_TARGET_Q             = 201;
-constexpr int GEN_TARGET_V             = 202;
-constexpr int GEN_MIN_P                = 203;
-constexpr int GEN_MAX_P                = 204;
-constexpr int GEN_VOLTAGE_REGULATOR_ON = 205;
-constexpr int GEN_ENERGY_SOURCE        = 206;
-
-// Load-specific
-constexpr int LOAD_P0                  = 300;
-constexpr int LOAD_Q0                  = 301;
-constexpr int LOAD_TYPE                = 302;
-
-// Terminal
-constexpr int TERMINAL_P               = 400;
-constexpr int TERMINAL_Q               = 401;
-constexpr int TERMINAL_CONNECTED       = 402;
-constexpr int TERMINAL_BUS_ID         = 403;
-
-// Bus
-constexpr int BUS_V                    = 500;
-constexpr int BUS_ANGLE                = 501;
-
-// VoltageLevel
-constexpr int VL_NOMINAL_V             = 600;
-constexpr int VL_LOW_VOLTAGE_LIMIT     = 601;
-constexpr int VL_HIGH_VOLTAGE_LIMIT    = 602;
-constexpr int VL_TOPOLOGY_KIND         = 603;
-
-// Line
-constexpr int LINE_R                   = 700;
-constexpr int LINE_X                   = 701;
-constexpr int LINE_G1                  = 702;
-constexpr int LINE_B1                  = 703;
-constexpr int LINE_G2                  = 704;
-constexpr int LINE_B2                  = 705;
+IIDM_CODE(GEN_TARGET_P,                200)
+IIDM_CODE(GEN_MIN_P,                   203)
+IIDM_CODE(GEN_MAX_P,                   204)
 // … and so on
-
-} // namespace iidm::prop
 ```
 
 ### 5.2 GraalVM Native Image Backend
@@ -712,50 +726,56 @@ properties, but the two backends handle the dispatch differently.
 
 #### C++ surface
 
-An extension is a thin wrapper class that holds the same `ObjectHandle` as
-its host component and routes calls through `EXT_*` property codes:
+An extension is an object of its own, reached from its host. Its wrapper holds the extension's
+handle and uses the extension's codes; the host has `hasX()`, `getX()` (`ExtensionNotFoundException`
+when absent), `newX()` and `removeX()`:
 
 ```cpp
 // include/iidm/ActivePowerControl.h
 class ActivePowerControl {
 public:
     explicit ActivePowerControl(ObjectHandle handle, BackendProvider* backend);
-
     bool   isParticipate() const;                     // EXT_APC_PARTICIPATE
-    ActivePowerControl& setParticipate(bool v);
+    ActivePowerControl& setParticipate(bool participate);
     double getDroop() const;                          // EXT_APC_DROOP
-    ActivePowerControl& setDroop(double v);
-
-    bool isValid() const { return handle_ != INVALID_HANDLE; }
-private:
-    ObjectHandle   handle_;
-    BackendProvider* backend_;
+    ActivePowerControl& setDroop(double droop);
+    // …
 };
 
-// include/iidm/Generator.h (additions)
-bool             hasActivePowerControl() const;  // EXT_APC_EXISTS
-ActivePowerControl getActivePowerControl() const;
+// include/iidm/Generator.h (and Battery.h)
+bool                    hasActivePowerControl() const;
+ActivePowerControl      getActivePowerControl() const;
+ActivePowerControlAdder newActivePowerControl();
+void                    removeActivePowerControl();
 ```
 
-Property codes for extensions occupy a dedicated range in `PropertyCodes.def`:
+Each extension has a block of codes in `PropertyCodes.def`. Its first code is the extension's
+**type code**, used for every operation on the host; the others are its properties:
 
 ```cpp
-IIDM_CODE(EXT_APC_EXISTS,      3000)  // bool: is extension present?
-IIDM_CODE(EXT_APC_DROOP,       3001)  // double getter/setter
-IIDM_CODE(EXT_APC_PARTICIPATE, 3002)  // bool getter/setter
+IIDM_CODE(ACTIVE_POWER_CONTROL, 3000) // getRelated(host, …): the extension (INVALID_HANDLE when absent)
+                                      // invoke(host, …): its adder; setRelated(host, …, INVALID_HANDLE): removes it
+IIDM_CODE(EXT_APC_DROOP,        3001) // on the extension object
+IIDM_CODE(EXT_APC_PARTICIPATE,  3002)
 ```
+
+The extension type is the same whatever the host, so a generator's and a battery's
+ActivePowerControl use the same codes. The extensions ported before this model (all but
+ActivePowerControl) are still read through their host's handle (`EXT_X_EXISTS` and host-based
+codes) until they move to it.
 
 #### GraalVM backend — automatic
 
 The GraalVM entry points (`iidm_get_double`, `iidm_get_bool`, …) forward
 **every** property code to `PropertyDispatcher.java` without a hard-coded
-switch. Adding an extension only requires new cases in `PropertyDispatcher`:
+switch. Adding an extension only requires new cases in `PropertyDispatcher`
+(and `Creation.java` for its adder):
 
 ```java
 // PropertyDispatcher.java
-case EXT_APC_DROOP    -> ((Generator) obj).getExtension(ActivePowerControl.class).getDroop();
-case EXT_APC_EXISTS   -> ((Generator) obj).getExtension(ActivePowerControl.class) != null;
-case EXT_APC_PARTICIPATE -> ((Generator) obj).getExtension(ActivePowerControl.class).isParticipate();
+case ACTIVE_POWER_CONTROL -> ((Extendable<?>) obj).getExtension(ActivePowerControl.class); // getRelatedObject
+case EXT_APC_DROOP        -> activePowerControl(obj).getDroop();                          // getDouble
+case EXT_APC_PARTICIPATE  -> activePowerControl(obj).isParticipate();                     // getBool
 ```
 
 No C++ changes are needed in the GraalVM backend.
@@ -772,7 +792,7 @@ powsybl-core.
 
 | Extension | Hosts | Codes |
 |---|---|---|
-| `ActivePowerControl` | Generator, Battery | `EXT_APC_*`, `EXT_BAT_APC_*` |
+| `ActivePowerControl` (object, with adder) | Generator, Battery | `ACTIVE_POWER_CONTROL`, `EXT_APC_*` |
 | `CoordinatedReactiveControl` | Generator | `EXT_CRC_*` |
 | `HvdcAngleDroopActivePowerControl` | HvdcLine | `EXT_HADAPC_*` |
 | `HvdcOperatorActivePowerRange` | HvdcLine | `EXT_HOAR_*` |
@@ -796,10 +816,10 @@ The state estimation extensions are exercised end to end by
 
 | Step | File(s) |
 |---|---|
-| `EXT_*` property codes | `include/iidm/PropertyCodes.def` (one line each) |
-| C++ extension wrapper | `include/iidm/MyExt.h` + `src/MyExt.cpp` (+ `CMakeLists.txt`, `iidm.h`) |
-| Host component accessors | e.g. `Generator.h` / `Generator.cpp` |
-| `PropertyDispatcher` cases | `PropertyDispatcher.java` — serves **both** backends |
+| Codes: the type code, then one per property | `include/iidm/PropertyCodes.def` (one line each) |
+| C++ extension wrapper and adder | `include/iidm/MyExt.h` + `src/MyExt.cpp`, `include/iidm/MyExtAdder.h` (+ `CMakeLists.txt`, `iidm.h`) |
+| Host accessors: `hasMyExt`, `getMyExt`, `newMyExt`, `removeMyExt` | e.g. `Generator.h` / `Generator.cpp` |
+| `PropertyDispatcher` cases (getRelatedObject, properties) and `Creation` cases (adder, fields, removal) | `PropertyDispatcher.java`, `Creation.java` — serve **both** backends |
 | C++ unit tests | `test/TestMyExt.cpp` with `MockBackend` |
 | Java dispatcher tests | `java/src/test/...` (covers the handle and object APIs) |
 
@@ -951,8 +971,7 @@ public final class PropertyDispatcher {
         Object obj = NetworkRegistry.lookup(handle);
         return switch (property) {
             case PropertyCodes.GEN_TARGET_P -> ((Generator) obj).getTargetP();
-            case PropertyCodes.GEN_TARGET_Q -> ((Generator) obj).getTargetQ();
-            case PropertyCodes.GEN_TARGET_V -> ((Generator) obj).getTargetV();
+            case PropertyCodes.LOCAL_TARGET_Q -> ((VoltageRegulationHolder<?>) obj).getLocalTargetQ();
             case PropertyCodes.GEN_MIN_P    -> ((Generator) obj).getMinP();
             case PropertyCodes.GEN_MAX_P    -> ((Generator) obj).getMaxP();
             case PropertyCodes.LOAD_P0      -> ((Load) obj).getP0();
@@ -970,8 +989,7 @@ public final class PropertyDispatcher {
         Object obj = NetworkRegistry.lookup(handle);
         switch (property) {
             case PropertyCodes.GEN_TARGET_P -> ((Generator) obj).setTargetP(value);
-            case PropertyCodes.GEN_TARGET_Q -> ((Generator) obj).setTargetQ(value);
-            case PropertyCodes.GEN_TARGET_V -> ((Generator) obj).setTargetV(value);
+            case PropertyCodes.LOCAL_TARGET_Q -> ((VoltageRegulationHolder<?>) obj).setLocalTargetQ(value);
             case PropertyCodes.LOAD_P0      -> ((Load) obj).setP0(value);
             case PropertyCodes.LOAD_Q0      -> ((Load) obj).setQ0(value);
             case PropertyCodes.TERMINAL_P   -> ((Terminal) obj).setP(value);

@@ -3,6 +3,7 @@ package com.powsybl.iidmbridge;
 import com.powsybl.commons.PowsyblException;
 import com.powsybl.iidm.network.*;
 import com.powsybl.iidm.network.extensions.*;
+import com.powsybl.iidm.network.regulation.RegulationMode;
 import com.powsybl.iidm.serde.NetworkSerDe;
 import com.powsybl.iidmbridge.graalvm.NetworkRegistry;
 import com.powsybl.iidmbridge.jni.IidmBridgeRegistry;
@@ -41,9 +42,11 @@ class BridgeErrorsTest {
         VoltageLevel vl2 = s.newVoltageLevel().setId("VL2").setNominalV(225).setTopologyKind(TopologyKind.BUS_BREAKER).add();
         vl2.getBusBreakerView().newBus().setId("B2").add();
         Generator g = vl1.newGenerator().setId("G").setBus("B1").setConnectableBus("B1")
-            .setMinP(0).setMaxP(200).setTargetP(100).setTargetV(400).setVoltageRegulatorOn(true).add();
+            .setMinP(0).setMaxP(200).setTargetP(100)
+            .setLocalTargetV(400).newVoltageRegulation().withMode(RegulationMode.VOLTAGE).withRegulating(true).add().add();
         vl1.newGenerator().setId("G2").setBus("B1").setConnectableBus("B1")
-            .setMinP(0).setMaxP(50).setTargetP(10).setTargetV(400).setVoltageRegulatorOn(true).add();
+            .setMinP(0).setMaxP(50).setTargetP(10)
+            .setLocalTargetV(400).newVoltageRegulation().withMode(RegulationMode.VOLTAGE).withRegulating(true).add().add();
         vl1.newLoad().setId("L").setBus("B1").setConnectableBus("B1").setP0(10).setQ0(0).add();
         vl2.newLoad().setId("L2").setBus("B2").setConnectableBus("B2").setP0(10).setQ0(0).add();
         g.newExtension(ActivePowerControlAdder.class).withParticipate(true).withDroop(4).withMaxTargetP(150).add();
@@ -85,9 +88,11 @@ class BridgeErrorsTest {
 
     @Test void absentExtension() {
         long g2 = reg(network.getGenerator("G2"));
-        // legacy code path (used to raise a NullPointerException)
-        assertEquals(BridgeErrors.EXTENSION_NOT_FOUND, kindOfFailure(() -> PropertyDispatcher.getDouble(g2, EXT_APC_DROOP)));
-        assertEquals(BridgeErrors.EXTENSION_NOT_FOUND, kindOfFailure(() -> PropertyDispatcher.getDouble(g2, EXT_APC_PARTICIPATION_FACTOR)));
+        // Extension objects: absent is null; their codes do not apply to the host
+        assertEquals(0L, PropertyDispatcher.getRelated(g2, ACTIVE_POWER_CONTROL));
+        assertEquals(BridgeErrors.PROPERTY_NOT_FOUND, kindOfFailure(() -> PropertyDispatcher.getDouble(g2, EXT_APC_DROOP)));
+        // Extensions read through their host
+        assertEquals(BridgeErrors.EXTENSION_NOT_FOUND, kindOfFailure(() -> PropertyDispatcher.getDouble(g2, EXT_CRC_Q_PERCENT)));
         long vl2 = reg(network.getVoltageLevel("VL2"));
         assertEquals(BridgeErrors.EXTENSION_NOT_FOUND, kindOfFailure(() -> PropertyDispatcher.getRelated(vl2, REL_SLACK_TERMINAL)));
     }
@@ -103,8 +108,8 @@ class BridgeErrorsTest {
     }
 
     @Test void rejectedValues() {
-        long g = reg(network.getGenerator("G"));
-        assertEquals(BridgeErrors.VALIDATION, kindOfFailure(() -> PropertyDispatcher.setDouble(g, EXT_APC_MAX_TARGET_P, 500)));
+        long apc = PropertyDispatcher.getRelated(reg(network.getGenerator("G")), ACTIVE_POWER_CONTROL);
+        assertEquals(BridgeErrors.VALIDATION, kindOfFailure(() -> PropertyDispatcher.setDouble(apc, EXT_APC_MAX_TARGET_P, 500)));
         long vl1 = reg(network.getVoltageLevel("VL1"));
         long l2Terminal = reg(network.getLoad("L2").getTerminal());
         assertEquals(BridgeErrors.VALIDATION, kindOfFailure(() -> PropertyDispatcher.setRelated(vl1, REL_SLACK_TERMINAL, l2Terminal)));
@@ -117,13 +122,15 @@ class BridgeErrorsTest {
     @Test void classification() {
         assertEquals(BridgeErrors.VALIDATION, BridgeErrors.kindOf(new PowsyblException("x")));
         assertEquals(BridgeErrors.VALIDATION, BridgeErrors.kindOf(new IllegalArgumentException("x")));
-        assertEquals(BridgeErrors.GENERIC, BridgeErrors.kindOf(new IllegalStateException("x")));
+        // powsybl refuses operations in the current state with IllegalStateException
+        assertEquals(BridgeErrors.VALIDATION, BridgeErrors.kindOf(new IllegalStateException("x")));
+        assertEquals(BridgeErrors.GENERIC, BridgeErrors.kindOf(new ArithmeticException("x")));
         assertEquals(BridgeErrors.GENERIC, BridgeErrors.kindOf(new OutOfMemoryError()));
     }
 
     @Test void messages() {
         assertEquals("plain", BridgeErrors.message(new PowsyblException("plain")));
-        assertEquals("java.lang.IllegalStateException: boom", BridgeErrors.message(new IllegalStateException("boom")));
+        assertEquals("java.lang.ArithmeticException: boom", BridgeErrors.message(new ArithmeticException("boom")));
         assertEquals("java.lang.NullPointerException", BridgeErrors.message(new NullPointerException()));
     }
 }

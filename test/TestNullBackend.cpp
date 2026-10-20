@@ -43,7 +43,7 @@ TEST(NullBackendTest, DefaultConstructedExtensions) {
 
 TEST(NullBackendTest, ExplicitNullBackend) {
     EXPECT_THROW(Generator(42, nullptr).getTargetP(), InvalidHandleException);
-    EXPECT_THROW(ActivePowerControl(42, nullptr, prop::EXT_APC_EXISTS).getDroop(), InvalidHandleException);
+    EXPECT_THROW(ActivePowerControl(42, nullptr).getDroop(), InvalidHandleException);
 }
 
 TEST(NullBackendTest, HandleChecksDoNotThrow) {

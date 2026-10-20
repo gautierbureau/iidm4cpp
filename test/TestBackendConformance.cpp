@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstdio>
 #include <deque>
+#include <functional>
 #include <map>
 #include <memory>
 #include <set>
@@ -30,8 +31,11 @@
 // value, the same number of children, the same null / non-null related object (then visited in
 // turn), or an exception of the same C++ type. Keyed and indexed lookups (getRelatedByString,
 // getRelatedByIndex, findById) are tried with every id and node number met during the walk.
-// Every value read is then written back with the matching setter: both backends must accept or
-// reject it alike, and read back the same value. Last, both networks must save to the same XIIDM.
+// invoke(object, TYPE), which starts an adder and changes nothing, is compared the same way. Every
+// value read is then written back with the matching setter: both backends must accept or reject it
+// alike, and read back the same value. Both networks must then save to the same XIIDM; last, every
+// identifiable is removed (in reverse visit order), with the same outcome, and the XIIDM compared
+// again. One case builds its network through the C++ adders instead of loading it.
 //
 // Every code is tried with every accessor on the first object reached through a given link (the
 // network's GENERATOR children, a generator's REL_TERMINAL...). A code that fails there because
@@ -204,10 +208,14 @@ struct Twin {
     HandleRef j;       // JNI handle
     std::string path;  // how the walk reached it, for messages
     std::string link;  // the accessor and code that led to it: objects reached through the same link have the same type
+    bool identifiable = false;
     std::vector<std::pair<int, int>> readable; // (read, code) of the scalar reads that returned a value
     std::vector<int> indices;                  // values of its int lists (node numbers): getRelatedByIndex keys
     std::vector<Related> related;
 };
+
+// Code sets kept per link: one per read, one per lookup, then the type codes invoke accepts
+enum CodeSet { CREATION = READ_COUNT + LOOKUP_COUNT, CODE_SET_COUNT };
 
 class Conformance {
 public:
@@ -234,12 +242,16 @@ public:
         }
         for (const std::unique_ptr<Twin>& twin : visited_) writeBack(*twin);
         compareSavedNetworks();
+        removeAll();
+        compareSavedNetworks();
     }
 
     std::vector<std::string> mismatches;
     std::size_t comparisons = 0;
     std::size_t values = 0; // comparisons where both backends returned (not threw)
     std::size_t writes = 0; // setter calls accepted by both backends
+    std::size_t adders = 0; // adders started by both backends
+    std::size_t removals = 0;
     std::size_t objects() const { return visited_.size(); }
     std::size_t links() const { return codesByLink_.size(); }
 
@@ -298,11 +310,12 @@ private:
         if (!idG.threw()) {
             if (!seen_.insert("id " + idG.value).second) return;
             twin.path += " " + idG.value;
+            twin.identifiable = true;
         }
 
         std::vector<std::set<int>>& known = codesByLink_[twin.link];
         bool firstOfItsType = known.empty();
-        if (firstOfItsType) known.resize(READ_COUNT + LOOKUP_COUNT);
+        if (firstOfItsType) known.resize(CODE_SET_COUNT);
         std::string fingerprint;
         std::vector<Twin> next;
         bool otherType = false;
@@ -326,6 +339,8 @@ private:
                 }
             }
         }
+
+        probeCreation(twin, known[CREATION], firstOfItsType);
 
         // Objects without id (terminals, steps, limits...) are recognized by what they returned
         if (idG.threw() && !seen_.insert("object " + fingerprint).second) return;
@@ -370,6 +385,33 @@ private:
         }
         next.insert(next.end(), targets.begin(), targets.end());
         return g;
+    }
+
+    // invoke(object, TYPE) starts an adder and changes nothing: compared, then released unused.
+    // ACT_ADD and ACT_REMOVE change the network: removal is compared in removeAll.
+    void probeCreation(Twin& twin, std::set<int>& creatable, bool firstOfItsType) {
+        for (const Code& code : codes_) {
+            if (code.value == prop::ACT_ADD || code.value == prop::ACT_REMOVE) continue;
+            if (!firstOfItsType && !creatable.count(code.value)) continue;
+            std::vector<ObjectHandle> objectsG, objectsJ;
+            Outcome g = attempt([&] { return show(g_.invoke(twin.g, code.value), objectsG); });
+            Outcome j = attempt([&] { return show(j_.invoke(twin.j, code.value), objectsJ); });
+            for (ObjectHandle h : objectsG) g_.releaseHandle(h);
+            for (ObjectHandle h : objectsJ) j_.releaseHandle(h);
+            if (compare("invoke", twin.path, code.name, g, j) && !g.threw()) ++adders;
+            if (!g.notForThisType()) creatable.insert(code.value);
+        }
+    }
+
+    // Removes every identifiable, in reverse visit order: equipment before its voltage level
+    void removeAll() {
+        for (auto it = visited_.rbegin(); it != visited_.rend(); ++it) {
+            Twin& twin = **it;
+            if (!twin.identifiable) continue;
+            Outcome g = attempt([&] { g_.invoke(twin.g, prop::ACT_REMOVE); return std::string(); });
+            Outcome j = attempt([&] { j_.invoke(twin.j, prop::ACT_REMOVE); return std::string(); });
+            if (compare("invoke", twin.path, "ACT_REMOVE", g, j) && !g.threw()) ++removals;
+        }
     }
 
     // getRelatedByString with every id read during the walk as key, getRelatedByIndex with the
@@ -513,22 +555,21 @@ private:
     }
 };
 
-void checkConformance(const char* network) {
+// Runs the walk on a network prepared the same way on both backends.
+void checkConformance(const std::string& name, const std::function<void(BackendProvider&)>& prepare) {
     const char* lib = test::envPath("IIDM_BRIDGE_GRAALVM_LIB");
     if (!lib || !test::ensureJvm()) GTEST_SKIP() << "IIDM_BRIDGE_GRAALVM_LIB and IIDM_BRIDGE_JAR must both be set";
-    std::string xiidm = test::readFile(network);
-    ASSERT_FALSE(xiidm.empty()) << network << " not found";
 
     GraalVMBackend graalvm(lib);
     JNIBackend jni("backend_conformance_test");
-    graalvm.loadNetworkBytes(xiidm.data(), xiidm.size(), "network.xiidm");
-    jni.loadNetworkBytes(xiidm.data(), xiidm.size(), "network.xiidm");
+    prepare(graalvm);
+    prepare(jni);
 
     Conformance conformance(graalvm, jni);
     conformance.run();
-    std::printf("%s: %zu objects (%zu kinds of links), %zu comparisons, %zu values, %zu writes\n", network,
-                conformance.objects(), conformance.links(), conformance.comparisons, conformance.values,
-                conformance.writes);
+    std::printf("%s: %zu objects (%zu kinds of links), %zu comparisons, %zu values, %zu writes, %zu adders, %zu removals\n",
+                name.c_str(), conformance.objects(), conformance.links(), conformance.comparisons, conformance.values,
+                conformance.writes, conformance.adders, conformance.removals);
 
     std::string report;
     for (std::size_t i = 0; i < conformance.mismatches.size() && i < 30; ++i) report += conformance.mismatches[i] + "\n";
@@ -536,6 +577,45 @@ void checkConformance(const char* network) {
         << conformance.mismatches.size() << " differences between GraalVM and JNI, first ones:\n" << report;
     EXPECT_GT(conformance.values, 100u);
     EXPECT_GT(conformance.writes, 10u);
+    EXPECT_GT(conformance.adders, 0u);
+    EXPECT_GT(conformance.removals, 0u);
+}
+
+void checkConformance(const char* network) {
+    const std::string xiidm = test::readFile(network);
+    ASSERT_FALSE(xiidm.empty()) << network << " not found";
+    checkConformance(network, [&](BackendProvider& b) { b.loadNetworkBytes(xiidm.data(), xiidm.size(), "network.xiidm"); });
+}
+
+// The same network built through the C++ adders on each backend
+void buildNetwork(BackendProvider& b) {
+    b.createNetwork("created");
+    const ObjectHandle network = b.getNetworkHandle();
+    b.setString(network, prop::NETWORK_CASE_DATE, "2026-01-31T12:00Z"); // else the creation time
+    b.setInt(network, prop::NETWORK_FORECAST_DISTANCE, 60);
+    Substation s = SubstationAdder(b.invoke(network, prop::SUBSTATION), &b)
+                     .setId("S").setCountry(Country::FR).setTso("RTE").add();
+    VoltageLevel vl1 = s.newVoltageLevel().setId("VL1").setNominalV(400).setLowVoltageLimit(380)
+                         .setHighVoltageLimit(420).setTopologyKind(TopologyKind::BUS_BREAKER).add();
+    vl1.getBusBreakerView().newBus().setId("B1").add();
+    vl1.getBusBreakerView().newBus().setId("B1b").setName("spare").add();
+    // Without substation
+    VoltageLevel vl2 = VoltageLevelAdder(b.invoke(network, prop::VOLTAGE_LEVEL), &b)
+                         .setId("VL2").setNominalV(225).setTopologyKind(TopologyKind::BUS_BREAKER).add();
+    vl2.getBusBreakerView().newBus().setId("B2").add();
+    Load load = vl2.newLoad().setId("L").setName("load").setBus("B2").setConnectableBus("B2")
+                  .setP0(80).setQ0(10).setLoadType(LoadType::AUXILIARY).add();
+    vl2.newLoad().setId("L2").setConnectableBus("B2").setP0(5).setQ0(1).setFictitious(true).add(); // disconnected
+    Generator g1 = vl1.newGenerator().setId("G1").setBus("B1").setMinP(0).setMaxP(200).setTargetP(100)
+                     .setRatedS(250).setEnergySource(EnergySource::NUCLEAR).setLocalTargetV(405).setLocalTargetQ(0)
+                     .newVoltageRegulation().withMode(RegulationMode::VOLTAGE).withRegulating(true).withTargetDeadband(1).add()
+                     .add();
+    g1.newActivePowerControl().withDroop(4).withParticipate(true).withParticipationFactor(0.5).withMaxTargetP(150).add();
+    vl2.newGenerator().setId("G2").setBus("B2").setMinP(-50).setMaxP(50).setTargetP(10).setLocalTargetQ(5)
+        .newVoltageRegulation().withMode(RegulationMode::REACTIVE_POWER).withTerminal(load.getTerminal())
+            .withTargetValue(-10).withRegulating(true).add()
+        .add();
+    vl2.newGenerator().setId("G3").setBus("B2").setMinP(0).setMaxP(10).setTargetP(1).setLocalTargetQ(0).add();
 }
 
 } // namespace
@@ -554,6 +634,10 @@ TEST(BackendConformanceTest, StateEstimation) {
 
 TEST(BackendConformanceTest, BackendErrors) {
     checkConformance("data/backend_errors_test.xiidm");
+}
+
+TEST(BackendConformanceTest, CreatedFromScratch) {
+    checkConformance("created from scratch", buildNetwork);
 }
 
 #endif

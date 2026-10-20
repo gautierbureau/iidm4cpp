@@ -1,6 +1,7 @@
 package com.powsybl.iidmbridge;
 
 import com.powsybl.iidm.network.*;
+import com.powsybl.iidm.network.regulation.RegulationMode;
 import com.powsybl.iidmbridge.graalvm.NetworkRegistry;
 import org.junit.jupiter.api.*;
 
@@ -61,8 +62,9 @@ class PropertyDispatcherChildrenTest {
         Bus b = vl.getBusBreakerView().newBus().setId("BG").add();
         Generator gen = vl.newGenerator().setId("G")
                 .setBus(b.getId()).setConnectableBus(b.getId())
-                .setTargetP(100).setTargetQ(0).setTargetV(400)
-                .setMinP(0).setMaxP(200).setVoltageRegulatorOn(true)
+                .setTargetP(100).setLocalTargetQ(0)
+                .setMinP(0).setMaxP(200)
+                .setLocalTargetV(400).newVoltageRegulation().withMode(RegulationMode.VOLTAGE).withRegulating(true).add()
                 .add();
         gen.newReactiveCapabilityCurve()
                 .beginPoint().setP(0).setMinQ(-10).setMaxQ(10).endPoint()

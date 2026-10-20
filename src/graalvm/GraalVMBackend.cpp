@@ -90,6 +90,7 @@ void GraalVMBackend::resolveSymbols() {
     fnReleaseHandle_   = resolveSymbol<FnReleaseHandle>  (libHandle_, "iidm_release_handle");
     fnHandleCount_     = resolveSymbol<FnHandleCount>    (libHandle_, "iidm_handle_count");
     fnLoadNetwork_     = resolveSymbol<FnLoadNetwork>    (libHandle_, "iidm_load_network");
+    fnCreateNetwork_   = resolveSymbol<FnCreateNetwork>  (libHandle_, "iidm_create_network");
     fnSaveNetwork_     = resolveSymbol<FnSaveNetwork>    (libHandle_, "iidm_save_network");
     fnLoadNetworkBytes_ = resolveSymbol<FnLoadNetworkBytes>(libHandle_, "iidm_load_network_bytes");
     fnSaveNetworkBytes_ = resolveSymbol<FnSaveNetworkBytes>(libHandle_, "iidm_save_network_bytes");
@@ -108,6 +109,7 @@ void GraalVMBackend::resolveSymbols() {
     fnGetRelatedByIndex_  = resolveSymbol<FnGetRelatedByIndex> (libHandle_, "iidm_get_related_by_index");
     fnGetRelatedByString_ = resolveSymbol<FnGetRelatedByString>(libHandle_, "iidm_get_related_by_string");
     fnFindById_           = resolveSymbol<FnFindById>          (libHandle_, "iidm_find_by_id");
+    fnInvoke_             = resolveSymbol<FnInvoke>            (libHandle_, "iidm_invoke");
 }
 
 void GraalVMBackend::check(int status) const {
@@ -127,6 +129,12 @@ std::string GraalVMBackend::takeString(char* raw) const {
 void GraalVMBackend::loadNetwork(const std::string& filePath) {
     ObjectHandle h = INVALID_HANDLE;
     check(fnLoadNetwork_(thread_, filePath.c_str(), &h));
+    networkHandle_ = h;
+}
+
+void GraalVMBackend::createNetwork(const std::string& id) {
+    ObjectHandle h = INVALID_HANDLE;
+    check(fnCreateNetwork_(thread_, id.c_str(), &h));
     networkHandle_ = h;
 }
 
@@ -241,6 +249,12 @@ ObjectHandle GraalVMBackend::getRelated(ObjectHandle h, int relation) const {
     ObjectHandle related = INVALID_HANDLE;
     check(fnGetRelated_(thread_, h, relation, &related));
     return related;
+}
+
+ObjectHandle GraalVMBackend::invoke(ObjectHandle h, int code) {
+    ObjectHandle result = INVALID_HANDLE;
+    check(fnInvoke_(thread_, h, code, &result));
+    return result;
 }
 
 void GraalVMBackend::setRelated(ObjectHandle h, int relation, ObjectHandle value) {

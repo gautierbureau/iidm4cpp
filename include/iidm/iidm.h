@@ -36,5 +36,14 @@
 #include <iidm/StaticVarCompensator.h>
 #include <iidm/VscConverterStation.h>
 #include <iidm/LccConverterStation.h>
+#include <iidm/VoltageRegulation.h>
+#include <iidm/Adder.h>
+#include <iidm/SubstationAdder.h>
+#include <iidm/VoltageLevelAdder.h>
+#include <iidm/BusAdder.h>
+#include <iidm/GeneratorAdder.h>
+#include <iidm/LoadAdder.h>
+#include <iidm/VoltageRegulationAdder.h>
+#include <iidm/ActivePowerControlAdder.h>
 #include <iidm/Network.h>
 #include <iidm/NetworkFactory.h>

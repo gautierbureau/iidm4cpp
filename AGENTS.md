@@ -134,40 +134,44 @@ extension code**. The supported extensions are listed in README §5.4.
 
 #### Steps common to both backends
 
-1. **Property codes** — add them to `include/iidm/PropertyCodes.def`. Reserve
-   three kinds of codes: existence check, getters, setters.
+An extension is an object of its own, as in powsybl: `ActivePowerControl` is the model to copy.
+(The extensions ported earlier are still read through their host's handle with `EXT_X_EXISTS`
+codes; do not add new ones that way.)
+
+1. **Property codes** — a block in `include/iidm/PropertyCodes.def`. Its first code is the
+   extension's type code; the others are its properties, which apply to the extension object.
 
    ```cpp
    // include/iidm/PropertyCodes.def
-   IIDM_CODE(EXT_FOO_EXISTS, 9000)  // bool (pick the next free block)
-   IIDM_CODE(EXT_FOO_SOME_D, 9001)  // double getter/setter
-   IIDM_CODE(EXT_FOO_SOME_B, 9002)  // bool getter/setter
+   IIDM_CODE(FOO,            9000)  // getRelated(host, FOO): the extension, INVALID_HANDLE when absent;
+                                    // invoke(host, FOO): its adder; setRelated(host, FOO, INVALID_HANDLE): removes it
+   IIDM_CODE(EXT_FOO_SOME_D, 9001)  // double, on the extension object
+   IIDM_CODE(EXT_FOO_SOME_B, 9002)  // bool
    ```
 
-2. **C++ extension class** — add `include/iidm/FooExtension.h` and
-   `src/FooExtension.cpp` following `ActivePowerControl` as a template.
-   The class holds the same `ObjectHandle` as its host component and calls
-   the backend with `EXT_FOO_*` property codes.
+2. **C++ classes** — `include/iidm/Foo.h` + `src/Foo.cpp` (the wrapper, holding the extension's
+   handle) and `include/iidm/FooAdder.h` (`detail::AdderBase`, one line per field, `add()`).
 
-3. **Host component accessor** — add `hasFooExtension()` and
-   `getFooExtension()` to the host component (e.g. `Generator`).
+3. **Host accessors** — `hasFoo()`, `getFoo()` (`ExtensionNotFoundException` when absent),
+   `newFoo()` and `removeFoo()` on each host (see `Generator`).
 
-4. **Java `PropertyDispatcher`** — add cases to the appropriate switch
-   blocks:
+4. **Java** — in `PropertyDispatcher.java`, `getRelatedObject` returns the extension for `FOO`,
+   and the property cases cast the extension object; in `Creation.java`, `newAdder` creates its
+   adder, the `set*` methods map its fields, and `clear` removes it:
 
    ```java
-   // PropertyDispatcher.java – getDouble
-   case EXT_FOO_SOME_D -> ((Generator) obj).getExtension(FooExtension.class).getSomeD();
-
-   // PropertyDispatcher.java – getBool
-   case EXT_FOO_EXISTS  -> ((Generator) obj).getExtension(FooExtension.class) != null;
-   case EXT_FOO_SOME_B  -> ((Generator) obj).getExtension(FooExtension.class).isSomeB();
+   // PropertyDispatcher.java
+   case FOO            -> ((Extendable<?>) obj).getExtension(Foo.class);   // getRelatedObject
+   case EXT_FOO_SOME_D -> ((Foo<?>) obj).getSomeD();                       // getDouble
+   // Creation.java
+   case FOO            -> newExtension(owner, FooAdder.class);             // newAdder
+   case EXT_FOO_SOME_D -> ((FooAdder<?>) a).withSomeD(value);              // setDouble (adder field)
    ```
 
-5. **Unit tests** — `test/TestFooExtension.cpp` using `MockBackend`, plus a
-   Java test of the dispatcher cases (see `StateEstimationDispatchTest`). Put the
-   extension in a test network (`examples/*.xiidm`): `TestBackendConformance` then
-   compares every new code on both backends without any change to the test.
+5. **Unit tests** — `test/TestFoo.cpp` using `MockBackend`, plus a Java test of the dispatcher
+   and creation cases (see `ExtensionDispatchTest`, `CreationDispatchTest`). Put the extension in
+   a test network (`examples/*.xiidm`): `TestBackendConformance` then compares every new code,
+   and the adder, on both backends without any change to the test.
 
 Larger extensions can keep their Java logic in a helper class called from the
 dispatcher cases (e.g. `StateEstimationDispatch.java`). Child objects of an
@@ -182,6 +186,21 @@ lookups by id, a `getRelatedByString` relation.
   `PropertyDispatcher` overloads — `getDouble(Object, int)`,
   `getChildObjects(Object, int)`, `getRelatedObject(Object, int)`, … Do **not** add
   per-property JNI calls to `JNIBackend.cpp`: the dispatcher is the only dispatch table.
+
+#### Creating and removing objects
+
+Adders are C++ classes deriving from `detail::IdentifiableAdder` / `detail::InjectionAdder`
+(`include/iidm/Adder.h`), with one line per field: `return doubleField(prop::GEN_MIN_P, minP);`.
+A field uses the code of the property it sets. The parent's `newX()` is
+`XAdder(backend_->invoke(handle_, prop::X), backend_)`, and `remove()` is
+`backend_->invoke(handle_, prop::ACT_REMOVE)`. On the Java side, `Creation.java` maps each
+(adder, field code) to the powsybl adder method, and `remove` to powsybl's removal. Validation
+stays powsybl's. A change that takes several values at once goes the same way: see
+`VoltageRegulation::setTerminal`.
+
+Only current powsybl APIs are ported: never a method marked `@Deprecated`, nor an extension
+from `extensions.removed` (e.g. voltage regulation goes through the 7.4 `VoltageRegulation`
+object, not `setVoltageRegulatorOn` / `setTargetV`).
 
 #### Handles
 

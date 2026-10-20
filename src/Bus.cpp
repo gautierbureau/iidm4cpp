@@ -40,6 +40,10 @@ VoltageLevel Bus::getVoltageLevel() const {
     return VoltageLevel(vlHandle, backend_);
 }
 
+void Bus::remove() {
+    backend_->invoke(handle_, prop::ACT_REMOVE);
+}
+
 bool Bus::operator==(const Bus& other) const {
     return handle_ == other.handle_;
 }

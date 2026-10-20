@@ -48,25 +48,31 @@ IIDM_CODE(OLG_LEG3,                    36) // all OperationalLimitsGroups for Th
 // ── Shared properties (applicable to many types) ────────────────────────────
 IIDM_CODE(ID,                          100)
 IIDM_CODE(NAME,                        101)
-IIDM_CODE(COUNTRY,                     102)
+IIDM_CODE(COUNTRY,                     102) // string: Substation country (Country enum name)
+IIDM_CODE(FICTITIOUS,                  103) // bool: any Identifiable (and its adder)
+IIDM_CODE(ENSURE_ID_UNICITY,           104) // bool, adders only: make the id unique if it is taken
+IIDM_CODE(SUBSTATION_TSO,              105) // string
+
+// ── Network ──────────────────────────────────────────────────────────────────
+IIDM_CODE(NETWORK_CASE_DATE,           110) // string: ISO-8601 date-time (ZonedDateTime)
+IIDM_CODE(NETWORK_FORECAST_DISTANCE,   111) // int: minutes
+IIDM_CODE(NETWORK_SOURCE_FORMAT,       112) // string, read-only
 
 // ── Generator-specific ───────────────────────────────────────────────────────
 IIDM_CODE(GEN_TARGET_P,                200)
-IIDM_CODE(GEN_TARGET_Q,                201)
-IIDM_CODE(GEN_TARGET_V,                202)
 IIDM_CODE(GEN_MIN_P,                   203)
 IIDM_CODE(GEN_MAX_P,                   204)
-IIDM_CODE(GEN_VOLTAGE_REGULATOR_ON,    205)
 IIDM_CODE(GEN_ENERGY_SOURCE,           206)
 IIDM_CODE(GEN_REACTIVE_LIMITS_KIND,    207) // 0=NONE 1=MIN_MAX 2=CURVE
 IIDM_CODE(GEN_MIN_Q,                   208)
 IIDM_CODE(GEN_MAX_Q,                   209)
+IIDM_CODE(GEN_RATED_S,                 210)
+IIDM_CODE(GEN_CONDENSER,               211) // bool
 
 // ── Load-specific ────────────────────────────────────────────────────────────
 IIDM_CODE(LOAD_P0,                     300)
 IIDM_CODE(LOAD_Q0,                     301)
 IIDM_CODE(LOAD_TYPE,                   302)
-IIDM_CODE(LOAD_FICTITIOUS,             303)
 
 // ── Terminal ─────────────────────────────────────────────────────────────────
 IIDM_CODE(TERMINAL_P,                  400)
@@ -75,6 +81,8 @@ IIDM_CODE(TERMINAL_CONNECTED,          402)
 IIDM_CODE(TERMINAL_BUS_ID,            403)
 IIDM_CODE(TERMINAL_NODE,               404) // node number (node-breaker topology)
 IIDM_CODE(TERMINAL_CONNECTABLE_ID,     405) // string: ID of the Connectable owning this terminal
+IIDM_CODE(TERMINAL_BUS_BREAKER_BUS_ID, 406) // string: bus-breaker view bus ("" when disconnected); adders: setBus
+IIDM_CODE(TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID, 407) // string: bus-breaker view connectable bus; adders: setConnectableBus
 
 // ── Bus ──────────────────────────────────────────────────────────────────────
 IIDM_CODE(BUS_V,                       500)
@@ -262,8 +270,12 @@ IIDM_CODE(SW_KIND,                     1502)
 IIDM_CODE(SW_NODE1,                    1503)
 IIDM_CODE(SW_NODE2,                    1504)
 
-// ── Extension: ActivePowerControl ────────────────────────────────────────────
-IIDM_CODE(EXT_APC_EXISTS,              3000)
+// ── Extension: ActivePowerControl (on any Injection) ─────────────────────────
+// ACTIVE_POWER_CONTROL is the extension's type code: getRelated(injection, ACTIVE_POWER_CONTROL)
+// gives the extension object (INVALID_HANDLE when absent), on which the EXT_APC_* codes apply;
+// invoke(injection, ACTIVE_POWER_CONTROL) starts its adder; setRelated(injection,
+// ACTIVE_POWER_CONTROL, INVALID_HANDLE) removes it.
+IIDM_CODE(ACTIVE_POWER_CONTROL,       3000)
 IIDM_CODE(EXT_APC_DROOP,              3001)
 IIDM_CODE(EXT_APC_PARTICIPATE,        3002)
 IIDM_CODE(EXT_APC_PARTICIPATION_FACTOR, 3003) // double
@@ -292,14 +304,6 @@ IIDM_CODE(EXT_VPRC_SLOPE,  3401)
 // ── Extension: SlackTerminal ──────────────────────────────────────────────────
 IIDM_CODE(EXT_ST_EXISTS, 3500)
 IIDM_CODE(EXT_ST_EMPTY,  3501) // bool: no terminal in any variant
-
-// ── Extension: ActivePowerControl (Battery) ───────────────────────────────────
-IIDM_CODE(EXT_BAT_APC_EXISTS,      3600)
-IIDM_CODE(EXT_BAT_APC_DROOP,       3601)
-IIDM_CODE(EXT_BAT_APC_PARTICIPATE, 3602)
-IIDM_CODE(EXT_BAT_APC_PARTICIPATION_FACTOR, 3603) // same layout as EXT_APC_*
-IIDM_CODE(EXT_BAT_APC_MIN_TARGET_P, 3604)
-IIDM_CODE(EXT_BAT_APC_MAX_TARGET_P, 3605)
 
 // ── CurrentLimits ─────────────────────────────────────────────────────────────
 IIDM_CODE(CL_PERMANENT_LIMIT,          1970)
@@ -340,6 +344,34 @@ IIDM_CODE(REL_NBV_TERMINAL_AT_NODE,    2021) // NodeBreakerView: terminal at nod
 IIDM_CODE(REL_CONNECTABLE,             2022) // Terminal → its Connectable
 IIDM_CODE(REL_VL_BBV_BUS1,            2023) // VL (keyed by switchId) → Bus on side 1 (getRelatedByString)
 IIDM_CODE(REL_VL_BBV_BUS2,            2024) // VL (keyed by switchId) → Bus on side 2 (getRelatedByString)
+
+// ── VoltageRegulation (powsybl 7.4 core model) ───────────────────────────────
+// VOLTAGE_REGULATION is the type code: getRelated(holder, VOLTAGE_REGULATION) gives the
+// holder's regulation (INVALID_HANDLE when it has none), on which the VR_* codes apply;
+// invoke(holder or holder adder, VOLTAGE_REGULATION) starts a new one; setRelated(holder,
+// VOLTAGE_REGULATION, INVALID_HANDLE) removes it. Holders: Generator (for now).
+IIDM_CODE(VOLTAGE_REGULATION,          2200)
+IIDM_CODE(VR_TARGET_VALUE,             2201) // double (reactive power: load sign convention)
+IIDM_CODE(VR_TARGET_DEADBAND,          2202) // double
+IIDM_CODE(VR_SLOPE,                    2203) // double
+IIDM_CODE(VR_MODE,                     2204) // int: RegulationMode ordinal, -1 = none
+IIDM_CODE(VR_REGULATING,               2205) // bool
+IIDM_CODE(VR_WITH_TERMINAL,            2206) // bool: a regulated terminal is set (getRelated(regulation, REL_TERMINAL))
+// The terminal and target value change together: invoke(regulation, REL_TERMINAL), set REL_TERMINAL
+// (setRelated, INVALID_HANDLE for local regulation) and VR_TARGET_VALUE, then invoke(change, ACT_ADD).
+// Methods of every regulation holder
+IIDM_CODE(LOCAL_TARGET_V,              2210) // double
+IIDM_CODE(LOCAL_TARGET_Q,              2211) // double
+IIDM_CODE(REGULATING,                  2212) // bool, read-only: has a regulation, and it is regulating
+IIDM_CODE(REGULATING_TARGET_V,         2213) // double, read-only: regulation target if it regulates V remotely, else local target V
+IIDM_CODE(REGULATING_TARGET_Q,         2214) // double, read-only: same for Q
+
+// ── Creation and removal (invoke) ────────────────────────────────────────────
+// invoke(parent, <type code>) starts a new object: it returns an adder, on which the setters
+// take the object's own property codes (setDouble(adder, GEN_TARGET_P, 100)); nothing changes
+// in the network until invoke(adder, ACT_ADD).
+IIDM_CODE(ACT_ADD,                     5000) // invoke(adder): adds the object, returns it (INVALID_HANDLE for nested adders)
+IIDM_CODE(ACT_REMOVE,                  5001) // invoke(identifiable): removes it from the network
 
 // ── Child types (new) ────────────────────────────────────────────────────────
 IIDM_CODE(CONNECTABLE_TERMINALS,       37) // all terminals of the Connectable owning a Terminal

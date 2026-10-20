@@ -2,7 +2,9 @@
 
 #include <iidm/BackendProvider.h>
 #include <iidm/Substation.h>
+#include <iidm/SubstationAdder.h>
 #include <iidm/VoltageLevel.h>
+#include <iidm/VoltageLevelAdder.h>
 #include <iidm/Battery.h>
 #include <iidm/Generator.h>
 #include <iidm/Load.h>
@@ -39,6 +41,14 @@ public:
 
     std::string getId() const;
     std::string getName() const;
+
+    // ISO-8601 date-time, e.g. "2026-01-31T12:00Z"
+    std::string getCaseDate() const;
+    Network& setCaseDate(const std::string& caseDate);
+    // In minutes
+    int getForecastDistance() const;
+    Network& setForecastDistance(int forecastDistance);
+    std::string getSourceFormat() const;
 
     // Save the network to an XIIDM file.
     void save(const std::string& filePath) const;
@@ -82,6 +92,11 @@ public:
     iidm::optional<LccConverterStation>    getLccConverterStation(const std::string& id) const;
     iidm::optional<Switch>                  getSwitch(const std::string& id) const;
     iidm::optional<BusbarSection>           getBusbarSection(const std::string& id) const;
+
+    // ── Creation ─────────────────────────────────────────────────────────────
+    SubstationAdder   newSubstation();
+    // A voltage level without substation
+    VoltageLevelAdder newVoltageLevel();
 
     // Backend accessor (advanced usage only)
     BackendProvider& getBackend();
