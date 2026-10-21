@@ -225,9 +225,25 @@ install(FILES
 # ── Tests ─────────────────────────────────────────────────────────────────────
 if(IIDM_BRIDGE_BUILD_TESTS)
     enable_testing()
+    # The tests need GoogleTest 1.10 or later (GTEST_SKIP): an installed one is used if recent
+    # enough, otherwise (none, or 1.8.1 on Fedora 29, the Dynawo CI image) it is fetched.
+    # IIDM_BRIDGE_GTEST_LIBRARIES names the targets the tests link.
     find_package(GTest QUIET)
-    if(NOT GTest_FOUND)
-        message(STATUS "GTest not found locally; fetching from GitHub...")
+    if(GTest_FOUND)
+        include(CheckCXXSourceCompiles)
+        set(CMAKE_REQUIRED_LIBRARIES GTest::GTest)
+        check_cxx_source_compiles("
+            #include <gtest/gtest.h>
+            #ifndef GTEST_SKIP
+            #error GoogleTest older than 1.10
+            #endif
+            int main() { return 0; }" IIDM_BRIDGE_GTEST_HAS_SKIP)
+        unset(CMAKE_REQUIRED_LIBRARIES)
+    endif()
+    if(GTest_FOUND AND IIDM_BRIDGE_GTEST_HAS_SKIP)
+        set(IIDM_BRIDGE_GTEST_LIBRARIES GTest::GTest GTest::Main)
+    else()
+        message(STATUS "GTest 1.10 or later not found locally; fetching from GitHub...")
         include(FetchContent)
         FetchContent_Declare(
             googletest
@@ -240,9 +256,7 @@ if(IIDM_BRIDGE_BUILD_TESTS)
         set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
         set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
         FetchContent_MakeAvailable(googletest)
-        # Alias to the target names that find_package(GTest) normally produces
-        add_library(GTest::GTest ALIAS gtest)
-        add_library(GTest::Main  ALIAS gtest_main)
+        set(IIDM_BRIDGE_GTEST_LIBRARIES gtest gtest_main)
     endif()
     add_subdirectory(test)
 endif()
@@ -340,6 +354,9 @@ if(IIDM_BRIDGE_BUILD_NATIVE)
         VERBATIM
     )
     add_custom_target(iidmbridge_native DEPENDS "${_NATIVE_LIB}" "${_NATIVE_H}")
+    # The JAR's rule is attached to both targets: without this, a parallel Makefile build
+    # runs two Maven builds at once, which share java/target and the Maven repository.
+    add_dependencies(iidmbridge_native iidmbridge_jar)
 
     # Install the native shared library so cmake --install bundles it.
     install(FILES "${_NATIVE_LIB}" DESTINATION ${CMAKE_INSTALL_LIBDIR})

@@ -105,10 +105,12 @@ public final class PropertyCodes {
                     </execution>
                 </executions>
             </plugin>
+            <!-- 3.4.0: the last version that runs on Maven 3.5 (Fedora 29's, in the Dynawo CI
+                 image); later ones refuse to. -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
-                <version>3.6.0</version>
+                <version>3.4.0</version>
                 <executions>
                     <execution>
                         <id>add-generated-sources</id>

@@ -35,8 +35,9 @@ jobs:
 
   # ── C++ unit tests: Ubuntu, macOS, Windows ──────────────────────────────────
   #
-  # GTest is fetched automatically via FetchContent when not found locally,
-  # so no separate GTest installation step is required on any platform.
+  # GTest is fetched automatically via FetchContent when not found locally (or
+  # older than 1.10), so no separate GTest installation step is required on any
+  # platform.
   cpp:
     name: C++ unit tests (${{ matrix.label }})
     runs-on: ${{ matrix.os }}
@@ -402,7 +403,10 @@ jobs:
           IIDM_BRIDGE_GRAALVM_LIB: ${{ github.workspace }}/build/graalvm-native/libpowsybl-iidm-native.so
           IIDM_BRIDGE_JAR: ${{ github.workspace }}/java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar
           IIDM_IEEE14_NETWORK_PATH: ${{ github.workspace }}/examples/IEEE14.xiidm
-        run: ctest --test-dir build --output-on-failure --parallel 4
+        # The image's CTest (3.14) predates --test-dir, which it ignores: it would look for
+        # tests in the current directory, find none and succeed.
+        working-directory: build
+        run: ctest --output-on-failure --parallel 4
 
       - name: Run example_standalone with IEEE14.xiidm
         env:
