@@ -64,4 +64,16 @@ void Substation::remove() {
     backend_->invoke(handle_, prop::ACT_REMOVE);
 }
 
+std::vector<OverloadManagementSystem> Substation::getOverloadManagementSystems() const {
+    return detail::wrapAll<OverloadManagementSystem>(backend_->getChildren(handle_, prop::OVERLOAD_MANAGEMENT_SYSTEM), backend_);
+}
+
+int Substation::getOverloadManagementSystemCount() const {
+    return detail::countOf(backend_, handle_, prop::OVERLOAD_MANAGEMENT_SYSTEM);
+}
+
+OverloadManagementSystemAdder Substation::newOverloadManagementSystem() {
+    return OverloadManagementSystemAdder(backend_->invoke(handle_, prop::OVERLOAD_MANAGEMENT_SYSTEM), backend_);
+}
+
 } // namespace iidm

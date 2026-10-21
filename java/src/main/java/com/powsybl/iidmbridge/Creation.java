@@ -249,6 +249,10 @@ public final class Creation {
             case AREA -> ((Network) owner).newArea();
             case AREA_BOUNDARY -> owner instanceof AreaAdder areaAdder ? new NewAreaBoundary(areaAdder) : ((Area) owner).newAreaBoundary();
             case VOLTAGE_ANGLE_LIMIT -> ((Network) owner).newVoltageAngleLimit();
+            case OVERLOAD_MANAGEMENT_SYSTEM -> ((Substation) owner).newOverloadManagementSystem();
+            case SWITCH_TRIPPING -> ((OverloadManagementSystemAdder) owner).newSwitchTripping();
+            case BRANCH_TRIPPING -> ((OverloadManagementSystemAdder) owner).newBranchTripping();
+            case THREE_WINDINGS_TRANSFORMER_TRIPPING -> ((OverloadManagementSystemAdder) owner).newThreeWindingsTransformerTripping();
             case VOLTAGE_REGULATION -> owner instanceof VoltageRegulationHolderAdder<?> holderAdder
                 ? holderAdder.newVoltageRegulation()
                 : ((VoltageRegulationHolder<?>) owner).newVoltageRegulation();
@@ -330,6 +334,10 @@ public final class Creation {
             }
             case TemporaryLimitsCheck check -> check.run();
             case AreaBoundaryAdder adder -> adder.add(); // the area
+            case OverloadManagementSystemAdder.TrippingAdder<?> adder -> {
+                adder.add();
+                yield null;
+            }
             case NewAreaBoundary boundary -> {
                 boundary.apply();
                 yield null;
@@ -372,6 +380,7 @@ public final class Creation {
             case Bus bus -> bus.getVoltageLevel().getBusBreakerView().removeBus(bus.getId());
             case TieLine tieLine -> tieLine.remove();
             case Area area -> area.remove();
+            case AutomationSystem<?> system -> system.remove();
             default -> throw new BridgeErrors.PropertyNotFoundException("Cannot remove " + obj);
         }
     }
@@ -474,6 +483,7 @@ public final class Creation {
             case AREA_INTERCHANGE_TARGET -> ((AreaAdder) a).setInterchangeTarget(value);
             case VAL_LOW_LIMIT -> ((VoltageAngleLimitAdder) a).setLowLimit(value);
             case VAL_HIGH_LIMIT -> ((VoltageAngleLimitAdder) a).setHighLimit(value);
+            case TRIPPING_CURRENT_LIMIT -> ((OverloadManagementSystemAdder.TrippingAdder<?>) a).setCurrentLimit(value);
             default -> throw unknownField("double", property);
         }
     }
@@ -490,6 +500,15 @@ public final class Creation {
             }
             case IC_NODE1 -> ((InternalConnectionsRemoval) a).node1 = value;
             case TERMINAL_SIDE -> ((TemporaryLimitsCheck) a).side = value;
+            case OMS_MONITORED_SIDE -> ((OverloadManagementSystemAdder) a).setMonitoredElementSide(enumValue(ThreeSides.class, value));
+            case TRIPPING_SIDE -> {
+                if (a instanceof OverloadManagementSystemAdder.BranchTrippingAdder adder) {
+                    adder.setSideToOperate(enumValue(TwoSides.class, value));
+                } else {
+                    ((OverloadManagementSystemAdder.ThreeWindingsTransformerTrippingAdder) a)
+                        .setSideToOperate(enumValue(ThreeSides.class, value));
+                }
+            }
             case LL_LIMIT_TYPE -> ((TemporaryLimitsCheck) a).type = value;
             case IC_NODE2 -> ((InternalConnectionsRemoval) a).node2 = value;
             case VL_TOPOLOGY_KIND -> ((VoltageLevelAdder) a).setTopologyKind(enumValue(TopologyKind.class, value));
@@ -538,6 +557,8 @@ public final class Creation {
             }
             case EQUIVALENT -> ((ConnectableAdder<?, ?>) a).setEquivalent(value);
             case TERMINAL_CONNECTED -> ((ConnectableMove) a).connected = value;
+            case AUTOMATION_SYSTEM_ENABLED -> ((OverloadManagementSystemAdder) a).setEnabled(value);
+            case TRIPPING_OPEN_ACTION -> ((OverloadManagementSystemAdder.TrippingAdder<?>) a).setOpenAction(value);
             case AREA_BOUNDARY_AC -> {
                 if (a instanceof NewAreaBoundary boundary) {
                     boundary.ac = value;
@@ -588,6 +609,17 @@ public final class Creation {
             case BOUNDARY_LINE1_ID -> ((TieLineAdder) a).setBoundaryLine1(value);
             case AREA_TYPE -> ((AreaAdder) a).setAreaType(value);
             case VAL_ID -> ((VoltageAngleLimitAdder) a).setId(value);
+            case OMS_MONITORED_ELEMENT_ID -> ((OverloadManagementSystemAdder) a).setMonitoredElementId(value);
+            case TRIPPING_KEY -> ((OverloadManagementSystemAdder.TrippingAdder<?>) a).setKey(value);
+            case TRIPPING_NAME -> ((OverloadManagementSystemAdder.TrippingAdder<?>) a).setName(value);
+            case TRIPPING_ELEMENT_ID -> {
+                switch (a) {
+                    case OverloadManagementSystemAdder.SwitchTrippingAdder adder -> adder.setSwitchToOperateId(value);
+                    case OverloadManagementSystemAdder.BranchTrippingAdder adder -> adder.setBranchToOperateId(value);
+                    default -> ((OverloadManagementSystemAdder.ThreeWindingsTransformerTrippingAdder) a)
+                        .setThreeWindingsTransformerToOperateId(value);
+                }
+            }
             case BOUNDARY_LINE2_ID -> ((TieLineAdder) a).setBoundaryLine2(value);
             case MEAS_ID -> ((MeasurementAdder) a).setId(value);
             case DMEAS_ID -> ((DiscreteMeasurementAdder) a).setId(value);

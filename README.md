@@ -190,6 +190,7 @@ Identifiable              getId(), getNameOrId(), getOptionalName(), setName(), 
 ├── Substation, VoltageLevel, Bus, Switch, HvdcLine
 ├── TieLine               + the Branch methods (two boundary lines paired)
 ├── Area
+├── OverloadManagementSystem
 └── Connectable           getTerminals(), connect() / disconnect(), isEquivalent(),
     │                     unsetSolvedValues(), remove()
     ├── Injection         getTerminal()
@@ -397,6 +398,13 @@ AreaBoundary               getArea(), getTerminal() / getBoundary() → optional
                            getQ(), properties
 VoltageLevel: getAreas(), getArea(type) → optional, addArea(area) / removeArea(area);
 Network: getAreas() / getArea(id) / getAreaCount(), getAreaTypes() / getAreaTypeCount()
+OverloadManagementSystem   isEnabled() (+ setter), getSubstation(), getMonitoredElementId(),
+│                          getMonitoredSide(), remove() (Substation::newOverloadManagementSystem())
+├── getTrippings() (in order) / addTripping(tripping)
+└── Tripping: getType(), getKey(), getNameOrKey() / setName(), getCurrentLimit() / isOpenAction()
+    (+ setters), properties; as<SwitchTripping>() getSwitchToOperateId(), as<BranchTripping>()
+    getBranchToOperateId() / getSideToOperate(), as<ThreeWindingsTransformerTripping>() (+ setters)
+    (adder: newSwitchTripping() / newBranchTripping() / newThreeWindingsTransformerTripping()…add())
 VoltageAngleLimit          getId(), getLimitType(), getTerminalFrom() / getTerminalTo(),
                            getLowLimit() / getHighLimit() → optional, properties, remove()
                            (Network::newVoltageAngleLimit(): setId(), from(t), to(t), setLow/HighLimit())

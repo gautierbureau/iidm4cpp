@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iidm:network xmlns:iidm="http://www.powsybl.org/schema/iidm/1_18" id="automation_test" caseDate="2026-01-31T12:00:00.000Z" forecastDistance="0" sourceFormat="test" minimumValidationLevel="STEADY_STATE_HYPOTHESIS">
+    <iidm:substation id="S" country="FR">
+        <iidm:voltageLevel id="VL1" nominalV="400.0" topologyKind="NODE_BREAKER">
+            <iidm:nodeBreakerTopology>
+                <iidm:busbarSection id="BBS" node="0"/>
+                <iidm:switch id="BR" kind="BREAKER" open="false" node1="0" node2="1"/>
+                <iidm:switch id="BR_T2" kind="BREAKER" open="false" node1="0" node2="2"/>
+                <iidm:switch id="BR_T3" kind="BREAKER" open="false" node1="0" node2="3"/>
+            </iidm:nodeBreakerTopology>
+        </iidm:voltageLevel>
+        <iidm:voltageLevel id="VL2" nominalV="400.0" topologyKind="BUS_BREAKER">
+            <iidm:busBreakerTopology>
+                <iidm:bus id="B2"/>
+            </iidm:busBreakerTopology>
+        </iidm:voltageLevel>
+        <iidm:voltageLevel id="VL3" nominalV="225.0" topologyKind="BUS_BREAKER">
+            <iidm:busBreakerTopology>
+                <iidm:bus id="B3"/>
+            </iidm:busBreakerTopology>
+        </iidm:voltageLevel>
+        <iidm:twoWindingsTransformer id="T2" r="0.5" x="20.0" ratedU1="400.0" ratedU2="400.0" voltageLevelId1="VL1" node1="2" voltageLevelId2="VL2" bus2="B2" connectableBus2="B2"/>
+        <iidm:threeWindingsTransformer id="T3" r1="0.1" x1="5.0" ratedU1="400.0" r2="0.1" x2="5.0" ratedU2="400.0" r3="0.1" x3="5.0" ratedU3="225.0" ratedU0="400.0" voltageLevelId1="VL1" node1="3" voltageLevelId2="VL2" bus2="B2" connectableBus2="B2" voltageLevelId3="VL3" bus3="B3" connectableBus3="B3"/>
+        <iidm:overloadManagementSystem id="OMS1" name="Line protection" enabled="true" monitoredElementId="L12" side="ONE">
+            <iidm:switchTripping key="SW" name="Open breaker" currentLimit="1000.0" openAction="true" switchId="BR"/>
+            <iidm:branchTripping key="BRANCH" currentLimit="1200.0" openAction="true" branchId="T2" side="TWO"/>
+            <iidm:threeWindingsTransformerTripping key="T3" currentLimit="900.0" openAction="false" threeWindingsTransformerId="T3" side="THREE"/>
+        </iidm:overloadManagementSystem>
+        <iidm:overloadManagementSystem id="OMS2" enabled="false" monitoredElementId="T3" side="TWO">
+            <iidm:switchTripping key="SW2" currentLimit="500.0" openAction="true" switchId="BR_T3"/>
+        </iidm:overloadManagementSystem>
+    </iidm:substation>
+    <iidm:line id="L12" r="1.0" x="10.0" voltageLevelId1="VL1" node1="1" voltageLevelId2="VL2" bus2="B2" connectableBus2="B2"/>
+</iidm:network>

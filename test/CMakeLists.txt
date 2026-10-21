@@ -12,6 +12,8 @@ set(TEST_SOURCES
     TestOverloads.cpp
     TestArea.cpp
     TestAreasNetwork.cpp
+    TestOverloadManagementSystem.cpp
+    TestAutomationNetwork.cpp
     TestShuntsNetwork.cpp
     TestLinesNetwork.cpp
     TestBoundaryLinesNetwork.cpp

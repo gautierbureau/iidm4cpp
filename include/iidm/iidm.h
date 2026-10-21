@@ -59,6 +59,8 @@
 #include <iidm/Area.h>
 #include <iidm/AreaAdder.h>
 #include <iidm/VoltageAngleLimit.h>
+#include <iidm/OverloadManagementSystem.h>
+#include <iidm/OverloadManagementSystemAdder.h>
 #include <iidm/ShuntCompensator.h>
 #include <iidm/LoadModel.h>
 #include <iidm/Container.h>

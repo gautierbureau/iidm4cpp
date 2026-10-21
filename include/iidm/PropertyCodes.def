@@ -60,6 +60,11 @@ IIDM_CODE(GROUND,                      63)
 IIDM_CODE(AREA,                        64)
 IIDM_CODE(AREA_BOUNDARY,               65) // a boundary of an area: a terminal, or the boundary of a boundary line
 IIDM_CODE(VOLTAGE_ANGLE_LIMIT,         66)
+IIDM_CODE(OVERLOAD_MANAGEMENT_SYSTEM,  67)
+IIDM_CODE(TRIPPING,                    68) // a tripping of an overload management system: of a switch, a branch or a 3WT
+IIDM_CODE(SWITCH_TRIPPING,             69)
+IIDM_CODE(BRANCH_TRIPPING,             70)
+IIDM_CODE(THREE_WINDINGS_TRANSFORMER_TRIPPING, 71)
 // Abstract types (Java interfaces)
 IIDM_CODE(IDENTIFIABLE,                43)
 IIDM_CODE(CONNECTABLE,                 44)
@@ -350,6 +355,27 @@ IIDM_CODE(REMOVE_AREA_BOUNDARY,        1052) // set only, on an area: the termin
 IIDM_CODE(VAL_ID,                      1055) // string (also an adder field)
 IIDM_CODE(VAL_LOW_LIMIT,               1056) // double, optional (none when unset; also an adder field)
 IIDM_CODE(VAL_HIGH_LIMIT,              1057) // double, optional (none when unset; also an adder field)
+
+// ── OverloadManagementSystem ─────────────────────────────────────────────────
+// An automation system of a substation that operates elements when a monitored element is overloaded:
+// getChildren(substation or network, OVERLOAD_MANAGEMENT_SYSTEM), findById(<it>, id),
+// getRelated(system, REL_SUBSTATION) its substation, invoke(system, ACT_REMOVE). Its trippings, in
+// order: getChildren(system, TRIPPING); setRelated(system, ADD_TRIPPING, tripping) adds one. Its adder:
+// invoke(substation, OVERLOAD_MANAGEMENT_SYSTEM), fields AUTOMATION_SYSTEM_ENABLED,
+// OMS_MONITORED_ELEMENT_ID, OMS_MONITORED_SIDE; invoke(adder, SWITCH_TRIPPING / BRANCH_TRIPPING /
+// THREE_WINDINGS_TRANSFORMER_TRIPPING) starts a tripping (nested: the TRIPPING_* fields, properties).
+IIDM_CODE(AUTOMATION_SYSTEM_ENABLED,   1060) // bool (also an adder field)
+IIDM_CODE(OMS_MONITORED_ELEMENT_ID,    1061) // string, read-only (also an adder field)
+IIDM_CODE(OMS_MONITORED_SIDE,          1062) // int, read-only: ThreeSides ordinal (also an adder field)
+IIDM_CODE(ADD_TRIPPING,                1063) // set only (setRelated), on a system: addTripping
+IIDM_CODE(TRIPPING_TYPE,               1064) // int, read-only: OverloadManagementSystem.Tripping.Type ordinal
+IIDM_CODE(TRIPPING_KEY,                1065) // string, read-only (also an adder field)
+IIDM_CODE(TRIPPING_NAME,               1066) // string: getNameOrKey; set: setName (also an adder field)
+IIDM_CODE(TRIPPING_CURRENT_LIMIT,      1067) // double (also an adder field)
+IIDM_CODE(TRIPPING_OPEN_ACTION,        1068) // bool (also an adder field)
+IIDM_CODE(TRIPPING_ELEMENT_ID,         1069) // string: the switch, branch or 3WT to operate (also an adder field)
+IIDM_CODE(TRIPPING_SIDE,               1070) // int: the side to operate, TwoSides (branch) or ThreeSides (3WT)
+                                             // ordinal (also an adder field)
 
 // ── ShuntCompensator ─────────────────────────────────────────────────────────
 // Its model is getRelated(shunt, SHUNT_COMPENSATOR_MODEL); getRelated(shunt, SHUNT_COMPENSATOR_LINEAR_MODEL
