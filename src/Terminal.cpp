@@ -18,8 +18,9 @@ iidm::optional<Bus> Terminal::BusBreakerView::getConnectableBus() const {
     return detail::wrapOptional<Bus>(backend_->getRelated(handle_, prop::REL_CONNECTABLE_BUS), backend_);
 }
 
-void Terminal::BusBreakerView::setConnectableBus(const std::string& busId) {
+Terminal::BusBreakerView& Terminal::BusBreakerView::setConnectableBus(const std::string& busId) {
     backend_->setString(handle_, prop::TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID, busId);
+    return *this;
 }
 
 void Terminal::BusBreakerView::moveConnectable(const std::string& busId, bool connected) {

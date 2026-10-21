@@ -98,8 +98,9 @@ bool OverloadManagementSystem::isEnabled() const {
     return backend_->getBool(handle_, prop::AUTOMATION_SYSTEM_ENABLED);
 }
 
-void OverloadManagementSystem::setEnabled(bool enabled) {
+OverloadManagementSystem& OverloadManagementSystem::setEnabled(bool enabled) {
     backend_->setBool(handle_, prop::AUTOMATION_SYSTEM_ENABLED, enabled);
+    return *this;
 }
 
 Substation OverloadManagementSystem::getSubstation() const {

@@ -83,7 +83,7 @@ public:
     explicit OverloadManagementSystem(ObjectHandle handle, BackendProvider* backend) : Identifiable(handle, backend) {}
 
     bool isEnabled() const;
-    void setEnabled(bool enabled);
+    OverloadManagementSystem& setEnabled(bool enabled);
     // Include <iidm/Substation.h> to use it
     Substation getSubstation() const;
     std::string getMonitoredElementId() const;
