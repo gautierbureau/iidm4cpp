@@ -125,11 +125,12 @@ public final class PropertyCodes {
                     </execution>
                 </executions>
             </plugin>
-            <!-- Only the current powsybl APIs are ported: a call to a deprecated one fails the build -->
+            <!-- Only the current powsybl APIs are ported: a call to a deprecated one fails the build.
+                 3.12.1: the last version that runs on Maven 3.5 (the Dynawo CI image's). -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
+                <version>3.12.1</version>
                 <configuration>
                     <compilerArgs>
                         <arg>-Xlint:deprecation</arg>
