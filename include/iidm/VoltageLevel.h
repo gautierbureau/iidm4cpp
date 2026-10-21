@@ -36,6 +36,7 @@ class TwoWindingsTransformer;
 class ThreeWindingsTransformer;
 class Substation;
 class Ground;
+class Area;
 
 class VoltageLevel : public Identifiable, public detail::ContainerMethods<VoltageLevel> {
 public:
@@ -188,6 +189,13 @@ public:
     NodeBreakerView getNodeBreakerView() const;
     BusBreakerView  getBusBreakerView()  const;
     BusView         getBusView()         const;
+
+    // ── Areas (include <iidm/Area.h> to use them) ────────────────────────────
+    std::vector<Area> getAreas() const;
+    // Its area of a type (empty without one)
+    iidm::optional<Area> getArea(const std::string& areaType) const;
+    void addArea(const Area& area);
+    void removeArea(const Area& area);
 
     // ── Creation and removal ─────────────────────────────────────────────────
     GeneratorAdder newGenerator();

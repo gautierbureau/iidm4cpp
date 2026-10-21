@@ -89,6 +89,14 @@ TieLineAdder Network::newTieLine() {
     return TieLineAdder(backend_->invoke(handle_, prop::TIE_LINE), backend_);
 }
 
+AreaAdder Network::newArea() {
+    return AreaAdder(backend_->invoke(handle_, prop::AREA), backend_);
+}
+
+VoltageAngleLimitAdder Network::newVoltageAngleLimit() {
+    return VoltageAngleLimitAdder(backend_->invoke(handle_, prop::VOLTAGE_ANGLE_LIMIT), backend_);
+}
+
 // ── Iteration helpers ────────────────────────────────────────────────────────
 
 namespace {
@@ -177,6 +185,18 @@ std::vector<Ground> Network::getGrounds() const {
     return all<Ground>(backend_, handle_);
 }
 
+std::vector<Area> Network::getAreas() const {
+    return all<Area>(backend_, handle_);
+}
+
+std::vector<VoltageAngleLimit> Network::getVoltageAngleLimits() const {
+    return all<VoltageAngleLimit>(backend_, handle_);
+}
+
+std::vector<std::string> Network::getAreaTypes() const {
+    return backend_->getStringList(handle_, prop::AREA_TYPE);
+}
+
 std::vector<VscConverterStation> Network::getVscConverterStations() const {
     return all<VscConverterStation>(backend_, handle_);
 }
@@ -249,6 +269,14 @@ iidm::optional<TieLine> Network::getTieLine(const std::string& id) const {
 
 iidm::optional<Ground> Network::getGround(const std::string& id) const {
     return find<Ground>(backend_, id);
+}
+
+iidm::optional<Area> Network::getArea(const std::string& id) const {
+    return find<Area>(backend_, id);
+}
+
+iidm::optional<VoltageAngleLimit> Network::getVoltageAngleLimit(const std::string& id) const {
+    return find<VoltageAngleLimit>(backend_, id);
 }
 
 iidm::optional<ShuntCompensator> Network::getShuntCompensator(const std::string& id) const {
@@ -409,6 +437,14 @@ int Network::getTieLineCount() const {
 
 int Network::getGroundCount() const {
     return detail::countOf(backend_, handle_, prop::GROUND);
+}
+
+int Network::getAreaCount() const {
+    return detail::countOf(backend_, handle_, prop::AREA);
+}
+
+int Network::getAreaTypeCount() const {
+    return static_cast<int>(getAreaTypes().size());
 }
 
 int Network::getVscConverterStationCount() const {

@@ -822,6 +822,10 @@ TEST(BackendConformanceTest, Topology) {
     checkConformance("data/topology_test.xiidm");
 }
 
+TEST(BackendConformanceTest, Areas) {
+    checkConformance("data/areas_test.xiidm");
+}
+
 TEST(BackendConformanceTest, CreatedFromScratch) {
     checkConformance("created from scratch", buildNetwork);
 }

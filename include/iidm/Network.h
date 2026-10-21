@@ -17,6 +17,8 @@
 #include <iidm/TwoWindingsTransformer.h>
 #include <iidm/ThreeWindingsTransformer.h>
 #include <iidm/HvdcLine.h>
+#include <iidm/Area.h>
+#include <iidm/AreaAdder.h>
 #include <iidm/BoundaryLine.h>
 #include <iidm/Ground.h>
 #include <iidm/TieLine.h>
@@ -27,6 +29,7 @@
 #include <iidm/LccConverterStation.h>
 #include <iidm/BusbarSection.h>
 #include <iidm/Switch.h>
+#include <iidm/VoltageAngleLimit.h>
 #include <iosfwd>
 #include <memory>
 #include <set>
@@ -125,6 +128,10 @@ public:
     std::vector<BoundaryLine>            getBoundaryLines(BoundaryLineFilter filter = BoundaryLineFilter::ALL) const;
     std::vector<TieLine>                 getTieLines() const;
     std::vector<Ground>                  getGrounds() const;
+    std::vector<Area>                    getAreas() const;
+    std::vector<VoltageAngleLimit>       getVoltageAngleLimits() const;
+    // The types of its areas (sorted)
+    std::vector<std::string>             getAreaTypes() const;
     std::vector<VscConverterStation>     getVscConverterStations() const;
     std::vector<LccConverterStation>     getLccConverterStations() const;
     std::vector<Switch>                  getSwitches() const;
@@ -154,6 +161,8 @@ public:
     int getBoundaryLineCount() const;
     int getTieLineCount() const;
     int getGroundCount() const;
+    int getAreaCount() const;
+    int getAreaTypeCount() const;
     int getVscConverterStationCount() const;
     int getLccConverterStationCount() const;
     int getSwitchCount() const;
@@ -176,6 +185,8 @@ public:
     iidm::optional<BoundaryLine>           getBoundaryLine(const std::string& id) const;
     iidm::optional<TieLine>                getTieLine(const std::string& id) const;
     iidm::optional<Ground>                 getGround(const std::string& id) const;
+    iidm::optional<Area>                   getArea(const std::string& id) const;
+    iidm::optional<VoltageAngleLimit>      getVoltageAngleLimit(const std::string& id) const;
     iidm::optional<ShuntCompensator>       getShuntCompensator(const std::string& id) const;
     iidm::optional<StaticVarCompensator>   getStaticVarCompensator(const std::string& id) const;
     iidm::optional<VscConverterStation>    getVscConverterStation(const std::string& id) const;
@@ -188,6 +199,8 @@ public:
     // A voltage level without substation
     VoltageLevelAdder newVoltageLevel();
     TieLineAdder      newTieLine();
+    AreaAdder         newArea();
+    VoltageAngleLimitAdder newVoltageAngleLimit();
 
     // Backend accessor (advanced usage only)
     BackendProvider& getBackend();
