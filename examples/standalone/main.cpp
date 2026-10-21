@@ -34,12 +34,12 @@ static void printNetwork(iidm::Network& network) {
                   << "  regulating=" << (gen.isRegulating() ? "yes" : "no")
                   << "  regulatingTargetV=" << gen.getRegulatingTargetV() << " kV"
                   << "\n";
-        if (gen.hasActivePowerControl())
+        if (gen.hasExtension<iidm::ActivePowerControl>())
             std::cout << "    activePowerControl.droop="
-                      << gen.getActivePowerControl().getDroop() << "\n";
-        if (gen.hasCoordinatedReactiveControl())
+                      << gen.getExtension<iidm::ActivePowerControl>().getDroop() << "\n";
+        if (gen.hasExtension<iidm::CoordinatedReactiveControl>())
             std::cout << "    coordinatedReactiveControl.qPercent="
-                      << gen.getCoordinatedReactiveControl().getQPercent() << "\n";
+                      << gen.getExtension<iidm::CoordinatedReactiveControl>().getQPercent() << "\n";
         iidm::ReactiveLimits limits = gen.getReactiveLimits();
         if (limits.is<iidm::MinMaxReactiveLimits>()) {
             auto rl = limits.as<iidm::MinMaxReactiveLimits>();
@@ -104,14 +104,14 @@ static void printNetwork(iidm::Network& network) {
         std::cout << "  " << hvdc.getId()
                   << "  activePowerSetpoint=" << hvdc.getActivePowerSetpoint() << " MW"
                   << "  maxP=" << hvdc.getMaxP() << " MW\n";
-        if (hvdc.hasHvdcAngleDroopActivePowerControl()) {
-            auto ext = hvdc.getHvdcAngleDroopActivePowerControl();
+        if (hvdc.hasExtension<iidm::HvdcAngleDroopActivePowerControl>()) {
+            auto ext = hvdc.getExtension<iidm::HvdcAngleDroopActivePowerControl>();
             std::cout << "    hvdcAngleDroopActivePowerControl: droop=" << ext.getDroop()
                       << "  p0=" << ext.getP0()
                       << "  enabled=" << (ext.isEnabled() ? "true" : "false") << "\n";
         }
-        if (hvdc.hasHvdcOperatorActivePowerRange()) {
-            auto ext = hvdc.getHvdcOperatorActivePowerRange();
+        if (hvdc.hasExtension<iidm::HvdcOperatorActivePowerRange>()) {
+            auto ext = hvdc.getExtension<iidm::HvdcOperatorActivePowerRange>();
             std::cout << "    hvdcOperatorActivePowerRange: oprFromCS1toCS2=" << ext.getOprFromCS1toCS2()
                       << "  oprFromCS2toCS1=" << ext.getOprFromCS2toCS1() << "\n";
         }
@@ -163,8 +163,8 @@ static void printNetwork(iidm::Network& network) {
     for (const auto& vl : voltageLevels) {
         std::cout << "  " << vl.getId()
                   << "  nominalV=" << vl.getNominalV() << " kV";
-        if (vl.hasSlackTerminal()) {
-            std::cout << "  slackTerminal.busId=" << example::slackBusId(vl.getSlackTerminal());
+        if (vl.hasExtension<iidm::SlackTerminal>()) {
+            std::cout << "  slackTerminal.busId=" << example::slackBusId(vl.getExtension<iidm::SlackTerminal>());
         }
         std::cout << "\n";
         // Report buses (bus-breaker view)

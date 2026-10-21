@@ -5,8 +5,8 @@
 
 namespace iidm {
 
-// New DiscreteMeasurements extension of an identifiable (newDiscreteMeasurements()), without
-// measurements: they are added with DiscreteMeasurements::newDiscreteMeasurement()
+// New DiscreteMeasurements extension of an identifiable, without measurements: they are added with
+// DiscreteMeasurements::newDiscreteMeasurement()
 class DiscreteMeasurementsAdder : public detail::AdderBase<DiscreteMeasurementsAdder> {
 public:
     DiscreteMeasurementsAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

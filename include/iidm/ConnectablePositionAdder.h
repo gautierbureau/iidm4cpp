@@ -6,9 +6,9 @@
 
 namespace iidm {
 
-// New ConnectablePosition extension of a connectable (newConnectablePosition()): a feeder for an
-// injection (newFeeder()), or one per side (newFeeder1() to newFeeder3()). ValidationException from
-// add() without a feeder, or with both kinds.
+// New ConnectablePosition extension of a connectable: a feeder for an injection (newFeeder()), or
+// one per side (newFeeder1() to newFeeder3()). ValidationException from add() without a feeder, or
+// with both kinds.
 class ConnectablePositionAdder : public detail::AdderBase<ConnectablePositionAdder> {
 public:
     class FeederAdder;

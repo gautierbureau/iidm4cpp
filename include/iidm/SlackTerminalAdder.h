@@ -5,8 +5,7 @@
 
 namespace iidm {
 
-// New SlackTerminal extension of a voltage level (newSlackTerminal()), with the slack terminal
-// of the current variant
+// New SlackTerminal extension of a voltage level, with the slack terminal of the current variant
 class SlackTerminalAdder : public detail::AdderBase<SlackTerminalAdder> {
 public:
     SlackTerminalAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

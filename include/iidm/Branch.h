@@ -1,7 +1,5 @@
 #pragma once
 
-#include <iidm/BranchObservability.h>
-#include <iidm/BranchObservabilityAdder.h>
 #include <iidm/Enums.h>
 #include <iidm/FlowsLimitsHolder.h>
 #include <iidm/Identifiable.h>
@@ -104,13 +102,6 @@ public:
     iidm::optional<Overload> checkTemporaryLimits2(double limitReductionValue, LimitType type) const;
     std::vector<Overload> checkAllTemporaryLimits(TwoSides side, LimitType type) const;
     std::vector<Overload> checkAllTemporaryLimits(TwoSides side, double limitReductionValue, LimitType type) const;
-
-    // ── Extensions ───────────────────────────────────────────────────────
-    // An extension's getter throws ExtensionNotFoundException when it is absent
-    bool hasBranchObservability() const;
-    BranchObservability getBranchObservability() const;
-    BranchObservabilityAdder newBranchObservability();
-    void removeBranchObservability();
 
 protected:
     BranchMethods() = default;

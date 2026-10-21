@@ -5,7 +5,7 @@
 
 namespace iidm {
 
-// New BusbarSectionPosition extension of a busbar section (newBusbarSectionPosition())
+// New BusbarSectionPosition extension of a busbar section
 class BusbarSectionPositionAdder : public detail::AdderBase<BusbarSectionPositionAdder> {
 public:
     BusbarSectionPositionAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

@@ -10,7 +10,7 @@ namespace iidm {
 class BackendProvider;
 
 // The DynamicModelInfo extension of an identifiable: the dynamic model it is simulated with. An
-// object of its own, from Identifiable::getDynamicModelInfo().
+// object of its own, from Identifiable::getExtension<DynamicModelInfo>().
 class DynamicModelInfo : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::DYNAMIC_MODEL_INFO;

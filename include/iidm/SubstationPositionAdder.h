@@ -6,7 +6,7 @@
 
 namespace iidm {
 
-// New SubstationPosition extension of a substation (newSubstationPosition())
+// New SubstationPosition extension of a substation
 class SubstationPositionAdder : public detail::AdderBase<SubstationPositionAdder> {
 public:
     SubstationPositionAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

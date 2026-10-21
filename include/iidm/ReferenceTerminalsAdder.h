@@ -6,7 +6,7 @@
 
 namespace iidm {
 
-// New ReferenceTerminals extension of a network (newReferenceTerminals())
+// New ReferenceTerminals extension of a network
 class ReferenceTerminalsAdder : public detail::AdderBase<ReferenceTerminalsAdder> {
 public:
     ReferenceTerminalsAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

@@ -1,12 +1,6 @@
 #pragma once
 
-#include <iidm/ConnectablePosition.h>
-#include <iidm/ConnectablePositionAdder.h>
 #include <iidm/Identifiable.h>
-#include <iidm/Measurement.h>
-#include <iidm/MeasurementsAdder.h>
-#include <iidm/ReferencePriorities.h>
-#include <iidm/ReferencePrioritiesAdder.h>
 #include <iidm/Terminal.h>
 #include <vector>
 
@@ -38,23 +32,6 @@ public:
 
     // Removes it from the network
     void remove();
-
-    // ── Extensions ───────────────────────────────────────────────────────
-    // An extension's getter throws ExtensionNotFoundException when it is absent
-    bool hasMeasurements() const;
-    Measurements getMeasurements() const;
-    MeasurementsAdder newMeasurements();
-    void removeMeasurements();
-
-    bool hasConnectablePosition() const;
-    ConnectablePosition getConnectablePosition() const;
-    ConnectablePositionAdder newConnectablePosition();
-    void removeConnectablePosition();
-
-    bool hasReferencePriorities() const;
-    ReferencePriorities getReferencePriorities() const;
-    ReferencePrioritiesAdder newReferencePriorities();
-    void removeReferencePriorities();
 };
 
 } // namespace iidm

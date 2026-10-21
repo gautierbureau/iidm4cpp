@@ -33,15 +33,15 @@ static std::string runEmbedded(const char* networkId) {
             std::cout << "[C++] Generator " << gen.getId()
                       << " targetP=" << targetP << " MW\n";
             gen.setTargetP(targetP * 0.95);
-            if (gen.hasActivePowerControl()) {
-                double droop = gen.getActivePowerControl().getDroop();
+            if (gen.hasExtension<iidm::ActivePowerControl>()) {
+                double droop = gen.getExtension<iidm::ActivePowerControl>().getDroop();
                 std::cout << "[C++]   activePowerControl.droop=" << droop << "\n";
-                gen.getActivePowerControl().setDroop(2);
+                gen.getExtension<iidm::ActivePowerControl>().setDroop(2);
             }
-            if (gen.hasCoordinatedReactiveControl()) {
-                double qPct = gen.getCoordinatedReactiveControl().getQPercent();
+            if (gen.hasExtension<iidm::CoordinatedReactiveControl>()) {
+                double qPct = gen.getExtension<iidm::CoordinatedReactiveControl>().getQPercent();
                 std::cout << "[C++]   coordinatedReactiveControl.qPercent=" << qPct << "\n";
-                gen.getCoordinatedReactiveControl().setQPercent(qPct * 1.1);
+                gen.getExtension<iidm::CoordinatedReactiveControl>().setQPercent(qPct * 1.1);
             }
         }
 
@@ -49,14 +49,14 @@ static std::string runEmbedded(const char* networkId) {
         for (const auto& hvdc : network.getHvdcLines()) {
             std::cout << "[C++] HvdcLine " << hvdc.getId()
                       << " activePowerSetpoint=" << hvdc.getActivePowerSetpoint() << " MW\n";
-            if (hvdc.hasHvdcAngleDroopActivePowerControl()) {
-                auto ext = hvdc.getHvdcAngleDroopActivePowerControl();
+            if (hvdc.hasExtension<iidm::HvdcAngleDroopActivePowerControl>()) {
+                auto ext = hvdc.getExtension<iidm::HvdcAngleDroopActivePowerControl>();
                 std::cout << "[C++]   hvdcAngleDroopActivePowerControl: droop=" << ext.getDroop()
                           << "  p0=" << ext.getP0()
                           << "  enabled=" << (ext.isEnabled() ? "true" : "false") << "\n";
             }
-            if (hvdc.hasHvdcOperatorActivePowerRange()) {
-                auto ext = hvdc.getHvdcOperatorActivePowerRange();
+            if (hvdc.hasExtension<iidm::HvdcOperatorActivePowerRange>()) {
+                auto ext = hvdc.getExtension<iidm::HvdcOperatorActivePowerRange>();
                 std::cout << "[C++]   hvdcOperatorActivePowerRange: oprFromCS1toCS2="
                           << ext.getOprFromCS1toCS2()
                           << "  oprFromCS2toCS1=" << ext.getOprFromCS2toCS1() << "\n";
@@ -73,9 +73,9 @@ static std::string runEmbedded(const char* networkId) {
 
         // Voltage levels: report SlackTerminal
         for (const auto& vl : network.getVoltageLevels()) {
-            if (!vl.hasSlackTerminal()) continue;
+            if (!vl.hasExtension<iidm::SlackTerminal>()) continue;
             std::cout << "[C++] VoltageLevel " << vl.getId()
-                      << " slackTerminal.busId=" << example::slackBusId(vl.getSlackTerminal()) << "\n";
+                      << " slackTerminal.busId=" << example::slackBusId(vl.getExtension<iidm::SlackTerminal>()) << "\n";
         }
 
         // ActivePowerControl (all fields) and SlackTerminal.setTerminal

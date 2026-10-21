@@ -89,7 +89,7 @@ public:
 };
 
 // The DiscreteMeasurements extension of an identifiable (switches, transformers, shunts...): an
-// object of its own, from Identifiable::getDiscreteMeasurements().
+// object of its own, from Identifiable::getExtension<DiscreteMeasurements>().
 class DiscreteMeasurements : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::DISCRETE_MEASUREMENTS;

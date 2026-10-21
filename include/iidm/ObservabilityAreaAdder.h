@@ -9,8 +9,8 @@
 
 namespace iidm {
 
-// New ObservabilityArea extension of a voltage level (newObservabilityArea()): its areas, each made of
-// the buses or the nodes given
+// New ObservabilityArea extension of a voltage level: its areas, each made of the buses or the
+// nodes given
 class ObservabilityAreaAdder : public detail::AdderBase<ObservabilityAreaAdder> {
 public:
     ObservabilityAreaAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

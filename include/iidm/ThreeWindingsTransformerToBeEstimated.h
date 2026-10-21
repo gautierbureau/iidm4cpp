@@ -11,7 +11,7 @@ class BackendProvider;
 
 // The ThreeWindingsTransformerToBeEstimated extension of a three windings transformer: which of
 // its tap changers a state estimator must estimate. An object of its own, from
-// ThreeWindingsTransformer::getThreeWindingsTransformerToBeEstimated().
+// ThreeWindingsTransformer::getExtension<ThreeWindingsTransformerToBeEstimated>().
 class ThreeWindingsTransformerToBeEstimated : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::THREE_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED;

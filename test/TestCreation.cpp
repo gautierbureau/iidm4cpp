@@ -85,13 +85,13 @@ void checkCreation(Network& network) {
     EXPECT_FALSE(g.isRegulating());
 
     // Extension
-    ActivePowerControl apc = g.newActivePowerControl().withDroop(4).withParticipate(true).withMaxTargetP(150).add();
-    EXPECT_TRUE(g.hasActivePowerControl());
-    EXPECT_DOUBLE_EQ(g.getActivePowerControl().getDroop(), 4);
+    ActivePowerControl apc = g.newExtension<ActivePowerControlAdder>().withDroop(4).withParticipate(true).withMaxTargetP(150).add();
+    EXPECT_TRUE(g.hasExtension<ActivePowerControl>());
+    EXPECT_DOUBLE_EQ(g.getExtension<ActivePowerControl>().getDroop(), 4);
     EXPECT_DOUBLE_EQ(*apc.getMaxTargetP(), 150);
-    g.removeActivePowerControl();
-    EXPECT_FALSE(g.hasActivePowerControl());
-    EXPECT_THROW(g.getActivePowerControl(), ExtensionNotFoundException);
+    g.removeExtension<ActivePowerControl>();
+    EXPECT_FALSE(g.hasExtension<ActivePowerControl>());
+    EXPECT_THROW(g.getExtension<ActivePowerControl>(), ExtensionNotFoundException);
 
     // Base classes: names, properties, aliases, types, identity, connection
     EXPECT_EQ(g.getNameOrId(), "G");

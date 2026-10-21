@@ -10,8 +10,8 @@ class BackendProvider;
 
 // The StandbyAutomaton extension of a static var compensator: in standby, it holds a fixed
 // susceptance until the voltage crosses a threshold, then regulates to the matching setpoint. An
-// object of its own, from StaticVarCompensator::getStandbyAutomaton(). ValidationException for a
-// NaN value, and in standby for a low threshold not below the high one.
+// object of its own, from StaticVarCompensator::getExtension<StandbyAutomaton>().
+// ValidationException for a NaN value, and in standby for a low threshold not below the high one.
 class StandbyAutomaton : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::STANDBY_AUTOMATON;

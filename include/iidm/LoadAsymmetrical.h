@@ -11,7 +11,7 @@ class BackendProvider;
 
 // The LoadAsymmetrical extension of a load: P0 and Q0 are then its balanced part, and each
 // phase has an unbalanced part on top (phase A: P0 + deltaPa, Q0 + deltaQa). An object of its
-// own, from Load::getLoadAsymmetrical().
+// own, from Load::getExtension<LoadAsymmetrical>().
 class LoadAsymmetrical : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::LOAD_ASYMMETRICAL;

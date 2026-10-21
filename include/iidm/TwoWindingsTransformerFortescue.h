@@ -11,7 +11,7 @@ class BackendProvider;
 
 // The TwoWindingsTransformerFortescue extension of a two windings transformer: its zero-sequence
 // impedance, magnetizing reactance and windings, for asymmetrical studies. An object of its own,
-// from TwoWindingsTransformer::getTwoWindingsTransformerFortescue().
+// from TwoWindingsTransformer::getExtension<TwoWindingsTransformerFortescue>().
 class TwoWindingsTransformerFortescue : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::TWO_WINDINGS_TRANSFORMER_FORTESCUE;

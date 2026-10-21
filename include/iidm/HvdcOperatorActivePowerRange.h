@@ -9,7 +9,7 @@ namespace iidm {
 class BackendProvider;
 
 // The HvdcOperatorActivePowerRange extension of an HVDC line: an object of its own, from
-// HvdcLine::getHvdcOperatorActivePowerRange(). Its values are floats in powsybl.
+// HvdcLine::getExtension<HvdcOperatorActivePowerRange>(). Its values are floats in powsybl.
 class HvdcOperatorActivePowerRange : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::HVDC_OPERATOR_ACTIVE_POWER_RANGE;

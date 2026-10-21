@@ -6,7 +6,7 @@
 
 namespace iidm {
 
-// New DynamicModelInfo extension of an identifiable (newDynamicModelInfo())
+// New DynamicModelInfo extension of an identifiable
 class DynamicModelInfoAdder : public detail::AdderBase<DynamicModelInfoAdder> {
 public:
     DynamicModelInfoAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

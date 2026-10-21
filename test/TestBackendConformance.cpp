@@ -747,37 +747,37 @@ void checkConformance(const char* network) {
 // The rest of the network built from C++: every other type of object, and every extension
 void addEverything(Network n, Substation s, VoltageLevel vl1, VoltageLevel vl2, Generator g1, Load load) {
     s.addGeographicalTag("north");
-    s.newSubstationPosition().withCoordinate(Coordinate(48.85, 2.35)).add();
+    s.newExtension<SubstationPositionAdder>().withCoordinate(Coordinate(48.85, 2.35)).add();
     vl1.getBusBreakerView().newSwitch().setId("CPL1").setBus1("B1").setBus2("B1b").setOpen(false).add();
-    vl1.newIdentifiableShortCircuit().withIpMin(1000).withIpMax(5000).add();
-    vl1.newSlackTerminal().withTerminal(g1.getTerminal()).add();
-    vl1.newObservabilityArea().withObservabilityAreaByBusBreakerViewBuses({"B1", "B1b"}, 1, ObservabilityStatus::OBSERVABLE).add();
+    vl1.newExtension<IdentifiableShortCircuitAdder>().withIpMin(1000).withIpMax(5000).add();
+    vl1.newExtension<SlackTerminalAdder>().withTerminal(g1.getTerminal()).add();
+    vl1.newExtension<ObservabilityAreaAdder>().withObservabilityAreaByBusBreakerViewBuses({"B1", "B1b"}, 1, ObservabilityStatus::OBSERVABLE).add();
 
     // Generator: its reactive limits and extensions
     g1.newReactiveCapabilityCurve().setProperty("source", "datasheet")
         .beginPoint().setP(0).setMinQ(-100).setMaxQ(100).endPoint()
         .beginPoint().setP(200).setMinQ(-80).setMaxQ(80).endPoint()
         .add();
-    g1.newCoordinatedReactiveControl().withQPercent(50).add();
-    g1.newGeneratorShortCircuit().withDirectSubtransX(0.2).withDirectTransX(0.3).withStepUpTransformerX(0.1).add();
-    g1.newGeneratorEntsoeCategory().withCode(1).add();
-    g1.newGeneratorStartup().withPlannedActivePowerSetpoint(90).withStartupCost(5).withMarginalCost(10)
+    g1.newExtension<CoordinatedReactiveControlAdder>().withQPercent(50).add();
+    g1.newExtension<GeneratorShortCircuitAdder>().withDirectSubtransX(0.2).withDirectTransX(0.3).withStepUpTransformerX(0.1).add();
+    g1.newExtension<GeneratorEntsoeCategoryAdder>().withCode(1).add();
+    g1.newExtension<GeneratorStartupAdder>().withPlannedActivePowerSetpoint(90).withStartupCost(5).withMarginalCost(10)
         .withPlannedOutageRate(0.01).withForcedOutageRate(0.02).add();
-    g1.newGeneratorFortescue().withGrounded(true).withRz(0.1).withXz(0.2).withRn(0.3).withXn(0.4).withGroundingR(0.5)
+    g1.newExtension<GeneratorFortescueAdder>().withGrounded(true).withRz(0.1).withXz(0.2).withRn(0.3).withXn(0.4).withGroundingR(0.5)
         .withGroundingX(0.6).add();
-    g1.newInjectionObservability().withObservable(true).withStandardDeviationP(0.1).withRedundantP(true).add();
-    g1.newManualFrequencyRestorationReserve().withParticipate(true).add();
-    g1.newConnectablePosition().newFeeder().withName("G1 feeder").withOrder(10)
+    g1.newExtension<InjectionObservabilityAdder>().withObservable(true).withStandardDeviationP(0.1).withRedundantP(true).add();
+    g1.newExtension<ManualFrequencyRestorationReserveAdder>().withParticipate(true).add();
+    g1.newExtension<ConnectablePositionAdder>().newFeeder().withName("G1 feeder").withOrder(10)
         .withDirection(ConnectablePosition::Direction::TOP).add().add();
-    g1.newDynamicModelInfo().setModelName("GeneratorSynchronous").add();
-    g1.newMeasurements().add().newMeasurement().setId("M1").setType(MeasurementType::ACTIVE_POWER).setValue(100)
+    g1.newExtension<DynamicModelInfoAdder>().setModelName("GeneratorSynchronous").add();
+    g1.newExtension<MeasurementsAdder>().add().newMeasurement().setId("M1").setType(MeasurementType::ACTIVE_POWER).setValue(100)
         .setStandardDeviation(1).setValid(true).add();
     ReferencePriority::set(g1, 1);
 
     // Loads: details, asymmetry, models
-    load.newLoadDetail().withFixedActivePower(40).withFixedReactivePower(5).withVariableActivePower(40)
+    load.newExtension<LoadDetailAdder>().withFixedActivePower(40).withFixedReactivePower(5).withVariableActivePower(40)
         .withVariableReactivePower(5).add();
-    load.newLoadAsymmetrical().withConnectionType(LoadConnectionType::Y).withDeltaPa(1).withDeltaQa(0.5).withDeltaPb(0)
+    load.newExtension<LoadAsymmetricalAdder>().withConnectionType(LoadConnectionType::Y).withDeltaPa(1).withDeltaQa(0.5).withDeltaPb(0)
         .withDeltaQb(0).withDeltaPc(-1).withDeltaQc(-0.5).add();
     vl2.newLoad().setId("LZIP").setBus("B2").setP0(10).setQ0(2)
         .newZipModel().setC0p(0.5).setC1p(0.3).setC2p(0.2).setC0q(0.5).setC1q(0.3).setC2q(0.2).add()
@@ -788,7 +788,7 @@ void addEverything(Network n, Substation s, VoltageLevel vl1, VoltageLevel vl2, 
     Battery battery = vl1.newBattery().setId("BAT").setBus("B1").setMinP(-50).setMaxP(50).setTargetP(10)
         .setLocalTargetQ(0).add();
     battery.newMinMaxReactiveLimits().setMinQ(-20).setMaxQ(20).add();
-    battery.newBatteryShortCircuit().withDirectSubtransX(0.2).withDirectTransX(0.3).withStepUpTransformerX(0.1).add();
+    battery.newExtension<BatteryShortCircuitAdder>().withDirectSubtransX(0.2).withDirectTransX(0.3).withStepUpTransformerX(0.1).add();
     vl1.newShuntCompensator().setId("SC1").setBus("B1").setSectionCount(1)
         .newLinearModel().setBPerSection(1e-5).setGPerSection(0).setMaximumSectionCount(2).add()
         .add();
@@ -802,7 +802,7 @@ void addEverything(Network n, Substation s, VoltageLevel vl1, VoltageLevel vl2, 
         .setLocalTargetV(400)
         .newVoltageRegulation().withMode(RegulationMode::VOLTAGE).withRegulating(true).add()
         .add();
-    svc.newStandbyAutomaton().withStandbyStatus(false).withB0(1e-4).withLowVoltageSetpoint(390).withHighVoltageSetpoint(410)
+    svc.newExtension<StandbyAutomatonAdder>().withStandbyStatus(false).withB0(1e-4).withLowVoltageSetpoint(390).withHighVoltageSetpoint(410)
         .withLowVoltageThreshold(385).withHighVoltageThreshold(415).add();
     VscConverterStation vsc1 = vl1.newVscConverterStation().setId("VSC1").setBus("B1").setLossFactor(1.1)
         .setLocalTargetQ(0).add();
@@ -814,8 +814,8 @@ void addEverything(Network n, Substation s, VoltageLevel vl1, VoltageLevel vl2, 
     HvdcLine hvdc = n.newHvdcLine().setId("HVDC").setR(1).setNominalV(400).setActivePowerSetpoint(100).setMaxP(200)
         .setConvertersMode(HvdcConverterStationMode::RECTIFIER).setConverterStationId1("VSC1").setConverterStationId2("VSC2")
         .add();
-    hvdc.newHvdcAngleDroopActivePowerControl().withP0(100).withDroop(1).withEnabled(true).add();
-    hvdc.newHvdcOperatorActivePowerRange().withOprFromCS1toCS2(150).withOprFromCS2toCS1(120).add();
+    hvdc.newExtension<HvdcAngleDroopActivePowerControlAdder>().withP0(100).withDroop(1).withEnabled(true).add();
+    hvdc.newExtension<HvdcOperatorActivePowerRangeAdder>().withOprFromCS1toCS2(150).withOprFromCS2toCS1(120).add();
     n.newHvdcLine().setId("HVDC_LCC").setR(1).setNominalV(400).setActivePowerSetpoint(50).setMaxP(100)
         .setConvertersMode(HvdcConverterStationMode::INVERTER).setConverterStationId1("LCC1").setConverterStationId2("LCC2")
         .add();
@@ -824,8 +824,8 @@ void addEverything(Network n, Substation s, VoltageLevel vl1, VoltageLevel vl2, 
     VoltageLevel vl3 = s.newVoltageLevel().setId("VL3").setNominalV(225).setTopologyKind(TopologyKind::NODE_BREAKER).add();
     VoltageLevel::NodeBreakerView nbv = vl3.getNodeBreakerView();
     BusbarSection bbs = nbv.newBusbarSection().setId("BBS3").setNode(0).add();
-    bbs.newBusbarSectionPosition().withBusbarIndex(1).withSectionIndex(1).add();
-    bbs.newOperatingStatus().withStatus(OperatingStatus::Status::IN_OPERATION).add();
+    bbs.newExtension<BusbarSectionPositionAdder>().withBusbarIndex(1).withSectionIndex(1).add();
+    bbs.newExtension<OperatingStatusAdder>().withStatus(OperatingStatus::Status::IN_OPERATION).add();
     nbv.newBreaker().setId("BR3").setNode1(0).setNode2(1).setOpen(false).add();
     nbv.newDisconnector().setId("DIS3").setNode1(0).setNode2(2).setOpen(false).add();
     nbv.newSwitch().setId("LBS3").setKind(SwitchKind::LOAD_BREAK_SWITCH).setNode1(0).setNode2(3).setOpen(false)
@@ -834,11 +834,11 @@ void addEverything(Network n, Substation s, VoltageLevel vl1, VoltageLevel vl2, 
     nbv.newBreaker().setId("BR3T2").setNode1(0).setNode2(5).setOpen(false).add();
     nbv.newBreaker().setId("BR3T3").setNode1(0).setNode2(6).setOpen(false).add();
     vl3.newLoad().setId("L3").setNode(1).setP0(30).setQ0(3).add()
-        .newConnectablePosition().newFeeder().withName("L3").withOrder(1).withDirection(ConnectablePosition::Direction::BOTTOM)
+        .newExtension<ConnectablePositionAdder>().newFeeder().withName("L3").withOrder(1).withDirection(ConnectablePosition::Direction::BOTTOM)
         .add().add();
     vl3.newGenerator().setId("G4").setNode(2).setMinP(0).setMaxP(50).setTargetP(10).setLocalTargetQ(0).add();
     vl3.newGround().setId("GROUND3").setNode(4).add();
-    vl3.newObservabilityArea().withObservabilityAreaByNodes({0, 1}, 1, ObservabilityStatus::BORDER).add();
+    vl3.newExtension<ObservabilityAreaAdder>().withObservabilityAreaByNodes({0, 1}, 1, ObservabilityStatus::BORDER).add();
     VoltageLevel vl4 = s.newVoltageLevel().setId("VL4").setNominalV(63).setTopologyKind(TopologyKind::BUS_BREAKER).add();
     vl4.getBusBreakerView().newBus().setId("B4").add();
     vl4.newLoad().setId("L4").setBus("B4").setP0(20).setQ0(2).add();
@@ -864,12 +864,12 @@ void addEverything(Network n, Substation s, VoltageLevel vl1, VoltageLevel vl2, 
         .beginTemporaryLimit().setName("TL10").setAcceptableDuration(600).setValue(1000).endTemporaryLimit()
         .add();
     t2.setSelectedOperationalLimitsGroup1("DEFAULT");
-    t2.newTwoWindingsTransformerToBeEstimated().withRatioTapChangerStatus(true).withPhaseTapChangerStatus(false).add();
-    t2.newTwoWindingsTransformerFortescue().withRz(0.1).withXz(0.2).withFreeFluxes(true).withXm(1)
+    t2.newExtension<TwoWindingsTransformerToBeEstimatedAdder>().withRatioTapChangerStatus(true).withPhaseTapChangerStatus(false).add();
+    t2.newExtension<TwoWindingsTransformerFortescueAdder>().withRz(0.1).withXz(0.2).withFreeFluxes(true).withXm(1)
         .withConnectionType1(WindingConnectionType::Y_GROUNDED).withConnectionType2(WindingConnectionType::DELTA)
         .withGroundingR1(0).withGroundingX1(0).withGroundingR2(0).withGroundingX2(0).add();
-    t2.newTwoWindingsTransformerPhaseAngleClock().withPhaseAngleClock(11).add();
-    t2.newDiscreteMeasurements().add().newDiscreteMeasurement().setId("DM1").setType(DiscreteMeasurementType::TAP_POSITION)
+    t2.newExtension<TwoWindingsTransformerPhaseAngleClockAdder>().withPhaseAngleClock(11).add();
+    t2.newExtension<DiscreteMeasurementsAdder>().add().newDiscreteMeasurement().setId("DM1").setType(DiscreteMeasurementType::TAP_POSITION)
         .setTapChanger(DiscreteMeasurementTapChanger::RATIO_TAP_CHANGER).setValue(0).setValid(true).add();
     ThreeWindingsTransformer t3 = s.newThreeWindingsTransformer().setId("T3").setRatedU0(400)
         .newLeg1().setR(0.1).setX(5).setG(0).setB(0).setRatedU(400).setRatedS(200).setVoltageLevel("VL1").setBus("B1").add()
@@ -884,13 +884,13 @@ void addEverything(Network n, Substation s, VoltageLevel vl1, VoltageLevel vl2, 
         .beginStep().setAlpha(0).setRho(1).setR(0).setX(0).setG(0).setB(0).endStep()
         .add();
     t3.getLeg1().newOperationalLimitsGroup("WINTER").newCurrentLimits().setPermanentLimit(500).add();
-    t3.newThreeWindingsTransformerToBeEstimated().withRatioTapChanger2Status(true).add();
-    t3.newThreeWindingsTransformerFortescue().leg1().withRz(0.1).withXz(0.2).withFreeFluxes(false)
+    t3.newExtension<ThreeWindingsTransformerToBeEstimatedAdder>().withRatioTapChanger2Status(true).add();
+    t3.newExtension<ThreeWindingsTransformerFortescueAdder>().leg1().withRz(0.1).withXz(0.2).withFreeFluxes(false)
         .withConnectionType(WindingConnectionType::Y).withGroundingR(0).withGroundingX(0)
         .leg2().withRz(0.1).withXz(0.2).withConnectionType(WindingConnectionType::DELTA)
         .leg3().withRz(0.1).withXz(0.2).withConnectionType(WindingConnectionType::Y_GROUNDED)
         .add();
-    t3.newThreeWindingsTransformerPhaseAngleClock().withPhaseAngleClockLeg2(1).withPhaseAngleClockLeg3(2).add();
+    t3.newExtension<ThreeWindingsTransformerPhaseAngleClockAdder>().withPhaseAngleClockLeg2(1).withPhaseAngleClockLeg3(2).add();
 
     // Lines, boundary lines and a tie line
     Line l12 = n.newLine().setId("L12").setVoltageLevel1("VL1").setBus1("B1").setVoltageLevel2("VL2").setBus2("B2")
@@ -902,15 +902,15 @@ void addEverything(Network n, Substation s, VoltageLevel vl1, VoltageLevel vl2, 
         .add();
     l12.setSelectedOperationalLimitsGroup1("DEFAULT");
     l12.newOperationalLimitsGroup2("DEFAULT").newActivePowerLimits().setPermanentLimit(400).add();
-    l12.newLineFortescue().withRz(0.1).withXz(0.3).withG1z(0).withB1z(0).withG2z(0).withB2z(0).add();
-    l12.newLinePosition().withCoordinates({Coordinate(48.85, 2.35), Coordinate(49, 3)}).add();
-    l12.newBranchObservability().withObservable(true).withStandardDeviationP1(0.1).withRedundantP1(false).add();
-    l12.newOperatingStatus().withStatus(OperatingStatus::Status::PLANNED_OUTAGE).add();
-    l12.newConnectablePosition()
+    l12.newExtension<LineFortescueAdder>().withRz(0.1).withXz(0.3).withG1z(0).withB1z(0).withG2z(0).withB2z(0).add();
+    l12.newExtension<LinePositionAdder>().withCoordinates({Coordinate(48.85, 2.35), Coordinate(49, 3)}).add();
+    l12.newExtension<BranchObservabilityAdder>().withObservable(true).withStandardDeviationP1(0.1).withRedundantP1(false).add();
+    l12.newExtension<OperatingStatusAdder>().withStatus(OperatingStatus::Status::PLANNED_OUTAGE).add();
+    l12.newExtension<ConnectablePositionAdder>()
         .newFeeder1().withName("L12 1").withOrder(1).withDirection(ConnectablePosition::Direction::TOP).add()
         .newFeeder2().withName("L12 2").withOrder(2).withDirection(ConnectablePosition::Direction::BOTTOM).add()
         .add();
-    l12.newMeasurements().add().newMeasurement().setId("M12").setType(MeasurementType::CURRENT).setSide(ThreeSides::ONE)
+    l12.newExtension<MeasurementsAdder>().add().newMeasurement().setId("M12").setType(MeasurementType::CURRENT).setSide(ThreeSides::ONE)
         .setValue(100).setStandardDeviation(1).setValid(true).add();
     ReferencePriority::set(l12, TwoSides::TWO, 2);
     BoundaryLine bl = vl1.newBoundaryLine().setId("BL1").setBus("B1").setP0(10).setQ0(5).setR(1).setX(10).setG(0).setB(0)
@@ -918,7 +918,7 @@ void addEverything(Network n, Substation s, VoltageLevel vl1, VoltageLevel vl2, 
         .newGeneration().setMinP(0).setMaxP(100).setTargetP(10).setTargetQ(0).setTargetV(400).setVoltageRegulationOn(false).add()
         .add();
     bl.getGeneration()->newMinMaxReactiveLimits().setMinQ(-50).setMaxQ(50).add();
-    bl.newLinePosition().withCoordinates({Coordinate(48.85, 2.35), Coordinate(50, 4)}).add();
+    bl.newExtension<LinePositionAdder>().withCoordinates({Coordinate(48.85, 2.35), Coordinate(50, 4)}).add();
     vl1.newBoundaryLine().setId("BLT1").setBus("B1").setP0(0).setQ0(0).setR(1).setX(10).setG(0).setB(0)
         .setPairingKey("XNODE2").add();
     vl2.newBoundaryLine().setId("BLT2").setBus("B2").setP0(0).setQ0(0).setR(1).setX(10).setG(0).setB(0)
@@ -943,14 +943,14 @@ void addEverything(Network n, Substation s, VoltageLevel vl1, VoltageLevel vl2, 
         .add();
 
     // Network extensions, and a subnetwork
-    n.newReferenceTerminals().withTerminals({g1.getTerminal()}).add();
-    n.newSecondaryVoltageControl()
+    n.newExtension<ReferenceTerminalsAdder>().withTerminals({g1.getTerminal()}).add();
+    n.newExtension<SecondaryVoltageControlAdder>()
         .newControlZone().withName("z1")
             .newPilotPoint().withBusbarSectionsOrBusesIds({"B2"}).withTargetV(225).add()
             .newControlUnit().withId("G2").add()
             .add()
         .add();
-    n.newLineCouplings().add().newMutualCoupling().withLine1(l12).withLine2(l12b).withR(0.1).withX(0.5)
+    n.newExtension<LineCouplingsAdder>().add().newMutualCoupling().withLine1(l12).withLine2(l12b).withR(0.1).withX(0.5)
         .withLine1Segment(LineSegment(0, 0.5)).add();
     Network sub = n.createSubnetwork("SUB", "sub", "test");
     sub.setCaseDate("2026-01-31T12:00Z"); // else the creation time
@@ -1000,7 +1000,7 @@ void buildNetwork(BackendProvider& b) {
                      .setRatedS(250).setEnergySource(EnergySource::NUCLEAR).setLocalTargetV(405).setLocalTargetQ(0)
                      .newVoltageRegulation().withMode(RegulationMode::VOLTAGE).withRegulating(true).withTargetDeadband(1).add()
                      .add();
-    g1.newActivePowerControl().withDroop(4).withParticipate(true).withParticipationFactor(0.5).withMaxTargetP(150).add();
+    g1.newExtension<ActivePowerControlAdder>().withDroop(4).withParticipate(true).withParticipationFactor(0.5).withMaxTargetP(150).add();
     // Properties, aliases, names out of ASCII (a 4-byte UTF-8 character too)
     g1.setProperty("owner", "EDF").setProperty("unit", "1");
     g1.addAlias("G1-alias").addAlias("G1-code", "code");

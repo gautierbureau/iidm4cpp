@@ -1,12 +1,6 @@
 #pragma once
 
-#include <iidm/ActivePowerControl.h>
-#include <iidm/ActivePowerControlAdder.h>
 #include <iidm/Connectable.h>
-#include <iidm/InjectionObservability.h>
-#include <iidm/InjectionObservabilityAdder.h>
-#include <iidm/ManualFrequencyRestorationReserve.h>
-#include <iidm/ManualFrequencyRestorationReserveAdder.h>
 #include <iidm/Terminal.h>
 
 namespace iidm {
@@ -20,23 +14,6 @@ public:
     explicit Injection(ObjectHandle handle, BackendProvider* backend) : Connectable(handle, backend) {}
 
     Terminal getTerminal() const;
-
-    // ── Extensions ───────────────────────────────────────────────────────
-    // An extension's getter throws ExtensionNotFoundException when it is absent
-    bool hasActivePowerControl() const;
-    ActivePowerControl getActivePowerControl() const;
-    ActivePowerControlAdder newActivePowerControl();
-    void removeActivePowerControl();
-
-    bool hasInjectionObservability() const;
-    InjectionObservability getInjectionObservability() const;
-    InjectionObservabilityAdder newInjectionObservability();
-    void removeInjectionObservability();
-
-    bool hasManualFrequencyRestorationReserve() const;
-    ManualFrequencyRestorationReserve getManualFrequencyRestorationReserve() const;
-    ManualFrequencyRestorationReserveAdder newManualFrequencyRestorationReserve();
-    void removeManualFrequencyRestorationReserve();
 };
 
 } // namespace iidm

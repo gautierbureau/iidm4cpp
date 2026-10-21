@@ -5,7 +5,8 @@
 
 namespace iidm {
 
-// New OperatingStatus extension of a busbar section, a line, a tie line, a transformer, an HVDC line or a boundary line (newOperatingStatus())
+// New OperatingStatus extension of a busbar section, a line, a tie line, a transformer, an HVDC
+// line or a boundary line
 class OperatingStatusAdder : public detail::AdderBase<OperatingStatusAdder> {
 public:
     OperatingStatusAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

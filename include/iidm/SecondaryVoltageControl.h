@@ -60,8 +60,8 @@ public:
 };
 
 // The SecondaryVoltageControl extension of a network: its control zones. An object of its own, from
-// Network::getSecondaryVoltageControl(); its zones, pilot points and control units are given at
-// creation (Network::newSecondaryVoltageControl()).
+// Network::getExtension<SecondaryVoltageControl>(); its zones, pilot points and control units are
+// given at creation (Network::newExtension<SecondaryVoltageControlAdder>()).
 class SecondaryVoltageControl : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::SECONDARY_VOLTAGE_CONTROL;

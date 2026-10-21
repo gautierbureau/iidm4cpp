@@ -8,8 +8,8 @@ namespace iidm {
 
 class BackendProvider;
 
-// The LineFortescue extension of a line: its zero-sequence impedance and admittances, its
-// open phases, for asymmetrical studies. An object of its own, from Line::getLineFortescue().
+// The LineFortescue extension of a line: its zero-sequence impedance and admittances, its open
+// phases, for asymmetrical studies. An object of its own, from Line::getExtension<LineFortescue>().
 class LineFortescue : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::LINE_FORTESCUE;

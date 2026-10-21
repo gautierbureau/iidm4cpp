@@ -1,7 +1,5 @@
 #pragma once
 
-#include <iidm/BatteryShortCircuit.h>
-#include <iidm/BatteryShortCircuitAdder.h>
 #include <iidm/Injection.h>
 #include <iidm/ReactiveLimitsHolder.h>
 #include <iidm/VoltageRegulationHolder.h>
@@ -30,13 +28,6 @@ public:
     // the voltage regulation holder)
     void applySolvedValues();
     void setTargetPToP();
-
-    // ── Extensions ───────────────────────────────────────────────────────
-    // An extension's getter throws ExtensionNotFoundException when it is absent
-    bool hasBatteryShortCircuit() const;
-    BatteryShortCircuit getBatteryShortCircuit() const;
-    BatteryShortCircuitAdder newBatteryShortCircuit();
-    void removeBatteryShortCircuit();
 };
 
 } // namespace iidm

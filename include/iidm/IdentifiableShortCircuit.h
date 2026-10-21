@@ -10,7 +10,7 @@ class BackendProvider;
 
 // The IdentifiableShortCircuit extension of an identifiable, a voltage level in general: the
 // allowable peak short-circuit currents. An object of its own, from
-// Identifiable::getIdentifiableShortCircuit().
+// Identifiable::getExtension<IdentifiableShortCircuit>().
 class IdentifiableShortCircuit : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::IDENTIFIABLE_SHORT_CIRCUIT;

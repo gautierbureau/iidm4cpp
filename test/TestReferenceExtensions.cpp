@@ -3,7 +3,10 @@
 #include <iidm/Line.h>
 #include <iidm/Network.h>
 #include <iidm/NetworkFactory.h>
+#include <iidm/ObservabilityAreaAdder.h>
 #include <iidm/PropertyCodes.h>
+#include <iidm/ReferencePriorities.h>
+#include <iidm/ReferenceTerminals.h>
 #include <iidm/VoltageLevel.h>
 #include "MockBackend.h"
 #include <memory>
@@ -40,18 +43,18 @@ TEST_F(ReferenceExtensionsTest, ReferencePriorities) {
     backend.related[{PRIORITY_HANDLE, prop::REL_TERMINAL}] = TERMINAL_HANDLE;
     backend.ints[{PRIORITY_HANDLE, prop::EXT_RP_PRIORITY}] = 2;
     Generator g(HOST_HANDLE, &backend);
-    std::vector<ReferencePriority> priorities = g.getReferencePriorities().getReferencePriorities();
+    std::vector<ReferencePriority> priorities = g.getExtension<ReferencePriorities>().getReferencePriorities();
     ASSERT_EQ(priorities.size(), 1u);
     EXPECT_EQ(priorities[0].getPriority(), 2);
     EXPECT_EQ(detail::Access::handle(priorities[0].getTerminal()), ObjectHandle(TERMINAL_HANDLE));
 
     // A new priority: its terminal and value
     Terminal terminal(TERMINAL_HANDLE, &backend);
-    g.getReferencePriorities().newReferencePriority().setTerminal(terminal).setPriority(7).add();
+    g.getExtension<ReferencePriorities>().newReferencePriority().setTerminal(terminal).setPriority(7).add();
     EXPECT_EQ(backend.invocations[0], std::make_pair(ObjectHandle(EXT_HANDLE), prop::REFERENCE_PRIORITY));
     EXPECT_EQ((backend.related[{ADDER_HANDLE, prop::REL_TERMINAL}]), ObjectHandle(TERMINAL_HANDLE));
     EXPECT_EQ((backend.ints[{ADDER_HANDLE, prop::EXT_RP_PRIORITY}]), 7);
-    g.getReferencePriorities().deleteReferencePriorities();
+    g.getExtension<ReferencePriorities>().deleteReferencePriorities();
     EXPECT_EQ(backend.invocations.back(), std::make_pair(ObjectHandle(EXT_HANDLE), prop::ACT_DELETE_REFERENCE_PRIORITIES));
 }
 
@@ -78,7 +81,7 @@ TEST_F(ReferenceExtensionsTest, ReferenceTerminals) {
     b.related[{NETWORK_HANDLE, prop::REFERENCE_TERMINALS}] = EXT_HANDLE;
     b.children[{EXT_HANDLE, prop::TERMINAL}] = {TERMINAL_HANDLE};
     Network network = NetworkFactory::createFromBackend(std::move(mock));
-    ReferenceTerminals terminals = network.getReferenceTerminals();
+    ReferenceTerminals terminals = network.getExtension<ReferenceTerminals>();
     EXPECT_EQ(terminals.getReferenceTerminals().size(), 1u);
     EXPECT_EQ(ReferenceTerminals::getTerminals(network).size(), 1u);
 
@@ -100,7 +103,7 @@ TEST_F(ReferenceExtensionsTest, ReferenceTerminals) {
 
 TEST_F(ReferenceExtensionsTest, ObservabilityAreaAdder) {
     VoltageLevel vl(HOST_HANDLE, &backend);
-    vl.newObservabilityArea()
+    vl.newExtension<ObservabilityAreaAdder>()
         .withObservabilityAreaByNodes({0, 1}, 1, ObservabilityStatus::BORDER)
         .withObservabilityAreaByBusViewBus("VL_0", 2, ObservabilityStatus::OBSERVABLE);
     EXPECT_EQ(backend.invocations[0], std::make_pair(ObjectHandle(HOST_HANDLE), prop::OBSERVABILITY_AREA));

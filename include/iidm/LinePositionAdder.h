@@ -7,7 +7,7 @@
 
 namespace iidm {
 
-// New LinePosition extension of a line or a boundary line (newLinePosition())
+// New LinePosition extension of a line or a boundary line
 class LinePositionAdder : public detail::AdderBase<LinePositionAdder> {
 public:
     LinePositionAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

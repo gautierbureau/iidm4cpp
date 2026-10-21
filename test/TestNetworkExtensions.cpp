@@ -5,6 +5,7 @@
 #include <iidm/NetworkFactory.h>
 #include <iidm/PropertyCodes.h>
 #include <iidm/SecondaryVoltageControl.h>
+#include <iidm/SecondaryVoltageControlAdder.h>
 #include "MockBackend.h"
 #include <memory>
 #include <string>
@@ -73,7 +74,7 @@ TEST_F(NetworkExtensionsTest, SecondaryVoltageControlAdder) {
     MockBackend& b = *mock;
     b.nextAdder = ADDER_HANDLE;
     Network network = NetworkFactory::createFromBackend(std::move(mock));
-    network.newSecondaryVoltageControl()
+    network.newExtension<SecondaryVoltageControlAdder>()
         .newControlZone().withName("z1")
             .newPilotPoint().withBusbarSectionsOrBusesIds({"B2", "B1"}).withTargetV(405).add()
             .newControlUnit().withId("G1").withParticipate(false).add()
@@ -96,12 +97,12 @@ TEST_F(NetworkExtensionsTest, SecondaryVoltageControlAdder) {
     EXPECT_EQ(b.invocations[6], std::make_pair(ObjectHandle(ADDER_HANDLE + 1), prop::ACT_ADD));
     EXPECT_EQ(b.invocations[7], std::make_pair(ObjectHandle(ADDER_HANDLE), prop::ACT_ADD));
 
-    EXPECT_FALSE(network.hasSecondaryVoltageControl());
-    EXPECT_THROW(network.getSecondaryVoltageControl(), ExtensionNotFoundException);
+    EXPECT_FALSE(network.hasExtension<SecondaryVoltageControl>());
+    EXPECT_THROW(network.getExtension<SecondaryVoltageControl>(), ExtensionNotFoundException);
     b.related[{NETWORK_HANDLE, prop::SECONDARY_VOLTAGE_CONTROL}] = EXT_HANDLE;
-    EXPECT_TRUE(network.hasSecondaryVoltageControl());
-    EXPECT_FALSE(network.hasLineCouplings());
-    network.removeSecondaryVoltageControl();
+    EXPECT_TRUE(network.hasExtension<SecondaryVoltageControl>());
+    EXPECT_FALSE(network.hasExtension<LineCouplings>());
+    network.removeExtension<SecondaryVoltageControl>();
     EXPECT_EQ((b.related[{NETWORK_HANDLE, prop::SECONDARY_VOLTAGE_CONTROL}]), INVALID_HANDLE);
 }
 

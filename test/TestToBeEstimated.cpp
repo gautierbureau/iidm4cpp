@@ -1,7 +1,11 @@
 #include <gtest/gtest.h>
-#include <iidm/ThreeWindingsTransformer.h>
-#include <iidm/TwoWindingsTransformer.h>
 #include <iidm/PropertyCodes.h>
+#include <iidm/ThreeWindingsTransformer.h>
+#include <iidm/ThreeWindingsTransformerToBeEstimated.h>
+#include <iidm/ThreeWindingsTransformerToBeEstimatedAdder.h>
+#include <iidm/TwoWindingsTransformer.h>
+#include <iidm/TwoWindingsTransformerToBeEstimated.h>
+#include <iidm/TwoWindingsTransformerToBeEstimatedAdder.h>
 #include "MockBackend.h"
 
 using namespace iidm;
@@ -26,14 +30,14 @@ protected:
 };
 
 TEST_F(ToBeEstimatedTest, TwoWindingsTransformerHasExtension) {
-    EXPECT_TRUE(TwoWindingsTransformer(TWT_H, &backend).hasTwoWindingsTransformerToBeEstimated());
+    EXPECT_TRUE(TwoWindingsTransformer(TWT_H, &backend).hasExtension<TwoWindingsTransformerToBeEstimated>());
     MockBackend empty;
-    EXPECT_FALSE(TwoWindingsTransformer(TWT_H, &empty).hasTwoWindingsTransformerToBeEstimated());
-    EXPECT_THROW(TwoWindingsTransformer(TWT_H, &empty).getTwoWindingsTransformerToBeEstimated(), ExtensionNotFoundException);
+    EXPECT_FALSE(TwoWindingsTransformer(TWT_H, &empty).hasExtension<TwoWindingsTransformerToBeEstimated>());
+    EXPECT_THROW(TwoWindingsTransformer(TWT_H, &empty).getExtension<TwoWindingsTransformerToBeEstimated>(), ExtensionNotFoundException);
 }
 
 TEST_F(ToBeEstimatedTest, TwoWindingsTransformerGetSet) {
-    auto ext = TwoWindingsTransformer(TWT_H, &backend).getTwoWindingsTransformerToBeEstimated();
+    auto ext = TwoWindingsTransformer(TWT_H, &backend).getExtension<TwoWindingsTransformerToBeEstimated>();
     EXPECT_EQ(ext, TwoWindingsTransformerToBeEstimated(TWT_EXT_H, &backend));
     EXPECT_TRUE(ext.shouldEstimateRatioTapChanger());
     EXPECT_FALSE(ext.shouldEstimatePhaseTapChanger());
@@ -45,7 +49,7 @@ TEST_F(ToBeEstimatedTest, TwoWindingsTransformerGetSet) {
 TEST_F(ToBeEstimatedTest, TwoWindingsTransformerNewAndRemove) {
     MockBackend b;
     TwoWindingsTransformer twt(TWT_H, &b);
-    TwoWindingsTransformerToBeEstimatedAdder adder = twt.newTwoWindingsTransformerToBeEstimated();
+    TwoWindingsTransformerToBeEstimatedAdder adder = twt.newExtension<TwoWindingsTransformerToBeEstimatedAdder>();
     EXPECT_EQ(b.invocations.back(), std::make_pair(static_cast<ObjectHandle>(TWT_H), prop::TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED));
     const ObjectHandle adderHandle = b.lastAdder;
     b.addResults[adderHandle] = TWT_EXT_H;
@@ -54,18 +58,18 @@ TEST_F(ToBeEstimatedTest, TwoWindingsTransformerNewAndRemove) {
     EXPECT_FALSE((b.bools[{adderHandle, prop::EXT_TWO_WT_TBE_PTC}]));
     EXPECT_EQ(ext, TwoWindingsTransformerToBeEstimated(TWT_EXT_H, &b));
 
-    twt.removeTwoWindingsTransformerToBeEstimated();
+    twt.removeExtension<TwoWindingsTransformerToBeEstimated>();
     EXPECT_EQ((b.related[{TWT_H, prop::TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED}]), INVALID_HANDLE);
 }
 
 TEST_F(ToBeEstimatedTest, ThreeWindingsTransformerHasExtension) {
-    EXPECT_TRUE(ThreeWindingsTransformer(THREE_H, &backend).hasThreeWindingsTransformerToBeEstimated());
+    EXPECT_TRUE(ThreeWindingsTransformer(THREE_H, &backend).hasExtension<ThreeWindingsTransformerToBeEstimated>());
     MockBackend empty;
-    EXPECT_FALSE(ThreeWindingsTransformer(THREE_H, &empty).hasThreeWindingsTransformerToBeEstimated());
+    EXPECT_FALSE(ThreeWindingsTransformer(THREE_H, &empty).hasExtension<ThreeWindingsTransformerToBeEstimated>());
 }
 
 TEST_F(ToBeEstimatedTest, ThreeWindingsTransformerGet) {
-    auto ext = ThreeWindingsTransformer(THREE_H, &backend).getThreeWindingsTransformerToBeEstimated();
+    auto ext = ThreeWindingsTransformer(THREE_H, &backend).getExtension<ThreeWindingsTransformerToBeEstimated>();
     EXPECT_FALSE(ext.shouldEstimateRatioTapChanger1());
     EXPECT_TRUE(ext.shouldEstimateRatioTapChanger2());
     EXPECT_FALSE(ext.shouldEstimateRatioTapChanger3());
@@ -77,7 +81,7 @@ TEST_F(ToBeEstimatedTest, ThreeWindingsTransformerGet) {
 }
 
 TEST_F(ToBeEstimatedTest, ThreeWindingsTransformerSetUsesSideCodes) {
-    auto ext = ThreeWindingsTransformer(THREE_H, &backend).getThreeWindingsTransformerToBeEstimated();
+    auto ext = ThreeWindingsTransformer(THREE_H, &backend).getExtension<ThreeWindingsTransformerToBeEstimated>();
     ext.shouldEstimateRatioTapChanger1(true)
        .shouldEstimateRatioTapChanger(false, ThreeSides::TWO)
        .shouldEstimateRatioTapChanger3(true)
@@ -95,7 +99,7 @@ TEST_F(ToBeEstimatedTest, ThreeWindingsTransformerSetUsesSideCodes) {
 TEST_F(ToBeEstimatedTest, ThreeWindingsTransformerAdderUsesSideCodes) {
     MockBackend b;
     ThreeWindingsTransformer t3(THREE_H, &b);
-    ThreeWindingsTransformerToBeEstimatedAdder adder = t3.newThreeWindingsTransformerToBeEstimated();
+    ThreeWindingsTransformerToBeEstimatedAdder adder = t3.newExtension<ThreeWindingsTransformerToBeEstimatedAdder>();
     const ObjectHandle adderHandle = b.lastAdder;
     adder.withRatioTapChanger1Status(true)
          .withRatioTapChangerStatus(ThreeSides::TWO, true)
@@ -110,6 +114,6 @@ TEST_F(ToBeEstimatedTest, ThreeWindingsTransformerAdderUsesSideCodes) {
     EXPECT_TRUE((b.bools[{adderHandle, prop::EXT_THREE_WT_TBE_PTC2}]));
     EXPECT_TRUE((b.bools[{adderHandle, prop::EXT_THREE_WT_TBE_PTC3}]));
 
-    t3.removeThreeWindingsTransformerToBeEstimated();
+    t3.removeExtension<ThreeWindingsTransformerToBeEstimated>();
     EXPECT_EQ((b.related[{THREE_H, prop::THREE_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED}]), INVALID_HANDLE);
 }

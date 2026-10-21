@@ -5,8 +5,8 @@
 
 namespace iidm {
 
-// New InjectionObservability extension of an injection (newInjectionObservability()). A quality
-// is defined when its standard deviation is given; its redundancy stays undefined unless given.
+// New InjectionObservability extension of an injection. A quality is defined when its standard
+// deviation is given; its redundancy stays undefined unless given.
 class InjectionObservabilityAdder : public detail::AdderBase<InjectionObservabilityAdder> {
 public:
     InjectionObservabilityAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

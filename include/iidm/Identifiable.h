@@ -1,20 +1,13 @@
 #pragma once
 
-#include <iidm/DiscreteMeasurement.h>
-#include <iidm/DiscreteMeasurementsAdder.h>
-#include <iidm/DynamicModelInfo.h>
-#include <iidm/DynamicModelInfoAdder.h>
 #include <iidm/Enums.h>
-#include <iidm/IdentifiableShortCircuit.h>
-#include <iidm/IdentifiableShortCircuitAdder.h>
 #include <iidm/IidmException.h>
 #include <iidm/ObjectRef.h>
-#include <iidm/OperatingStatus.h>
-#include <iidm/OperatingStatusAdder.h>
 #include <iidm/PropertiesHolder.h>
 #include <iidm/PropertyCodes.h>
 #include <iidm/stdcxx/optional.hpp>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace iidm {
@@ -64,26 +57,32 @@ public:
     Identifiable& removeAlias(const std::string& alias);
 
     // ── Extensions ───────────────────────────────────────────────────────
-    // An extension's getter throws ExtensionNotFoundException when it is absent
-    bool hasDiscreteMeasurements() const;
-    DiscreteMeasurements getDiscreteMeasurements() const;
-    DiscreteMeasurementsAdder newDiscreteMeasurements();
-    void removeDiscreteMeasurements();
+    // An extension by its class, as in powsybl: getExtension<ActivePowerControl>(),
+    // newExtension<ActivePowerControlAdder>().withDroop(4).add(). Include the extension's header to use
+    // it. A host that powsybl does not allow for the extension never has it, and newExtension fails
+    // there at run time (PropertyNotFoundException).
+    template <class E> bool hasExtension() const { return static_cast<bool>(findExtension<E>()); }
+    // Empty when absent
+    template <class E> iidm::optional<E> findExtension() const {
+        ObjectHandle extension = backend_->getRelated(handle_, E::TYPE);
+        if (extension == INVALID_HANDLE) return {};
+        return E(extension, backend_);
+    }
+    // ExtensionNotFoundException when absent
+    template <class E> E getExtension() const {
+        iidm::optional<E> extension = findExtension<E>();
+        if (!extension) extensionNotFound(E::TYPE);
+        return std::move(*extension);
+    }
+    // The extension it adds is the type that the adder's add() returns
+    template <class A> A newExtension() {
+        using E = decltype(std::declval<A&>().add());
+        return A(backend_->invoke(handle_, E::TYPE), backend_);
+    }
+    template <class E> void removeExtension() { backend_->setRelated(handle_, E::TYPE, INVALID_HANDLE); }
 
-    bool hasIdentifiableShortCircuit() const;
-    IdentifiableShortCircuit getIdentifiableShortCircuit() const;
-    IdentifiableShortCircuitAdder newIdentifiableShortCircuit();
-    void removeIdentifiableShortCircuit();
-
-    bool hasOperatingStatus() const;
-    OperatingStatus getOperatingStatus() const;
-    OperatingStatusAdder newOperatingStatus();
-    void removeOperatingStatus();
-
-    bool hasDynamicModelInfo() const;
-    DynamicModelInfo getDynamicModelInfo() const;
-    DynamicModelInfoAdder newDynamicModelInfo();
-    void removeDynamicModelInfo();
+private:
+    [[noreturn]] void extensionNotFound(int type) const;
 };
 
 } // namespace iidm

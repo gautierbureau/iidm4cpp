@@ -34,8 +34,8 @@ ReferenceTerminals& ReferenceTerminals::addReferenceTerminal(const Terminal& ter
 }
 
 std::vector<Terminal> ReferenceTerminals::getTerminals(const Network& network) {
-    if (!network.hasReferenceTerminals()) return std::vector<Terminal>();
-    return network.getReferenceTerminals().getReferenceTerminals();
+    if (!network.hasExtension<ReferenceTerminals>()) return std::vector<Terminal>();
+    return network.getExtension<ReferenceTerminals>().getReferenceTerminals();
 }
 
 void ReferenceTerminals::reset(const Network& network) {

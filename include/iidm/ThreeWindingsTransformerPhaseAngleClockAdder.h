@@ -5,7 +5,7 @@
 
 namespace iidm {
 
-// New ThreeWindingsTransformerPhaseAngleClock extension of a three windings transformer (newThreeWindingsTransformerPhaseAngleClock())
+// New ThreeWindingsTransformerPhaseAngleClock extension of a three windings transformer
 class ThreeWindingsTransformerPhaseAngleClockAdder : public detail::AdderBase<ThreeWindingsTransformerPhaseAngleClockAdder> {
 public:
     ThreeWindingsTransformerPhaseAngleClockAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

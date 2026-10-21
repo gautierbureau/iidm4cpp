@@ -10,7 +10,7 @@ namespace iidm {
 class BackendProvider;
 
 // The ActivePowerControl extension of an injection (generator, battery...): an object of its own,
-// from Injection::getActivePowerControl().
+// from Injection::getExtension<ActivePowerControl>().
 class ActivePowerControl : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::ACTIVE_POWER_CONTROL;

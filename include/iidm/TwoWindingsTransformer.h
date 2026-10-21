@@ -3,12 +3,6 @@
 #include <iidm/Branch.h>
 #include <iidm/Connectable.h>
 #include <iidm/TapChangerHolder.h>
-#include <iidm/TwoWindingsTransformerFortescue.h>
-#include <iidm/TwoWindingsTransformerFortescueAdder.h>
-#include <iidm/TwoWindingsTransformerPhaseAngleClock.h>
-#include <iidm/TwoWindingsTransformerPhaseAngleClockAdder.h>
-#include <iidm/TwoWindingsTransformerToBeEstimated.h>
-#include <iidm/TwoWindingsTransformerToBeEstimatedAdder.h>
 #include <iidm/stdcxx/optional.hpp>
 
 namespace iidm {
@@ -49,23 +43,6 @@ public:
     void applySolvedValues();
     void setRatioTapPositionToSolvedTapPosition();
     void setPhaseTapPositionToSolvedTapPosition();
-
-    // ── Extensions ───────────────────────────────────────────────────────
-    // An extension's getter throws ExtensionNotFoundException when it is absent
-    bool hasTwoWindingsTransformerToBeEstimated() const;
-    TwoWindingsTransformerToBeEstimated getTwoWindingsTransformerToBeEstimated() const;
-    TwoWindingsTransformerToBeEstimatedAdder newTwoWindingsTransformerToBeEstimated();
-    void removeTwoWindingsTransformerToBeEstimated();
-
-    bool hasTwoWindingsTransformerFortescue() const;
-    TwoWindingsTransformerFortescue getTwoWindingsTransformerFortescue() const;
-    TwoWindingsTransformerFortescueAdder newTwoWindingsTransformerFortescue();
-    void removeTwoWindingsTransformerFortescue();
-
-    bool hasTwoWindingsTransformerPhaseAngleClock() const;
-    TwoWindingsTransformerPhaseAngleClock getTwoWindingsTransformerPhaseAngleClock() const;
-    TwoWindingsTransformerPhaseAngleClockAdder newTwoWindingsTransformerPhaseAngleClock();
-    void removeTwoWindingsTransformerPhaseAngleClock();
 };
 
 } // namespace iidm

@@ -5,7 +5,7 @@
 
 namespace iidm {
 
-// New LineFortescue extension of a line (newLineFortescue())
+// New LineFortescue extension of a line
 class LineFortescueAdder : public detail::AdderBase<LineFortescueAdder> {
 public:
     LineFortescueAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

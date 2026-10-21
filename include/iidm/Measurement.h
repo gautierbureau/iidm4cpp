@@ -78,7 +78,7 @@ public:
 };
 
 // The Measurements extension of a connectable: an object of its own, from
-// Connectable::getMeasurements().
+// Connectable::getExtension<Measurements>().
 class Measurements : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::MEASUREMENTS;

@@ -11,7 +11,7 @@ namespace iidm {
 class BackendProvider;
 
 // The LinePosition extension of a line or a boundary line: its path. An object of its own, from
-// Line::getLinePosition() or BoundaryLine::getLinePosition().
+// Line::getExtension<LinePosition>() or BoundaryLine::getExtension<LinePosition>().
 class LinePosition : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::LINE_POSITION;

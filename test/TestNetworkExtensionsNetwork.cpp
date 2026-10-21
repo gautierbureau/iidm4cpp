@@ -42,7 +42,7 @@ Ids couplingsOf(const LineCouplings& lineCouplings) {
 }
 
 void checkSecondaryVoltageControl(Network& network) {
-    SecondaryVoltageControl svc = network.getSecondaryVoltageControl();
+    SecondaryVoltageControl svc = network.getExtension<SecondaryVoltageControl>();
     std::vector<ControlZone> zones = svc.getControlZones();
     ASSERT_EQ(zones.size(), 2u);
     EXPECT_EQ(zones[0].getName(), "z1");
@@ -74,9 +74,9 @@ void checkSecondaryVoltageControl(Network& network) {
     variants.removeVariant("V2");
 
     // A new one; powsybl's checks
-    network.removeSecondaryVoltageControl();
-    EXPECT_FALSE(network.hasSecondaryVoltageControl());
-    SecondaryVoltageControl added = network.newSecondaryVoltageControl()
+    network.removeExtension<SecondaryVoltageControl>();
+    EXPECT_FALSE(network.hasExtension<SecondaryVoltageControl>());
+    SecondaryVoltageControl added = network.newExtension<SecondaryVoltageControlAdder>()
         .newControlZone().withName("z")
             .newPilotPoint().withBusbarSectionsOrBusesIds({"B3", "B1"}).withTargetV(400).add()
             .newControlUnit().withId("G3").withParticipate(false).add()
@@ -86,9 +86,9 @@ void checkSecondaryVoltageControl(Network& network) {
     ControlZone zone = *added.getControlZone("z");
     EXPECT_EQ(zone.getPilotPoint().getBusbarSectionsOrBusesIds(), (Ids{"B3", "B1"}));
     EXPECT_EQ(unitsOf(zone), (Ids{"G3=false", "G1=true"}));
-    network.removeSecondaryVoltageControl();
-    EXPECT_THROW(network.newSecondaryVoltageControl().add(), ValidationException);
-    SecondaryVoltageControlAdder adder = network.newSecondaryVoltageControl();
+    network.removeExtension<SecondaryVoltageControl>();
+    EXPECT_THROW(network.newExtension<SecondaryVoltageControlAdder>().add(), ValidationException);
+    SecondaryVoltageControlAdder adder = network.newExtension<SecondaryVoltageControlAdder>();
     ControlZoneAdder noUnit = adder.newControlZone();
     noUnit.withName("z").newPilotPoint().withBusbarSectionsOrBusesIds({"B1"}).withTargetV(400).add();
     EXPECT_THROW(noUnit.add(), ValidationException);
@@ -96,7 +96,7 @@ void checkSecondaryVoltageControl(Network& network) {
 }
 
 void checkLineCouplings(Network& network) {
-    LineCouplings lineCouplings = network.getLineCouplings();
+    LineCouplings lineCouplings = network.getExtension<LineCouplings>();
     EXPECT_EQ(couplingsOf(lineCouplings), (Ids{"L12-L13", "L23-L12"}));
     std::vector<MutualCoupling> couplings = lineCouplings.getMutualCouplings();
     EXPECT_EQ(couplings[0].getR(), 0.1);
@@ -147,9 +147,9 @@ void checkLineCouplings(Network& network) {
     EXPECT_TRUE(lineCouplings.getMutualCouplings().empty());
 
     // Removed (powsybl then fails, see Network::removeLineCouplings); a new, empty one
-    EXPECT_THROW(network.removeLineCouplings(), PropertyNotFoundException);
-    EXPECT_FALSE(network.hasLineCouplings());
-    EXPECT_TRUE(network.newLineCouplings().add().getMutualCouplings().empty());
+    EXPECT_THROW(network.removeExtension<LineCouplings>(), PropertyNotFoundException);
+    EXPECT_FALSE(network.hasExtension<LineCouplings>());
+    EXPECT_TRUE(network.newExtension<LineCouplingsAdder>().add().getMutualCouplings().empty());
 }
 
 void checkNetwork(BackendProvider& b) {

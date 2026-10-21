@@ -5,8 +5,8 @@
 
 namespace iidm {
 
-// New ReferencePriorities extension of a connectable (newReferencePriorities()): empty, its
-// priorities come with newReferencePriority()
+// New ReferencePriorities extension of a connectable: empty, its priorities come with
+// newReferencePriority()
 class ReferencePrioritiesAdder : public detail::AdderBase<ReferencePrioritiesAdder> {
 public:
     ReferencePrioritiesAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

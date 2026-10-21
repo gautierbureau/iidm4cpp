@@ -52,7 +52,7 @@ TEST(HandleRefTest, ExtensionsHaveTheirOwnHandle) {
     backend.related[{10, prop::COORDINATED_REACTIVE_CONTROL}] = 11;
     {
         Generator g(10, &backend);
-        CoordinatedReactiveControl crc = g.getCoordinatedReactiveControl();
+        CoordinatedReactiveControl crc = g.getExtension<CoordinatedReactiveControl>();
         EXPECT_EQ(backend.liveHandleCount(), 2u);
     }
     EXPECT_EQ(backend.releases(10), 1);

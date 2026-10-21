@@ -11,7 +11,7 @@ namespace iidm {
 class BackendProvider;
 
 // The SlackTerminal extension of a voltage level: an object of its own, from
-// VoltageLevel::getSlackTerminal(). It holds one slack terminal per variant.
+// VoltageLevel::getExtension<SlackTerminal>(). It holds one slack terminal per variant.
 class SlackTerminal : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::SLACK_TERMINAL;

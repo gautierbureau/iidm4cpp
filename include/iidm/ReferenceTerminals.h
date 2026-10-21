@@ -12,7 +12,8 @@ class BackendProvider;
 class Network;
 
 // The ReferenceTerminals extension of a network: the terminals chosen as the angle reference (by a
-// load flow, for each synchronous component). An object of its own, from Network::getReferenceTerminals().
+// load flow, for each synchronous component). An object of its own, from
+// Network::getExtension<ReferenceTerminals>().
 class ReferenceTerminals : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::REFERENCE_TERMINALS;

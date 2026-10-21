@@ -5,7 +5,7 @@
 
 namespace iidm {
 
-// New StandbyAutomaton extension of a static var compensator (newStandbyAutomaton())
+// New StandbyAutomaton extension of a static var compensator
 class StandbyAutomatonAdder : public detail::AdderBase<StandbyAutomatonAdder> {
 public:
     StandbyAutomatonAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

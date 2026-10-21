@@ -38,10 +38,9 @@ inline std::string toString(const iidm::optional<std::string>& id) {
     return id ? *id : "-";
 }
 
-template <typename Host>
-void printMeasurements(const Host& host, const std::string& prefix) {
-    if (!host.hasMeasurements()) return;
-    for (const auto& m : host.getMeasurements().getMeasurements()) {
+inline void printMeasurements(const iidm::Identifiable& host, const std::string& prefix) {
+    if (!host.hasExtension<iidm::Measurements>()) return;
+    for (const auto& m : host.getExtension<iidm::Measurements>().getMeasurements()) {
         std::cout << prefix << "  measurement " << toString(m.getId()) << " " << toString(m.getType())
                   << " value=" << m.getValue() << " sd=" << m.getStandardDeviation()
                   << " valid=" << (m.isValueValid() ? "true" : "false");
@@ -50,10 +49,9 @@ void printMeasurements(const Host& host, const std::string& prefix) {
     }
 }
 
-template <typename Host>
-void printDiscreteMeasurements(const Host& host, const std::string& prefix) {
-    if (!host.hasDiscreteMeasurements()) return;
-    for (const auto& m : host.getDiscreteMeasurements().getDiscreteMeasurements()) {
+inline void printDiscreteMeasurements(const iidm::Identifiable& host, const std::string& prefix) {
+    if (!host.hasExtension<iidm::DiscreteMeasurements>()) return;
+    for (const auto& m : host.getExtension<iidm::DiscreteMeasurements>().getDiscreteMeasurements()) {
         std::cout << prefix << "  discreteMeasurement " << toString(m.getId()) << " value=";
         switch (m.getValueType()) {
             case iidm::DiscreteMeasurementValueType::BOOLEAN: std::cout << (m.getValueAsBoolean() ? "true" : "false"); break;
@@ -64,10 +62,9 @@ void printDiscreteMeasurements(const Host& host, const std::string& prefix) {
     }
 }
 
-template <typename Host>
-void printInjectionObservability(const Host& host, const std::string& prefix) {
-    if (!host.hasInjectionObservability()) return;
-    auto obs = host.getInjectionObservability();
+inline void printInjectionObservability(const iidm::Identifiable& host, const std::string& prefix) {
+    if (!host.hasExtension<iidm::InjectionObservability>()) return;
+    auto obs = host.getExtension<iidm::InjectionObservability>();
     std::cout << prefix << "  injectionObservability observable=" << (obs.isObservable() ? "true" : "false")
               << " P[" << toString(obs.getQualityP()) << "]"
               << " Q[" << toString(obs.getQualityQ()) << "]"
@@ -79,12 +76,12 @@ inline void reportStateEstimation(iidm::Network& network, const std::string& pre
         std::cout << prefix << "Generator " << gen.getId() << "\n";
         printInjectionObservability(gen, prefix);
         printMeasurements(gen, prefix);
-        if (gen.hasMeasurements()) {
-            auto p = gen.getMeasurements().getMeasurement("G1_P");
+        if (gen.hasExtension<iidm::Measurements>()) {
+            auto p = gen.getExtension<iidm::Measurements>().getMeasurement("G1_P");
             if (p) p->setValueAndValidity(100.0, true);
         }
-        if (gen.hasInjectionObservability())
-            gen.getInjectionObservability().setQualityV(0.9);
+        if (gen.hasExtension<iidm::InjectionObservability>())
+            gen.getExtension<iidm::InjectionObservability>().setQualityV(0.9);
     }
     for (const auto& vl : network.getVoltageLevels()) {
         if (vl.getTopologyKind() == iidm::TopologyKind::NODE_BREAKER) {
@@ -94,8 +91,8 @@ inline void reportStateEstimation(iidm::Network& network, const std::string& pre
                 printMeasurements(bbs, prefix);
             }
         }
-        if (vl.hasObservabilityArea()) {
-            auto ext = vl.getObservabilityArea();
+        if (vl.hasExtension<iidm::ObservabilityArea>()) {
+            auto ext = vl.getExtension<iidm::ObservabilityArea>();
             std::cout << prefix << "VoltageLevel " << vl.getId() << " observabilityArea consistent="
                       << (ext.isConsistentWithTopology() ? "true" : "false") << "\n";
             for (const auto& area : ext.getObservabilityAreas()) {
@@ -112,8 +109,8 @@ inline void reportStateEstimation(iidm::Network& network, const std::string& pre
     }
     for (const auto& line : network.getLines()) {
         std::cout << prefix << "Line " << line.getId() << "\n";
-        if (line.hasBranchObservability()) {
-            auto obs = line.getBranchObservability();
+        if (line.hasExtension<iidm::BranchObservability>()) {
+            auto obs = line.getExtension<iidm::BranchObservability>();
             std::cout << prefix << "  branchObservability observable=" << (obs.isObservable() ? "true" : "false")
                       << " P1[" << toString(obs.getQualityP1()) << "] P2[" << toString(obs.getQualityP2()) << "]"
                       << " Q1[" << toString(obs.getQualityQ1()) << "] Q2[" << toString(obs.getQualityQ2()) << "]\n";
@@ -122,8 +119,8 @@ inline void reportStateEstimation(iidm::Network& network, const std::string& pre
     }
     for (auto& twt : network.getTwoWindingsTransformers()) {
         std::cout << prefix << "TwoWindingsTransformer " << twt.getId() << "\n";
-        if (twt.hasTwoWindingsTransformerToBeEstimated()) {
-            auto tbe = twt.getTwoWindingsTransformerToBeEstimated();
+        if (twt.hasExtension<iidm::TwoWindingsTransformerToBeEstimated>()) {
+            auto tbe = twt.getExtension<iidm::TwoWindingsTransformerToBeEstimated>();
             std::cout << prefix << "  toBeEstimated rtc=" << tbe.shouldEstimateRatioTapChanger()
                       << " ptc=" << tbe.shouldEstimatePhaseTapChanger() << "\n";
             tbe.shouldEstimatePhaseTapChanger(true);
@@ -132,8 +129,8 @@ inline void reportStateEstimation(iidm::Network& network, const std::string& pre
     }
     for (const auto& twt : network.getThreeWindingsTransformers()) {
         std::cout << prefix << "ThreeWindingsTransformer " << twt.getId() << "\n";
-        if (twt.hasThreeWindingsTransformerToBeEstimated()) {
-            auto tbe = twt.getThreeWindingsTransformerToBeEstimated();
+        if (twt.hasExtension<iidm::ThreeWindingsTransformerToBeEstimated>()) {
+            auto tbe = twt.getExtension<iidm::ThreeWindingsTransformerToBeEstimated>();
             std::cout << prefix << "  toBeEstimated rtc=" << tbe.shouldEstimateRatioTapChanger1()
                       << tbe.shouldEstimateRatioTapChanger2() << tbe.shouldEstimateRatioTapChanger3()
                       << " ptc=" << tbe.shouldEstimatePhaseTapChanger1() << tbe.shouldEstimatePhaseTapChanger2()

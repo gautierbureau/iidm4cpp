@@ -5,7 +5,7 @@
 
 namespace iidm {
 
-// New GeneratorStartup extension of a generator (newGeneratorStartup())
+// New GeneratorStartup extension of a generator
 class GeneratorStartupAdder : public detail::AdderBase<GeneratorStartupAdder> {
 public:
     GeneratorStartupAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

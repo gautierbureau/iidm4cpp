@@ -1,11 +1,15 @@
 #include <gtest/gtest.h>
+#include <iidm/DiscreteMeasurement.h>
+#include <iidm/DiscreteMeasurementsAdder.h>
 #include <iidm/Generator.h>
 #include <iidm/Line.h>
 #include <iidm/Load.h>
+#include <iidm/Measurement.h>
+#include <iidm/MeasurementsAdder.h>
+#include <iidm/PropertyCodes.h>
 #include <iidm/Switch.h>
 #include <iidm/ThreeWindingsTransformer.h>
 #include <iidm/TwoWindingsTransformer.h>
-#include <iidm/PropertyCodes.h>
 #include "MockBackend.h"
 
 using namespace iidm;
@@ -40,17 +44,17 @@ protected:
 };
 
 TEST_F(MeasurementsTest, HasExtensionOnConnectables) {
-    EXPECT_TRUE(Generator(GEN_H, &backend).hasMeasurements());
+    EXPECT_TRUE(Generator(GEN_H, &backend).hasExtension<Measurements>());
     MockBackend empty;
-    EXPECT_FALSE(Load(GEN_H, &empty).hasMeasurements());
-    EXPECT_FALSE(Line(GEN_H, &empty).hasMeasurements());
-    EXPECT_FALSE(TwoWindingsTransformer(GEN_H, &empty).hasMeasurements());
-    EXPECT_FALSE(ThreeWindingsTransformer(GEN_H, &empty).hasMeasurements());
-    EXPECT_THROW(Load(GEN_H, &empty).getMeasurements(), ExtensionNotFoundException);
+    EXPECT_FALSE(Load(GEN_H, &empty).hasExtension<Measurements>());
+    EXPECT_FALSE(Line(GEN_H, &empty).hasExtension<Measurements>());
+    EXPECT_FALSE(TwoWindingsTransformer(GEN_H, &empty).hasExtension<Measurements>());
+    EXPECT_FALSE(ThreeWindingsTransformer(GEN_H, &empty).hasExtension<Measurements>());
+    EXPECT_THROW(Load(GEN_H, &empty).getExtension<Measurements>(), ExtensionNotFoundException);
 }
 
 TEST_F(MeasurementsTest, ListAndFilterByType) {
-    Measurements meas = Generator(GEN_H, &backend).getMeasurements();
+    Measurements meas = Generator(GEN_H, &backend).getExtension<Measurements>();
     EXPECT_EQ(meas, Measurements(EXT_H, &backend));
     std::vector<Measurement> all = meas.getMeasurements();
     ASSERT_EQ(all.size(), 2u);
@@ -63,7 +67,7 @@ TEST_F(MeasurementsTest, ListAndFilterByType) {
 }
 
 TEST_F(MeasurementsTest, LookupById) {
-    Measurements meas = Generator(GEN_H, &backend).getMeasurements();
+    Measurements meas = Generator(GEN_H, &backend).getExtension<Measurements>();
     iidm::optional<Measurement> p = meas.getMeasurement("G_P");
     ASSERT_TRUE(p.has_value());
     EXPECT_EQ(p->getType(), MeasurementType::ACTIVE_POWER);
@@ -107,7 +111,7 @@ TEST_F(MeasurementsTest, MeasurementProperties) {
 
 TEST_F(MeasurementsTest, RemoveAndCleanIfEmpty) {
     Measurement(M1_H, &backend).remove();
-    Generator(GEN_H, &backend).getMeasurements().cleanIfEmpty();
+    Generator(GEN_H, &backend).getExtension<Measurements>().cleanIfEmpty();
     ASSERT_EQ(backend.invocations.size(), 2u);
     EXPECT_EQ(backend.invocations[0], std::make_pair(static_cast<ObjectHandle>(M1_H), prop::ACT_REMOVE));
     EXPECT_EQ(backend.invocations[1], std::make_pair(static_cast<ObjectHandle>(EXT_H), prop::ACT_CLEAN_IF_EMPTY));
@@ -115,7 +119,7 @@ TEST_F(MeasurementsTest, RemoveAndCleanIfEmpty) {
 
 TEST_F(MeasurementsTest, NewMeasurement) {
     static constexpr ObjectHandle NEW_M = 54;
-    Measurements meas = Generator(GEN_H, &backend).getMeasurements();
+    Measurements meas = Generator(GEN_H, &backend).getExtension<Measurements>();
     MeasurementAdder adder = meas.newMeasurement();
     EXPECT_EQ(backend.invocations.back(), std::make_pair(static_cast<ObjectHandle>(EXT_H), prop::MEASUREMENT));
     const ObjectHandle adderHandle = backend.lastAdder;
@@ -138,12 +142,12 @@ TEST_F(MeasurementsTest, NewMeasurement) {
 TEST_F(MeasurementsTest, NewAndRemoveExtension) {
     MockBackend b;
     Load load(GEN_H, &b);
-    MeasurementsAdder adder = load.newMeasurements();
+    MeasurementsAdder adder = load.newExtension<MeasurementsAdder>();
     EXPECT_EQ(b.invocations.back(), std::make_pair(static_cast<ObjectHandle>(GEN_H), prop::MEASUREMENTS));
     b.addResults[b.lastAdder] = EXT_H;
     EXPECT_EQ(adder.add(), Measurements(EXT_H, &b));
 
-    load.removeMeasurements();
+    load.removeExtension<Measurements>();
     EXPECT_EQ((b.related[{GEN_H, prop::MEASUREMENTS}]), INVALID_HANDLE);
 }
 
@@ -176,15 +180,15 @@ protected:
 };
 
 TEST_F(DiscreteMeasurementsTest, Hosts) {
-    EXPECT_TRUE(Switch(SW_H, &backend).hasDiscreteMeasurements());
+    EXPECT_TRUE(Switch(SW_H, &backend).hasExtension<DiscreteMeasurements>());
     MockBackend empty;
-    EXPECT_FALSE(TwoWindingsTransformer(SW_H, &empty).hasDiscreteMeasurements());
-    EXPECT_FALSE(ThreeWindingsTransformer(SW_H, &empty).hasDiscreteMeasurements());
-    EXPECT_THROW(Switch(SW_H, &empty).getDiscreteMeasurements(), ExtensionNotFoundException);
+    EXPECT_FALSE(TwoWindingsTransformer(SW_H, &empty).hasExtension<DiscreteMeasurements>());
+    EXPECT_FALSE(ThreeWindingsTransformer(SW_H, &empty).hasExtension<DiscreteMeasurements>());
+    EXPECT_THROW(Switch(SW_H, &empty).getExtension<DiscreteMeasurements>(), ExtensionNotFoundException);
 }
 
 TEST_F(DiscreteMeasurementsTest, ListFilterAndLookup) {
-    DiscreteMeasurements ext = Switch(SW_H, &backend).getDiscreteMeasurements();
+    DiscreteMeasurements ext = Switch(SW_H, &backend).getExtension<DiscreteMeasurements>();
     EXPECT_EQ(ext, DiscreteMeasurements(EXT_H, &backend));
     EXPECT_EQ(ext.getDiscreteMeasurements().size(), 2u);
     std::vector<DiscreteMeasurement> taps = ext.getDiscreteMeasurements(DiscreteMeasurementType::TAP_POSITION);
@@ -231,14 +235,14 @@ TEST_F(DiscreteMeasurementsTest, PropertiesAndRemove) {
     EXPECT_TRUE(pos.getPropertyNames().empty());
 
     pos.remove();
-    Switch(SW_H, &backend).getDiscreteMeasurements().cleanIfEmpty();
+    Switch(SW_H, &backend).getExtension<DiscreteMeasurements>().cleanIfEmpty();
     ASSERT_EQ(backend.invocations.size(), 2u);
     EXPECT_EQ(backend.invocations[0], std::make_pair(static_cast<ObjectHandle>(POS_H), prop::ACT_REMOVE));
     EXPECT_EQ(backend.invocations[1], std::make_pair(static_cast<ObjectHandle>(EXT_H), prop::ACT_CLEAN_IF_EMPTY));
 }
 
 TEST_F(DiscreteMeasurementsTest, NewDiscreteMeasurement) {
-    DiscreteMeasurements ext = Switch(SW_H, &backend).getDiscreteMeasurements();
+    DiscreteMeasurements ext = Switch(SW_H, &backend).getExtension<DiscreteMeasurements>();
     DiscreteMeasurementAdder adder = ext.newDiscreteMeasurement();
     EXPECT_EQ(backend.invocations.back(), std::make_pair(static_cast<ObjectHandle>(EXT_H), prop::DISCRETE_MEASUREMENT));
     const ObjectHandle adderHandle = backend.lastAdder;
@@ -262,11 +266,11 @@ TEST_F(DiscreteMeasurementsTest, NewDiscreteMeasurement) {
 TEST_F(DiscreteMeasurementsTest, NewAndRemoveExtension) {
     MockBackend b;
     TwoWindingsTransformer twt(SW_H, &b);
-    DiscreteMeasurementsAdder adder = twt.newDiscreteMeasurements();
+    DiscreteMeasurementsAdder adder = twt.newExtension<DiscreteMeasurementsAdder>();
     EXPECT_EQ(b.invocations.back(), std::make_pair(static_cast<ObjectHandle>(SW_H), prop::DISCRETE_MEASUREMENTS));
     b.addResults[b.lastAdder] = EXT_H;
     EXPECT_EQ(adder.add(), DiscreteMeasurements(EXT_H, &b));
 
-    twt.removeDiscreteMeasurements();
+    twt.removeExtension<DiscreteMeasurements>();
     EXPECT_EQ((b.related[{SW_H, prop::DISCRETE_MEASUREMENTS}]), INVALID_HANDLE);
 }

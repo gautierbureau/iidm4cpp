@@ -9,7 +9,7 @@ namespace iidm {
 class BackendProvider;
 
 // The ManualFrequencyRestorationReserve extension of an injection (mFRR): an object of its own,
-// from Injection::getManualFrequencyRestorationReserve().
+// from Injection::getExtension<ManualFrequencyRestorationReserve>().
 class ManualFrequencyRestorationReserve : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::MANUAL_FREQUENCY_RESTORATION_RESERVE;

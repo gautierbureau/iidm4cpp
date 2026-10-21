@@ -173,7 +173,7 @@ TEST_F(AddersTest, AddersAreReleased) {
 TEST_F(AddersTest, NotBoundToANetwork) {
     EXPECT_THROW(VoltageLevel().newGenerator(), InvalidHandleException);
     EXPECT_THROW(Generator().remove(), InvalidHandleException);
-    EXPECT_THROW(Generator().newActivePowerControl(), InvalidHandleException);
+    EXPECT_THROW(Generator().newExtension<ActivePowerControlAdder>(), InvalidHandleException);
 }
 
 TEST_F(AddersTest, Injections) {
