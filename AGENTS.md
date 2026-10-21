@@ -152,8 +152,11 @@ cmake/          CMake helper modules (FindGraalVM.cmake, etc.)
    of a powsybl interface, named after that interface.
 4. Expose the component through `Network` (or the appropriate parent) with a
    getter that returns by value or `std::vector`.
-5. In `java/.../PropertyDispatcher.java`: its property cases, its type code in `getBool` (instanceof),
-   `childStream` and `findObjectById`.
+5. In `java/.../PropertyTable.java`: one line per property, with its getter, setter and adder field
+   (`doubles(LOAD_P0, Load::getP0, Load::setP0, LoadAdder::setP0);`, `null` where there is none).
+   In `PropertyDispatcher.java`: the cases of the properties that take more than one call (and in
+   `Creation.java`, of such adder fields), its type code in `getBool` (instanceof), `childStream`
+   and `findObjectById`.
 6. Add unit tests in `test/TestMyComponent.cpp` using `MockBackend`.
 
 ### Primitives for values that may be absent, lists and keys
@@ -207,17 +210,19 @@ An extension is an object of its own, as in powsybl: `ActivePowerControl` is the
    injection goes on `Injection` (see `ActivePowerControl` in `Injection.h`), of a generator only
    on `Generator`. Each is one line, with the helpers of `src/Extensions.h`.
 
-4. **Java** — in `PropertyDispatcher.java`, `getRelatedObject` returns the extension for `FOO`,
-   and the property cases cast the extension object; in `Creation.java`, `newAdder` creates its
-   adder, the `set*` methods map its fields, and `clear` removes it:
+4. **Java** — in `PropertyDispatcher.java`, `getRelatedObject` returns the extension for `FOO`; in
+   `Creation.java`, `newAdder` creates its adder and `clear` removes it; in `PropertyTable.java`,
+   each property is one line: its getter and setter on the extension, and its field on the adder
+   (a typed lambda where the type is generic, `null` where there is none):
 
    ```java
    // PropertyDispatcher.java
-   case FOO            -> extension(obj, Foo.class);                       // getRelatedObject
-   case EXT_FOO_SOME_D -> ((Foo<?>) obj).getSomeD();                       // getDouble
+   case FOO -> extension(obj, Foo.class);                                  // getRelatedObject
    // Creation.java
-   case FOO            -> newExtension(owner, FooAdder.class);             // newAdder
-   case EXT_FOO_SOME_D -> ((FooAdder<?>) a).withSomeD(value);              // setDouble (adder field)
+   case FOO -> newExtension(owner, FooAdder.class);                        // newAdder
+   // PropertyTable.java
+   doubles(EXT_FOO_SOME_D, (Foo<?> x) -> x.getSomeD(), (Foo<?> x, double v) -> x.setSomeD(v),
+       (FooAdder<?> x, double v) -> x.withSomeD(v));
    ```
 
 5. **Unit tests** — `test/TestFoo.cpp` using `MockBackend`, plus a Java test of the dispatcher
@@ -225,8 +230,9 @@ An extension is an object of its own, as in powsybl: `ActivePowerControl` is the
    a test network (`examples/*.xiidm`): `TestBackendConformance` then compares every new code,
    and the adder, on both backends without any change to the test.
 
-An extension's Java code stays in `PropertyDispatcher`, like every other: its cases, plus a helper
-at the end of the class when a case needs more than an expression (e.g. the observability areas,
+An extension's Java code stays in `PropertyTable` and `PropertyDispatcher`, like every other: its
+table lines, the cases of what takes more than one call, plus a helper at the end of
+`PropertyDispatcher` when a case needs more than an expression (e.g. the observability areas,
 paired with their voltage level to resolve their nodes and buses). The objects an extension holds are
 objects too: a `Measurement` of a `Measurements` extension has the type code `MEASUREMENT`,
 used for `getChildren` (all of them), `getRelatedByString` (one by id) and `invoke` (the adder of

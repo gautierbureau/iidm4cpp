@@ -872,65 +872,19 @@ public final class Creation {
     // ── Adder fields: the codes of the object's own properties ────────────
 
     static void setDouble(PendingAdd pending, int property, double value) {
+        PropertyTable.DoubleProperty table = PropertyTable.doubleProperty(property);
+        if (table != null && table.add() != null) {
+            table.add().accept(pending.adder(), value);
+            return;
+        }
         Object a = pending.adder();
         switch (property) {
-            case VL_NOMINAL_V -> ((VoltageLevelAdder) a).setNominalV(value);
-            case VL_LOW_VOLTAGE_LIMIT -> ((VoltageLevelAdder) a).setLowVoltageLimit(value);
-            case VL_HIGH_VOLTAGE_LIMIT -> ((VoltageLevelAdder) a).setHighVoltageLimit(value);
-            case GEN_MIN_P -> ((GeneratorAdder) a).setMinP(value);
-            case GEN_MAX_P -> ((GeneratorAdder) a).setMaxP(value);
-            case GEN_TARGET_P -> ((GeneratorAdder) a).setTargetP(value);
-            case GEN_RATED_S -> ((GeneratorAdder) a).setRatedS(value);
-            case LOCAL_TARGET_V -> ((VoltageRegulationHolderAdder<?>) a).setLocalTargetV(value);
-            case LOCAL_TARGET_Q -> ((VoltageRegulationHolderAdder<?>) a).setLocalTargetQ(value);
-            case LOAD_P0 -> ((LoadAdder) a).setP0(value);
-            case LOAD_Q0 -> ((LoadAdder) a).setQ0(value);
-            case LINE_R -> ((LineAdder) a).setR(value);
-            case LINE_X -> ((LineAdder) a).setX(value);
-            case LINE_G1 -> ((LineAdder) a).setG1(value);
-            case LINE_B1 -> ((LineAdder) a).setB1(value);
-            case LINE_G2 -> ((LineAdder) a).setG2(value);
-            case LINE_B2 -> ((LineAdder) a).setB2(value);
-            case TWO_WT_R -> ((TwoWindingsTransformerAdder) a).setR(value);
-            case TWO_WT_X -> ((TwoWindingsTransformerAdder) a).setX(value);
-            case TWO_WT_G -> ((TwoWindingsTransformerAdder) a).setG(value);
-            case TWO_WT_B -> ((TwoWindingsTransformerAdder) a).setB(value);
-            case TWO_WT_RATED_U1 -> ((TwoWindingsTransformerAdder) a).setRatedU1(value);
-            case TWO_WT_RATED_U2 -> ((TwoWindingsTransformerAdder) a).setRatedU2(value);
-            case TWO_WT_RATED_S -> ((TwoWindingsTransformerAdder) a).setRatedS(value);
-            case THREE_WT_RATED_U0 -> ((ThreeWindingsTransformerAdder) a).setRatedU0(value);
             case LEG_R -> ((NewLeg) a).leg().setR(value);
             case LEG_X -> ((NewLeg) a).leg().setX(value);
             case LEG_G -> ((NewLeg) a).leg().setG(value);
             case LEG_B -> ((NewLeg) a).leg().setB(value);
             case LEG_RATED_U -> ((NewLeg) a).leg().setRatedU(value);
             case LEG_RATED_S -> ((NewLeg) a).leg().setRatedS(value);
-            case HVDC_R -> ((HvdcLineAdder) a).setR(value);
-            case HVDC_NOMINAL_V -> ((HvdcLineAdder) a).setNominalV(value);
-            case HVDC_ACTIVE_POWER_SETPOINT -> ((HvdcLineAdder) a).setActivePowerSetpoint(value);
-            case HVDC_MAX_P -> ((HvdcLineAdder) a).setMaxP(value);
-            case BAT_TARGET_P -> ((BatteryAdder) a).setTargetP(value);
-            case BAT_MIN_P -> ((BatteryAdder) a).setMinP(value);
-            case BAT_MAX_P -> ((BatteryAdder) a).setMaxP(value);
-            case SVC_B_MIN -> ((StaticVarCompensatorAdder) a).setBmin(value);
-            case SVC_B_MAX -> ((StaticVarCompensatorAdder) a).setBmax(value);
-            case CONVERTER_STATION_LOSS_FACTOR -> ((HvdcConverterStationAdder<?, ?>) a).setLossFactor((float) value);
-            case LCC_POWER_FACTOR -> ((LccConverterStationAdder) a).setPowerFactor((float) value);
-            case SHUNT_B_PER_SECTION -> ((ShuntCompensatorLinearModelAdder) a).setBPerSection(value);
-            case SHUNT_G_PER_SECTION -> ((ShuntCompensatorLinearModelAdder) a).setGPerSection(value);
-            case SHUNT_SECTION_B -> ((ShuntCompensatorNonLinearModelAdder.SectionAdder) a).setB(value);
-            case SHUNT_SECTION_G -> ((ShuntCompensatorNonLinearModelAdder.SectionAdder) a).setG(value);
-            case BL_P0 -> ((BoundaryLineAdder) a).setP0(value);
-            case BL_Q0 -> ((BoundaryLineAdder) a).setQ0(value);
-            case BL_R -> ((BoundaryLineAdder) a).setR(value);
-            case BL_X -> ((BoundaryLineAdder) a).setX(value);
-            case BL_G -> ((BoundaryLineAdder) a).setG(value);
-            case BL_B -> ((BoundaryLineAdder) a).setB(value);
-            case GENERATION_TARGET_P -> ((BoundaryLineAdder.GenerationAdder) a).setTargetP(value);
-            case GENERATION_MIN_P -> ((BoundaryLineAdder.GenerationAdder) a).setMinP(value);
-            case GENERATION_MAX_P -> ((BoundaryLineAdder.GenerationAdder) a).setMaxP(value);
-            case GENERATION_TARGET_Q -> ((BoundaryLineAdder.GenerationAdder) a).setTargetQ(value);
-            case GENERATION_TARGET_V -> ((BoundaryLineAdder.GenerationAdder) a).setTargetV(value);
             case VR_TARGET_VALUE -> {
                 if (a instanceof TerminalChange change) {
                     change.targetValue = value;
@@ -938,27 +892,6 @@ public final class Creation {
                     ((VoltageRegulationAdderOrBuilder<?>) a).withTargetValue(value);
                 }
             }
-            case VR_TARGET_DEADBAND -> ((VoltageRegulationAdderOrBuilder<?>) a).withTargetDeadband(value);
-            case VR_SLOPE -> ((VoltageRegulationAdderOrBuilder<?>) a).withSlope(value);
-            case EXT_APC_DROOP -> ((ActivePowerControlAdder<?>) a).withDroop(value);
-            case EXT_APC_PARTICIPATION_FACTOR -> ((ActivePowerControlAdder<?>) a).withParticipationFactor(value);
-            case EXT_APC_MIN_TARGET_P -> ((ActivePowerControlAdder<?>) a).withMinTargetP(value);
-            case EXT_APC_MAX_TARGET_P -> ((ActivePowerControlAdder<?>) a).withMaxTargetP(value);
-            case EXT_CRC_Q_PERCENT -> ((CoordinatedReactiveControlAdder) a).withQPercent(value);
-            case EXT_HADAPC_DROOP -> ((HvdcAngleDroopActivePowerControlAdder) a).withDroop((float) value);
-            case EXT_HADAPC_P0 -> ((HvdcAngleDroopActivePowerControlAdder) a).withP0((float) value);
-            case EXT_HOAR_OPR_CS1_TO_CS2 -> ((HvdcOperatorActivePowerRangeAdder) a).withOprFromCS1toCS2((float) value);
-            case EXT_HOAR_OPR_CS2_TO_CS1 -> ((HvdcOperatorActivePowerRangeAdder) a).withOprFromCS2toCS1((float) value);
-            case OBS_QUALITY_P  -> ((InjectionObservabilityAdder<?>) a).withStandardDeviationP(value);
-            case OBS_QUALITY_Q  -> ((InjectionObservabilityAdder<?>) a).withStandardDeviationQ(value);
-            case OBS_QUALITY_V  -> ((InjectionObservabilityAdder<?>) a).withStandardDeviationV(value);
-            case OBS_QUALITY_P1 -> ((BranchObservabilityAdder<?>) a).withStandardDeviationP1(value);
-            case OBS_QUALITY_P2 -> ((BranchObservabilityAdder<?>) a).withStandardDeviationP2(value);
-            case OBS_QUALITY_Q1 -> ((BranchObservabilityAdder<?>) a).withStandardDeviationQ1(value);
-            case OBS_QUALITY_Q2 -> ((BranchObservabilityAdder<?>) a).withStandardDeviationQ2(value);
-            case MEAS_VALUE -> ((MeasurementAdder) a).setValue(value);
-            case MEAS_STD_DEV -> ((MeasurementAdder) a).setStandardDeviation(value);
-            case LL_PERMANENT_LIMIT -> ((LoadingLimitsAdder<?, ?>) a).setPermanentLimit(value);
             case TL_VALUE -> {
                 if (a instanceof TemporaryLimitValueChange change) {
                     change.value = value;
@@ -966,81 +899,12 @@ public final class Creation {
                     ((LoadingLimitsAdder.TemporaryLimitAdder<?>) a).setValue(value);
                 }
             }
-            case STEP_RHO -> ((TapChangerStepAdder<?, ?>) a).setRho(value);
-            case STEP_R -> ((TapChangerStepAdder<?, ?>) a).setR(value);
-            case STEP_X -> ((TapChangerStepAdder<?, ?>) a).setX(value);
-            case STEP_G -> ((TapChangerStepAdder<?, ?>) a).setG(value);
-            case STEP_B -> ((TapChangerStepAdder<?, ?>) a).setB(value);
-            case PTC_STEP_ALPHA -> ((PhaseTapChangerStepAdder<?, ?>) a).setAlpha(value);
-            case PTC_REGULATION_VALUE -> ((PhaseTapChangerAdder) a).setRegulationValue(value);
-            case PTC_TARGET_DEADBAND -> ((PhaseTapChangerAdder) a).setTargetDeadband(value);
-            case RL_MIN_Q -> ((MinMaxReactiveLimitsAdder) a).setMinQ(value);
-            case RL_MAX_Q -> ((MinMaxReactiveLimitsAdder) a).setMaxQ(value);
-            case POINT_P -> ((ReactiveCapabilityCurveAdder.PointAdder) a).setP(value);
-            case POINT_MIN_Q -> ((ReactiveCapabilityCurveAdder.PointAdder) a).setMinQ(value);
-            case POINT_MAX_Q -> ((ReactiveCapabilityCurveAdder.PointAdder) a).setMaxQ(value);
             case PLANE_ALPHA -> ((NewPlane) a).alpha = value;
             case PLANE_BETA -> ((NewPlane) a).beta = value;
             case PLANE_DELTA -> ((NewPlane) a).delta = value;
             case PLANE_GAMMA -> ((NewPlane) a).gamma = value;
-            case ZIP_C0P -> ((ZipLoadModelAdder) a).setC0p(value);
-            case ZIP_C1P -> ((ZipLoadModelAdder) a).setC1p(value);
-            case ZIP_C2P -> ((ZipLoadModelAdder) a).setC2p(value);
-            case ZIP_C0Q -> ((ZipLoadModelAdder) a).setC0q(value);
-            case ZIP_C1Q -> ((ZipLoadModelAdder) a).setC1q(value);
-            case ZIP_C2Q -> ((ZipLoadModelAdder) a).setC2q(value);
-            case EXP_NP -> ((ExponentialLoadModelAdder) a).setNp(value);
-            case EXP_NQ -> ((ExponentialLoadModelAdder) a).setNq(value);
             case FICTITIOUS_P0, FICTITIOUS_Q0 -> ((NodeFictitiousInjection) a).setValue(property, value);
             case LIMIT_REDUCTION -> ((TemporaryLimitsCheck) a).limitReduction = value;
-            case AREA_INTERCHANGE_TARGET -> ((AreaAdder) a).setInterchangeTarget(value);
-            case VAL_LOW_LIMIT -> ((VoltageAngleLimitAdder) a).setLowLimit(value);
-            case VAL_HIGH_LIMIT -> ((VoltageAngleLimitAdder) a).setHighLimit(value);
-            case TRIPPING_CURRENT_LIMIT -> ((OverloadManagementSystemAdder.TrippingAdder<?>) a).setCurrentLimit(value);
-            case EXT_SC_DIRECT_SUBTRANS_X -> ((ShortCircuitExtensionAdder<?, ?, ?>) a).withDirectSubtransX(value);
-            case EXT_SC_DIRECT_TRANS_X -> ((ShortCircuitExtensionAdder<?, ?, ?>) a).withDirectTransX(value);
-            case EXT_SC_STEP_UP_TRANSFORMER_X -> ((ShortCircuitExtensionAdder<?, ?, ?>) a).withStepUpTransformerX(value);
-            case EXT_ISC_IP_MIN -> ((IdentifiableShortCircuitAdder<?>) a).withIpMin(value);
-            case EXT_ISC_IP_MAX -> ((IdentifiableShortCircuitAdder<?>) a).withIpMax(value);
-            case EXT_GS_PLANNED_ACTIVE_POWER_SETPOINT -> ((GeneratorStartupAdder) a).withPlannedActivePowerSetpoint(value);
-            case EXT_GS_STARTUP_COST -> ((GeneratorStartupAdder) a).withStartupCost(value);
-            case EXT_GS_MARGINAL_COST -> ((GeneratorStartupAdder) a).withMarginalCost(value);
-            case EXT_GS_PLANNED_OUTAGE_RATE -> ((GeneratorStartupAdder) a).withPlannedOutageRate(value);
-            case EXT_GS_FORCED_OUTAGE_RATE -> ((GeneratorStartupAdder) a).withForcedOutageRate(value);
-            case EXT_LD_FIXED_ACTIVE_POWER -> ((LoadDetailAdder) a).withFixedActivePower(value);
-            case EXT_LD_FIXED_REACTIVE_POWER -> ((LoadDetailAdder) a).withFixedReactivePower(value);
-            case EXT_LD_VARIABLE_ACTIVE_POWER -> ((LoadDetailAdder) a).withVariableActivePower(value);
-            case EXT_LD_VARIABLE_REACTIVE_POWER -> ((LoadDetailAdder) a).withVariableReactivePower(value);
-            case EXT_SA_B0 -> ((StandbyAutomatonAdder) a).withB0(value);
-            case EXT_SA_LOW_VOLTAGE_SETPOINT -> ((StandbyAutomatonAdder) a).withLowVoltageSetpoint(value);
-            case EXT_SA_HIGH_VOLTAGE_SETPOINT -> ((StandbyAutomatonAdder) a).withHighVoltageSetpoint(value);
-            case EXT_SA_LOW_VOLTAGE_THRESHOLD -> ((StandbyAutomatonAdder) a).withLowVoltageThreshold(value);
-            case EXT_SA_HIGH_VOLTAGE_THRESHOLD -> ((StandbyAutomatonAdder) a).withHighVoltageThreshold(value);
-            case EXT_GF_RZ -> ((GeneratorFortescueAdder) a).withRz(value);
-            case EXT_GF_XZ -> ((GeneratorFortescueAdder) a).withXz(value);
-            case EXT_GF_RN -> ((GeneratorFortescueAdder) a).withRn(value);
-            case EXT_GF_XN -> ((GeneratorFortescueAdder) a).withXn(value);
-            case EXT_GF_GROUNDING_R -> ((GeneratorFortescueAdder) a).withGroundingR(value);
-            case EXT_GF_GROUNDING_X -> ((GeneratorFortescueAdder) a).withGroundingX(value);
-            case EXT_LINE_F_RZ -> ((LineFortescueAdder) a).withRz(value);
-            case EXT_LINE_F_XZ -> ((LineFortescueAdder) a).withXz(value);
-            case EXT_LINE_F_G1Z -> ((LineFortescueAdder) a).withG1z(value);
-            case EXT_LINE_F_B1Z -> ((LineFortescueAdder) a).withB1z(value);
-            case EXT_LINE_F_G2Z -> ((LineFortescueAdder) a).withG2z(value);
-            case EXT_LINE_F_B2Z -> ((LineFortescueAdder) a).withB2z(value);
-            case EXT_LA_DELTA_PA -> ((LoadAsymmetricalAdder) a).withDeltaPa(value);
-            case EXT_LA_DELTA_QA -> ((LoadAsymmetricalAdder) a).withDeltaQa(value);
-            case EXT_LA_DELTA_PB -> ((LoadAsymmetricalAdder) a).withDeltaPb(value);
-            case EXT_LA_DELTA_QB -> ((LoadAsymmetricalAdder) a).withDeltaQb(value);
-            case EXT_LA_DELTA_PC -> ((LoadAsymmetricalAdder) a).withDeltaPc(value);
-            case EXT_LA_DELTA_QC -> ((LoadAsymmetricalAdder) a).withDeltaQc(value);
-            case EXT_TWO_WTF_RZ -> ((TwoWindingsTransformerFortescueAdder) a).withRz(value);
-            case EXT_TWO_WTF_XZ -> ((TwoWindingsTransformerFortescueAdder) a).withXz(value);
-            case EXT_TWO_WTF_XM -> ((TwoWindingsTransformerFortescueAdder) a).withXm(value);
-            case EXT_TWO_WTF_GROUNDING_R1 -> ((TwoWindingsTransformerFortescueAdder) a).withGroundingR1(value);
-            case EXT_TWO_WTF_GROUNDING_X1 -> ((TwoWindingsTransformerFortescueAdder) a).withGroundingX1(value);
-            case EXT_TWO_WTF_GROUNDING_R2 -> ((TwoWindingsTransformerFortescueAdder) a).withGroundingR2(value);
-            case EXT_TWO_WTF_GROUNDING_X2 -> ((TwoWindingsTransformerFortescueAdder) a).withGroundingX2(value);
             case EXT_LEG_F_RZ -> ((FortescueLegs) a).leg().withRz(value);
             case EXT_LEG_F_XZ -> ((FortescueLegs) a).leg().withXz(value);
             case EXT_LEG_F_GROUNDING_R -> ((FortescueLegs) a).leg().withGroundingR(value);
@@ -1048,8 +912,6 @@ public final class Creation {
             case COORD_LATITUDE -> ((NewCoordinate) a).latitude = value;
             case COORD_LONGITUDE -> ((NewCoordinate) a).longitude = value;
             case EXT_SVC_TARGET_V -> ((NewPilotPoint) a).adder.withTargetV(value);
-            case EXT_MC_R -> ((MutualCouplingAdder) a).withR(value);
-            case EXT_MC_X -> ((MutualCouplingAdder) a).withX(value);
             case EXT_MC_SEGMENT_START -> ((SegmentChange) a).start = value;
             case EXT_MC_SEGMENT_END -> ((SegmentChange) a).end = value;
             default -> throw unknownField("double", property);
@@ -1057,6 +919,11 @@ public final class Creation {
     }
 
     static void setInt(PendingAdd pending, int property, int value) {
+        PropertyTable.IntProperty table = PropertyTable.intProperty(property);
+        if (table != null && table.add() != null) {
+            table.add().accept(pending.adder(), value);
+            return;
+        }
         Object a = pending.adder();
         switch (property) {
             case TERMINAL_NODE -> {
@@ -1092,7 +959,6 @@ public final class Creation {
             case OBS_AREA_NUMBER -> ((NewObservabilityArea) a).number = value;
             case OBS_AREA_STATUS -> ((NewObservabilityArea) a).status = enumValue(ObservabilityArea.ObservabilityStatus.class, value);
             case OBS_AREA_NODE -> ((NewObservabilityArea) a).nodes.add(value);
-            case OMS_MONITORED_SIDE -> ((OverloadManagementSystemAdder) a).setMonitoredElementSide(enumValue(ThreeSides.class, value));
             case TRIPPING_SIDE -> {
                 if (a instanceof OverloadManagementSystemAdder.BranchTrippingAdder adder) {
                     adder.setSideToOperate(enumValue(TwoSides.class, value));
@@ -1102,9 +968,6 @@ public final class Creation {
                 }
             }
             case LL_LIMIT_TYPE -> ((TemporaryLimitsCheck) a).type = value;
-            case TC_LOW_TAP_POSITION -> ((TapChangerAdder<?, ?, ?, ?, ?, ?>) a).setLowTapPosition(value);
-            case TC_TAP_POSITION -> ((TapChangerAdder<?, ?, ?, ?, ?, ?>) a).setTapPosition(value);
-            case TC_SOLVED_TAP_POSITION -> ((TapChangerAdder<?, ?, ?, ?, ?, ?>) a).setSolvedTapPosition(value);
             case PTC_REGULATION_MODE -> ((PhaseTapChangerAdder) a)
                 .setRegulationMode(enumValue(PhaseTapChanger.RegulationMode.class, value));
             case IC_NODE2 -> {
@@ -1114,19 +977,7 @@ public final class Creation {
                     ((InternalConnectionsRemoval) a).node2 = value;
                 }
             }
-            case SW_NODE1 -> ((VoltageLevel.NodeBreakerView.SwitchAdder) a).setNode1(value);
-            case SW_NODE2 -> ((VoltageLevel.NodeBreakerView.SwitchAdder) a).setNode2(value);
-            case SW_KIND -> ((VoltageLevel.NodeBreakerView.SwitchAdder) a).setKind(enumValue(SwitchKind.class, value));
-            case VL_TOPOLOGY_KIND -> ((VoltageLevelAdder) a).setTopologyKind(enumValue(TopologyKind.class, value));
-            case GEN_ENERGY_SOURCE -> ((GeneratorAdder) a).setEnergySource(enumValue(EnergySource.class, value));
-            case LOAD_TYPE -> ((LoadAdder) a).setLoadType(enumValue(LoadType.class, value));
-            case SHUNT_SECTION_COUNT -> ((ShuntCompensatorAdder) a).setSectionCount(value);
-            case BRANCH_NODE1 -> ((BranchAdder<?, ?>) a).setNode1(value);
-            case BRANCH_NODE2 -> ((BranchAdder<?, ?>) a).setNode2(value);
             case LEG_SIDE -> ((NewLeg) a).select(value);
-            case HVDC_CONVERTERS_MODE -> ((HvdcLineAdder) a).setConvertersMode(enumValue(HvdcLine.ConvertersMode.class, value));
-            case SHUNT_SOLVED_SECTION_COUNT -> ((ShuntCompensatorAdder) a).setSolvedSectionCount(value);
-            case SHUNT_MAX_SECTION_COUNT -> ((ShuntCompensatorLinearModelAdder) a).setMaximumSectionCount(value);
             case VR_MODE -> ((VoltageRegulationAdderOrBuilder<?>) a).withMode(value < 0 ? null : enumValue(RegulationMode.class, value));
             case OBS_QUALITY_P  -> ((InjectionObservabilityAdder<?>) a).withRedundantP(redundant(value));
             case OBS_QUALITY_Q  -> ((InjectionObservabilityAdder<?>) a).withRedundantQ(redundant(value));
@@ -1135,13 +986,9 @@ public final class Creation {
             case OBS_QUALITY_P2 -> ((BranchObservabilityAdder<?>) a).withRedundantP2(redundant(value));
             case OBS_QUALITY_Q1 -> ((BranchObservabilityAdder<?>) a).withRedundantQ1(redundant(value));
             case OBS_QUALITY_Q2 -> ((BranchObservabilityAdder<?>) a).withRedundantQ2(redundant(value));
-            case MEAS_TYPE -> ((MeasurementAdder) a).setType(enumValue(Measurement.Type.class, value));
             case MEAS_SIDE -> ((MeasurementAdder) a).setSide(value < 0 ? null : enumValue(ThreeSides.class, value));
-            case DMEAS_TYPE -> ((DiscreteMeasurementAdder) a).setType(enumValue(DiscreteMeasurement.Type.class, value));
             case DMEAS_TAP_CHANGER -> ((DiscreteMeasurementAdder) a)
                 .setTapChanger(value < 0 ? null : enumValue(DiscreteMeasurement.TapChanger.class, value));
-            case DMEAS_VALUE_INT -> ((DiscreteMeasurementAdder) a).setValue(value);
-            case LL_DETECTION_KIND -> ((LoadingLimitsAdder<?, ?>) a).setDetectionKind(enumValue(DetectionKind.class, value));
             case TL_ACCEPTABLE_DURATION -> {
                 if (a instanceof TemporaryLimitValueChange change) {
                     change.acceptableDuration = value;
@@ -1149,20 +996,11 @@ public final class Creation {
                     ((LoadingLimitsAdder.TemporaryLimitAdder<?>) a).setAcceptableDuration(value);
                 }
             }
-            case EXT_GEC_CODE -> ((GeneratorEntsoeCategoryAdder) a).withCode(value);
-            case EXT_OS_STATUS -> ((OperatingStatusAdder<?>) a).withStatus(enumValue(OperatingStatus.Status.class, value));
-            case EXT_LA_CONNECTION_TYPE -> ((LoadAsymmetricalAdder) a).withConnectionType(enumValue(LoadConnectionType.class, value));
             case EXT_TWO_WTF_CONNECTION_TYPE1 -> ((TwoWindingsTransformerFortescueAdder) a)
                 .withConnectionType1(enumValue(WindingConnectionType.class, value));
             case EXT_TWO_WTF_CONNECTION_TYPE2 -> ((TwoWindingsTransformerFortescueAdder) a)
                 .withConnectionType2(enumValue(WindingConnectionType.class, value));
-            case EXT_THREE_WTF_LEG -> ((FortescueLegs) a).select(value);
             case EXT_LEG_F_CONNECTION_TYPE -> ((FortescueLegs) a).leg().withConnectionType(enumValue(WindingConnectionType.class, value));
-            case EXT_TWO_WT_PAC_CLOCK -> ((TwoWindingsTransformerPhaseAngleClockAdder) a).withPhaseAngleClock(value);
-            case EXT_THREE_WT_PAC_CLOCK_LEG2 -> ((ThreeWindingsTransformerPhaseAngleClockAdder) a).withPhaseAngleClockLeg2(value);
-            case EXT_THREE_WT_PAC_CLOCK_LEG3 -> ((ThreeWindingsTransformerPhaseAngleClockAdder) a).withPhaseAngleClockLeg3(value);
-            case EXT_BSP_BUSBAR_INDEX -> ((BusbarSectionPositionAdder) a).withBusbarIndex(value);
-            case EXT_BSP_SECTION_INDEX -> ((BusbarSectionPositionAdder) a).withSectionIndex(value);
             case EXT_FEEDER_SLOT -> ((NewFeeder) a).slot = value;
             case EXT_FEEDER_ORDER -> ((NewFeeder) a).order = value;
             case EXT_FEEDER_DIRECTION -> ((NewFeeder) a).direction = enumValue(ConnectablePosition.Direction.class, value);
@@ -1171,9 +1009,13 @@ public final class Creation {
     }
 
     static void setBool(PendingAdd pending, int property, boolean value) {
+        PropertyTable.BoolProperty table = PropertyTable.boolProperty(property);
+        if (table != null && table.add() != null) {
+            table.add().accept(pending.adder(), value);
+            return;
+        }
         Object a = pending.adder();
         switch (property) {
-            case FICTITIOUS -> ((IdentifiableAdder<?, ?>) a).setFictitious(value);
             case ENSURE_ID_UNICITY -> {
                 switch (a) {
                     case MeasurementAdder m -> m.setEnsureIdUnicity(value);
@@ -1185,11 +1027,8 @@ public final class Creation {
                     default -> ((IdentifiableAdder<?, ?>) a).setEnsureIdUnicity(value);
                 }
             }
-            case EQUIVALENT -> ((ConnectableAdder<?, ?>) a).setEquivalent(value);
             case TERMINAL_CONNECTED -> ((ConnectableMove) a).connected = value;
-            case AUTOMATION_SYSTEM_ENABLED -> ((OverloadManagementSystemAdder) a).setEnabled(value);
             case VARIANT_MAY_OVERWRITE -> ((VariantClone) a).mayOverwrite = value;
-            case TRIPPING_OPEN_ACTION -> ((OverloadManagementSystemAdder.TrippingAdder<?>) a).setOpenAction(value);
             case AREA_BOUNDARY_AC -> {
                 if (a instanceof NewAreaBoundary boundary) {
                     boundary.ac = value;
@@ -1197,8 +1036,6 @@ public final class Creation {
                     ((AreaBoundaryAdder) a).setAc(value);
                 }
             }
-            case GEN_CONDENSER -> ((GeneratorAdder) a).setCondenser(value);
-            case GENERATION_VOLTAGE_REGULATION_ON -> ((BoundaryLineAdder.GenerationAdder) a).setVoltageRegulationOn(value);
             case SW_OPEN -> {
                 if (a instanceof VoltageLevel.NodeBreakerView.SwitchAdder adder) {
                     adder.setOpen(value);
@@ -1206,43 +1043,22 @@ public final class Creation {
                     ((VoltageLevel.BusBreakerView.SwitchAdder) a).setOpen(value);
                 }
             }
-            case SW_RETAINED -> ((VoltageLevel.NodeBreakerView.SwitchAdder) a).setRetained(value);
-            case TC_LOAD_TAP_CHANGING_CAPABILITIES -> ((TapChangerAdder<?, ?, ?, ?, ?, ?>) a).setLoadTapChangingCapabilities(value);
-            case REGULATING -> ((PhaseTapChangerAdder) a).setRegulating(value);
             case PLANE_GREATER_OR_EQUAL -> ((NewPlane) a).greaterOrEqual = value;
-            case VR_REGULATING -> ((VoltageRegulationAdderOrBuilder<?>) a).withRegulating(value);
-            case EXT_APC_PARTICIPATE -> ((ActivePowerControlAdder<?>) a).withParticipate(value);
-            case EXT_HADAPC_ENABLED -> ((HvdcAngleDroopActivePowerControlAdder) a).withEnabled(value);
-            case EXT_TWO_WT_TBE_RTC -> ((TwoWindingsTransformerToBeEstimatedAdder) a).withRatioTapChangerStatus(value);
-            case EXT_TWO_WT_TBE_PTC -> ((TwoWindingsTransformerToBeEstimatedAdder) a).withPhaseTapChangerStatus(value);
-            case EXT_THREE_WT_TBE_RTC1 -> ((ThreeWindingsTransformerToBeEstimatedAdder) a).withRatioTapChanger1Status(value);
-            case EXT_THREE_WT_TBE_RTC2 -> ((ThreeWindingsTransformerToBeEstimatedAdder) a).withRatioTapChanger2Status(value);
-            case EXT_THREE_WT_TBE_RTC3 -> ((ThreeWindingsTransformerToBeEstimatedAdder) a).withRatioTapChanger3Status(value);
-            case EXT_THREE_WT_TBE_PTC1 -> ((ThreeWindingsTransformerToBeEstimatedAdder) a).withPhaseTapChanger1Status(value);
-            case EXT_THREE_WT_TBE_PTC2 -> ((ThreeWindingsTransformerToBeEstimatedAdder) a).withPhaseTapChanger2Status(value);
-            case EXT_THREE_WT_TBE_PTC3 -> ((ThreeWindingsTransformerToBeEstimatedAdder) a).withPhaseTapChanger3Status(value);
             case EXT_OBS_OBSERVABLE -> {
                 if (a instanceof BranchObservabilityAdder<?> branch) branch.withObservable(value);
                 else ((InjectionObservabilityAdder<?>) a).withObservable(value);
             }
-            case MEAS_VALID -> ((MeasurementAdder) a).setValid(value);
-            case DMEAS_VALID -> ((DiscreteMeasurementAdder) a).setValid(value);
-            case DMEAS_VALUE_BOOL -> ((DiscreteMeasurementAdder) a).setValue(value);
-            case TL_FICTITIOUS -> ((LoadingLimitsAdder.TemporaryLimitAdder<?>) a).setFictitious(value);
-            case EXT_SA_STANDBY -> ((StandbyAutomatonAdder) a).withStandbyStatus(value);
-            case EXT_MFRR_PARTICIPATE -> ((ManualFrequencyRestorationReserveAdder<?>) a).withParticipate(value);
-            case EXT_GF_GROUNDED -> ((GeneratorFortescueAdder) a).withGrounded(value);
-            case EXT_LINE_F_OPEN_PHASE_A -> ((LineFortescueAdder) a).withOpenPhaseA(value);
-            case EXT_LINE_F_OPEN_PHASE_B -> ((LineFortescueAdder) a).withOpenPhaseB(value);
-            case EXT_LINE_F_OPEN_PHASE_C -> ((LineFortescueAdder) a).withOpenPhaseC(value);
-            case EXT_TWO_WTF_FREE_FLUXES -> ((TwoWindingsTransformerFortescueAdder) a).withFreeFluxes(value);
             case EXT_LEG_F_FREE_FLUXES -> ((FortescueLegs) a).leg().withFreeFluxes(value);
-            case EXT_SVC_UNIT_PARTICIPATE -> ((ControlUnitAdder) a).withParticipate(value);
             default -> throw unknownField("bool", property);
         }
     }
 
     static void setString(PendingAdd pending, int property, String value) {
+        PropertyTable.StringProperty table = PropertyTable.stringProperty(property);
+        if (table != null && table.add() != null) {
+            table.add().accept(pending.adder(), value);
+            return;
+        }
         Object a = pending.adder();
         switch (property) {
             case ID -> {
@@ -1261,7 +1077,6 @@ public final class Creation {
             }
             case NETWORK_SOURCE_FORMAT -> ((NewSubnetwork) a).sourceFormat = value;
             case COUNTRY -> ((SubstationAdder) a).setCountry(Country.valueOf(value));
-            case SUBSTATION_TSO -> ((SubstationAdder) a).setTso(value);
             case TERMINAL_BUS_BREAKER_BUS_ID -> {
                 if (a instanceof NewLeg leg) {
                     leg.leg().setBus(value);
@@ -1283,25 +1098,8 @@ public final class Creation {
                     ((ConnectableMove) a).voltageLevelId = value;
                 }
             }
-            case BRANCH_VOLTAGE_LEVEL1 -> ((BranchAdder<?, ?>) a).setVoltageLevel1(value);
-            case BRANCH_VOLTAGE_LEVEL2 -> ((BranchAdder<?, ?>) a).setVoltageLevel2(value);
-            case BRANCH_BUS1 -> ((BranchAdder<?, ?>) a).setBus1(value);
-            case BRANCH_BUS2 -> ((BranchAdder<?, ?>) a).setBus2(value);
-            case BRANCH_CONNECTABLE_BUS1 -> ((BranchAdder<?, ?>) a).setConnectableBus1(value);
-            case BRANCH_CONNECTABLE_BUS2 -> ((BranchAdder<?, ?>) a).setConnectableBus2(value);
-            case HVDC_CONVERTER_STATION_ID1 -> ((HvdcLineAdder) a).setConverterStationId1(value);
-            case HVDC_CONVERTER_STATION_ID2 -> ((HvdcLineAdder) a).setConverterStationId2(value);
-            case BOUNDARY_LINE1_ID -> ((TieLineAdder) a).setBoundaryLine1(value);
-            case BL_PAIRING_KEY -> ((BoundaryLineAdder) a).setPairingKey(value);
-            case SW_BUS1 -> ((VoltageLevel.BusBreakerView.SwitchAdder) a).setBus1(value);
-            case SW_BUS2 -> ((VoltageLevel.BusBreakerView.SwitchAdder) a).setBus2(value);
-            case AREA_TYPE -> ((AreaAdder) a).setAreaType(value);
-            case VAL_ID -> ((VoltageAngleLimitAdder) a).setId(value);
-            case OMS_MONITORED_ELEMENT_ID -> ((OverloadManagementSystemAdder) a).setMonitoredElementId(value);
             case VARIANT_SOURCE_ID -> ((VariantClone) a).sourceId = value;
             case VARIANT_TARGET_ID -> ((VariantClone) a).targetIds.add(value);
-            case TRIPPING_KEY -> ((OverloadManagementSystemAdder.TrippingAdder<?>) a).setKey(value);
-            case TRIPPING_NAME -> ((OverloadManagementSystemAdder.TrippingAdder<?>) a).setName(value);
             case TRIPPING_ELEMENT_ID -> {
                 switch (a) {
                     case OverloadManagementSystemAdder.SwitchTrippingAdder adder -> adder.setSwitchToOperateId(value);
@@ -1310,25 +1108,16 @@ public final class Creation {
                         .setThreeWindingsTransformerToOperateId(value);
                 }
             }
-            case BOUNDARY_LINE2_ID -> ((TieLineAdder) a).setBoundaryLine2(value);
-            case MEAS_ID -> ((MeasurementAdder) a).setId(value);
-            case DMEAS_ID -> ((DiscreteMeasurementAdder) a).setId(value);
-            case DMEAS_VALUE_STRING -> ((DiscreteMeasurementAdder) a).setValue(value);
             case OLG_ID -> {
                 switch (a) {
                     case NewGroup group -> group.id = value;
                     default -> ((SelectedGroup) a).id = value;
                 }
             }
-            case LL_PERMANENT_LIMIT_NAME -> ((LoadingLimitsAdder<?, ?>) a).setPermanentLimitName(value);
-            case TL_NAME -> ((LoadingLimitsAdder.TemporaryLimitAdder<?>) a).setName(value);
-            case EXT_DMI_MODEL_NAME -> ((DynamicModelInfoAdder<?>) a).setModelName(value);
             case EXT_FEEDER_NAME -> ((NewFeeder) a).name = value;
             case OBS_AREA_BUS_BREAKER_BUS_ID -> ((NewObservabilityArea) a).busBreakerBusIds.add(value);
             case OBS_AREA_BUS_ID -> ((NewObservabilityArea) a).busId = value;
-            case EXT_SVC_ZONE_NAME -> ((ControlZoneAdder) a).withName(value);
             case EXT_SVC_PILOT_POINT_IDS -> ((NewPilotPoint) a).ids.add(value);
-            case EXT_SVC_UNIT_ID -> ((ControlUnitAdder) a).withId(value);
             default -> throw unknownField("string", property);
         }
     }

@@ -42,205 +42,9 @@ public final class PropertyDispatcher {
     }
 
     public static double getDouble(Object obj, int property) {
-        return switch (property) {
-            case GEN_TARGET_P  -> ((Generator) obj).getTargetP();
-            case GEN_MIN_P     -> ((Generator) obj).getMinP();
-            case GEN_MAX_P     -> ((Generator) obj).getMaxP();
-            case GEN_RATED_S   -> ((Generator) obj).getRatedS();
-            case LOCAL_TARGET_V      -> ((VoltageRegulationHolder<?>) obj).getLocalTargetV();
-            case LOCAL_TARGET_Q      -> ((VoltageRegulationHolder<?>) obj).getLocalTargetQ();
-            case REGULATING_TARGET_V -> ((VoltageRegulationHolder<?>) obj).getRegulatingTargetV();
-            case REGULATING_TARGET_Q -> ((VoltageRegulationHolder<?>) obj).getRegulatingTargetQ();
-            case VR_TARGET_VALUE    -> ((VoltageRegulation) obj).getTargetValue();
-            case VR_TARGET_DEADBAND -> ((VoltageRegulation) obj).getTargetDeadband();
-            case VR_SLOPE           -> ((VoltageRegulation) obj).getSlope();
-            case LOAD_P0       -> ((Load) obj).getP0();
-            case LOAD_Q0       -> ((Load) obj).getQ0();
-            case ZIP_C0P -> ((ZipLoadModel) obj).getC0p();
-            case ZIP_C1P -> ((ZipLoadModel) obj).getC1p();
-            case ZIP_C2P -> ((ZipLoadModel) obj).getC2p();
-            case ZIP_C0Q -> ((ZipLoadModel) obj).getC0q();
-            case ZIP_C1Q -> ((ZipLoadModel) obj).getC1q();
-            case ZIP_C2Q -> ((ZipLoadModel) obj).getC2q();
-            case EXP_NP  -> ((ExponentialLoadModel) obj).getNp();
-            case EXP_NQ  -> ((ExponentialLoadModel) obj).getNq();
-            case TERMINAL_P    -> ((Terminal) obj).getP();
-            case TERMINAL_Q    -> ((Terminal) obj).getQ();
-            case TERMINAL_I    -> ((Terminal) obj).getI();
-            case BUS_V         -> ((Bus) obj).getV();
-            case BUS_ANGLE     -> ((Bus) obj).getAngle();
-            case BUS_P         -> ((Bus) obj).getP();
-            case BUS_Q         -> ((Bus) obj).getQ();
-            case FICTITIOUS_P0 -> ((Bus) obj).getFictitiousP0();
-            case FICTITIOUS_Q0 -> ((Bus) obj).getFictitiousQ0();
-            case VL_NOMINAL_V  -> ((VoltageLevel) obj).getNominalV();
-            case VL_LOW_VOLTAGE_LIMIT  -> ((VoltageLevel) obj).getLowVoltageLimit();
-            case VL_HIGH_VOLTAGE_LIMIT -> ((VoltageLevel) obj).getHighVoltageLimit();
-            case LINE_R  -> ((LineCharacteristics) obj).getR();
-            case LINE_X  -> ((LineCharacteristics) obj).getX();
-            case LINE_G1 -> ((LineCharacteristics) obj).getG1();
-            case LINE_B1 -> ((LineCharacteristics) obj).getB1();
-            case LINE_G2 -> ((LineCharacteristics) obj).getG2();
-            case LINE_B2 -> ((LineCharacteristics) obj).getB2();
-            case TWO_WT_R        -> ((TwoWindingsTransformer) obj).getR();
-            case TWO_WT_X        -> ((TwoWindingsTransformer) obj).getX();
-            case TWO_WT_G        -> ((TwoWindingsTransformer) obj).getG();
-            case TWO_WT_B        -> ((TwoWindingsTransformer) obj).getB();
-            case TWO_WT_RATED_U1 -> ((TwoWindingsTransformer) obj).getRatedU1();
-            case TWO_WT_RATED_U2 -> ((TwoWindingsTransformer) obj).getRatedU2();
-            case TWO_WT_RATED_S  -> ((TwoWindingsTransformer) obj).getRatedS();
-            case LEG_R       -> ((ThreeWindingsTransformer.Leg) obj).getR();
-            case LEG_X       -> ((ThreeWindingsTransformer.Leg) obj).getX();
-            case LEG_G       -> ((ThreeWindingsTransformer.Leg) obj).getG();
-            case LEG_B       -> ((ThreeWindingsTransformer.Leg) obj).getB();
-            case LEG_RATED_U -> ((ThreeWindingsTransformer.Leg) obj).getRatedU();
-            case LEG_RATED_S -> ((ThreeWindingsTransformer.Leg) obj).getRatedS();
-            case PTC_REGULATION_VALUE -> ((PhaseTapChanger) obj).getRegulationValue();
-            case PTC_TARGET_DEADBAND  -> ((PhaseTapChanger) obj).getTargetDeadband();
-            case STEP_RHO       -> ((TapChangerStep<?>) obj).getRho();
-            case STEP_R         -> ((TapChangerStep<?>) obj).getR();
-            case STEP_X         -> ((TapChangerStep<?>) obj).getX();
-            case STEP_G         -> ((TapChangerStep<?>) obj).getG();
-            case STEP_B         -> ((TapChangerStep<?>) obj).getB();
-            case PTC_STEP_ALPHA -> ((PhaseTapChangerStep) obj).getAlpha();
-            case HVDC_R                     -> ((HvdcLine) obj).getR();
-            case HVDC_NOMINAL_V             -> ((HvdcLine) obj).getNominalV();
-            case HVDC_ACTIVE_POWER_SETPOINT -> ((HvdcLine) obj).getActivePowerSetpoint();
-            case HVDC_MAX_P                 -> ((HvdcLine) obj).getMaxP();
-            case BL_P0 -> ((BoundaryLine) obj).getP0();
-            case BL_Q0 -> ((BoundaryLine) obj).getQ0();
-            case BL_R  -> ((BoundaryLine) obj).getR();
-            case BL_X  -> ((BoundaryLine) obj).getX();
-            case BL_G  -> ((BoundaryLine) obj).getG();
-            case BL_B  -> ((BoundaryLine) obj).getB();
-            case GENERATION_TARGET_P -> ((BoundaryLine.Generation) obj).getTargetP();
-            case GENERATION_MIN_P    -> ((BoundaryLine.Generation) obj).getMinP();
-            case GENERATION_MAX_P    -> ((BoundaryLine.Generation) obj).getMaxP();
-            case GENERATION_TARGET_Q -> ((BoundaryLine.Generation) obj).getTargetQ();
-            case GENERATION_TARGET_V -> ((BoundaryLine.Generation) obj).getTargetV();
-            case BOUNDARY_V     -> ((Boundary) obj).getV();
-            case BOUNDARY_ANGLE -> ((Boundary) obj).getAngle();
-            case BOUNDARY_P     -> ((Boundary) obj).getP();
-            case BOUNDARY_Q     -> ((Boundary) obj).getQ();
-            case BOUNDARY_I     -> ((Boundary) obj).getI();
-            case SHUNT_B -> ((ShuntCompensator) obj).getB();
-            case SHUNT_G -> ((ShuntCompensator) obj).getG();
-            case SHUNT_B_PER_SECTION -> ((ShuntCompensatorLinearModel) obj).getBPerSection();
-            case SHUNT_G_PER_SECTION -> ((ShuntCompensatorLinearModel) obj).getGPerSection();
-            case SHUNT_SECTION_B -> ((ShuntCompensatorNonLinearModel.Section) obj).getB();
-            case SHUNT_SECTION_G -> ((ShuntCompensatorNonLinearModel.Section) obj).getG();
-            case SVC_B_MIN                   -> ((StaticVarCompensator) obj).getBmin();
-            case SVC_B_MAX                   -> ((StaticVarCompensator) obj).getBmax();
-            case CONVERTER_STATION_LOSS_FACTOR -> ((HvdcConverterStation<?>) obj).getLossFactor();
-            case LCC_POWER_FACTOR -> ((LccConverterStation) obj).getPowerFactor();
-            case EXT_APC_DROOP -> activePowerControl(obj).getDroop();
-            case EXT_APC_PARTICIPATION_FACTOR -> activePowerControl(obj).getParticipationFactor();
-            case EXT_APC_MIN_TARGET_P -> activePowerControl(obj).getMinTargetP().orElse(Double.NaN);
-            case EXT_APC_MAX_TARGET_P -> activePowerControl(obj).getMaxTargetP().orElse(Double.NaN);
-            case EXT_CRC_Q_PERCENT -> ((CoordinatedReactiveControl) obj).getQPercent();
-            case EXT_HADAPC_DROOP -> ((HvdcAngleDroopActivePowerControl) obj).getDroop();
-            case EXT_HADAPC_P0 -> ((HvdcAngleDroopActivePowerControl) obj).getP0();
-            case EXT_HOAR_OPR_CS1_TO_CS2 -> ((HvdcOperatorActivePowerRange) obj).getOprFromCS1toCS2();
-            case EXT_HOAR_OPR_CS2_TO_CS1 -> ((HvdcOperatorActivePowerRange) obj).getOprFromCS2toCS1();
-            case BBS_V     -> ((BusbarSection) obj).getV();
-            case BBS_ANGLE -> ((BusbarSection) obj).getAngle();
-            // Battery
-            case BAT_TARGET_P -> ((Battery) obj).getTargetP();
-            case BAT_MIN_P    -> ((Battery) obj).getMinP();
-            case BAT_MAX_P    -> ((Battery) obj).getMaxP();
-            // Generator reactive limits (min-max kind)
-            // Reactive limits
-            case RL_MIN_Q    -> ((MinMaxReactiveLimits) obj).getMinQ();
-            case RL_MAX_Q    -> ((MinMaxReactiveLimits) obj).getMaxQ();
-            case CURVE_MIN_P -> ((ReactiveCapabilityCurve) obj).getMinP();
-            case CURVE_MAX_P -> ((ReactiveCapabilityCurve) obj).getMaxP();
-            case PLANE_ALPHA -> ((ReactiveCapabilityShapePlane) obj).getAlpha();
-            case PLANE_BETA  -> ((ReactiveCapabilityShapePlane) obj).getBeta();
-            case PLANE_GAMMA -> ((ReactiveCapabilityShapePlane) obj).getGamma();
-            case PLANE_DELTA -> ((ReactiveCapabilityShapePlane) obj).getDelta();
-            case POINT_P     -> ((ReactiveCapabilityCurve.Point) obj).getP();
-            case POINT_MIN_Q -> ((ReactiveCapabilityCurve.Point) obj).getMinQ();
-            case POINT_MAX_Q -> ((ReactiveCapabilityCurve.Point) obj).getMaxQ();
-            // CurrentLimits
-            case LL_PERMANENT_LIMIT -> ((LoadingLimits) obj).getPermanentLimit();
-            // TemporaryLimit
-            case TL_VALUE -> ((TemporaryLimit) obj).getValue();
-            // Areas, voltage angle limits
-            case AREA_INTERCHANGE_TARGET -> ((Area) obj).getInterchangeTarget().orElse(Double.NaN);
-            case AREA_AC_INTERCHANGE     -> ((Area) obj).getAcInterchange();
-            case AREA_DC_INTERCHANGE     -> ((Area) obj).getDcInterchange();
-            case AREA_INTERCHANGE        -> ((Area) obj).getInterchange();
-            case AREA_BOUNDARY_P         -> ((AreaBoundary) obj).getP();
-            case AREA_BOUNDARY_Q         -> ((AreaBoundary) obj).getQ();
-            case VAL_LOW_LIMIT  -> ((VoltageAngleLimit) obj).getLowLimit().orElse(Double.NaN);
-            case VAL_HIGH_LIMIT -> ((VoltageAngleLimit) obj).getHighLimit().orElse(Double.NaN);
-            case TRIPPING_CURRENT_LIMIT -> ((OverloadManagementSystem.Tripping) obj).getCurrentLimit();
-            // Overload
-            case OVERLOAD_PREVIOUS_LIMIT -> ((Overload) obj).getPreviousLimit();
-            case OVERLOAD_LIMIT_SCALING  -> ((Overload) obj).getLimitScalingCoefficient();
-            // ThreeWT
-            case THREE_WT_RATED_U0 -> ((ThreeWindingsTransformer) obj).getRatedU0();
-            // State estimation extensions
-            case OBS_QUALITY_STANDARD_DEVIATION -> ((ObservabilityQuality<?>) obj).getStandardDeviation();
-            case MEAS_VALUE   -> ((Measurement) obj).getValue();
-            case MEAS_STD_DEV -> ((Measurement) obj).getStandardDeviation();
-            case EXT_SC_DIRECT_SUBTRANS_X -> ((ShortCircuitExtension<?>) obj).getDirectSubtransX();
-            case EXT_SC_DIRECT_TRANS_X -> ((ShortCircuitExtension<?>) obj).getDirectTransX();
-            case EXT_SC_STEP_UP_TRANSFORMER_X -> ((ShortCircuitExtension<?>) obj).getStepUpTransformerX();
-            case EXT_ISC_IP_MIN -> ((IdentifiableShortCircuit<?>) obj).getIpMin();
-            case EXT_ISC_IP_MAX -> ((IdentifiableShortCircuit<?>) obj).getIpMax();
-            case EXT_GS_PLANNED_ACTIVE_POWER_SETPOINT -> ((GeneratorStartup) obj).getPlannedActivePowerSetpoint();
-            case EXT_GS_STARTUP_COST -> ((GeneratorStartup) obj).getStartupCost();
-            case EXT_GS_MARGINAL_COST -> ((GeneratorStartup) obj).getMarginalCost();
-            case EXT_GS_PLANNED_OUTAGE_RATE -> ((GeneratorStartup) obj).getPlannedOutageRate();
-            case EXT_GS_FORCED_OUTAGE_RATE -> ((GeneratorStartup) obj).getForcedOutageRate();
-            case EXT_LD_FIXED_ACTIVE_POWER -> ((LoadDetail) obj).getFixedActivePower();
-            case EXT_LD_FIXED_REACTIVE_POWER -> ((LoadDetail) obj).getFixedReactivePower();
-            case EXT_LD_VARIABLE_ACTIVE_POWER -> ((LoadDetail) obj).getVariableActivePower();
-            case EXT_LD_VARIABLE_REACTIVE_POWER -> ((LoadDetail) obj).getVariableReactivePower();
-            case EXT_SA_B0 -> ((StandbyAutomaton) obj).getB0();
-            case EXT_SA_LOW_VOLTAGE_SETPOINT -> ((StandbyAutomaton) obj).getLowVoltageSetpoint();
-            case EXT_SA_HIGH_VOLTAGE_SETPOINT -> ((StandbyAutomaton) obj).getHighVoltageSetpoint();
-            case EXT_SA_LOW_VOLTAGE_THRESHOLD -> ((StandbyAutomaton) obj).getLowVoltageThreshold();
-            case EXT_SA_HIGH_VOLTAGE_THRESHOLD -> ((StandbyAutomaton) obj).getHighVoltageThreshold();
-            case EXT_GF_RZ -> ((GeneratorFortescue) obj).getRz();
-            case EXT_GF_XZ -> ((GeneratorFortescue) obj).getXz();
-            case EXT_GF_RN -> ((GeneratorFortescue) obj).getRn();
-            case EXT_GF_XN -> ((GeneratorFortescue) obj).getXn();
-            case EXT_GF_GROUNDING_R -> ((GeneratorFortescue) obj).getGroundingR();
-            case EXT_GF_GROUNDING_X -> ((GeneratorFortescue) obj).getGroundingX();
-            case EXT_LINE_F_RZ -> ((LineFortescue) obj).getRz();
-            case EXT_LINE_F_XZ -> ((LineFortescue) obj).getXz();
-            case EXT_LINE_F_G1Z -> ((LineFortescue) obj).getG1z();
-            case EXT_LINE_F_B1Z -> ((LineFortescue) obj).getB1z();
-            case EXT_LINE_F_G2Z -> ((LineFortescue) obj).getG2z();
-            case EXT_LINE_F_B2Z -> ((LineFortescue) obj).getB2z();
-            case EXT_LA_DELTA_PA -> ((LoadAsymmetrical) obj).getDeltaPa();
-            case EXT_LA_DELTA_QA -> ((LoadAsymmetrical) obj).getDeltaQa();
-            case EXT_LA_DELTA_PB -> ((LoadAsymmetrical) obj).getDeltaPb();
-            case EXT_LA_DELTA_QB -> ((LoadAsymmetrical) obj).getDeltaQb();
-            case EXT_LA_DELTA_PC -> ((LoadAsymmetrical) obj).getDeltaPc();
-            case EXT_LA_DELTA_QC -> ((LoadAsymmetrical) obj).getDeltaQc();
-            case EXT_TWO_WTF_RZ -> ((TwoWindingsTransformerFortescue) obj).getRz();
-            case EXT_TWO_WTF_XZ -> ((TwoWindingsTransformerFortescue) obj).getXz();
-            case EXT_TWO_WTF_XM -> ((TwoWindingsTransformerFortescue) obj).getXm();
-            case EXT_TWO_WTF_GROUNDING_R1 -> ((TwoWindingsTransformerFortescue) obj).getGroundingR1();
-            case EXT_TWO_WTF_GROUNDING_X1 -> ((TwoWindingsTransformerFortescue) obj).getGroundingX1();
-            case EXT_TWO_WTF_GROUNDING_R2 -> ((TwoWindingsTransformerFortescue) obj).getGroundingR2();
-            case EXT_TWO_WTF_GROUNDING_X2 -> ((TwoWindingsTransformerFortescue) obj).getGroundingX2();
-            case EXT_LEG_F_RZ -> ((LegFortescue) obj).getRz();
-            case EXT_LEG_F_XZ -> ((LegFortescue) obj).getXz();
-            case EXT_LEG_F_GROUNDING_R -> ((LegFortescue) obj).getGroundingR();
-            case EXT_LEG_F_GROUNDING_X -> ((LegFortescue) obj).getGroundingX();
-            case COORD_LATITUDE -> ((Coordinate) obj).getLatitude();
-            case COORD_LONGITUDE -> ((Coordinate) obj).getLongitude();
-            case EXT_SVC_TARGET_V -> ((PilotPoint) obj).getTargetV();
-            case EXT_MC_R -> ((MutualCoupling) obj).getR();
-            case EXT_MC_X -> ((MutualCoupling) obj).getX();
-            case EXT_MC_SEGMENT_START -> ((LineSegment) obj).start();
-            case EXT_MC_SEGMENT_END -> ((LineSegment) obj).end();
-            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown double property: " + property);
-        };
+        PropertyTable.DoubleProperty table = PropertyTable.doubleProperty(property);
+        if (table != null && table.get() != null) return table.get().applyAsDouble(obj);
+        throw new BridgeErrors.PropertyNotFoundException("Unknown double property: " + property);
     }
 
     // ── Double setters ────────────────────────────────────────────────────
@@ -254,167 +58,12 @@ public final class PropertyDispatcher {
             Creation.setDouble(adder, property, value);
             return;
         }
-        switch (property) {
-            case GEN_TARGET_P  -> ((Generator) obj).setTargetP(value);
-            case GEN_MIN_P     -> ((Generator) obj).setMinP(value);
-            case GEN_MAX_P     -> ((Generator) obj).setMaxP(value);
-            case GEN_RATED_S   -> ((Generator) obj).setRatedS(value);
-            case LOCAL_TARGET_V -> ((VoltageRegulationHolder<?>) obj).setLocalTargetV(value);
-            case LOCAL_TARGET_Q -> ((VoltageRegulationHolder<?>) obj).setLocalTargetQ(value);
-            case VR_TARGET_VALUE    -> ((VoltageRegulation) obj).setTargetValue(value);
-            case VR_TARGET_DEADBAND -> ((VoltageRegulation) obj).setTargetDeadband(value);
-            case VR_SLOPE           -> ((VoltageRegulation) obj).setSlope(value);
-            case LOAD_P0       -> ((Load) obj).setP0(value);
-            case LOAD_Q0       -> ((Load) obj).setQ0(value);
-            case ZIP_C0P -> ((ZipLoadModel) obj).setC0p(value);
-            case ZIP_C1P -> ((ZipLoadModel) obj).setC1p(value);
-            case ZIP_C2P -> ((ZipLoadModel) obj).setC2p(value);
-            case ZIP_C0Q -> ((ZipLoadModel) obj).setC0q(value);
-            case ZIP_C1Q -> ((ZipLoadModel) obj).setC1q(value);
-            case ZIP_C2Q -> ((ZipLoadModel) obj).setC2q(value);
-            case EXP_NP  -> ((ExponentialLoadModel) obj).setNp(value);
-            case EXP_NQ  -> ((ExponentialLoadModel) obj).setNq(value);
-            case TERMINAL_P    -> ((Terminal) obj).setP(value);
-            case TERMINAL_Q    -> ((Terminal) obj).setQ(value);
-            case BUS_V         -> ((Bus) obj).setV(value);
-            case BUS_ANGLE     -> ((Bus) obj).setAngle(value);
-            case FICTITIOUS_P0 -> ((Bus) obj).setFictitiousP0(value);
-            case AREA_INTERCHANGE_TARGET -> ((Area) obj).setInterchangeTarget(value);
-            case TRIPPING_CURRENT_LIMIT -> ((OverloadManagementSystem.Tripping) obj).setCurrentLimit(value);
-            case FICTITIOUS_Q0 -> ((Bus) obj).setFictitiousQ0(value);
-            case VL_NOMINAL_V          -> ((VoltageLevel) obj).setNominalV(value);
-            case VL_LOW_VOLTAGE_LIMIT  -> ((VoltageLevel) obj).setLowVoltageLimit(value);
-            case VL_HIGH_VOLTAGE_LIMIT -> ((VoltageLevel) obj).setHighVoltageLimit(value);
-            case HVDC_R                     -> ((HvdcLine) obj).setR(value);
-            case HVDC_NOMINAL_V             -> ((HvdcLine) obj).setNominalV(value);
-            case HVDC_ACTIVE_POWER_SETPOINT -> ((HvdcLine) obj).setActivePowerSetpoint(value);
-            case HVDC_MAX_P                 -> ((HvdcLine) obj).setMaxP(value);
-            case LINE_R  -> ((Line) obj).setR(value);
-            case LINE_X  -> ((Line) obj).setX(value);
-            case LINE_G1 -> ((Line) obj).setG1(value);
-            case LINE_B1 -> ((Line) obj).setB1(value);
-            case LINE_G2 -> ((Line) obj).setG2(value);
-            case LINE_B2 -> ((Line) obj).setB2(value);
-            case TWO_WT_R        -> ((TwoWindingsTransformer) obj).setR(value);
-            case TWO_WT_X        -> ((TwoWindingsTransformer) obj).setX(value);
-            case TWO_WT_G        -> ((TwoWindingsTransformer) obj).setG(value);
-            case TWO_WT_B        -> ((TwoWindingsTransformer) obj).setB(value);
-            case TWO_WT_RATED_U1 -> ((TwoWindingsTransformer) obj).setRatedU1(value);
-            case TWO_WT_RATED_U2 -> ((TwoWindingsTransformer) obj).setRatedU2(value);
-            case TWO_WT_RATED_S  -> ((TwoWindingsTransformer) obj).setRatedS(value);
-            case THREE_WT_RATED_U0 -> ((ThreeWindingsTransformer) obj).setRatedU0(value);
-            case BL_P0 -> ((BoundaryLine) obj).setP0(value);
-            case BL_Q0 -> ((BoundaryLine) obj).setQ0(value);
-            case BL_R  -> ((BoundaryLine) obj).setR(value);
-            case BL_X  -> ((BoundaryLine) obj).setX(value);
-            case BL_G  -> ((BoundaryLine) obj).setG(value);
-            case BL_B  -> ((BoundaryLine) obj).setB(value);
-            case GENERATION_TARGET_P -> ((BoundaryLine.Generation) obj).setTargetP(value);
-            case GENERATION_MIN_P    -> ((BoundaryLine.Generation) obj).setMinP(value);
-            case GENERATION_MAX_P    -> ((BoundaryLine.Generation) obj).setMaxP(value);
-            case GENERATION_TARGET_Q -> ((BoundaryLine.Generation) obj).setTargetQ(value);
-            case GENERATION_TARGET_V -> ((BoundaryLine.Generation) obj).setTargetV(value);
-            case CONVERTER_STATION_LOSS_FACTOR -> ((HvdcConverterStation<?>) obj).setLossFactor((float) value);
-            case SHUNT_B_PER_SECTION -> ((ShuntCompensatorLinearModel) obj).setBPerSection(value);
-            case SHUNT_G_PER_SECTION -> ((ShuntCompensatorLinearModel) obj).setGPerSection(value);
-            case SHUNT_SECTION_B -> ((ShuntCompensatorNonLinearModel.Section) obj).setB(value);
-            case SHUNT_SECTION_G -> ((ShuntCompensatorNonLinearModel.Section) obj).setG(value);
-            case SVC_B_MIN -> ((StaticVarCompensator) obj).setBmin(value);
-            case SVC_B_MAX -> ((StaticVarCompensator) obj).setBmax(value);
-            case EXT_APC_DROOP -> activePowerControl(obj).setDroop(value);
-            case EXT_APC_PARTICIPATION_FACTOR -> activePowerControl(obj).setParticipationFactor(value);
-            case EXT_APC_MIN_TARGET_P -> activePowerControl(obj).setMinTargetP(value);
-            case EXT_APC_MAX_TARGET_P -> activePowerControl(obj).setMaxTargetP(value);
-            case EXT_CRC_Q_PERCENT -> ((CoordinatedReactiveControl) obj).setQPercent(value);
-            case EXT_HADAPC_DROOP -> ((HvdcAngleDroopActivePowerControl) obj).setDroop((float) value);
-            case EXT_HADAPC_P0 -> ((HvdcAngleDroopActivePowerControl) obj).setP0((float) value);
-            case EXT_HOAR_OPR_CS1_TO_CS2 -> ((HvdcOperatorActivePowerRange) obj).setOprFromCS1toCS2((float) value);
-            case EXT_HOAR_OPR_CS2_TO_CS1 -> ((HvdcOperatorActivePowerRange) obj).setOprFromCS2toCS1((float) value);
-            case LEG_R       -> ((ThreeWindingsTransformer.Leg) obj).setR(value);
-            case LEG_X       -> ((ThreeWindingsTransformer.Leg) obj).setX(value);
-            case LEG_G       -> ((ThreeWindingsTransformer.Leg) obj).setG(value);
-            case LEG_B       -> ((ThreeWindingsTransformer.Leg) obj).setB(value);
-            case LEG_RATED_U -> ((ThreeWindingsTransformer.Leg) obj).setRatedU(value);
-            case LEG_RATED_S -> ((ThreeWindingsTransformer.Leg) obj).setRatedS(value);
-            case PTC_REGULATION_VALUE -> ((PhaseTapChanger) obj).setRegulationValue(value);
-            case PTC_TARGET_DEADBAND  -> ((PhaseTapChanger) obj).setTargetDeadband(value);
-            case STEP_RHO       -> ((TapChangerStep<?>) obj).setRho(value);
-            case STEP_R         -> ((TapChangerStep<?>) obj).setR(value);
-            case STEP_X         -> ((TapChangerStep<?>) obj).setX(value);
-            case STEP_G         -> ((TapChangerStep<?>) obj).setG(value);
-            case STEP_B         -> ((TapChangerStep<?>) obj).setB(value);
-            case PTC_STEP_ALPHA -> ((PhaseTapChangerStep) obj).setAlpha(value);
-            case BAT_TARGET_P -> ((Battery) obj).setTargetP(value);
-            case BAT_MIN_P    -> ((Battery) obj).setMinP(value);
-            case BAT_MAX_P    -> ((Battery) obj).setMaxP(value);
-            case LCC_POWER_FACTOR -> ((LccConverterStation) obj).setPowerFactor((float) value);
-            case LL_PERMANENT_LIMIT -> ((LoadingLimits) obj).setPermanentLimit(value);
-            case OBS_QUALITY_STANDARD_DEVIATION -> ((ObservabilityQuality<?>) obj).setStandardDeviation(value);
-            // Creates the quality if needed
-            case OBS_QUALITY_P  -> ((InjectionObservability<?>) obj).setQualityP(value);
-            case OBS_QUALITY_Q  -> ((InjectionObservability<?>) obj).setQualityQ(value);
-            case OBS_QUALITY_V  -> ((InjectionObservability<?>) obj).setQualityV(value);
-            case OBS_QUALITY_P1 -> ((BranchObservability<?>) obj).setQualityP1(value);
-            case OBS_QUALITY_P2 -> ((BranchObservability<?>) obj).setQualityP2(value);
-            case OBS_QUALITY_Q1 -> ((BranchObservability<?>) obj).setQualityQ1(value);
-            case OBS_QUALITY_Q2 -> ((BranchObservability<?>) obj).setQualityQ2(value);
-            case MEAS_VALUE   -> ((Measurement) obj).setValue(value);
-            case MEAS_STD_DEV -> ((Measurement) obj).setStandardDeviation(value);
-            case EXT_SC_DIRECT_SUBTRANS_X -> ((ShortCircuitExtension<?>) obj).setDirectSubtransX(value);
-            case EXT_SC_DIRECT_TRANS_X -> ((ShortCircuitExtension<?>) obj).setDirectTransX(value);
-            case EXT_SC_STEP_UP_TRANSFORMER_X -> ((ShortCircuitExtension<?>) obj).setStepUpTransformerX(value);
-            case EXT_ISC_IP_MIN -> ((IdentifiableShortCircuit<?>) obj).setIpMin(value);
-            case EXT_ISC_IP_MAX -> ((IdentifiableShortCircuit<?>) obj).setIpMax(value);
-            case EXT_GS_PLANNED_ACTIVE_POWER_SETPOINT -> ((GeneratorStartup) obj).setPlannedActivePowerSetpoint(value);
-            case EXT_GS_STARTUP_COST -> ((GeneratorStartup) obj).setStartupCost(value);
-            case EXT_GS_MARGINAL_COST -> ((GeneratorStartup) obj).setMarginalCost(value);
-            case EXT_GS_PLANNED_OUTAGE_RATE -> ((GeneratorStartup) obj).setPlannedOutageRate(value);
-            case EXT_GS_FORCED_OUTAGE_RATE -> ((GeneratorStartup) obj).setForcedOutageRate(value);
-            case EXT_LD_FIXED_ACTIVE_POWER -> ((LoadDetail) obj).setFixedActivePower(value);
-            case EXT_LD_FIXED_REACTIVE_POWER -> ((LoadDetail) obj).setFixedReactivePower(value);
-            case EXT_LD_VARIABLE_ACTIVE_POWER -> ((LoadDetail) obj).setVariableActivePower(value);
-            case EXT_LD_VARIABLE_REACTIVE_POWER -> ((LoadDetail) obj).setVariableReactivePower(value);
-            case EXT_SA_B0 -> ((StandbyAutomaton) obj).setB0(value);
-            case EXT_SA_LOW_VOLTAGE_SETPOINT -> ((StandbyAutomaton) obj).setLowVoltageSetpoint(value);
-            case EXT_SA_HIGH_VOLTAGE_SETPOINT -> ((StandbyAutomaton) obj).setHighVoltageSetpoint(value);
-            case EXT_SA_LOW_VOLTAGE_THRESHOLD -> ((StandbyAutomaton) obj).setLowVoltageThreshold(value);
-            case EXT_SA_HIGH_VOLTAGE_THRESHOLD -> ((StandbyAutomaton) obj).setHighVoltageThreshold(value);
-            case EXT_GF_RZ -> ((GeneratorFortescue) obj).setRz(value);
-            case EXT_GF_XZ -> ((GeneratorFortescue) obj).setXz(value);
-            case EXT_GF_RN -> ((GeneratorFortescue) obj).setRn(value);
-            case EXT_GF_XN -> ((GeneratorFortescue) obj).setXn(value);
-            case EXT_GF_GROUNDING_R -> ((GeneratorFortescue) obj).setGroundingR(value);
-            case EXT_GF_GROUNDING_X -> ((GeneratorFortescue) obj).setGroundingX(value);
-            case EXT_LINE_F_RZ -> ((LineFortescue) obj).setRz(value);
-            case EXT_LINE_F_XZ -> ((LineFortescue) obj).setXz(value);
-            case EXT_LINE_F_G1Z -> ((LineFortescue) obj).setG1z(value);
-            case EXT_LINE_F_B1Z -> ((LineFortescue) obj).setB1z(value);
-            case EXT_LINE_F_G2Z -> ((LineFortescue) obj).setG2z(value);
-            case EXT_LINE_F_B2Z -> ((LineFortescue) obj).setB2z(value);
-            case EXT_LA_DELTA_PA -> ((LoadAsymmetrical) obj).setDeltaPa(value);
-            case EXT_LA_DELTA_QA -> ((LoadAsymmetrical) obj).setDeltaQa(value);
-            case EXT_LA_DELTA_PB -> ((LoadAsymmetrical) obj).setDeltaPb(value);
-            case EXT_LA_DELTA_QB -> ((LoadAsymmetrical) obj).setDeltaQb(value);
-            case EXT_LA_DELTA_PC -> ((LoadAsymmetrical) obj).setDeltaPc(value);
-            case EXT_LA_DELTA_QC -> ((LoadAsymmetrical) obj).setDeltaQc(value);
-            case EXT_TWO_WTF_RZ -> ((TwoWindingsTransformerFortescue) obj).setRz(value);
-            case EXT_TWO_WTF_XZ -> ((TwoWindingsTransformerFortescue) obj).setXz(value);
-            case EXT_TWO_WTF_XM -> ((TwoWindingsTransformerFortescue) obj).setXm(value);
-            case EXT_TWO_WTF_GROUNDING_R1 -> ((TwoWindingsTransformerFortescue) obj).setGroundingR1(value);
-            case EXT_TWO_WTF_GROUNDING_X1 -> ((TwoWindingsTransformerFortescue) obj).setGroundingX1(value);
-            case EXT_TWO_WTF_GROUNDING_R2 -> ((TwoWindingsTransformerFortescue) obj).setGroundingR2(value);
-            case EXT_TWO_WTF_GROUNDING_X2 -> ((TwoWindingsTransformerFortescue) obj).setGroundingX2(value);
-            case EXT_LEG_F_RZ -> ((LegFortescue) obj).setRz(value);
-            case EXT_LEG_F_XZ -> ((LegFortescue) obj).setXz(value);
-            case EXT_LEG_F_GROUNDING_R -> ((LegFortescue) obj).setGroundingR(value);
-            case EXT_LEG_F_GROUNDING_X -> ((LegFortescue) obj).setGroundingX(value);
-            case EXT_SVC_TARGET_V -> ((PilotPoint) obj).setTargetV(value);
-            case PLANE_LESS_OR_EQUAL -> ((ReactiveCapabilityShapePlane) obj).lessOrEqual(value);
-            case PLANE_GREATER_OR_EQUAL -> ((ReactiveCapabilityShapePlane) obj).greaterOrEqual(value);
-            case EXT_MC_R -> ((MutualCoupling) obj).setR(value);
-            case EXT_MC_X -> ((MutualCoupling) obj).setX(value);
-            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown double property for set: " + property);
+        PropertyTable.DoubleProperty table = PropertyTable.doubleProperty(property);
+        if (table != null && table.set() != null) {
+            table.set().accept(obj, value);
+            return;
         }
+        throw new BridgeErrors.PropertyNotFoundException("Unknown double property for set: " + property);
     }
 
     // ── Int getters ───────────────────────────────────────────────────────
@@ -424,86 +73,40 @@ public final class PropertyDispatcher {
     }
 
     public static int getInt(Object obj, int property) {
+        PropertyTable.IntProperty table = PropertyTable.intProperty(property);
+        if (table != null && table.get() != null) return table.get().applyAsInt(obj);
         return switch (property) {
-            case IDENTIFIABLE_TYPE  -> ((Identifiable<?>) obj).getType().ordinal();
-            case CONTAINER_TYPE     -> ((Container<?>) obj).getContainerType().ordinal();
-            case NETWORK_VALIDATION_LEVEL -> ((Network) obj).getValidationLevel().ordinal();
-            case CONVERTER_STATION_HVDC_TYPE -> ((HvdcConverterStation<?>) obj).getHvdcType().ordinal();
             case TERMINAL_SIDE -> {
                 ThreeSides side = ((Terminal) obj).getSide();
                 yield side == null ? -1 : side.ordinal();
             }
-            case GEN_ENERGY_SOURCE  -> ((Generator) obj).getEnergySource().ordinal();
-            case NETWORK_FORECAST_DISTANCE -> ((Network) obj).getForecastDistance();
             case VR_MODE -> {
                 RegulationMode mode = ((VoltageRegulation) obj).getMode();
                 yield mode == null ? -1 : mode.ordinal();
             }
-            case LOAD_TYPE          -> ((Load) obj).getLoadType().ordinal();
-            case LOAD_MODEL_TYPE    -> ((LoadModel) obj).getType().ordinal();
-            case VL_TOPOLOGY_KIND   -> ((VoltageLevel) obj).getTopologyKind().ordinal();
             case VL_NBV_MAXIMUM_NODE_INDEX -> ((VoltageLevel) obj).getNodeBreakerView().getMaximumNodeIndex();
-            case HVDC_CONVERTERS_MODE -> ((HvdcLine) obj).getConvertersMode().ordinal();
-            case SHUNT_SECTION_COUNT     -> ((ShuntCompensator) obj).getSectionCount(); // fails when undefined
-            case SHUNT_MAX_SECTION_COUNT -> ((ShuntCompensator) obj).getMaximumSectionCount();
-            case SHUNT_MODEL_TYPE        -> ((ShuntCompensator) obj).getModelType().ordinal();
-            case SW_KIND  -> ((Switch) obj).getKind().ordinal();
             case SW_NODE1 -> ((Switch) obj).getVoltageLevel().getNodeBreakerView().getNode1(((Switch) obj).getId());
             case SW_NODE2 -> ((Switch) obj).getVoltageLevel().getNodeBreakerView().getNode2(((Switch) obj).getId());
-            case IC_NODE1 -> ((VoltageLevel.NodeBreakerView.InternalConnection) obj).getNode1();
-            case IC_NODE2 -> ((VoltageLevel.NodeBreakerView.InternalConnection) obj).getNode2();
-            case TL_ACCEPTABLE_DURATION -> ((TemporaryLimit) obj).getAcceptableDuration();
-            case OMS_MONITORED_SIDE -> ((OverloadManagementSystem) obj).getMonitoredSide().ordinal();
-            case COMPONENT_NUM  -> ((Component) obj).getNum();
-            case COMPONENT_SIZE -> ((Component) obj).getSize();
-            case TRIPPING_TYPE -> ((OverloadManagementSystem.Tripping) obj).getType().ordinal();
             case TRIPPING_SIDE -> obj instanceof OverloadManagementSystem.BranchTripping tripping
                 ? tripping.getSideToOperate().ordinal()
                 : ((OverloadManagementSystem.ThreeWindingsTransformerTripping) obj).getSideToOperate().ordinal();
             case OVERLOAD_DURATION -> overloadChecked(obj) instanceof ThreeWindingsTransformer twt
                 ? twt.getOverloadDuration()
                 : ((Branch<?>) obj).getOverloadDuration();
-            case LL_DETECTION_KIND -> ((LoadingLimits) obj).getDetectionKind().ordinal();
-            case LL_LIMIT_TYPE -> ((OperationalLimits) obj).getLimitType().ordinal();
-            case TC_LOW_TAP_POSITION  -> tapChanger(obj).getLowTapPosition();
-            case TC_HIGH_TAP_POSITION -> tapChanger(obj).getHighTapPosition();
-            case TC_TAP_POSITION      -> tapChanger(obj).getTapPosition(); // fails when unset
-            case TC_STEP_COUNT        -> tapChanger(obj).getStepCount();
-            case PTC_REGULATION_MODE  -> ((PhaseTapChanger) obj).getRegulationMode().ordinal();
-            case LEG_SIDE             -> ((ThreeWindingsTransformer.Leg) obj).getSide().ordinal();
-            case RL_KIND           -> ((ReactiveLimits) obj).getKind().ordinal();
-            case CURVE_POINT_COUNT -> ((ReactiveCapabilityCurve) obj).getPointCount();
             // Terminal node number (node-breaker topology)
             case TERMINAL_NODE -> ((Terminal) obj).getNodeBreakerView().getNode();
             // State estimation extensions
             case OBS_QUALITY_REDUNDANT -> ((ObservabilityQuality<?>) obj).isRedundant().map(r -> r ? 1 : 0).orElse(-1);
-            case MEAS_TYPE          -> ((Measurement) obj).getType().ordinal();
             case MEAS_SIDE -> {
                 ThreeSides side = ((Measurement) obj).getSide();
                 yield side == null ? -1 : side.ordinal();
             }
-            case DMEAS_TYPE         -> ((DiscreteMeasurement) obj).getType().ordinal();
             case DMEAS_TAP_CHANGER -> {
                 DiscreteMeasurement.TapChanger tapChanger = ((DiscreteMeasurement) obj).getTapChanger();
                 yield tapChanger == null ? -1 : tapChanger.ordinal();
             }
-            case DMEAS_VALUE_TYPE   -> ((DiscreteMeasurement) obj).getValueType().ordinal();
-            case DMEAS_VALUE_INT    -> ((DiscreteMeasurement) obj).getValueAsInt();
             case OBS_AREA_NUMBER    -> ((ObservabilityAreaRef) obj).area().getAreaNumber();
             case OBS_AREA_STATUS    -> ((ObservabilityAreaRef) obj).area().getStatus().ordinal();
-            case EXT_GEC_CODE -> ((GeneratorEntsoeCategory) obj).getCode();
-            case EXT_OS_STATUS -> ((OperatingStatus<?>) obj).getStatus().ordinal();
-            case EXT_LA_CONNECTION_TYPE -> ((LoadAsymmetrical) obj).getConnectionType().ordinal();
-            case EXT_TWO_WTF_CONNECTION_TYPE1 -> ((TwoWindingsTransformerFortescue) obj).getConnectionType1().ordinal();
-            case EXT_TWO_WTF_CONNECTION_TYPE2 -> ((TwoWindingsTransformerFortescue) obj).getConnectionType2().ordinal();
-            case EXT_LEG_F_CONNECTION_TYPE -> ((LegFortescue) obj).getConnectionType().ordinal();
-            case EXT_TWO_WT_PAC_CLOCK -> ((TwoWindingsTransformerPhaseAngleClock) obj).getPhaseAngleClock();
-            case EXT_THREE_WT_PAC_CLOCK_LEG2 -> ((ThreeWindingsTransformerPhaseAngleClock) obj).getPhaseAngleClockLeg2();
-            case EXT_THREE_WT_PAC_CLOCK_LEG3 -> ((ThreeWindingsTransformerPhaseAngleClock) obj).getPhaseAngleClockLeg3();
-            case EXT_BSP_BUSBAR_INDEX -> ((BusbarSectionPosition) obj).getBusbarIndex();
-            case EXT_BSP_SECTION_INDEX -> ((BusbarSectionPosition) obj).getSectionIndex();
-            case EXT_FEEDER_DIRECTION -> ((ConnectablePosition.Feeder) obj).getDirection().ordinal();
-            case EXT_RP_PRIORITY -> ((ReferencePriority) obj).getPriority();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown int property: " + property);
         };
     }
@@ -519,22 +122,17 @@ public final class PropertyDispatcher {
             Creation.setInt(adder, property, value);
             return;
         }
+        PropertyTable.IntProperty table = PropertyTable.intProperty(property);
+        if (table != null && table.set() != null) {
+            table.set().accept(obj, value);
+            return;
+        }
         switch (property) {
-            case GEN_ENERGY_SOURCE -> ((Generator) obj).setEnergySource(Creation.enumValue(EnergySource.class, value));
-            case LOAD_TYPE -> ((Load) obj).setLoadType(Creation.enumValue(LoadType.class, value));
-            case NETWORK_FORECAST_DISTANCE -> ((Network) obj).setForecastDistance(value);
             case NETWORK_MIN_VALIDATION_LEVEL ->
                 ((Network) obj).setMinimumAcceptableValidationLevel(Creation.enumValue(ValidationLevel.class, value));
-            case VL_TOPOLOGY_KIND -> ((VoltageLevel) obj).convertToTopology(Creation.enumValue(TopologyKind.class, value));
             case VR_MODE -> ((VoltageRegulation) obj).setMode(value < 0 ? null : Creation.enumValue(RegulationMode.class, value));
             case HVDC_CONVERTERS_MODE ->
                 ((HvdcLine) obj).setConvertersMode(HvdcLine.ConvertersMode.values()[value]);
-            case SHUNT_SECTION_COUNT        -> ((ShuntCompensator) obj).setSectionCount(value);
-            case SHUNT_SOLVED_SECTION_COUNT -> ((ShuntCompensator) obj).setSolvedSectionCount(value);
-            case SHUNT_MAX_SECTION_COUNT    -> ((ShuntCompensatorLinearModel) obj).setMaximumSectionCount(value);
-            case TC_LOW_TAP_POSITION    -> tapChanger(obj).setLowTapPosition(value);
-            case TC_TAP_POSITION        -> tapChanger(obj).setTapPosition(value);
-            case TC_SOLVED_TAP_POSITION -> tapChanger(obj).setSolvedTapPosition(value);
             case PTC_REGULATION_MODE ->
                 ((PhaseTapChanger) obj).setRegulationMode(Creation.enumValue(PhaseTapChanger.RegulationMode.class, value));
             case TRIPPING_SIDE -> {
@@ -546,21 +144,10 @@ public final class PropertyDispatcher {
                 }
             }
             case OBS_QUALITY_REDUNDANT -> ((ObservabilityQuality<?>) obj).setRedundant(value < 0 ? null : value != 0);
-            case DMEAS_VALUE_INT -> ((DiscreteMeasurement) obj).setValue(value);
-            case EXT_GEC_CODE -> ((GeneratorEntsoeCategory) obj).setCode(value);
-            case EXT_OS_STATUS -> ((OperatingStatus<?>) obj).setStatus(Creation.enumValue(OperatingStatus.Status.class, value));
-            case EXT_LA_CONNECTION_TYPE -> ((LoadAsymmetrical) obj).setConnectionType(Creation.enumValue(LoadConnectionType.class, value));
             case EXT_TWO_WTF_CONNECTION_TYPE1 -> ((TwoWindingsTransformerFortescue) obj)
                 .setConnectionType1(Creation.enumValue(WindingConnectionType.class, value));
             case EXT_TWO_WTF_CONNECTION_TYPE2 -> ((TwoWindingsTransformerFortescue) obj)
                 .setConnectionType2(Creation.enumValue(WindingConnectionType.class, value));
-            case EXT_LEG_F_CONNECTION_TYPE -> ((LegFortescue) obj).setConnectionType(Creation.enumValue(WindingConnectionType.class, value));
-            case EXT_TWO_WT_PAC_CLOCK -> ((TwoWindingsTransformerPhaseAngleClock) obj).setPhaseAngleClock(value);
-            case EXT_THREE_WT_PAC_CLOCK_LEG2 -> ((ThreeWindingsTransformerPhaseAngleClock) obj).setPhaseAngleClockLeg2(value);
-            case EXT_THREE_WT_PAC_CLOCK_LEG3 -> ((ThreeWindingsTransformerPhaseAngleClock) obj).setPhaseAngleClockLeg3(value);
-            case EXT_BSP_BUSBAR_INDEX -> ((BusbarSectionPosition) obj).setBusbarIndex(value);
-            case EXT_BSP_SECTION_INDEX -> ((BusbarSectionPosition) obj).setSectionIndex(value);
-            case EXT_FEEDER_ORDER -> ((ConnectablePosition.Feeder) obj).setOrder(value);
             case EXT_FEEDER_DIRECTION -> ((ConnectablePosition.Feeder) obj)
                 .setDirection(Creation.enumValue(ConnectablePosition.Direction.class, value));
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown int property for set: " + property);
@@ -574,6 +161,8 @@ public final class PropertyDispatcher {
     }
 
     public static boolean getBool(Object obj, int property) {
+        PropertyTable.BoolProperty table = PropertyTable.boolProperty(property);
+        if (table != null && table.get() != null) return table.get().test(obj);
         return switch (property) {
             // Identifiable type codes: whether the object is one
             case IDENTIFIABLE               -> obj instanceof Identifiable<?>;
@@ -599,22 +188,15 @@ public final class PropertyDispatcher {
             case TIE_LINE                   -> obj instanceof TieLine;
             case AREA                       -> obj instanceof Area;
             case AREA_BOUNDARY              -> obj instanceof AreaBoundary;
-            case AREA_BOUNDARY_AC           -> ((AreaBoundary) obj).isAc();
             case VOLTAGE_ANGLE_LIMIT        -> obj instanceof VoltageAngleLimit;
             case OVERLOAD_MANAGEMENT_SYSTEM -> obj instanceof OverloadManagementSystem;
             case COMPONENT                  -> obj instanceof Component;
             case VARIANT_MANAGER            -> obj instanceof VariantManager;
-            case VARIANT_MULTI_THREAD_ACCESS -> ((VariantManager) obj).isVariantMultiThreadAccessAllowed();
-            case NETWORK_DETACHABLE         -> ((Network) obj).isDetachable();
             case TRIPPING                   -> obj instanceof OverloadManagementSystem.Tripping;
             case SWITCH_TRIPPING            -> obj instanceof OverloadManagementSystem.SwitchTripping;
             case BRANCH_TRIPPING            -> obj instanceof OverloadManagementSystem.BranchTripping;
             case THREE_WINDINGS_TRANSFORMER_TRIPPING -> obj instanceof OverloadManagementSystem.ThreeWindingsTransformerTripping;
-            case AUTOMATION_SYSTEM_ENABLED  -> ((AutomationSystem<?>) obj).isEnabled();
-            case TRIPPING_OPEN_ACTION       -> ((OverloadManagementSystem.Tripping) obj).isOpenAction();
             case GROUND                     -> obj instanceof Ground;
-            case BL_PAIRED                  -> ((BoundaryLine) obj).isPaired();
-            case GENERATION_VOLTAGE_REGULATION_ON -> ((BoundaryLine.Generation) obj).isVoltageRegulationOn();
             case SHUNT_COMPENSATOR          -> obj instanceof ShuntCompensator;
             case SHUNT_COMPENSATOR_MODEL    -> obj instanceof ShuntCompensatorModel;
             case SHUNT_COMPENSATOR_LINEAR_MODEL -> obj instanceof ShuntCompensatorLinearModel;
@@ -652,44 +234,10 @@ public final class PropertyDispatcher {
             case MEASUREMENT                -> obj instanceof Measurement;
             case DISCRETE_MEASUREMENT       -> obj instanceof DiscreteMeasurement;
             case AREA_CHARACTERISTICS       -> obj instanceof ObservabilityAreaRef;
-            case PLANE_LESS_OR_EQUAL        -> ((ReactiveCapabilityShapePlane) obj).isLessOrEqual();
-            case PLANE_GREATER_OR_EQUAL     -> ((ReactiveCapabilityShapePlane) obj).isGreaterOrEqual();
-            case FICTITIOUS                 -> ((Identifiable<?>) obj).isFictitious();
-            case EQUIVALENT                 -> ((Connectable<?>) obj).isEquivalent();
-            case GEN_CONDENSER              -> ((Generator) obj).isCondenser();
             case REGULATING                 -> obj instanceof TapChanger<?, ?, ?, ?> tapChanger
                                                ? tapChanger.isRegulating()
                                                : ((VoltageRegulationHolder<?>) obj).isRegulating();
-            case TC_LOAD_TAP_CHANGING_CAPABILITIES -> tapChanger(obj).hasLoadTapChangingCapabilities();
-            case HAS_REGULATING_TERMINAL    -> ((VoltageRegulationHolder<?>) obj).hasRegulatingTerminal();
-            case VR_REGULATING              -> ((VoltageRegulation) obj).isRegulating();
-            case VR_WITH_TERMINAL           -> ((VoltageRegulation) obj).isWithTerminal();
-            case TERMINAL_CONNECTED         -> ((Terminal) obj).isConnected();
-            case BUS_IN_MAIN_CONNECTED_COMPONENT   -> ((Bus) obj).isInMainConnectedComponent();
-            case BUS_IN_MAIN_SYNCHRONOUS_COMPONENT -> ((Bus) obj).isInMainSynchronousComponent();
-            case TL_FICTITIOUS -> ((TemporaryLimit) obj).isFictitious();
-            case SW_OPEN     -> ((Switch) obj).isOpen();
-            case SW_RETAINED -> ((Switch) obj).isRetained();
-            case EXT_APC_PARTICIPATE -> activePowerControl(obj).isParticipate();
-            case EXT_HADAPC_ENABLED  -> ((HvdcAngleDroopActivePowerControl) obj).isEnabled();
-            case EXT_ST_EMPTY        -> ((SlackTerminal) obj).isEmpty();
-            case EXT_TWO_WT_TBE_RTC  -> ((TwoWindingsTransformerToBeEstimated) obj).shouldEstimateRatioTapChanger();
-            case EXT_TWO_WT_TBE_PTC  -> ((TwoWindingsTransformerToBeEstimated) obj).shouldEstimatePhaseTapChanger();
-            case EXT_THREE_WT_TBE_RTC1 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimateRatioTapChanger1();
-            case EXT_THREE_WT_TBE_RTC2 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimateRatioTapChanger2();
-            case EXT_THREE_WT_TBE_RTC3 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimateRatioTapChanger3();
-            case EXT_THREE_WT_TBE_PTC1 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimatePhaseTapChanger1();
-            case EXT_THREE_WT_TBE_PTC2 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimatePhaseTapChanger2();
-            case EXT_THREE_WT_TBE_PTC3 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimatePhaseTapChanger3();
-            case EXT_OBS_OBSERVABLE  -> ((Observability<?>) obj).isObservable();
-            case OLG_EMPTY -> ((OperationalLimitsGroup) obj).isEmpty();
             // State estimation extensions
-            case MEAS_VALID       -> ((Measurement) obj).isValid();
-            case DMEAS_VALUE_BOOL -> ((DiscreteMeasurement) obj).getValueAsBoolean();
-            case DMEAS_VALID      -> ((DiscreteMeasurement) obj).isValid();
-            case EXT_OBS_AREA_CONSISTENT -> ((ObservabilityArea) obj).isConsistentWithTopology();
-            case EXT_SA_STANDBY             -> ((StandbyAutomaton) obj).isStandby();
-            case EXT_MFRR_PARTICIPATE       -> ((ManualFrequencyRestorationReserve<?>) obj).isParticipate();
             case REFERENCE_PRIORITY         -> obj instanceof ReferencePriority;
             case COORDINATE                 -> obj instanceof Coordinate;
             case FEEDER                     -> obj instanceof ConnectablePosition.Feeder;
@@ -697,14 +245,7 @@ public final class PropertyDispatcher {
             case CONTROL_ZONE               -> obj instanceof ControlZone;
             case PILOT_POINT                -> obj instanceof PilotPoint;
             case CONTROL_UNIT               -> obj instanceof ControlUnit;
-            case EXT_SVC_UNIT_PARTICIPATE   -> ((ControlUnit) obj).isParticipate();
             case MUTUAL_COUPLING            -> obj instanceof MutualCoupling;
-            case EXT_GF_GROUNDED            -> ((GeneratorFortescue) obj).isGrounded();
-            case EXT_LINE_F_OPEN_PHASE_A    -> ((LineFortescue) obj).isOpenPhaseA();
-            case EXT_LINE_F_OPEN_PHASE_B    -> ((LineFortescue) obj).isOpenPhaseB();
-            case EXT_LINE_F_OPEN_PHASE_C    -> ((LineFortescue) obj).isOpenPhaseC();
-            case EXT_TWO_WTF_FREE_FLUXES    -> ((TwoWindingsTransformerFortescue) obj).isFreeFluxes();
-            case EXT_LEG_F_FREE_FLUXES      -> ((LegFortescue) obj).isFreeFluxes();
             default -> {
                 // An extension type code: whether the object is one
                 if (Extensions.isType(property)) yield Extensions.isInstance(obj, property);
@@ -724,43 +265,12 @@ public final class PropertyDispatcher {
             Creation.setBool(adder, property, bval);
             return;
         }
-        switch (property) {
-            case FICTITIOUS -> ((Identifiable<?>) obj).setFictitious(bval);
-            case EQUIVALENT -> ((Connectable<?>) obj).setEquivalent(bval);
-            case VR_REGULATING -> ((VoltageRegulation) obj).setRegulating(bval);
-            case SW_OPEN     -> ((Switch) obj).setOpen(bval);
-            case SW_RETAINED -> ((Switch) obj).setRetained(bval);
-            case REGULATING -> ((PhaseTapChanger) obj).setRegulating(bval);
-            case TC_LOAD_TAP_CHANGING_CAPABILITIES -> tapChanger(obj).setLoadTapChangingCapabilities(bval);
-            case GENERATION_VOLTAGE_REGULATION_ON -> ((BoundaryLine.Generation) obj).setVoltageRegulationOn(bval);
-            case AUTOMATION_SYSTEM_ENABLED -> ((AutomationSystem<?>) obj).setEnabled(bval);
-            case VARIANT_MULTI_THREAD_ACCESS -> ((VariantManager) obj).allowVariantMultiThreadAccess(bval);
-            case TRIPPING_OPEN_ACTION -> ((OverloadManagementSystem.Tripping) obj).setOpenAction(bval);
-            case EXT_APC_PARTICIPATE     -> activePowerControl(obj).setParticipate(bval);
-            case EXT_HADAPC_ENABLED  -> ((HvdcAngleDroopActivePowerControl) obj).setEnabled(bval);
-            case EXT_TWO_WT_TBE_RTC  -> ((TwoWindingsTransformerToBeEstimated) obj).shouldEstimateRatioTapChanger(bval);
-            case EXT_TWO_WT_TBE_PTC  -> ((TwoWindingsTransformerToBeEstimated) obj).shouldEstimatePhaseTapChanger(bval);
-            case EXT_THREE_WT_TBE_RTC1 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimateRatioTapChanger1(bval);
-            case EXT_THREE_WT_TBE_RTC2 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimateRatioTapChanger2(bval);
-            case EXT_THREE_WT_TBE_RTC3 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimateRatioTapChanger3(bval);
-            case EXT_THREE_WT_TBE_PTC1 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimatePhaseTapChanger1(bval);
-            case EXT_THREE_WT_TBE_PTC2 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimatePhaseTapChanger2(bval);
-            case EXT_THREE_WT_TBE_PTC3 -> ((ThreeWindingsTransformerToBeEstimated) obj).shouldEstimatePhaseTapChanger3(bval);
-            case EXT_OBS_OBSERVABLE  -> ((Observability<?>) obj).setObservable(bval);
-            case MEAS_VALID       -> ((Measurement) obj).setValid(bval);
-            case DMEAS_VALUE_BOOL -> ((DiscreteMeasurement) obj).setValue(bval);
-            case DMEAS_VALID      -> ((DiscreteMeasurement) obj).setValid(bval);
-            case EXT_SA_STANDBY -> ((StandbyAutomaton) obj).setStandby(bval);
-            case EXT_MFRR_PARTICIPATE -> ((ManualFrequencyRestorationReserve<?>) obj).setParticipate(bval);
-            case EXT_GF_GROUNDED -> ((GeneratorFortescue) obj).setGrounded(bval);
-            case EXT_LINE_F_OPEN_PHASE_A -> ((LineFortescue) obj).setOpenPhaseA(bval);
-            case EXT_LINE_F_OPEN_PHASE_B -> ((LineFortescue) obj).setOpenPhaseB(bval);
-            case EXT_LINE_F_OPEN_PHASE_C -> ((LineFortescue) obj).setOpenPhaseC(bval);
-            case EXT_TWO_WTF_FREE_FLUXES -> ((TwoWindingsTransformerFortescue) obj).setFreeFluxes(bval);
-            case EXT_LEG_F_FREE_FLUXES -> ((LegFortescue) obj).setFreeFluxes(bval);
-            case EXT_SVC_UNIT_PARTICIPATE -> ((ControlUnit) obj).setParticipate(bval);
-            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown bool property for set: " + property);
+        PropertyTable.BoolProperty table = PropertyTable.boolProperty(property);
+        if (table != null && table.set() != null) {
+            table.set().accept(obj, bval);
+            return;
         }
+        throw new BridgeErrors.PropertyNotFoundException("Unknown bool property for set: " + property);
     }
 
     // ── String getters ────────────────────────────────────────────────────
@@ -771,10 +281,8 @@ public final class PropertyDispatcher {
 
     /** A value, or fails: a property that may have none is read with {@link #getOptString}. */
     public static String getString(Object obj, int property) {
-        String value = switch (property) {
-            case ID   -> ((Identifiable<?>) obj).getId();
-            case NAME -> ((Identifiable<?>) obj).getNameOrId();
-            case TL_NAME -> ((TemporaryLimit) obj).getName();
+        PropertyTable.StringProperty table = PropertyTable.stringProperty(property);
+        String value = table != null && table.get() != null ? table.get().apply(obj) : switch (property) {
             case TERMINAL_BUS_BREAKER_BUS_ID -> {
                 Bus bus = ((Terminal) obj).getBusBreakerView().getBus();
                 yield bus != null ? bus.getId() : "";
@@ -788,36 +296,19 @@ public final class PropertyDispatcher {
                 yield tso != null ? tso : "";
             }
             case NETWORK_CASE_DATE -> ((Network) obj).getCaseDate().toString();
-            case NETWORK_SOURCE_FORMAT -> ((Network) obj).getSourceFormat();
             case VL_TOPOLOGY_TEXT -> {
                 java.io.ByteArrayOutputStream text = new java.io.ByteArrayOutputStream();
                 ((VoltageLevel) obj).printTopology(new java.io.PrintStream(text, true, java.nio.charset.StandardCharsets.UTF_8), null);
                 yield text.toString(java.nio.charset.StandardCharsets.UTF_8);
             }
-            case OLG_ID -> ((OperationalLimitsGroup) obj).getId();
-            case OVERLOAD_PREVIOUS_LIMIT_NAME -> ((Overload) obj).getPreviousLimitName();
-            case AREA_TYPE -> ((Area) obj).getAreaType();
-            case VAL_ID -> ((VoltageAngleLimit) obj).getId();
-            case OMS_MONITORED_ELEMENT_ID -> ((OverloadManagementSystem) obj).getMonitoredElementId();
-            case WORKING_VARIANT_ID -> ((VariantManager) obj).getWorkingVariantId();
-            case TRIPPING_KEY -> ((OverloadManagementSystem.Tripping) obj).getKey();
-            case TRIPPING_NAME -> ((OverloadManagementSystem.Tripping) obj).getNameOrKey();
             case TRIPPING_ELEMENT_ID -> switch (obj) {
                 case OverloadManagementSystem.SwitchTripping tripping -> tripping.getSwitchToOperateId();
                 case OverloadManagementSystem.BranchTripping tripping -> tripping.getBranchToOperateId();
                 default -> ((OverloadManagementSystem.ThreeWindingsTransformerTripping) obj).getThreeWindingsTransformerToOperateId();
             };
-            case OVERLOAD_OLG_ID -> ((Overload) obj).getOperationalLimitsGroupId();
-            case LL_PERMANENT_LIMIT_NAME -> ((LoadingLimits) obj).getPermanentLimitName();
             case BL_PAIRING_KEY -> pairingKey(obj);
             case SELECTED_OLG_ID -> LimitsDispatch.holder(obj).getSelectedOperationalLimitsGroupId().orElse(null);
             case COUNTRY -> ((Substation) obj).getCountry().map(Country::name).orElse("");
-            case MEAS_ID            -> ((Measurement) obj).getId();
-            case DMEAS_ID           -> ((DiscreteMeasurement) obj).getId();
-            case DMEAS_VALUE_STRING -> ((DiscreteMeasurement) obj).getValueAsString();
-            case EXT_DMI_MODEL_NAME -> ((DynamicModelInfo<?>) obj).getModelName();
-            case EXT_SVC_ZONE_NAME -> ((ControlZone) obj).getName();
-            case EXT_SVC_UNIT_ID -> ((ControlUnit) obj).getId();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown string property: " + property);
         };
         if (value == null) {
@@ -838,13 +329,12 @@ public final class PropertyDispatcher {
             Creation.setString(adder, property, value);
             return;
         }
+        PropertyTable.StringProperty table = PropertyTable.stringProperty(property);
+        if (table != null && table.set() != null) {
+            table.set().accept(obj, value);
+            return;
+        }
         switch (property) {
-            case NAME    -> ((Identifiable<?>) obj).setName(value);
-            case ID      -> ((Identifiable<?>) obj).setId(value);
-            case ADD_GEOGRAPHICAL_TAG -> ((Substation) obj).addGeographicalTag(value);
-            case TRIPPING_NAME -> ((OverloadManagementSystem.Tripping) obj).setName(value);
-            case WORKING_VARIANT_ID -> ((VariantManager) obj).setWorkingVariant(value);
-            case REMOVE_VARIANT -> ((VariantManager) obj).removeVariant(value);
             case TRIPPING_ELEMENT_ID -> {
                 switch (obj) {
                     case OverloadManagementSystem.SwitchTripping tripping -> tripping.setSwitchToOperateId(value);
@@ -855,18 +345,12 @@ public final class PropertyDispatcher {
             case TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID -> ((Terminal) obj).getBusBreakerView().setConnectableBus(value);
             case VL_NBV_REMOVE_SWITCH -> ((VoltageLevel) obj).getNodeBreakerView().removeSwitch(value);
             case VL_BBV_REMOVE_SWITCH -> ((VoltageLevel) obj).getBusBreakerView().removeSwitch(value);
-            case BL_PAIRING_KEY -> ((BoundaryLine) obj).setPairingKey(value);
             case COUNTRY -> ((Substation) obj).setCountry(Country.valueOf(value));
-            case SUBSTATION_TSO -> ((Substation) obj).setTso(value);
             case NETWORK_CASE_DATE -> ((Network) obj).setCaseDate(java.time.ZonedDateTime.parse(value));
-            case DMEAS_VALUE_STRING -> ((DiscreteMeasurement) obj).setValue(value);
-            case LL_PERMANENT_LIMIT_NAME -> ((LoadingLimits) obj).setPermanentLimitName(value);
             case SELECTED_OLG_ID  -> LimitsDispatch.holder(obj).setSelectedOperationalLimitsGroup(value);
             case ADD_SELECTED_OLG -> LimitsDispatch.holder(obj).addSelectedOperationalLimitsGroup(value);
             case DESELECT_OLG     -> LimitsDispatch.holder(obj).deselectOperationalLimitsGroup(value);
             case REMOVE_OLG       -> LimitsDispatch.holder(obj).removeOperationalLimitsGroup(value);
-            case EXT_DMI_MODEL_NAME -> ((DynamicModelInfo<?>) obj).setModelName(value);
-            case EXT_FEEDER_NAME -> ((ConnectablePosition.Feeder) obj).setName(value);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown string property for set: " + property);
         }
     }
@@ -1776,11 +1260,6 @@ public final class PropertyDispatcher {
     }
 
     // ── Extension helpers ─────────────────────────────────────────────────
-
-    /** The ActivePowerControl extension object (from getRelated(injection, ACTIVE_POWER_CONTROL)). */
-    static ActivePowerControl<?> activePowerControl(Object obj) {
-        return (ActivePowerControl<?>) obj;
-    }
 
     /** The ordinals of the regulation modes that satisfy a test. */
     private static int[] modes(java.util.function.Predicate<RegulationMode> test) {
