@@ -31,12 +31,12 @@ public:
     Substation& setCountry(Country country);
 
     // Empty when undefined
-    iidm::optional<std::string> getTso() const;
-    Substation& setTso(const std::string& tso);
+    iidm::optional<std::string> getTso() const { return getOptString(prop::SUBSTATION_TSO); }
+    Substation& setTso(const std::string& tso) { return setString(*this, prop::SUBSTATION_TSO, tso); }
 
     // Sorted
     std::vector<std::string> getGeographicalTags() const;
-    Substation& addGeographicalTag(const std::string& tag);
+    Substation& addGeographicalTag(const std::string& tag) { return setString(*this, prop::ADD_GEOGRAPHICAL_TAG, tag); }
 
     std::vector<VoltageLevel> getVoltageLevels() const;
     std::vector<TwoWindingsTransformer> getTwoWindingsTransformers() const;

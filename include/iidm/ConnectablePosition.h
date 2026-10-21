@@ -27,14 +27,16 @@ public:
         Feeder() = default;
         explicit Feeder(ObjectHandle handle, BackendProvider* backend) : ObjectRef(handle, backend) {}
 
-        iidm::optional<std::string> getName() const;
-        Feeder& setName(const std::string& name);
+        iidm::optional<std::string> getName() const { return getOptString(prop::EXT_FEEDER_NAME); }
+        Feeder& setName(const std::string& name) { return setString(*this, prop::EXT_FEEDER_NAME, name); }
         // Its rank among the feeders of its busbar section (empty when unset)
-        iidm::optional<int> getOrder() const;
-        Feeder& setOrder(int order);
+        iidm::optional<int> getOrder() const { return getOptInt(prop::EXT_FEEDER_ORDER); }
+        Feeder& setOrder(int order) { return setInt(*this, prop::EXT_FEEDER_ORDER, order); }
         Feeder& removeOrder();
-        Direction getDirection() const;
-        Feeder& setDirection(Direction direction);
+        Direction getDirection() const { return static_cast<Direction>(getInt(prop::EXT_FEEDER_DIRECTION)); }
+        Feeder& setDirection(Direction direction) {
+            return setInt(*this, prop::EXT_FEEDER_DIRECTION, static_cast<int>(direction));
+        }
     };
 
     ConnectablePosition() = default;

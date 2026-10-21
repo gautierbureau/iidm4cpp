@@ -18,12 +18,16 @@ public:
     explicit BusbarSectionPosition(ObjectHandle handle, BackendProvider* backend);
 
     // The rank of its busbar (from 1)
-    int getBusbarIndex() const;
-    BusbarSectionPosition& setBusbarIndex(int busbarIndex);
+    int getBusbarIndex() const { return getInt(prop::EXT_BSP_BUSBAR_INDEX); }
+    BusbarSectionPosition& setBusbarIndex(int busbarIndex) {
+        return setInt(*this, prop::EXT_BSP_BUSBAR_INDEX, busbarIndex);
+    }
 
     // Its rank along the busbar (from 1)
-    int getSectionIndex() const;
-    BusbarSectionPosition& setSectionIndex(int sectionIndex);
+    int getSectionIndex() const { return getInt(prop::EXT_BSP_SECTION_INDEX); }
+    BusbarSectionPosition& setSectionIndex(int sectionIndex) {
+        return setInt(*this, prop::EXT_BSP_SECTION_INDEX, sectionIndex);
+    }
 };
 
 } // namespace iidm

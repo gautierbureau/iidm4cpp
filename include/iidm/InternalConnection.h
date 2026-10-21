@@ -12,8 +12,8 @@ public:
     InternalConnection() = default;
     explicit InternalConnection(ObjectHandle handle, BackendProvider* backend);
 
-    int getNode1() const;
-    int getNode2() const;
+    int getNode1() const { return getInt(prop::IC_NODE1); }
+    int getNode2() const { return getInt(prop::IC_NODE2); }
 };
 
 } // namespace iidm

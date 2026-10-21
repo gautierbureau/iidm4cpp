@@ -22,8 +22,8 @@ public:
     // Ids of busbar sections or of buses of the bus-breaker view, in order
     std::vector<std::string> getBusbarSectionsOrBusesIds() const;
     // kV, for the working variant
-    double getTargetV() const;
-    PilotPoint& setTargetV(double targetV);
+    double getTargetV() const { return getDouble(prop::EXT_SVC_TARGET_V); }
+    PilotPoint& setTargetV(double targetV) { return setDouble(*this, prop::EXT_SVC_TARGET_V, targetV); }
 };
 
 // A control unit of a control zone: an equipment that controls the voltage of the pilot point
@@ -35,10 +35,12 @@ public:
     explicit ControlUnit(ObjectHandle handle, BackendProvider* backend) : ObjectRef(handle, backend) {}
 
     // The id of its equipment
-    std::string getId() const;
+    std::string getId() const { return getString(prop::EXT_SVC_UNIT_ID); }
     // For the working variant
-    bool isParticipate() const;
-    ControlUnit& setParticipate(bool participate);
+    bool isParticipate() const { return getBool(prop::EXT_SVC_UNIT_PARTICIPATE); }
+    ControlUnit& setParticipate(bool participate) {
+        return setBool(*this, prop::EXT_SVC_UNIT_PARTICIPATE, participate);
+    }
 };
 
 // A control zone of the SecondaryVoltageControl extension: its pilot point and its control units
@@ -49,7 +51,7 @@ public:
     ControlZone() = default;
     explicit ControlZone(ObjectHandle handle, BackendProvider* backend) : ObjectRef(handle, backend) {}
 
-    std::string getName() const;
+    std::string getName() const { return getString(prop::EXT_SVC_ZONE_NAME); }
     PilotPoint getPilotPoint() const;
     // In order
     std::vector<ControlUnit> getControlUnits() const;

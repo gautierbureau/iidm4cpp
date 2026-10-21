@@ -27,24 +27,6 @@ Line MutualCoupling::getLine2() const {
     return Line(backend_->getRelated(handle_, prop::EXT_MC_LINE2), backend_);
 }
 
-double MutualCoupling::getR() const {
-    return backend_->getDouble(handle_, prop::EXT_MC_R);
-}
-
-MutualCoupling& MutualCoupling::setR(double r) {
-    backend_->setDouble(handle_, prop::EXT_MC_R, r);
-    return *this;
-}
-
-double MutualCoupling::getX() const {
-    return backend_->getDouble(handle_, prop::EXT_MC_X);
-}
-
-MutualCoupling& MutualCoupling::setX(double x) {
-    backend_->setDouble(handle_, prop::EXT_MC_X, x);
-    return *this;
-}
-
 LineSegment MutualCoupling::getLine1Segment() const {
     return detail::readLineSegment(backend_, backend_->getRelated(handle_, prop::EXT_MC_LINE1_SEGMENT));
 }

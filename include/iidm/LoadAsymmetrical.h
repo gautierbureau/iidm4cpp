@@ -19,28 +19,32 @@ public:
     LoadAsymmetrical() = default;
     explicit LoadAsymmetrical(ObjectHandle handle, BackendProvider* backend);
 
-    LoadConnectionType getConnectionType() const;
-    LoadAsymmetrical& setConnectionType(LoadConnectionType connectionType);
+    LoadConnectionType getConnectionType() const {
+        return static_cast<LoadConnectionType>(getInt(prop::EXT_LA_CONNECTION_TYPE));
+    }
+    LoadAsymmetrical& setConnectionType(LoadConnectionType connectionType) {
+        return setInt(*this, prop::EXT_LA_CONNECTION_TYPE, static_cast<int>(connectionType));
+    }
 
     // MW
-    double getDeltaPa() const;
-    LoadAsymmetrical& setDeltaPa(double deltaPa);
+    double getDeltaPa() const { return getDouble(prop::EXT_LA_DELTA_PA); }
+    LoadAsymmetrical& setDeltaPa(double deltaPa) { return setDouble(*this, prop::EXT_LA_DELTA_PA, deltaPa); }
 
     // MVar
-    double getDeltaQa() const;
-    LoadAsymmetrical& setDeltaQa(double deltaQa);
+    double getDeltaQa() const { return getDouble(prop::EXT_LA_DELTA_QA); }
+    LoadAsymmetrical& setDeltaQa(double deltaQa) { return setDouble(*this, prop::EXT_LA_DELTA_QA, deltaQa); }
 
-    double getDeltaPb() const;
-    LoadAsymmetrical& setDeltaPb(double deltaPb);
+    double getDeltaPb() const { return getDouble(prop::EXT_LA_DELTA_PB); }
+    LoadAsymmetrical& setDeltaPb(double deltaPb) { return setDouble(*this, prop::EXT_LA_DELTA_PB, deltaPb); }
 
-    double getDeltaQb() const;
-    LoadAsymmetrical& setDeltaQb(double deltaQb);
+    double getDeltaQb() const { return getDouble(prop::EXT_LA_DELTA_QB); }
+    LoadAsymmetrical& setDeltaQb(double deltaQb) { return setDouble(*this, prop::EXT_LA_DELTA_QB, deltaQb); }
 
-    double getDeltaPc() const;
-    LoadAsymmetrical& setDeltaPc(double deltaPc);
+    double getDeltaPc() const { return getDouble(prop::EXT_LA_DELTA_PC); }
+    LoadAsymmetrical& setDeltaPc(double deltaPc) { return setDouble(*this, prop::EXT_LA_DELTA_PC, deltaPc); }
 
-    double getDeltaQc() const;
-    LoadAsymmetrical& setDeltaQc(double deltaQc);
+    double getDeltaQc() const { return getDouble(prop::EXT_LA_DELTA_QC); }
+    LoadAsymmetrical& setDeltaQc(double deltaQc) { return setDouble(*this, prop::EXT_LA_DELTA_QC, deltaQc); }
 };
 
 } // namespace iidm

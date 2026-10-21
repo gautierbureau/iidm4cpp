@@ -20,11 +20,11 @@ public:
     TemporaryLimit() = default;
     explicit TemporaryLimit(ObjectHandle handle, BackendProvider* backend);
 
-    std::string getName() const;
-    double getValue() const;
+    std::string getName() const { return getString(prop::TL_NAME); }
+    double getValue() const { return getDouble(prop::TL_VALUE); }
     // Seconds
-    int getAcceptableDuration() const;
-    bool isFictitious() const;
+    int getAcceptableDuration() const { return getInt(prop::TL_ACCEPTABLE_DURATION); }
+    bool isFictitious() const { return getBool(prop::TL_FICTITIOUS); }
 };
 
 } // namespace iidm

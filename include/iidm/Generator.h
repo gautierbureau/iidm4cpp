@@ -28,22 +28,24 @@ public:
     Generator() = default;
     explicit Generator(ObjectHandle handle, BackendProvider* backend) : Injection(handle, backend) {}
 
-    double getTargetP() const;
-    Generator& setTargetP(double targetP);
+    double getTargetP() const { return getDouble(prop::GEN_TARGET_P); }
+    Generator& setTargetP(double targetP) { return setDouble(*this, prop::GEN_TARGET_P, targetP); }
 
-    double getMinP() const;
-    Generator& setMinP(double minP);
+    double getMinP() const { return getDouble(prop::GEN_MIN_P); }
+    Generator& setMinP(double minP) { return setDouble(*this, prop::GEN_MIN_P, minP); }
 
-    double getMaxP() const;
-    Generator& setMaxP(double maxP);
+    double getMaxP() const { return getDouble(prop::GEN_MAX_P); }
+    Generator& setMaxP(double maxP) { return setDouble(*this, prop::GEN_MAX_P, maxP); }
 
-    double getRatedS() const;
-    Generator& setRatedS(double ratedS);
+    double getRatedS() const { return getDouble(prop::GEN_RATED_S); }
+    Generator& setRatedS(double ratedS) { return setDouble(*this, prop::GEN_RATED_S, ratedS); }
 
-    bool isCondenser() const;
+    bool isCondenser() const { return getBool(prop::GEN_CONDENSER); }
 
-    EnergySource getEnergySource() const;
-    Generator& setEnergySource(EnergySource energySource);
+    EnergySource getEnergySource() const { return static_cast<EnergySource>(getInt(prop::GEN_ENERGY_SOURCE)); }
+    Generator& setEnergySource(EnergySource energySource) {
+        return setInt(*this, prop::GEN_ENERGY_SOURCE, static_cast<int>(energySource));
+    }
 
     // ── Solved values ────────────────────────────────────────────────────
     // Its targets (P, Q, V) from the solved values: all of them; the target P

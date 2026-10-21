@@ -31,19 +31,19 @@ public:
     Identifiable() = default;
     explicit Identifiable(ObjectHandle handle, BackendProvider* backend) : ObjectRef(handle, backend) {}
 
-    std::string getId() const;
+    std::string getId() const { return getString(prop::ID); }
     // Renames it (ValidationException when the id is taken)
-    Identifiable& setId(const std::string& id);
+    Identifiable& setId(const std::string& id) { return setString(*this, prop::ID, id); }
     // The name, or else the id
-    std::string getNameOrId() const;
+    std::string getNameOrId() const { return getString(prop::NAME); }
     // Empty when it has no name
-    iidm::optional<std::string> getOptionalName() const;
-    Identifiable& setName(const std::string& name);
+    iidm::optional<std::string> getOptionalName() const { return getOptString(prop::NAME); }
+    Identifiable& setName(const std::string& name) { return setString(*this, prop::NAME, name); }
 
-    bool isFictitious() const;
-    Identifiable& setFictitious(bool fictitious);
+    bool isFictitious() const { return getBool(prop::FICTITIOUS); }
+    Identifiable& setFictitious(bool fictitious) { return setBool(*this, prop::FICTITIOUS, fictitious); }
 
-    IdentifiableType getType() const;
+    IdentifiableType getType() const { return static_cast<IdentifiableType>(getInt(prop::IDENTIFIABLE_TYPE)); }
 
     // Its network; the smallest network that holds it (a subnetwork, or else its network). Views
     // of the network: they do not own it (include <iidm/Network.h> to use them).

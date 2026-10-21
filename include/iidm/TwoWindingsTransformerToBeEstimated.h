@@ -18,11 +18,15 @@ public:
     TwoWindingsTransformerToBeEstimated() = default;
     explicit TwoWindingsTransformerToBeEstimated(ObjectHandle handle, BackendProvider* backend);
 
-    bool shouldEstimateRatioTapChanger() const;
-    TwoWindingsTransformerToBeEstimated& shouldEstimateRatioTapChanger(bool toBeEstimated);
+    bool shouldEstimateRatioTapChanger() const { return getBool(prop::EXT_TWO_WT_TBE_RTC); }
+    TwoWindingsTransformerToBeEstimated& shouldEstimateRatioTapChanger(bool toBeEstimated) {
+        return setBool(*this, prop::EXT_TWO_WT_TBE_RTC, toBeEstimated);
+    }
 
-    bool shouldEstimatePhaseTapChanger() const;
-    TwoWindingsTransformerToBeEstimated& shouldEstimatePhaseTapChanger(bool toBeEstimated);
+    bool shouldEstimatePhaseTapChanger() const { return getBool(prop::EXT_TWO_WT_TBE_PTC); }
+    TwoWindingsTransformerToBeEstimated& shouldEstimatePhaseTapChanger(bool toBeEstimated) {
+        return setBool(*this, prop::EXT_TWO_WT_TBE_PTC, toBeEstimated);
+    }
 };
 
 } // namespace iidm

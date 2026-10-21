@@ -19,12 +19,12 @@ public:
     explicit IdentifiableShortCircuit(ObjectHandle handle, BackendProvider* backend);
 
     // Minimum allowable peak short-circuit current (A; NaN when undefined)
-    double getIpMin() const;
-    IdentifiableShortCircuit& setIpMin(double ipMin);
+    double getIpMin() const { return getDouble(prop::EXT_ISC_IP_MIN); }
+    IdentifiableShortCircuit& setIpMin(double ipMin) { return setDouble(*this, prop::EXT_ISC_IP_MIN, ipMin); }
 
     // Maximum allowable peak short-circuit current (A)
-    double getIpMax() const;
-    IdentifiableShortCircuit& setIpMax(double ipMax);
+    double getIpMax() const { return getDouble(prop::EXT_ISC_IP_MAX); }
+    IdentifiableShortCircuit& setIpMax(double ipMax) { return setDouble(*this, prop::EXT_ISC_IP_MAX, ipMax); }
 };
 
 } // namespace iidm

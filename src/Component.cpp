@@ -6,14 +6,6 @@
 
 namespace iidm {
 
-int Component::getNum() const {
-    return backend_->getInt(handle_, prop::COMPONENT_NUM);
-}
-
-int Component::getSize() const {
-    return backend_->getInt(handle_, prop::COMPONENT_SIZE);
-}
-
 std::vector<Bus> Component::getBuses() const {
     return detail::wrapAll<Bus>(backend_->getChildren(handle_, prop::BUS), backend_);
 }

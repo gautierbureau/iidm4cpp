@@ -73,10 +73,16 @@ public:
     Generator() = default;
     explicit Generator(ObjectHandle handle, BackendProvider* backend) : Injection(handle, backend) {}
 
-    double getTargetP() const;
-    Generator& setTargetP(double mw);         // chainable setter
+    // A property is one inline line: the ObjectRef helpers getDouble/getInt/getBool/getString,
+    // getOptDouble/getOptInt/getOptString, and setDouble/setInt/... which return the wrapper
+    double getTargetP() const { return getDouble(prop::GEN_TARGET_P); }
+    Generator& setTargetP(double targetP) { return setDouble(*this, prop::GEN_TARGET_P, targetP); }
+    EnergySource getEnergySource() const { return static_cast<EnergySource>(getInt(prop::GEN_ENERGY_SOURCE)); }
 };
 ```
+
+Only methods that do more than forward one property (lists, related objects, adders, anything
+returning another wrapper) are defined in `src/X.cpp`.
 
 **Class model** — the C++ classes follow the powsybl interfaces:
 
@@ -140,7 +146,8 @@ cmake/          CMake helper modules (FindGraalVM.cmake, etc.)
 1. Add a header under `include/iidm/MyComponent.h`: derive from the class of the powsybl interface
    it extends (`Injection`, `Connectable`, `Identifiable`; mixins for the others), declare
    `TYPE`, and only the methods of its own powsybl interface.
-2. Add `src/MyComponent.cpp`.
+2. Its property accessors are inline one-liners in the header (see the shape above); the rest of its
+   methods, if any, go in `src/MyComponent.cpp`.
 3. Add a type code and its property codes to `include/iidm/PropertyCodes.def`: one code per method
    of a powsybl interface, named after that interface.
 4. Expose the component through `Network` (or the appropriate parent) with a
@@ -192,8 +199,8 @@ An extension is an object of its own, as in powsybl: `ActivePowerControl` is the
    IIDM_CODE(EXT_FOO_SOME_B, 9002)  // bool
    ```
 
-2. **C++ classes** — `include/iidm/Foo.h` + `src/Foo.cpp` (the wrapper, holding the extension's
-   handle) and `include/iidm/FooAdder.h` (`detail::AdderBase`, one line per field, `add()`).
+2. **C++ classes** — `include/iidm/Foo.h` (the wrapper, holding the extension's handle, its property
+   accessors inline; `src/Foo.cpp` only for its other methods) and `include/iidm/FooAdder.h` (`detail::AdderBase`, one line per field, `add()`).
 
 3. **Host accessors** — `hasFoo()`, `getFoo()` (`ExtensionNotFoundException` when absent),
    `newFoo()` and `removeFoo()` on the class of its powsybl host type: an extension of any

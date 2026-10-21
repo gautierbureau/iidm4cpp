@@ -28,10 +28,10 @@ public:
     iidm::optional<Terminal> getTerminal() const;
     iidm::optional<Boundary> getBoundary() const;
     // In the AC interchange of the area, else in the DC one
-    bool isAc() const;
+    bool isAc() const { return getBool(prop::AREA_BOUNDARY_AC); }
     // The flows out of the area through it
-    double getP() const;
-    double getQ() const;
+    double getP() const { return getDouble(prop::AREA_BOUNDARY_P); }
+    double getQ() const { return getDouble(prop::AREA_BOUNDARY_Q); }
 };
 
 // New boundary of an area (Area::newAreaBoundary()): a terminal or a boundary; add() returns the area
@@ -54,7 +54,7 @@ public:
     Area() = default;
     explicit Area(ObjectHandle handle, BackendProvider* backend) : Identifiable(handle, backend) {}
 
-    std::string getAreaType() const;
+    std::string getAreaType() const { return getString(prop::AREA_TYPE); }
 
     // Sorted by id (include <iidm/VoltageLevel.h> to use them)
     std::vector<VoltageLevel> getVoltageLevels() const;
@@ -70,12 +70,14 @@ public:
     Area& removeAreaBoundary(const Boundary& boundary);
 
     // Empty when unset; NaN unsets it
-    iidm::optional<double> getInterchangeTarget() const;
-    Area& setInterchangeTarget(double interchangeTarget);
+    iidm::optional<double> getInterchangeTarget() const { return getOptDouble(prop::AREA_INTERCHANGE_TARGET); }
+    Area& setInterchangeTarget(double interchangeTarget) {
+        return setDouble(*this, prop::AREA_INTERCHANGE_TARGET, interchangeTarget);
+    }
     // The power leaving it through its boundaries: the AC ones, the DC ones, all of them
-    double getAcInterchange() const;
-    double getDcInterchange() const;
-    double getInterchange() const;
+    double getAcInterchange() const { return getDouble(prop::AREA_AC_INTERCHANGE); }
+    double getDcInterchange() const { return getDouble(prop::AREA_DC_INTERCHANGE); }
+    double getInterchange() const { return getDouble(prop::AREA_INTERCHANGE); }
 
     void remove();
 };

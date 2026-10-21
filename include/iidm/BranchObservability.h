@@ -19,8 +19,8 @@ public:
     BranchObservability() = default;
     explicit BranchObservability(ObjectHandle handle, BackendProvider* backend);
 
-    bool isObservable() const;
-    BranchObservability& setObservable(bool observable);
+    bool isObservable() const { return getBool(prop::EXT_OBS_OBSERVABLE); }
+    BranchObservability& setObservable(bool observable) { return setBool(*this, prop::EXT_OBS_OBSERVABLE, observable); }
 
     // Empty when the quality is not defined
     iidm::optional<ObservabilityQuality> getQualityP1() const;

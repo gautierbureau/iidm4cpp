@@ -17,11 +17,15 @@ public:
     HvdcOperatorActivePowerRange() = default;
     explicit HvdcOperatorActivePowerRange(ObjectHandle handle, BackendProvider* backend);
 
-    double getOprFromCS1toCS2() const;
-    HvdcOperatorActivePowerRange& setOprFromCS1toCS2(double value);
+    double getOprFromCS1toCS2() const { return getDouble(prop::EXT_HOAR_OPR_CS1_TO_CS2); }
+    HvdcOperatorActivePowerRange& setOprFromCS1toCS2(double value) {
+        return setDouble(*this, prop::EXT_HOAR_OPR_CS1_TO_CS2, value);
+    }
 
-    double getOprFromCS2toCS1() const;
-    HvdcOperatorActivePowerRange& setOprFromCS2toCS1(double value);
+    double getOprFromCS2toCS1() const { return getDouble(prop::EXT_HOAR_OPR_CS2_TO_CS1); }
+    HvdcOperatorActivePowerRange& setOprFromCS2toCS1(double value) {
+        return setDouble(*this, prop::EXT_HOAR_OPR_CS2_TO_CS1, value);
+    }
 };
 
 } // namespace iidm

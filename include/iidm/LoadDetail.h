@@ -18,20 +18,28 @@ public:
     explicit LoadDetail(ObjectHandle handle, BackendProvider* backend);
 
     // MW
-    double getFixedActivePower() const;
-    LoadDetail& setFixedActivePower(double fixedActivePower);
+    double getFixedActivePower() const { return getDouble(prop::EXT_LD_FIXED_ACTIVE_POWER); }
+    LoadDetail& setFixedActivePower(double fixedActivePower) {
+        return setDouble(*this, prop::EXT_LD_FIXED_ACTIVE_POWER, fixedActivePower);
+    }
 
     // MVar
-    double getFixedReactivePower() const;
-    LoadDetail& setFixedReactivePower(double fixedReactivePower);
+    double getFixedReactivePower() const { return getDouble(prop::EXT_LD_FIXED_REACTIVE_POWER); }
+    LoadDetail& setFixedReactivePower(double fixedReactivePower) {
+        return setDouble(*this, prop::EXT_LD_FIXED_REACTIVE_POWER, fixedReactivePower);
+    }
 
     // MW
-    double getVariableActivePower() const;
-    LoadDetail& setVariableActivePower(double variableActivePower);
+    double getVariableActivePower() const { return getDouble(prop::EXT_LD_VARIABLE_ACTIVE_POWER); }
+    LoadDetail& setVariableActivePower(double variableActivePower) {
+        return setDouble(*this, prop::EXT_LD_VARIABLE_ACTIVE_POWER, variableActivePower);
+    }
 
     // MVar
-    double getVariableReactivePower() const;
-    LoadDetail& setVariableReactivePower(double variableReactivePower);
+    double getVariableReactivePower() const { return getDouble(prop::EXT_LD_VARIABLE_REACTIVE_POWER); }
+    LoadDetail& setVariableReactivePower(double variableReactivePower) {
+        return setDouble(*this, prop::EXT_LD_VARIABLE_REACTIVE_POWER, variableReactivePower);
+    }
 };
 
 } // namespace iidm

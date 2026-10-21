@@ -15,8 +15,10 @@ public:
     ObservabilityQuality() = default;
     explicit ObservabilityQuality(ObjectHandle handle, BackendProvider* backend);
 
-    double getStandardDeviation() const;
-    ObservabilityQuality& setStandardDeviation(double standardDeviation);
+    double getStandardDeviation() const { return getDouble(prop::OBS_QUALITY_STANDARD_DEVIATION); }
+    ObservabilityQuality& setStandardDeviation(double standardDeviation) {
+        return setDouble(*this, prop::OBS_QUALITY_STANDARD_DEVIATION, standardDeviation);
+    }
 
     // Empty when the redundancy is undefined
     iidm::optional<bool> isRedundant() const;

@@ -19,22 +19,8 @@ Substation& Substation::setCountry(Country country) {
     return *this;
 }
 
-iidm::optional<std::string> Substation::getTso() const {
-    return backend_->getOptString(handle_, prop::SUBSTATION_TSO);
-}
-
-Substation& Substation::setTso(const std::string& tso) {
-    backend_->setString(handle_, prop::SUBSTATION_TSO, tso);
-    return *this;
-}
-
 std::vector<std::string> Substation::getGeographicalTags() const {
     return backend_->getStringList(handle_, prop::SUBSTATION_GEOGRAPHICAL_TAGS);
-}
-
-Substation& Substation::addGeographicalTag(const std::string& tag) {
-    backend_->setString(handle_, prop::ADD_GEOGRAPHICAL_TAG, tag);
-    return *this;
 }
 
 std::vector<VoltageLevel> Substation::getVoltageLevels() const {

@@ -33,26 +33,26 @@ public:
         explicit Leg(ObjectHandle handle, BackendProvider* backend) : ObjectRef(handle, backend) {}
 
         Terminal getTerminal() const;
-        ThreeSides getSide() const;
+        ThreeSides getSide() const { return static_cast<ThreeSides>(getInt(prop::LEG_SIDE)); }
         ThreeWindingsTransformer getTransformer() const;
 
-        double getR() const;
-        Leg& setR(double r);
+        double getR() const { return getDouble(prop::LEG_R); }
+        Leg& setR(double r) { return setDouble(*this, prop::LEG_R, r); }
 
-        double getX() const;
-        Leg& setX(double x);
+        double getX() const { return getDouble(prop::LEG_X); }
+        Leg& setX(double x) { return setDouble(*this, prop::LEG_X, x); }
 
-        double getG() const;
-        Leg& setG(double g);
+        double getG() const { return getDouble(prop::LEG_G); }
+        Leg& setG(double g) { return setDouble(*this, prop::LEG_G, g); }
 
-        double getB() const;
-        Leg& setB(double b);
+        double getB() const { return getDouble(prop::LEG_B); }
+        Leg& setB(double b) { return setDouble(*this, prop::LEG_B, b); }
 
-        double getRatedU() const;
-        Leg& setRatedU(double ratedU);
+        double getRatedU() const { return getDouble(prop::LEG_RATED_U); }
+        Leg& setRatedU(double ratedU) { return setDouble(*this, prop::LEG_RATED_U, ratedU); }
 
-        iidm::optional<double> getRatedS() const;
-        Leg& setRatedS(double ratedS);
+        iidm::optional<double> getRatedS() const { return getOptDouble(prop::LEG_RATED_S); }
+        Leg& setRatedS(double ratedS) { return setDouble(*this, prop::LEG_RATED_S, ratedS); }
 
         // Limits of a type (current, active power or apparent power): of the selected group, of
         // every selected group
@@ -68,8 +68,8 @@ public:
     // Empty when it is not in a substation
     iidm::optional<Substation> getSubstation() const;
 
-    double getRatedU0() const;
-    ThreeWindingsTransformer& setRatedU0(double ratedU0);
+    double getRatedU0() const { return getDouble(prop::THREE_WT_RATED_U0); }
+    ThreeWindingsTransformer& setRatedU0(double ratedU0) { return setDouble(*this, prop::THREE_WT_RATED_U0, ratedU0); }
 
     Leg getLeg1() const;
     Leg getLeg2() const;
@@ -94,10 +94,10 @@ public:
     // ── Overloads: a flow (current, active or apparent power) over the limits in force; with a
     // limit reduction, over these limits multiplied by it ──────────────────────────────────────
     // Whether the current is over the permanent limit, on any side
-    bool isOverloaded() const;
+    bool isOverloaded() const { return getBool(prop::OVERLOADED); }
     bool isOverloaded(double limitReductionValue) const;
     // The shortest acceptable duration of the overloads of the current (seconds; INT_MAX without any)
-    int getOverloadDuration() const;
+    int getOverloadDuration() const { return getInt(prop::OVERLOAD_DURATION); }
     bool checkPermanentLimit(ThreeSides side, LimitType type) const;
     bool checkPermanentLimit(ThreeSides side, double limitReductionValue, LimitType type) const;
     bool checkPermanentLimit1(LimitType type) const;

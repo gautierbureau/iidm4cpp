@@ -18,16 +18,22 @@ public:
     explicit GeneratorShortCircuit(ObjectHandle handle, BackendProvider* backend);
 
     // Direct-axis subtransient reactance (X''d)
-    double getDirectSubtransX() const;
-    GeneratorShortCircuit& setDirectSubtransX(double directSubtransX);
+    double getDirectSubtransX() const { return getDouble(prop::EXT_SC_DIRECT_SUBTRANS_X); }
+    GeneratorShortCircuit& setDirectSubtransX(double directSubtransX) {
+        return setDouble(*this, prop::EXT_SC_DIRECT_SUBTRANS_X, directSubtransX);
+    }
 
     // Direct-axis transient reactance (X'd)
-    double getDirectTransX() const;
-    GeneratorShortCircuit& setDirectTransX(double directTransX);
+    double getDirectTransX() const { return getDouble(prop::EXT_SC_DIRECT_TRANS_X); }
+    GeneratorShortCircuit& setDirectTransX(double directTransX) {
+        return setDouble(*this, prop::EXT_SC_DIRECT_TRANS_X, directTransX);
+    }
 
     // Reactance of a step-up transformer that is not modeled (NaN when none)
-    double getStepUpTransformerX() const;
-    GeneratorShortCircuit& setStepUpTransformerX(double stepUpTransformerX);
+    double getStepUpTransformerX() const { return getDouble(prop::EXT_SC_STEP_UP_TRANSFORMER_X); }
+    GeneratorShortCircuit& setStepUpTransformerX(double stepUpTransformerX) {
+        return setDouble(*this, prop::EXT_SC_STEP_UP_TRANSFORMER_X, stepUpTransformerX);
+    }
 };
 
 } // namespace iidm

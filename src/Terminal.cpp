@@ -18,11 +18,6 @@ iidm::optional<Bus> Terminal::BusBreakerView::getConnectableBus() const {
     return detail::wrapOptional<Bus>(backend_->getRelated(handle_, prop::REL_CONNECTABLE_BUS), backend_);
 }
 
-Terminal::BusBreakerView& Terminal::BusBreakerView::setConnectableBus(const std::string& busId) {
-    backend_->setString(handle_, prop::TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID, busId);
-    return *this;
-}
-
 void Terminal::BusBreakerView::moveConnectable(const std::string& busId, bool connected) {
     HandleRef move(backend_->invoke(handle_, prop::MOVE_CONNECTABLE), backend_);
     backend_->setString(move, prop::TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID, busId);
@@ -42,10 +37,6 @@ iidm::optional<Bus> Terminal::BusView::getConnectableBus() const {
 
 // ── NodeBreakerView ───────────────────────────────────────────────────────────
 
-int Terminal::NodeBreakerView::getNode() const {
-    return backend_->getInt(handle_, prop::TERMINAL_NODE);
-}
-
 void Terminal::NodeBreakerView::moveConnectable(int node, const std::string& voltageLevelId) {
     HandleRef move(backend_->invoke(handle_, prop::MOVE_CONNECTABLE), backend_);
     backend_->setInt(move, prop::TERMINAL_NODE, node);
@@ -55,34 +46,8 @@ void Terminal::NodeBreakerView::moveConnectable(int node, const std::string& vol
 
 // ── Terminal ──────────────────────────────────────────────────────────────────
 
-double Terminal::getP() const {
-    return backend_->getDouble(handle_, prop::TERMINAL_P);
-}
-
-Terminal& Terminal::setP(double p) {
-    backend_->setDouble(handle_, prop::TERMINAL_P, p);
-    return *this;
-}
-
-double Terminal::getQ() const {
-    return backend_->getDouble(handle_, prop::TERMINAL_Q);
-}
-
-Terminal& Terminal::setQ(double q) {
-    backend_->setDouble(handle_, prop::TERMINAL_Q, q);
-    return *this;
-}
-
-double Terminal::getI() const {
-    return backend_->getDouble(handle_, prop::TERMINAL_I);
-}
-
 void Terminal::unsetSolvedValues() {
     backend_->invoke(handle_, prop::ACT_UNSET_SOLVED_VALUES);
-}
-
-bool Terminal::isConnected() const {
-    return backend_->getBool(handle_, prop::TERMINAL_CONNECTED);
 }
 
 bool Terminal::connect() {

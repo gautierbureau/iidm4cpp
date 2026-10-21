@@ -23,7 +23,7 @@ public:
     explicit ReferencePriority(ObjectHandle handle, BackendProvider* backend) : ObjectRef(handle, backend) {}
 
     Terminal getTerminal() const;
-    int getPriority() const;
+    int getPriority() const { return getInt(prop::EXT_RP_PRIORITY); }
 
     // The powsybl helpers: the priority of an injection, of a side of a branch or of a three windings
     // transformer (0 when it has none); set: the extension is created when absent, and the priority

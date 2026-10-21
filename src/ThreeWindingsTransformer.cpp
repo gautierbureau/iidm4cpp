@@ -14,81 +14,14 @@ Terminal ThreeWindingsTransformer::Leg::getTerminal() const {
     return Terminal(backend_->getRelated(handle_, prop::REL_TERMINAL), backend_);
 }
 
-ThreeSides ThreeWindingsTransformer::Leg::getSide() const {
-    return static_cast<ThreeSides>(backend_->getInt(handle_, prop::LEG_SIDE));
-}
-
 ThreeWindingsTransformer ThreeWindingsTransformer::Leg::getTransformer() const {
     return ThreeWindingsTransformer(backend_->getRelated(handle_, prop::THREE_WINDINGS_TRANSFORMER), backend_);
-}
-
-double ThreeWindingsTransformer::Leg::getR() const {
-    return backend_->getDouble(handle_, prop::LEG_R);
-}
-
-ThreeWindingsTransformer::Leg& ThreeWindingsTransformer::Leg::setR(double r) {
-    backend_->setDouble(handle_, prop::LEG_R, r);
-    return *this;
-}
-
-double ThreeWindingsTransformer::Leg::getX() const {
-    return backend_->getDouble(handle_, prop::LEG_X);
-}
-
-ThreeWindingsTransformer::Leg& ThreeWindingsTransformer::Leg::setX(double x) {
-    backend_->setDouble(handle_, prop::LEG_X, x);
-    return *this;
-}
-
-double ThreeWindingsTransformer::Leg::getG() const {
-    return backend_->getDouble(handle_, prop::LEG_G);
-}
-
-ThreeWindingsTransformer::Leg& ThreeWindingsTransformer::Leg::setG(double g) {
-    backend_->setDouble(handle_, prop::LEG_G, g);
-    return *this;
-}
-
-double ThreeWindingsTransformer::Leg::getB() const {
-    return backend_->getDouble(handle_, prop::LEG_B);
-}
-
-ThreeWindingsTransformer::Leg& ThreeWindingsTransformer::Leg::setB(double b) {
-    backend_->setDouble(handle_, prop::LEG_B, b);
-    return *this;
-}
-
-double ThreeWindingsTransformer::Leg::getRatedU() const {
-    return backend_->getDouble(handle_, prop::LEG_RATED_U);
-}
-
-ThreeWindingsTransformer::Leg& ThreeWindingsTransformer::Leg::setRatedU(double ratedU) {
-    backend_->setDouble(handle_, prop::LEG_RATED_U, ratedU);
-    return *this;
-}
-
-iidm::optional<double> ThreeWindingsTransformer::Leg::getRatedS() const {
-    return backend_->getOptDouble(handle_, prop::LEG_RATED_S);
-}
-
-ThreeWindingsTransformer::Leg& ThreeWindingsTransformer::Leg::setRatedS(double ratedS) {
-    backend_->setDouble(handle_, prop::LEG_RATED_S, ratedS);
-    return *this;
 }
 
 // ── ThreeWindingsTransformer ──────────────────────────────────────────────────
 
 iidm::optional<Substation> ThreeWindingsTransformer::getSubstation() const {
     return detail::wrapOptional<Substation>(backend_->getRelated(handle_, prop::REL_SUBSTATION), backend_);
-}
-
-double ThreeWindingsTransformer::getRatedU0() const {
-    return backend_->getDouble(handle_, prop::THREE_WT_RATED_U0);
-}
-
-ThreeWindingsTransformer& ThreeWindingsTransformer::setRatedU0(double ratedU0) {
-    backend_->setDouble(handle_, prop::THREE_WT_RATED_U0, ratedU0);
-    return *this;
 }
 
 ThreeWindingsTransformer::Leg ThreeWindingsTransformer::getLeg1() const {
@@ -142,16 +75,8 @@ void ThreeWindingsTransformer::setPhaseTapPositionToSolvedTapPosition() {
 
 // ── Overloads ────────────────────────────────────────────────────────────────
 
-bool ThreeWindingsTransformer::isOverloaded() const {
-    return backend_->getBool(handle_, prop::OVERLOADED);
-}
-
 bool ThreeWindingsTransformer::isOverloaded(double limitReductionValue) const {
     return backend_->evaluate(handle_, prop::OVERLOADED, {limitReductionValue}) != 0;
-}
-
-int ThreeWindingsTransformer::getOverloadDuration() const {
-    return backend_->getInt(handle_, prop::OVERLOAD_DURATION);
 }
 
 bool ThreeWindingsTransformer::checkPermanentLimit(ThreeSides side, LimitType type) const {

@@ -32,10 +32,6 @@ Terminal ReferencePriority::getTerminal() const {
     return Terminal(backend_->getRelated(handle_, prop::REL_TERMINAL), backend_);
 }
 
-int ReferencePriority::getPriority() const {
-    return backend_->getInt(handle_, prop::EXT_RP_PRIORITY);
-}
-
 int ReferencePriority::get(const Injection& injection) {
     return priorityOf(injection, std::vector<double>());
 }

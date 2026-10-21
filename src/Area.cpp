@@ -24,18 +24,6 @@ iidm::optional<Boundary> AreaBoundary::getBoundary() const {
     return detail::wrapOptional<Boundary>(backend_->getRelated(handle_, prop::BOUNDARY), backend_);
 }
 
-bool AreaBoundary::isAc() const {
-    return backend_->getBool(handle_, prop::AREA_BOUNDARY_AC);
-}
-
-double AreaBoundary::getP() const {
-    return backend_->getDouble(handle_, prop::AREA_BOUNDARY_P);
-}
-
-double AreaBoundary::getQ() const {
-    return backend_->getDouble(handle_, prop::AREA_BOUNDARY_Q);
-}
-
 // ── AreaBoundaryAdder ─────────────────────────────────────────────────────────
 
 AreaBoundaryAdder& AreaBoundaryAdder::setTerminal(const Terminal& terminal) {
@@ -74,10 +62,6 @@ AreaAdder& AreaAdder::addBoundary(int code, ObjectHandle at, bool ac) {
 }
 
 // ── Area ──────────────────────────────────────────────────────────────────────
-
-std::string Area::getAreaType() const {
-    return backend_->getString(handle_, prop::AREA_TYPE);
-}
 
 std::vector<VoltageLevel> Area::getVoltageLevels() const {
     return detail::wrapAll<VoltageLevel>(backend_->getChildren(handle_, prop::VOLTAGE_LEVEL), backend_);
@@ -125,27 +109,6 @@ Area& Area::removeAreaBoundary(const Terminal& terminal) {
 Area& Area::removeAreaBoundary(const Boundary& boundary) {
     backend_->setRelated(handle_, prop::REMOVE_AREA_BOUNDARY, detail::Access::handle(boundary));
     return *this;
-}
-
-iidm::optional<double> Area::getInterchangeTarget() const {
-    return backend_->getOptDouble(handle_, prop::AREA_INTERCHANGE_TARGET);
-}
-
-Area& Area::setInterchangeTarget(double interchangeTarget) {
-    backend_->setDouble(handle_, prop::AREA_INTERCHANGE_TARGET, interchangeTarget);
-    return *this;
-}
-
-double Area::getAcInterchange() const {
-    return backend_->getDouble(handle_, prop::AREA_AC_INTERCHANGE);
-}
-
-double Area::getDcInterchange() const {
-    return backend_->getDouble(handle_, prop::AREA_DC_INTERCHANGE);
-}
-
-double Area::getInterchange() const {
-    return backend_->getDouble(handle_, prop::AREA_INTERCHANGE);
 }
 
 void Area::remove() {

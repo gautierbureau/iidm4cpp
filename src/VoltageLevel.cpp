@@ -38,10 +38,6 @@ std::vector<int> VoltageLevel::NodeBreakerView::getNodes() const {
     return backend_->getIntList(handle_, prop::VL_NBV_NODES);
 }
 
-int VoltageLevel::NodeBreakerView::getMaximumNodeIndex() const {
-    return backend_->getInt(handle_, prop::VL_NBV_MAXIMUM_NODE_INDEX);
-}
-
 iidm::optional<Terminal> VoltageLevel::NodeBreakerView::getTerminal(int node) const {
     return detail::wrapOptional<Terminal>(backend_->getRelatedByIndex(handle_, prop::REL_NBV_TERMINAL_AT_NODE, node), backend_);
 }
@@ -262,37 +258,6 @@ iidm::optional<Bus> VoltageLevel::BusView::getMergedBus(const std::string& confi
 
 iidm::optional<Substation> VoltageLevel::getSubstation() const {
     return detail::wrapOptional<Substation>(backend_->getRelated(handle_, prop::REL_SUBSTATION), backend_);
-}
-
-double VoltageLevel::getNominalV() const {
-    return backend_->getDouble(handle_, prop::VL_NOMINAL_V);
-}
-
-VoltageLevel& VoltageLevel::setNominalV(double nominalV) {
-    backend_->setDouble(handle_, prop::VL_NOMINAL_V, nominalV);
-    return *this;
-}
-
-iidm::optional<double> VoltageLevel::getLowVoltageLimit() const {
-    return backend_->getOptDouble(handle_, prop::VL_LOW_VOLTAGE_LIMIT);
-}
-
-VoltageLevel& VoltageLevel::setLowVoltageLimit(double lowVoltageLimit) {
-    backend_->setDouble(handle_, prop::VL_LOW_VOLTAGE_LIMIT, lowVoltageLimit);
-    return *this;
-}
-
-iidm::optional<double> VoltageLevel::getHighVoltageLimit() const {
-    return backend_->getOptDouble(handle_, prop::VL_HIGH_VOLTAGE_LIMIT);
-}
-
-VoltageLevel& VoltageLevel::setHighVoltageLimit(double highVoltageLimit) {
-    backend_->setDouble(handle_, prop::VL_HIGH_VOLTAGE_LIMIT, highVoltageLimit);
-    return *this;
-}
-
-TopologyKind VoltageLevel::getTopologyKind() const {
-    return static_cast<TopologyKind>(backend_->getInt(handle_, prop::VL_TOPOLOGY_KIND));
 }
 
 void VoltageLevel::convertToTopology(TopologyKind topologyKind) {

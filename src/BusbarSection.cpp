@@ -5,14 +5,6 @@
 
 namespace iidm {
 
-double BusbarSection::getV() const {
-    return backend_->getDouble(handle_, prop::BBS_V);
-}
-
-double BusbarSection::getAngle() const {
-    return backend_->getDouble(handle_, prop::BBS_ANGLE);
-}
-
 bool BusbarSection::hasBusbarSectionPosition() const {
     return detail::hasExtension<BusbarSectionPosition>(backend_, handle_);
 }

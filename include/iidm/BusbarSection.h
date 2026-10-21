@@ -13,8 +13,8 @@ public:
     BusbarSection() = default;
     explicit BusbarSection(ObjectHandle handle, BackendProvider* backend) : Injection(handle, backend) {}
 
-    double getV() const;
-    double getAngle() const;
+    double getV() const { return getDouble(prop::BBS_V); }
+    double getAngle() const { return getDouble(prop::BBS_ANGLE); }
 
     // ── Extensions ───────────────────────────────────────────────────────
     // An extension's getter throws ExtensionNotFoundException when it is absent

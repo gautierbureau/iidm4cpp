@@ -18,32 +18,36 @@ public:
     explicit GeneratorFortescue(ObjectHandle handle, BackendProvider* backend);
 
     // Whether it is grounded
-    bool isGrounded() const;
-    GeneratorFortescue& setGrounded(bool grounded);
+    bool isGrounded() const { return getBool(prop::EXT_GF_GROUNDED); }
+    GeneratorFortescue& setGrounded(bool grounded) { return setBool(*this, prop::EXT_GF_GROUNDED, grounded); }
 
     // Zero-sequence resistance
-    double getRz() const;
-    GeneratorFortescue& setRz(double rz);
+    double getRz() const { return getDouble(prop::EXT_GF_RZ); }
+    GeneratorFortescue& setRz(double rz) { return setDouble(*this, prop::EXT_GF_RZ, rz); }
 
     // Zero-sequence reactance
-    double getXz() const;
-    GeneratorFortescue& setXz(double xz);
+    double getXz() const { return getDouble(prop::EXT_GF_XZ); }
+    GeneratorFortescue& setXz(double xz) { return setDouble(*this, prop::EXT_GF_XZ, xz); }
 
     // Negative-sequence resistance
-    double getRn() const;
-    GeneratorFortescue& setRn(double rn);
+    double getRn() const { return getDouble(prop::EXT_GF_RN); }
+    GeneratorFortescue& setRn(double rn) { return setDouble(*this, prop::EXT_GF_RN, rn); }
 
     // Negative-sequence reactance
-    double getXn() const;
-    GeneratorFortescue& setXn(double xn);
+    double getXn() const { return getDouble(prop::EXT_GF_XN); }
+    GeneratorFortescue& setXn(double xn) { return setDouble(*this, prop::EXT_GF_XN, xn); }
 
     // Resistance to ground, when grounded
-    double getGroundingR() const;
-    GeneratorFortescue& setGroundingR(double groundingR);
+    double getGroundingR() const { return getDouble(prop::EXT_GF_GROUNDING_R); }
+    GeneratorFortescue& setGroundingR(double groundingR) {
+        return setDouble(*this, prop::EXT_GF_GROUNDING_R, groundingR);
+    }
 
     // Reactance to ground, when grounded
-    double getGroundingX() const;
-    GeneratorFortescue& setGroundingX(double groundingX);
+    double getGroundingX() const { return getDouble(prop::EXT_GF_GROUNDING_X); }
+    GeneratorFortescue& setGroundingX(double groundingX) {
+        return setDouble(*this, prop::EXT_GF_GROUNDING_X, groundingX);
+    }
 };
 
 } // namespace iidm

@@ -16,18 +16,18 @@ public:
     Line() = default;
     explicit Line(ObjectHandle handle, BackendProvider* backend) : Connectable(handle, backend) {}
 
-    double getR() const;
-    Line& setR(double r);
-    double getX() const;
-    Line& setX(double x);
-    double getG1() const;
-    Line& setG1(double g1);
-    double getB1() const;
-    Line& setB1(double b1);
-    double getG2() const;
-    Line& setG2(double g2);
-    double getB2() const;
-    Line& setB2(double b2);
+    double getR() const { return getDouble(prop::LINE_R); }
+    Line& setR(double r) { return setDouble(*this, prop::LINE_R, r); }
+    double getX() const { return getDouble(prop::LINE_X); }
+    Line& setX(double x) { return setDouble(*this, prop::LINE_X, x); }
+    double getG1() const { return getDouble(prop::LINE_G1); }
+    Line& setG1(double g1) { return setDouble(*this, prop::LINE_G1, g1); }
+    double getB1() const { return getDouble(prop::LINE_B1); }
+    Line& setB1(double b1) { return setDouble(*this, prop::LINE_B1, b1); }
+    double getG2() const { return getDouble(prop::LINE_G2); }
+    Line& setG2(double g2) { return setDouble(*this, prop::LINE_G2, g2); }
+    double getB2() const { return getDouble(prop::LINE_B2); }
+    Line& setB2(double b2) { return setDouble(*this, prop::LINE_B2, b2); }
 
     // ── Extensions ───────────────────────────────────────────────────────
     // An extension's getter throws ExtensionNotFoundException when it is absent

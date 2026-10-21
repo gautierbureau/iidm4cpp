@@ -19,13 +19,13 @@ public:
     VoltageAngleLimit() = default;
     explicit VoltageAngleLimit(ObjectHandle handle, BackendProvider* backend) : ObjectRef(handle, backend) {}
 
-    std::string getId() const;
-    LimitType getLimitType() const;
+    std::string getId() const { return getString(prop::VAL_ID); }
+    LimitType getLimitType() const { return static_cast<LimitType>(getInt(prop::LL_LIMIT_TYPE)); }
     Terminal getTerminalFrom() const;
     Terminal getTerminalTo() const;
     // Degrees; empty when unset
-    iidm::optional<double> getLowLimit() const;
-    iidm::optional<double> getHighLimit() const;
+    iidm::optional<double> getLowLimit() const { return getOptDouble(prop::VAL_LOW_LIMIT); }
+    iidm::optional<double> getHighLimit() const { return getOptDouble(prop::VAL_HIGH_LIMIT); }
 
     void remove();
 };

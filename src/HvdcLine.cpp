@@ -8,51 +8,6 @@
 
 namespace iidm {
 
-double HvdcLine::getR() const {
-    return backend_->getDouble(handle_, prop::HVDC_R);
-}
-
-HvdcLine& HvdcLine::setR(double r) {
-    backend_->setDouble(handle_, prop::HVDC_R, r);
-    return *this;
-}
-
-double HvdcLine::getNominalV() const {
-    return backend_->getDouble(handle_, prop::HVDC_NOMINAL_V);
-}
-
-HvdcLine& HvdcLine::setNominalV(double nominalV) {
-    backend_->setDouble(handle_, prop::HVDC_NOMINAL_V, nominalV);
-    return *this;
-}
-
-double HvdcLine::getActivePowerSetpoint() const {
-    return backend_->getDouble(handle_, prop::HVDC_ACTIVE_POWER_SETPOINT);
-}
-
-HvdcLine& HvdcLine::setActivePowerSetpoint(double value) {
-    backend_->setDouble(handle_, prop::HVDC_ACTIVE_POWER_SETPOINT, value);
-    return *this;
-}
-
-double HvdcLine::getMaxP() const {
-    return backend_->getDouble(handle_, prop::HVDC_MAX_P);
-}
-
-HvdcLine& HvdcLine::setMaxP(double maxP) {
-    backend_->setDouble(handle_, prop::HVDC_MAX_P, maxP);
-    return *this;
-}
-
-HvdcConverterStationMode HvdcLine::getConvertersMode() const {
-    return static_cast<HvdcConverterStationMode>(backend_->getInt(handle_, prop::HVDC_CONVERTERS_MODE));
-}
-
-HvdcLine& HvdcLine::setConvertersMode(HvdcConverterStationMode mode) {
-    backend_->setInt(handle_, prop::HVDC_CONVERTERS_MODE, static_cast<int>(mode));
-    return *this;
-}
-
 HvdcConverterStation HvdcLine::getConverterStation1() const {
     return HvdcConverterStation(backend_->getRelated(handle_, prop::REL_CONVERTER_STATION1), backend_);
 }

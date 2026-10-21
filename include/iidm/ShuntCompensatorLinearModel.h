@@ -13,12 +13,18 @@ public:
     explicit ShuntCompensatorLinearModel(ObjectHandle handle, BackendProvider* backend)
         : ShuntCompensatorModel(handle, backend) {}
 
-    double getBPerSection() const;
-    ShuntCompensatorLinearModel& setBPerSection(double bPerSection);
-    double getGPerSection() const;
-    ShuntCompensatorLinearModel& setGPerSection(double gPerSection);
+    double getBPerSection() const { return getDouble(prop::SHUNT_B_PER_SECTION); }
+    ShuntCompensatorLinearModel& setBPerSection(double bPerSection) {
+        return setDouble(*this, prop::SHUNT_B_PER_SECTION, bPerSection);
+    }
+    double getGPerSection() const { return getDouble(prop::SHUNT_G_PER_SECTION); }
+    ShuntCompensatorLinearModel& setGPerSection(double gPerSection) {
+        return setDouble(*this, prop::SHUNT_G_PER_SECTION, gPerSection);
+    }
     // (ShuntCompensator::getMaximumSectionCount() reads it)
-    ShuntCompensatorLinearModel& setMaximumSectionCount(int maximumSectionCount);
+    ShuntCompensatorLinearModel& setMaximumSectionCount(int maximumSectionCount) {
+        return setInt(*this, prop::SHUNT_MAX_SECTION_COUNT, maximumSectionCount);
+    }
 };
 
 } // namespace iidm

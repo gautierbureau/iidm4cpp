@@ -20,52 +20,8 @@
 
 namespace iidm {
 
-double Bus::getV() const {
-    return backend_->getDouble(handle_, prop::BUS_V);
-}
-
-Bus& Bus::setV(double v) {
-    backend_->setDouble(handle_, prop::BUS_V, v);
-    return *this;
-}
-
-double Bus::getAngle() const {
-    return backend_->getDouble(handle_, prop::BUS_ANGLE);
-}
-
-Bus& Bus::setAngle(double angle) {
-    backend_->setDouble(handle_, prop::BUS_ANGLE, angle);
-    return *this;
-}
-
 void Bus::unsetSolvedValues() {
     backend_->invoke(handle_, prop::ACT_UNSET_SOLVED_VALUES);
-}
-
-double Bus::getP() const {
-    return backend_->getDouble(handle_, prop::BUS_P);
-}
-
-double Bus::getQ() const {
-    return backend_->getDouble(handle_, prop::BUS_Q);
-}
-
-double Bus::getFictitiousP0() const {
-    return backend_->getDouble(handle_, prop::FICTITIOUS_P0);
-}
-
-Bus& Bus::setFictitiousP0(double p0) {
-    backend_->setDouble(handle_, prop::FICTITIOUS_P0, p0);
-    return *this;
-}
-
-double Bus::getFictitiousQ0() const {
-    return backend_->getDouble(handle_, prop::FICTITIOUS_Q0);
-}
-
-Bus& Bus::setFictitiousQ0(double q0) {
-    backend_->setDouble(handle_, prop::FICTITIOUS_Q0, q0);
-    return *this;
 }
 
 iidm::optional<Component> Bus::getConnectedComponent() const {
@@ -74,14 +30,6 @@ iidm::optional<Component> Bus::getConnectedComponent() const {
 
 iidm::optional<Component> Bus::getSynchronousComponent() const {
     return detail::wrapOptional<Component>(backend_->getRelated(handle_, prop::REL_SYNCHRONOUS_COMPONENT), backend_);
-}
-
-bool Bus::isInMainConnectedComponent() const {
-    return backend_->getBool(handle_, prop::BUS_IN_MAIN_CONNECTED_COMPONENT);
-}
-
-bool Bus::isInMainSynchronousComponent() const {
-    return backend_->getBool(handle_, prop::BUS_IN_MAIN_SYNCHRONOUS_COMPONENT);
 }
 
 VoltageLevel Bus::getVoltageLevel() const {

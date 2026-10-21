@@ -16,11 +16,11 @@ public:
     StaticVarCompensator() = default;
     explicit StaticVarCompensator(ObjectHandle handle, BackendProvider* backend) : Injection(handle, backend) {}
 
-    double getBmin() const;
-    StaticVarCompensator& setBmin(double bMin);
+    double getBmin() const { return getDouble(prop::SVC_B_MIN); }
+    StaticVarCompensator& setBmin(double bMin) { return setDouble(*this, prop::SVC_B_MIN, bMin); }
 
-    double getBmax() const;
-    StaticVarCompensator& setBmax(double bMax);
+    double getBmax() const { return getDouble(prop::SVC_B_MAX); }
+    StaticVarCompensator& setBmax(double bMax) { return setDouble(*this, prop::SVC_B_MAX, bMax); }
 
     // ── Extensions ───────────────────────────────────────────────────────
     // An extension's getter throws ExtensionNotFoundException when it is absent

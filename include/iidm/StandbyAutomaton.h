@@ -20,28 +20,36 @@ public:
     explicit StandbyAutomaton(ObjectHandle handle, BackendProvider* backend);
 
     // In standby
-    bool isStandby() const;
-    StandbyAutomaton& setStandby(bool standby);
+    bool isStandby() const { return getBool(prop::EXT_SA_STANDBY); }
+    StandbyAutomaton& setStandby(bool standby) { return setBool(*this, prop::EXT_SA_STANDBY, standby); }
 
     // The fixed susceptance in standby (S), between the bounds of the compensator
-    double getB0() const;
-    StandbyAutomaton& setB0(double b0);
+    double getB0() const { return getDouble(prop::EXT_SA_B0); }
+    StandbyAutomaton& setB0(double b0) { return setDouble(*this, prop::EXT_SA_B0, b0); }
 
     // The voltage setpoint once the low voltage threshold is reached (kV)
-    double getLowVoltageSetpoint() const;
-    StandbyAutomaton& setLowVoltageSetpoint(double lowVoltageSetpoint);
+    double getLowVoltageSetpoint() const { return getDouble(prop::EXT_SA_LOW_VOLTAGE_SETPOINT); }
+    StandbyAutomaton& setLowVoltageSetpoint(double lowVoltageSetpoint) {
+        return setDouble(*this, prop::EXT_SA_LOW_VOLTAGE_SETPOINT, lowVoltageSetpoint);
+    }
 
     // The voltage setpoint once the high voltage threshold is reached (kV)
-    double getHighVoltageSetpoint() const;
-    StandbyAutomaton& setHighVoltageSetpoint(double highVoltageSetpoint);
+    double getHighVoltageSetpoint() const { return getDouble(prop::EXT_SA_HIGH_VOLTAGE_SETPOINT); }
+    StandbyAutomaton& setHighVoltageSetpoint(double highVoltageSetpoint) {
+        return setDouble(*this, prop::EXT_SA_HIGH_VOLTAGE_SETPOINT, highVoltageSetpoint);
+    }
 
     // kV
-    double getLowVoltageThreshold() const;
-    StandbyAutomaton& setLowVoltageThreshold(double lowVoltageThreshold);
+    double getLowVoltageThreshold() const { return getDouble(prop::EXT_SA_LOW_VOLTAGE_THRESHOLD); }
+    StandbyAutomaton& setLowVoltageThreshold(double lowVoltageThreshold) {
+        return setDouble(*this, prop::EXT_SA_LOW_VOLTAGE_THRESHOLD, lowVoltageThreshold);
+    }
 
     // kV
-    double getHighVoltageThreshold() const;
-    StandbyAutomaton& setHighVoltageThreshold(double highVoltageThreshold);
+    double getHighVoltageThreshold() const { return getDouble(prop::EXT_SA_HIGH_VOLTAGE_THRESHOLD); }
+    StandbyAutomaton& setHighVoltageThreshold(double highVoltageThreshold) {
+        return setDouble(*this, prop::EXT_SA_HIGH_VOLTAGE_THRESHOLD, highVoltageThreshold);
+    }
 };
 
 } // namespace iidm
