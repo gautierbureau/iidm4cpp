@@ -77,12 +77,17 @@ ThreeWindingsTransformer::Leg& ThreeWindingsTransformer::Leg::setRatedS(double r
 
 // ── ThreeWindingsTransformer ──────────────────────────────────────────────────
 
+iidm::optional<Substation> ThreeWindingsTransformer::getSubstation() const {
+    return detail::wrapOptional<Substation>(backend_->getRelated(handle_, prop::REL_SUBSTATION), backend_);
+}
+
 double ThreeWindingsTransformer::getRatedU0() const {
     return backend_->getDouble(handle_, prop::THREE_WT_RATED_U0);
 }
 
-Substation ThreeWindingsTransformer::getSubstation() const {
-    return Substation(backend_->getRelated(handle_, prop::REL_SUBSTATION), backend_);
+ThreeWindingsTransformer& ThreeWindingsTransformer::setRatedU0(double ratedU0) {
+    backend_->setDouble(handle_, prop::THREE_WT_RATED_U0, ratedU0);
+    return *this;
 }
 
 ThreeWindingsTransformer::Leg ThreeWindingsTransformer::getLeg1() const {
@@ -111,6 +116,27 @@ Terminal ThreeWindingsTransformer::getTerminal(ThreeSides side) const {
 
 Terminal ThreeWindingsTransformer::getTerminal(const std::string& voltageLevelId) const {
     return Terminal(backend_->getRelatedByString(handle_, prop::REL_TERMINAL, voltageLevelId), backend_);
+}
+
+ThreeSides ThreeWindingsTransformer::getSide(const Terminal& terminal) const {
+    for (ThreeSides side : {ThreeSides::ONE, ThreeSides::TWO, ThreeSides::THREE}) {
+        if (getTerminal(side) == terminal) return side;
+    }
+    throw ValidationException("The terminal is not connected to three windings transformer " + getId());
+}
+
+// ── Solved values ────────────────────────────────────────────────────────────
+
+void ThreeWindingsTransformer::applySolvedValues() {
+    backend_->invoke(handle_, prop::ACT_APPLY_SOLVED_VALUES);
+}
+
+void ThreeWindingsTransformer::setRatioTapPositionToSolvedTapPosition() {
+    backend_->invoke(handle_, prop::ACT_SET_RATIO_TAP_POSITION_TO_SOLVED_TAP_POSITION);
+}
+
+void ThreeWindingsTransformer::setPhaseTapPositionToSolvedTapPosition() {
+    backend_->invoke(handle_, prop::ACT_SET_PHASE_TAP_POSITION_TO_SOLVED_TAP_POSITION);
 }
 
 // ── Extensions ───────────────────────────────────────────────────────────────

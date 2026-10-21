@@ -134,6 +134,9 @@ public final class Creation {
             case APPARENT_POWER_LIMITS -> ((OperationalLimitsGroup) owner).newApparentPowerLimits();
             case TEMPORARY_LIMIT -> ((LoadingLimitsAdder<?, ?>) owner).beginTemporaryLimit();
             case LL_TEMPORARY_LIMIT_VALUE -> new TemporaryLimitValueChange((LoadingLimits) owner);
+            case TC_STEPS_REPLACER -> PropertyDispatcher.tapChanger(owner).stepsReplacer();
+            case RATIO_TAP_CHANGER_STEP -> ((RatioTapChangerStepsReplacer) owner).beginStep();
+            case PHASE_TAP_CHANGER_STEP -> ((PhaseTapChangerStepsReplacer) owner).beginStep();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown type to create: " + type);
         };
         return new PendingAdd(adder, parent);
@@ -165,6 +168,14 @@ public final class Creation {
             }
             case TemporaryLimitValueChange change -> {
                 change.apply();
+                yield null;
+            }
+            case TapChangerStepAdder<?, ?> step -> {
+                step.endStep();
+                yield null;
+            }
+            case TapChangerStepsReplacer<?, ?> replacer -> {
+                replacer.replaceSteps();
                 yield null;
             }
             case NewGroup group -> group.holder.newOperationalLimitsGroup(Objects.requireNonNull(group.id, "group id"));
@@ -270,6 +281,12 @@ public final class Creation {
                     ((LoadingLimitsAdder.TemporaryLimitAdder<?>) a).setValue(value);
                 }
             }
+            case STEP_RHO -> ((TapChangerStepAdder<?, ?>) a).setRho(value);
+            case STEP_R -> ((TapChangerStepAdder<?, ?>) a).setR(value);
+            case STEP_X -> ((TapChangerStepAdder<?, ?>) a).setX(value);
+            case STEP_G -> ((TapChangerStepAdder<?, ?>) a).setG(value);
+            case STEP_B -> ((TapChangerStepAdder<?, ?>) a).setB(value);
+            case PTC_STEP_ALPHA -> ((PhaseTapChangerStepAdder<?, ?>) a).setAlpha(value);
             default -> throw unknownField("double", property);
         }
     }

@@ -5,6 +5,7 @@
 #include <iidm/PropertyCodes.h>
 #include <iidm/RatioTapChangerStep.h>
 #include <iidm/TapChanger.h>
+#include <iidm/TapChangerStepsReplacer.h>
 #include <iidm/VoltageRegulationHolder.h>
 
 namespace iidm {
@@ -14,7 +15,7 @@ namespace iidm {
 // VoltageRegulation (powsybl 7.4).
 class RatioTapChanger : public detail::ObjectRef,
                         public detail::PropertiesHolder<RatioTapChanger>,
-                        public detail::TapChangerMethods<RatioTapChanger, RatioTapChangerStep>,
+                        public detail::TapChangerMethods<RatioTapChanger, RatioTapChangerStep, RatioTapChangerStepsReplacer>,
                         public detail::VoltageRegulationHolderMethods<RatioTapChanger> {
 public:
     static constexpr int TYPE = prop::RATIO_TAP_CHANGER;
@@ -23,7 +24,7 @@ public:
     explicit RatioTapChanger(ObjectHandle handle, BackendProvider* backend) : ObjectRef(handle, backend) {}
 
     // The same method in both powsybl interfaces
-    using detail::TapChangerMethods<RatioTapChanger, RatioTapChangerStep>::isRegulating;
+    using detail::TapChangerMethods<RatioTapChanger, RatioTapChangerStep, RatioTapChangerStepsReplacer>::isRegulating;
 };
 
 } // namespace iidm

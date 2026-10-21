@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <iidm/iidm.h>
 #include "RealBackends.h"
+#include <cmath>
 #include <set>
 #include <string>
 
@@ -161,6 +162,75 @@ void checkDanglingLine(BackendProvider& b) {
     EXPECT_DOUBLE_EQ(dl.getCurrentLimits()->getPermanentLimit(), 1000.0);
 }
 
+// Values, solved tap positions and steps changed (after checkTwoWindingsTransformer: the ratio tap
+// changer of T2 is at position 1, its phase tap changer removed)
+void checkTransformerChanges(BackendProvider& b) {
+    TwoWindingsTransformer t2(b.findById(prop::TWO_WINDINGS_TRANSFORMER, "T2"), &b);
+    EXPECT_EQ(t2.getSubstation()->getId(), "S");
+    t2.setR(0.6).setX(21).setG(1e-6).setB(1e-5).setRatedU1(410).setRatedU2(230).setRatedS(350);
+    EXPECT_DOUBLE_EQ(t2.getR(), 0.6);
+    EXPECT_DOUBLE_EQ(t2.getX(), 21.0);
+    EXPECT_DOUBLE_EQ(t2.getG(), 1e-6);
+    EXPECT_DOUBLE_EQ(t2.getB(), 1e-5);
+    EXPECT_DOUBLE_EQ(t2.getRatedU1(), 410.0);
+    EXPECT_DOUBLE_EQ(t2.getRatedU2(), 230.0);
+    EXPECT_EQ(t2.getRatedS(), iidm::optional<double>(350.0));
+    t2.setRatedS(NAN);
+    EXPECT_FALSE(t2.getRatedS());
+    EXPECT_THROW(t2.setRatedU1(NAN), ValidationException);
+
+    RatioTapChanger rtc = *t2.getRatioTapChanger();
+    rtc.setSolvedTapPosition(-1);
+    t2.setPhaseTapPositionToSolvedTapPosition(); // it has none: no change
+    EXPECT_EQ(rtc.getTapPosition(), 1);
+    t2.setRatioTapPositionToSolvedTapPosition();
+    EXPECT_EQ(rtc.getTapPosition(), -1);
+    rtc.setSolvedTapPosition(0);
+    t2.applySolvedValues();
+    EXPECT_EQ(rtc.getTapPosition(), 0);
+    EXPECT_EQ(rtc.findSolvedTapPosition(), iidm::optional<int>(0));
+    t2.unsetSolvedValues();
+    EXPECT_FALSE(rtc.findSolvedTapPosition());
+
+    // Two steps instead of three, from the low tap position (-1); the tap position (0) stays in
+    rtc.stepsReplacer()
+        .beginStep().setRho(0.9).setR(0).setX(1).setG(0).setB(0).setProperty("origin", "c++").endStep()
+        .beginStep().setRho(1.0).setR(0).setX(1).setG(0).setB(0).endStep()
+        .replaceSteps();
+    EXPECT_EQ(rtc.getStepCount(), 2);
+    EXPECT_EQ(rtc.getHighTapPosition(), 0);
+    EXPECT_DOUBLE_EQ(rtc.getStep(-1).getRho(), 0.9);
+    EXPECT_EQ(rtc.getStep(-1).getProperty("origin"), iidm::optional<std::string>("c++"));
+    // One step only: the tap position would be out of them
+    EXPECT_THROW(rtc.stepsReplacer().beginStep().setRho(1).setR(0).setX(0).setG(0).setB(0).endStep().replaceSteps(),
+                 ValidationException);
+    EXPECT_EQ(rtc.getStepCount(), 2);
+
+    ThreeWindingsTransformer t3(b.findById(prop::THREE_WINDINGS_TRANSFORMER, "T3"), &b);
+    EXPECT_EQ(t3.getSubstation()->getId(), "S");
+    t3.setRatedU0(390);
+    EXPECT_DOUBLE_EQ(t3.getRatedU0(), 390.0);
+    EXPECT_EQ(t3.getSide(t3.getLeg2().getTerminal()), ThreeSides::TWO);
+    EXPECT_THROW(t3.getSide(t2.getTerminal1()), ValidationException);
+
+    // Leg 1: a phase tap changer from -2 to 0, at 0
+    PhaseTapChanger ptc1 = *t3.getLeg1().getPhaseTapChanger();
+    ptc1.setSolvedTapPosition(-1);
+    t3.setRatioTapPositionToSolvedTapPosition(); // the ratio tap changers only
+    EXPECT_EQ(ptc1.getTapPosition(), 0);
+    t3.setPhaseTapPositionToSolvedTapPosition();
+    EXPECT_EQ(ptc1.getTapPosition(), -1);
+    ptc1.setSolvedTapPosition(-2);
+    t3.applySolvedValues();
+    EXPECT_EQ(ptc1.getTapPosition(), -2);
+    ptc1.stepsReplacer()
+        .beginStep().setAlpha(-4).setRho(1).setR(0).setX(0).setG(0).setB(0).endStep()
+        .beginStep().setAlpha(4).setRho(1).setR(0).setX(0).setG(0).setB(0).endStep()
+        .replaceSteps();
+    EXPECT_EQ(ptc1.getStepCount(), 2);
+    EXPECT_DOUBLE_EQ(ptc1.getStep(-1).getAlpha(), 4.0);
+}
+
 // Reading tap changers, steps and legs leaves no Java reference behind
 void checkHandlesAreReleased(BackendProvider& b) {
     ThreeWindingsTransformer t3(b.findById(prop::THREE_WINDINGS_TRANSFORMER, "T3"), &b);
@@ -187,6 +257,7 @@ void checkTransformers(BackendProvider& b) {
     checkThreeWindingsTransformer(b);
     checkDanglingLine(b);
     checkHandlesAreReleased(b);
+    checkTransformerChanges(b);
 }
 
 } // namespace

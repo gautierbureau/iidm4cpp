@@ -34,9 +34,11 @@
 // int values (node numbers, tap positions) and sides; evaluate with a set of argument lists.
 // invoke(object, TYPE), which starts an adder and changes nothing, is compared the same way. Every
 // value read is then written back with the matching setter: both backends must accept or reject it
-// alike, and read back the same value. Both networks must then save to the same XIIDM; last, every
-// identifiable is removed (in reverse visit order), with the same outcome, and the XIIDM compared
-// again. One case builds its network through the C++ adders instead of loading it.
+// alike, and read back the same value. Then every action (ACT_*) that changes an object's values
+// (solved values applied or unset, tap positions unset...) is applied to every object, with the
+// same outcome. Both networks must then save to the same XIIDM; last, every identifiable is removed
+// (in reverse visit order), with the same outcome, and the XIIDM compared again. One case builds
+// its network through the C++ adders instead of loading it.
 //
 // Every code is tried with every accessor on the first object reached through a given link (the
 // network's GENERATOR children, a generator's REL_TERMINAL...). A code that fails there because
@@ -287,6 +289,7 @@ public:
             for (; lookedUp < visited_.size(); ++lookedUp) lookUp(*visited_[lookedUp]);
         }
         for (const std::unique_ptr<Twin>& twin : visited_) writeBack(*twin);
+        for (const std::unique_ptr<Twin>& twin : visited_) applyActions(*twin);
         compareSavedNetworks();
         removeAll();
         compareSavedNetworks();
@@ -297,6 +300,7 @@ public:
     std::size_t values = 0; // comparisons where both backends returned (not threw)
     std::size_t writes = 0; // setter calls accepted by both backends
     std::size_t adders = 0; // adders started by both backends
+    std::size_t actions = 0; // actions applied by both backends
     std::size_t removals = 0;
     std::size_t objects() const { return visited_.size(); }
     std::size_t links() const { return codesByLink_.size(); }
@@ -472,6 +476,21 @@ private:
         }
     }
 
+    // The actions that change values, on every object; adding, removing and connecting are
+    // compared elsewhere
+    void applyActions(Twin& twin) {
+        for (const Code& code : codes_) {
+            if (!isAction(code) || code.value == prop::ACT_ADD || code.value == prop::ACT_REMOVE
+                || code.value == prop::ACT_CONNECT || code.value == prop::ACT_DISCONNECT) continue;
+            std::vector<ObjectHandle> objectsG, objectsJ;
+            Outcome g = attempt([&] { return show(g_.invoke(twin.g, code.value), objectsG); });
+            Outcome j = attempt([&] { return show(j_.invoke(twin.j, code.value), objectsJ); });
+            for (ObjectHandle h : objectsG) g_.releaseHandle(h);
+            for (ObjectHandle h : objectsJ) j_.releaseHandle(h);
+            if (compare("invoke", twin.path, code.name, g, j) && !g.threw()) ++actions;
+        }
+    }
+
     // Removes every identifiable, in reverse visit order: equipment before its voltage level
     void removeAll() {
         for (auto it = visited_.rbegin(); it != visited_.rend(); ++it) {
@@ -625,12 +644,13 @@ private:
         disconnectAndConnect(twin);
     }
 
-    // Terminals and connectables: disconnected, then connected (a disconnected terminal: the other way round)
+    // Terminals, connectables and HVDC lines: disconnected, then connected (a disconnected terminal:
+    // the other way round)
     void disconnectAndConnect(Twin& twin) {
         bool connected = true;
         try {
             if (twin.identifiable) {
-                if (!g_.getBool(twin.g, prop::CONNECTABLE)) return;
+                if (!g_.getBool(twin.g, prop::CONNECTABLE) && !g_.getBool(twin.g, prop::HVDC_LINE)) return;
             } else {
                 connected = g_.getBool(twin.g, prop::TERMINAL_CONNECTED); // throws for other objects
             }
@@ -700,9 +720,9 @@ void checkConformance(const std::string& name, const std::function<void(BackendP
 
     Conformance conformance(graalvm, jni);
     conformance.run();
-    std::printf("%s: %zu objects (%zu kinds of links), %zu comparisons, %zu values, %zu writes, %zu adders, %zu removals\n",
+    std::printf("%s: %zu objects (%zu kinds of links), %zu comparisons, %zu values, %zu writes, %zu adders, %zu actions, %zu removals\n",
                 name.c_str(), conformance.objects(), conformance.links(), conformance.comparisons, conformance.values,
-                conformance.writes, conformance.adders, conformance.removals);
+                conformance.writes, conformance.adders, conformance.actions, conformance.removals);
 
     std::string report;
     for (std::size_t i = 0; i < conformance.mismatches.size() && i < 30; ++i) report += conformance.mismatches[i] + "\n";
@@ -711,6 +731,7 @@ void checkConformance(const std::string& name, const std::function<void(BackendP
     EXPECT_GT(conformance.values, 100u);
     EXPECT_GT(conformance.writes, 10u);
     EXPECT_GT(conformance.adders, 0u);
+    EXPECT_GT(conformance.actions, 0u);
     EXPECT_GT(conformance.removals, 0u);
 }
 

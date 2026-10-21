@@ -18,16 +18,25 @@ public:
     explicit HvdcLine(ObjectHandle handle, BackendProvider* backend) : Identifiable(handle, backend) {}
 
     double getR() const;
+    HvdcLine& setR(double r);
     double getNominalV() const;
+    HvdcLine& setNominalV(double nominalV);
     double getActivePowerSetpoint() const;
     HvdcLine& setActivePowerSetpoint(double value);
     double getMaxP() const;
+    HvdcLine& setMaxP(double maxP);
 
     HvdcConverterStationMode getConvertersMode() const;
     HvdcLine& setConvertersMode(HvdcConverterStationMode mode);
 
     HvdcConverterStation getConverterStation1() const;
     HvdcConverterStation getConverterStation2() const;
+    HvdcConverterStation getConverterStation(TwoSides side) const;
+
+    // Connects (disconnects) both converter stations, operating breakers if needed: true when
+    // this changed them, false when it could not, or already was
+    bool connectConverterStations();
+    bool disconnectConverterStations();
 
     // Removes the HVDC line (its converter stations stay)
     void remove();

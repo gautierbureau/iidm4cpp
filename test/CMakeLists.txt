@@ -10,6 +10,7 @@ set(TEST_SOURCES
     TestTransformers.cpp
     TestLimitsNetwork.cpp
     TestShuntsNetwork.cpp
+    TestLinesNetwork.cpp
     TestTopologyViews.cpp
     TestGenerator.cpp
     TestActivePowerControl.cpp

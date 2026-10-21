@@ -55,6 +55,7 @@ public:
     Self& setSelectedOperationalLimitsGroup1(const std::string& id);
     Self& setSelectedOperationalLimitsGroup2(const std::string& id);
     void addSelectedOperationalLimitsGroups(TwoSides side, const std::vector<std::string>& ids);
+    void addSelectedOperationalLimitsGroupByPredicate(TwoSides side, const std::function<bool(const std::string&)>& idPredicate);
     void deselectOperationalLimitsGroups(TwoSides side, const std::vector<std::string>& ids);
     void cancelSelectedOperationalLimitsGroup1();
     void cancelSelectedOperationalLimitsGroup2();

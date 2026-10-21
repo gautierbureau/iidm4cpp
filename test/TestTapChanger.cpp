@@ -105,6 +105,39 @@ TEST_F(TapChangerTest, Actions) {
     EXPECT_EQ(backend.invocations[4], std::make_pair(RTC, prop::ACT_REMOVE));
 }
 
+TEST_F(TapChangerTest, FindSolvedTapPosition) {
+    RatioTapChanger tc = rtc();
+    EXPECT_FALSE(tc.findSolvedTapPosition());
+    backend.optInts[{RTC, prop::TC_SOLVED_TAP_POSITION}] = 1;
+    EXPECT_EQ(tc.findSolvedTapPosition(), iidm::optional<int>(1));
+}
+
+// Every step at once: the replacer, a nested adder for each step, then replaceSteps
+TEST_F(TapChangerTest, StepsReplacer) {
+    RatioTapChanger tc = rtc();
+    RatioTapChangerStepsReplacer replacer = tc.stepsReplacer();
+    const ObjectHandle replacerHandle = backend.lastAdder;
+    EXPECT_EQ(backend.invocations.back(), std::make_pair(RTC, prop::TC_STEPS_REPLACER));
+    replacer.beginStep().setRho(0.95).setR(0.1).setX(0.2).setG(0.3).setB(0.4).setProperty("k", "v").endStep()
+            .replaceSteps();
+    const ObjectHandle step = replacerHandle + 1;
+    ASSERT_EQ(backend.invocations.size(), 4u);
+    EXPECT_EQ(backend.invocations[1], std::make_pair(replacerHandle, prop::RATIO_TAP_CHANGER_STEP));
+    EXPECT_DOUBLE_EQ((backend.doubles[{step, prop::STEP_RHO}]), 0.95);
+    EXPECT_DOUBLE_EQ((backend.doubles[{step, prop::STEP_R}]), 0.1);
+    EXPECT_DOUBLE_EQ((backend.doubles[{step, prop::STEP_X}]), 0.2);
+    EXPECT_DOUBLE_EQ((backend.doubles[{step, prop::STEP_G}]), 0.3);
+    EXPECT_DOUBLE_EQ((backend.doubles[{step, prop::STEP_B}]), 0.4);
+    EXPECT_EQ((backend.keyedStrings[std::make_tuple(step, prop::PROPERTY, std::string("k"))]), "v");
+    EXPECT_EQ(backend.invocations[2], std::make_pair(step, prop::ACT_ADD));
+    EXPECT_EQ(backend.invocations[3], std::make_pair(replacerHandle, prop::ACT_ADD));
+
+    ptc().stepsReplacer().beginStep().setAlpha(-5.0).setRho(1.0).endStep().replaceSteps();
+    const ObjectHandle phaseStep = backend.lastAdder;
+    EXPECT_EQ(backend.invocations[5], std::make_pair(phaseStep - 1, prop::PHASE_TAP_CHANGER_STEP));
+    EXPECT_DOUBLE_EQ((backend.doubles[{phaseStep, prop::PTC_STEP_ALPHA}]), -5.0);
+}
+
 TEST_F(TapChangerTest, StepsByTapPosition) {
     RatioTapChanger tc = rtc();
     std::map<int, RatioTapChangerStep> steps = tc.getAllSteps();

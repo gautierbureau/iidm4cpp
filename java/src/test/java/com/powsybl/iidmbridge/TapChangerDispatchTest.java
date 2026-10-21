@@ -230,4 +230,84 @@ class TapChangerDispatchTest {
         assertEquals(0L, PropertyDispatcher.getRelated(leg2, REL_SELECTED_OLG));
         assertEquals(0L, PropertyDispatcher.getRelated(leg2, CURRENT_LIMITS));
     }
+
+    // Every step replaced at once: the replacer, then each new step (nested: ACT_ADD returns null)
+    @Test void stepsReplacer() {
+        long rtc = reg(twt.getRatioTapChanger());
+        long replacer = PropertyDispatcher.invoke(rtc, TC_STEPS_REPLACER);
+        for (double rho : new double[] {0.95, 1.0}) {
+            long step = PropertyDispatcher.invoke(replacer, RATIO_TAP_CHANGER_STEP);
+            PropertyDispatcher.setDouble(step, STEP_RHO, rho);
+            PropertyDispatcher.setDouble(step, STEP_R, 0.5);
+            PropertyDispatcher.setDouble(step, STEP_X, 0);
+            PropertyDispatcher.setDouble(step, STEP_G, 0);
+            PropertyDispatcher.setDouble(step, STEP_B, 0);
+            PropertyDispatcher.setKeyedString(step, PROPERTY, "origin", "replacer");
+            assertEquals(0L, PropertyDispatcher.invoke(step, ACT_ADD));
+        }
+        assertEquals(3, twt.getRatioTapChanger().getStepCount()); // not yet
+        assertEquals(0L, PropertyDispatcher.invoke(replacer, ACT_ADD));
+        RatioTapChanger tc = twt.getRatioTapChanger();
+        assertEquals(2, tc.getStepCount());
+        assertEquals(0.95, tc.getStep(-1).getRho());
+        assertEquals(0.5, tc.getStep(0).getR());
+
+        // A phase tap changer step has an angle too; a step of the other kind is not one of its steps
+        long ptcReplacer = PropertyDispatcher.invoke(reg(twt.getPhaseTapChanger()), TC_STEPS_REPLACER);
+        assertEquals(BridgeErrors.PROPERTY_NOT_FOUND, kindOfFailure(() -> PropertyDispatcher.invoke(ptcReplacer, RATIO_TAP_CHANGER_STEP)));
+        long step = PropertyDispatcher.invoke(ptcReplacer, PHASE_TAP_CHANGER_STEP);
+        PropertyDispatcher.setDouble(step, PTC_STEP_ALPHA, 5);
+        PropertyDispatcher.setDouble(step, STEP_RHO, 1);
+        PropertyDispatcher.invoke(step, ACT_ADD);
+        // The tap position (1) must stay within the steps
+        assertEquals(BridgeErrors.VALIDATION, kindOfFailure(() -> PropertyDispatcher.invoke(ptcReplacer, ACT_ADD)));
+    }
+
+    @Test void solvedTapPositionsOfTransformers() {
+        twt.getRatioTapChanger().setSolvedTapPosition(1);
+        twt.getPhaseTapChanger().setSolvedTapPosition(0);
+        PropertyDispatcher.invoke(reg(twt), ACT_SET_RATIO_TAP_POSITION_TO_SOLVED_TAP_POSITION);
+        assertEquals(1, twt.getRatioTapChanger().getTapPosition());
+        assertEquals(1, twt.getPhaseTapChanger().getTapPosition());
+        PropertyDispatcher.invoke(reg(twt), ACT_SET_PHASE_TAP_POSITION_TO_SOLVED_TAP_POSITION);
+        assertEquals(0, twt.getPhaseTapChanger().getTapPosition());
+        twt.getRatioTapChanger().setSolvedTapPosition(-1);
+        PropertyDispatcher.invoke(reg(twt), ACT_APPLY_SOLVED_VALUES);
+        assertEquals(-1, twt.getRatioTapChanger().getTapPosition());
+        PropertyDispatcher.invoke(reg(twt), ACT_UNSET_SOLVED_VALUES);
+        assertTrue(twt.getRatioTapChanger().findSolvedTapPosition().isEmpty());
+
+        twt3.getLeg2().getRatioTapChanger().setSolvedTapPosition(1);
+        PropertyDispatcher.invoke(reg(twt3), ACT_SET_RATIO_TAP_POSITION_TO_SOLVED_TAP_POSITION);
+        PropertyDispatcher.invoke(reg(twt3), ACT_SET_PHASE_TAP_POSITION_TO_SOLVED_TAP_POSITION); // none: no change
+        PropertyDispatcher.invoke(reg(twt3), ACT_APPLY_SOLVED_VALUES);
+        assertEquals(1, twt3.getLeg2().getRatioTapChanger().getTapPosition());
+        assertEquals(BridgeErrors.PROPERTY_NOT_FOUND,
+            kindOfFailure(() -> PropertyDispatcher.invoke(reg(twt.getRatioTapChanger()), ACT_SET_RATIO_TAP_POSITION_TO_SOLVED_TAP_POSITION)));
+    }
+
+    @Test void transformerValues() {
+        long t2 = reg(twt);
+        PropertyDispatcher.setDouble(t2, TWO_WT_R, 2);
+        PropertyDispatcher.setDouble(t2, TWO_WT_X, 20);
+        PropertyDispatcher.setDouble(t2, TWO_WT_G, 1e-6);
+        PropertyDispatcher.setDouble(t2, TWO_WT_B, 1e-5);
+        PropertyDispatcher.setDouble(t2, TWO_WT_RATED_U1, 410);
+        PropertyDispatcher.setDouble(t2, TWO_WT_RATED_U2, 230);
+        PropertyDispatcher.setDouble(t2, TWO_WT_RATED_S, 300);
+        assertEquals(20, twt.getX());
+        assertEquals(1e-5, twt.getB());
+        assertEquals(230, twt.getRatedU2());
+        assertEquals(300, twt.getRatedS());
+        PropertyDispatcher.setDouble(t2, TWO_WT_RATED_S, Double.NaN);
+        assertTrue(Double.isNaN(twt.getRatedS()));
+        assertEquals(BridgeErrors.VALIDATION, kindOfFailure(() -> PropertyDispatcher.setDouble(t2, TWO_WT_X, Double.NaN)));
+
+        PropertyDispatcher.setDouble(reg(twt3), THREE_WT_RATED_U0, 150);
+        assertEquals(150, twt3.getRatedU0());
+
+        // Their substation
+        assertSame(network.getSubstation("S"), obj(PropertyDispatcher.getRelated(t2, REL_SUBSTATION)));
+        assertSame(network.getSubstation("S"), obj(PropertyDispatcher.getRelated(reg(twt3), REL_SUBSTATION)));
+    }
 }

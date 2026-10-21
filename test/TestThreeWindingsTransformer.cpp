@@ -60,7 +60,29 @@ TEST_F(ThreeWindingsTransformerTest, Transformer) {
     ThreeWindingsTransformer twt(TWT, &backend);
     EXPECT_EQ(twt.getId(), "3WT1");
     EXPECT_DOUBLE_EQ(twt.getRatedU0(), 110.0);
-    EXPECT_EQ(twt.getSubstation().getId(), "SUB1");
+    EXPECT_EQ(twt.getSubstation()->getId(), "SUB1");
+    EXPECT_EQ(&twt.setRatedU0(120.0), &twt);
+    EXPECT_DOUBLE_EQ((backend.doubles[{TWT, prop::THREE_WT_RATED_U0}]), 120.0);
+    backend.related.erase({TWT, prop::REL_SUBSTATION});
+    EXPECT_FALSE(twt.getSubstation());
+}
+
+TEST_F(ThreeWindingsTransformerTest, SideOfATerminal) {
+    ThreeWindingsTransformer twt(TWT, &backend);
+    EXPECT_EQ(twt.getSide(Terminal(T2, &backend)), ThreeSides::TWO);
+    EXPECT_EQ(twt.getSide(Terminal(T3, &backend)), ThreeSides::THREE);
+    EXPECT_THROW(twt.getSide(Terminal(99, &backend)), ValidationException);
+}
+
+TEST_F(ThreeWindingsTransformerTest, SolvedValues) {
+    ThreeWindingsTransformer twt(TWT, &backend);
+    twt.applySolvedValues();
+    twt.setRatioTapPositionToSolvedTapPosition();
+    twt.setPhaseTapPositionToSolvedTapPosition();
+    ASSERT_EQ(backend.invocations.size(), 3u);
+    EXPECT_EQ(backend.invocations[0], std::make_pair(TWT, prop::ACT_APPLY_SOLVED_VALUES));
+    EXPECT_EQ(backend.invocations[1], std::make_pair(TWT, prop::ACT_SET_RATIO_TAP_POSITION_TO_SOLVED_TAP_POSITION));
+    EXPECT_EQ(backend.invocations[2], std::make_pair(TWT, prop::ACT_SET_PHASE_TAP_POSITION_TO_SOLVED_TAP_POSITION));
 }
 
 TEST_F(ThreeWindingsTransformerTest, Legs) {
