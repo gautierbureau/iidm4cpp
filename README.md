@@ -705,6 +705,12 @@ g.removeActivePowerControl();
   area boundaries, overload management system trippings), and every extension. A node-breaker
   voltage level gets its busbar sections, switches and internal connections from its
   `getNodeBreakerView()`, a bus-breaker one its buses and switches from its `getBusBreakerView()`.
+- **Copies,** as in powsybl: `network.newLine(line)` and `substation.newTwoWindingsTransformer(transformer)`
+  start from the values of another one (and give the new one its operational limits on `add()`);
+  `newRatioTapChanger(tapChanger)`, `newPhaseTapChanger(tapChanger)`, `newReactiveCapabilityCurve(curve)`
+  and an operational limits group's `newCurrentLimits(limits)`... copy the object given;
+  `LineAdder::fillLineAdder` and `TwoWindingsTransformerAdder::fillTwoWindingsTransformerAdder` set the
+  values of an object on an adder.
 
 Underneath, there is one backend primitive, `invoke(handle, code)` (§5.1): `invoke(parent, TYPE)`
 returns a Java adder, the adder's fields are set with the usual setters and the object's own

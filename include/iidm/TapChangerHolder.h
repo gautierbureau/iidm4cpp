@@ -25,6 +25,9 @@ public:
     // New tap changers, which replace the current ones on add()
     RatioTapChangerAdder newRatioTapChanger();
     PhaseTapChangerAdder newPhaseTapChanger();
+    // The same, with the values, regulation and steps of another one (a copy)
+    RatioTapChangerAdder newRatioTapChanger(const RatioTapChanger& copied);
+    PhaseTapChangerAdder newPhaseTapChanger(const PhaseTapChanger& copied);
 
 protected:
     TapChangerHolderMethods() = default;

@@ -334,3 +334,49 @@ TEST_F(AddersTest, Topology) {
     EXPECT_EQ((backend.strings[{a, prop::SW_BUS2}]), "B2");
     EXPECT_FALSE((backend.bools[{a, prop::SW_OPEN}]));
 }
+
+// Copies: the adder of a copy is a new adder restarted from the copied object (COPY_OF); a fill sets the
+// values of an object on an adder (FILL_FROM)
+TEST_F(AddersTest, Copies) {
+    static constexpr ObjectHandle NETWORK = 1; // the mock's network
+    static constexpr ObjectHandle S = 30, LINE = 40, TWT = 41, RTC = 42, PTC = 43, CURVE = 44, LIMITS = 45, GROUP = 46, GEN = 47;
+    std::unique_ptr<MockBackend> mock(new MockBackend());
+    MockBackend& b = *mock;
+    Network network = NetworkFactory::createFromBackend(std::move(mock));
+
+    network.newLine(Line(LINE, &b)).setId("L2");
+    EXPECT_EQ(b.invocations[0], call(NETWORK, prop::LINE));
+    EXPECT_EQ((b.related[{b.lastAdder, prop::COPY_OF}]), LINE);
+    EXPECT_EQ((b.strings[{b.lastAdder, prop::ID}]), "L2");
+    LineAdder line = network.newLine();
+    EXPECT_EQ(&LineAdder::fillLineAdder(line, Line(LINE, &b)), &line);
+    EXPECT_EQ((b.related[{b.lastAdder, prop::FILL_FROM}]), LINE);
+
+    Substation s(S, &b);
+    s.newTwoWindingsTransformer(TwoWindingsTransformer(TWT, &b));
+    EXPECT_EQ(b.invocations.back(), call(S, prop::TWO_WINDINGS_TRANSFORMER));
+    EXPECT_EQ((b.related[{b.lastAdder, prop::COPY_OF}]), TWT);
+    TwoWindingsTransformerAdder transformer = s.newTwoWindingsTransformer();
+    TwoWindingsTransformerAdder::fillTwoWindingsTransformerAdder(transformer, TwoWindingsTransformer(TWT, &b));
+    EXPECT_EQ((b.related[{b.lastAdder, prop::FILL_FROM}]), TWT);
+
+    TwoWindingsTransformer twt(TWT, &b);
+    twt.newRatioTapChanger(RatioTapChanger(RTC, &b));
+    EXPECT_EQ(b.invocations.back(), call(TWT, prop::RATIO_TAP_CHANGER));
+    EXPECT_EQ((b.related[{b.lastAdder, prop::COPY_OF}]), RTC);
+    twt.newPhaseTapChanger(PhaseTapChanger(PTC, &b));
+    EXPECT_EQ(b.invocations.back(), call(TWT, prop::PHASE_TAP_CHANGER));
+    EXPECT_EQ((b.related[{b.lastAdder, prop::COPY_OF}]), PTC);
+
+    Generator(GEN, &b).newReactiveCapabilityCurve(ReactiveCapabilityCurve(CURVE, &b));
+    EXPECT_EQ(b.invocations.back(), call(GEN, prop::REACTIVE_CAPABILITY_CURVE));
+    EXPECT_EQ((b.related[{b.lastAdder, prop::COPY_OF}]), CURVE);
+    OperationalLimitsGroup group(GROUP, &b);
+    group.newCurrentLimits(CurrentLimits(LIMITS, &b));
+    EXPECT_EQ(b.invocations.back(), call(GROUP, prop::CURRENT_LIMITS));
+    EXPECT_EQ((b.related[{b.lastAdder, prop::COPY_OF}]), LIMITS);
+    group.newActivePowerLimits(ActivePowerLimits(LIMITS, &b));
+    EXPECT_EQ(b.invocations.back(), call(GROUP, prop::ACTIVE_POWER_LIMITS));
+    group.newApparentPowerLimits(ApparentPowerLimits(LIMITS, &b));
+    EXPECT_EQ(b.invocations.back(), call(GROUP, prop::APPARENT_POWER_LIMITS));
+}

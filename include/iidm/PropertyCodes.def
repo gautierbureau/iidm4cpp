@@ -683,6 +683,13 @@ IIDM_CODE(HAS_REGULATING_TERMINAL,     2217) // bool: the regulation has a termi
 // take the object's own property codes (setDouble(adder, GEN_TARGET_P, 100)); nothing changes
 // in the network until invoke(adder, ACT_ADD).
 IIDM_CODE(ACT_ADD,                     5000) // invoke(adder): adds the object, returns it (INVALID_HANDLE for nested adders)
+// A copy: setRelated(adder, COPY_OF, copied), before any field, restarts the adder of a new line, two
+// windings transformer, tap changer, reactive capability curve or loading limits from the copied object
+// (powsybl newX(copied): a line or a transformer also gets the operational limits of the copied one on
+// add()); setRelated(adder, FILL_FROM, copied) fills the adder of a line or of a two windings
+// transformer with its values (LineAdder.fillLineAdder, TwoWindingsTransformerAdder.fillTwoWindingsTransformerAdder).
+IIDM_CODE(COPY_OF,                     5090) // related, set only, on an adder
+IIDM_CODE(FILL_FROM,                   5091) // related, set only, on an adder
 IIDM_CODE(ACT_REMOVE,                  5001) // invoke(identifiable): removes it from the network; invoke(tap changer): removes it
 // invoke(terminal or connectable, ACT_CONNECT / ACT_DISCONNECT): connects / disconnects it (every
 // terminal of a connectable, the converter stations of an HVDC line); returns the object when this

@@ -46,8 +46,27 @@ public final class Creation {
 
     private Creation() {}
 
-    /** A powsybl adder (or builder) handed to C++, with what it belongs to: an object, or a parent adder. */
-    record PendingAdd(Object adder, Object parent) {}
+    /**
+     * A powsybl adder (or builder) handed to C++, with what it belongs to: an object, or a parent adder.
+     * COPY_OF restarts it from powsybl's adder of a copy (see {@link #copyAdder}).
+     */
+    static final class PendingAdd {
+        private Object adder;
+        private final Object parent;
+
+        PendingAdd(Object adder, Object parent) {
+            this.adder = adder;
+            this.parent = parent;
+        }
+
+        Object adder() {
+            return adder;
+        }
+
+        Object parent() {
+            return parent;
+        }
+    }
 
     /** The arguments of VoltageRegulation.setTerminal(terminal, targetValue); null terminal: local regulation. */
     static final class TerminalChange {
@@ -532,6 +551,22 @@ public final class Creation {
             boolean removed = coupling != null ? couplings.removeMutualCoupling(coupling) : couplings.removeMutualCoupling(line1, line2);
             return removed ? couplings : null;
         }
+    }
+
+    /** powsybl's adder of a copy of the object (Network.newLine(copied)...), on the parent of a pending adder. */
+    private static Object copyAdder(Object parent, Object copied) {
+        Object owner = parent instanceof PendingAdd p ? p.adder() : parent;
+        return switch (copied) {
+            case Line line -> ((Network) owner).newLine(line);
+            case TwoWindingsTransformer transformer -> ((Substation) owner).newTwoWindingsTransformer(transformer);
+            case RatioTapChanger tapChanger -> ((RatioTapChangerHolder) owner).newRatioTapChanger(tapChanger);
+            case PhaseTapChanger tapChanger -> ((PhaseTapChangerHolder) owner).newPhaseTapChanger(tapChanger);
+            case ReactiveCapabilityCurve curve -> ((ReactiveLimitsHolder) owner).newReactiveCapabilityCurve(curve);
+            case CurrentLimits limits -> ((OperationalLimitsGroup) owner).newCurrentLimits(limits);
+            case ActivePowerLimits limits -> ((OperationalLimitsGroup) owner).newActivePowerLimits(limits);
+            case ApparentPowerLimits limits -> ((OperationalLimitsGroup) owner).newApparentPowerLimits(limits);
+            default -> throw new BridgeErrors.PropertyNotFoundException("No copy of " + copied);
+        };
     }
 
     /** A new, empty network. */
@@ -1355,6 +1390,21 @@ public final class Creation {
                 }
             }
             case MUTUAL_COUPLING -> ((MutualCouplingQuery) a).coupling = (MutualCoupling) value;
+            case COPY_OF -> {
+                Object copy = copyAdder(pending.parent(), value);
+                if (copy.getClass() != a.getClass()) {
+                    throw new BridgeErrors.PropertyNotFoundException("Not a copy for this adder: " + value);
+                }
+                pending.adder = copy;
+            }
+            case FILL_FROM -> {
+                if (a instanceof LineAdder adder) {
+                    LineAdder.fillLineAdder(adder, (Line) value);
+                } else {
+                    TwoWindingsTransformerAdder.fillTwoWindingsTransformerAdder((TwoWindingsTransformerAdder) a,
+                        (TwoWindingsTransformer) value);
+                }
+            }
             default -> throw unknownField("related object", relation);
         }
     }

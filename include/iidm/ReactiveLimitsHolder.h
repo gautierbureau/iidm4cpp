@@ -26,6 +26,8 @@ public:
     // New reactive limits, which replace the current ones on add()
     MinMaxReactiveLimitsAdder newMinMaxReactiveLimits();
     ReactiveCapabilityCurveAdder newReactiveCapabilityCurve();
+    // A curve with the points of another one (a copy)
+    ReactiveCapabilityCurveAdder newReactiveCapabilityCurve(const ReactiveCapabilityCurve& copied);
     ReactiveCapabilityShapeAdder newReactiveCapabilityShape();
 
 protected:

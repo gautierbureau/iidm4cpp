@@ -41,6 +41,18 @@ ActivePowerLimitsAdder OperationalLimitsGroup::newActivePowerLimits() {
     return ActivePowerLimitsAdder(backend_->invoke(handle_, ActivePowerLimits::TYPE), backend_);
 }
 
+CurrentLimitsAdder OperationalLimitsGroup::newCurrentLimits(const CurrentLimits& copied) {
+    return detail::copyAdder<CurrentLimitsAdder>(backend_, handle_, prop::CURRENT_LIMITS, detail::Access::handle(copied));
+}
+
+ActivePowerLimitsAdder OperationalLimitsGroup::newActivePowerLimits(const ActivePowerLimits& copied) {
+    return detail::copyAdder<ActivePowerLimitsAdder>(backend_, handle_, prop::ACTIVE_POWER_LIMITS, detail::Access::handle(copied));
+}
+
+ApparentPowerLimitsAdder OperationalLimitsGroup::newApparentPowerLimits(const ApparentPowerLimits& copied) {
+    return detail::copyAdder<ApparentPowerLimitsAdder>(backend_, handle_, prop::APPARENT_POWER_LIMITS, detail::Access::handle(copied));
+}
+
 ApparentPowerLimitsAdder OperationalLimitsGroup::newApparentPowerLimits() {
     return ApparentPowerLimitsAdder(backend_->invoke(handle_, ApparentPowerLimits::TYPE), backend_);
 }

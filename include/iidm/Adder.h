@@ -61,6 +61,16 @@ protected:
     IdentifiableAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase<Self>(adder, backend) {}
 };
 
+// The adder of a copy of an object (powsybl newX(copied)): a new adder (invoke(parent, type)),
+// restarted from the copied object
+template <class A>
+A copyAdder(BackendProvider* backend, ObjectHandle parent, int type, ObjectHandle copied) {
+    const ObjectHandle handle = backend->invoke(parent, type);
+    A adder(handle, backend);
+    backend->setRelated(handle, prop::COPY_OF, copied);
+    return adder;
+}
+
 // Equipment (powsybl ConnectableAdder)
 template <class Self>
 class ConnectableAdder : public IdentifiableAdder<Self> {

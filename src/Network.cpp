@@ -90,6 +90,10 @@ LineAdder Network::newLine() {
     return LineAdder(backend_->invoke(handle_, prop::LINE), backend_);
 }
 
+LineAdder Network::newLine(const Line& copied) {
+    return detail::copyAdder<LineAdder>(backend_, handle_, prop::LINE, detail::Access::handle(copied));
+}
+
 HvdcLineAdder Network::newHvdcLine() {
     return HvdcLineAdder(backend_->invoke(handle_, prop::HVDC_LINE), backend_);
 }

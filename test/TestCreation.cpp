@@ -308,6 +308,66 @@ void checkTopology(Network& network) {
     bb.remove();
 }
 
+// Copies of lines, transformers, tap changers, reactive capability curves and limits
+void checkCopies(Network& network) {
+    Substation s = network.newSubstation().setId("S5").add();
+    s.newVoltageLevel().setId("VL51").setNominalV(400).setTopologyKind(TopologyKind::BUS_BREAKER).add()
+        .getBusBreakerView().newBus().setId("VL51_B").add();
+    s.newVoltageLevel().setId("VL52").setNominalV(225).setTopologyKind(TopologyKind::BUS_BREAKER).add()
+        .getBusBreakerView().newBus().setId("VL52_B").add();
+    Line line = network.newLine().setId("L51").setVoltageLevel1("VL51").setBus1("VL51_B").setVoltageLevel2("VL52")
+        .setBus2("VL52_B").setR(1).setX(10).setG1(0).setB1(1e-6).setG2(0).setB2(1e-6).add();
+    line.newOperationalLimitsGroup1("DEFAULT").newCurrentLimits().setPermanentLimit(1000).add();
+
+    // A copy gets the operational limits of the copied line on add(); a fill, its values only
+    Line copy = network.newLine(line).setId("L51_COPY").setBus1("VL51_B").setBus2("VL52_B").add();
+    EXPECT_DOUBLE_EQ(copy.getX(), 10);
+    EXPECT_EQ(copy.getTerminal2().getVoltageLevel().getId(), "VL52");
+    EXPECT_DOUBLE_EQ(copy.getOperationalLimitsGroup1("DEFAULT")->getCurrentLimits()->getPermanentLimit(), 1000);
+    LineAdder fill = network.newLine();
+    Line filled = LineAdder::fillLineAdder(fill, line).setId("L51_FILL").setBus1("VL51_B").setBus2("VL52_B").add();
+    EXPECT_DOUBLE_EQ(filled.getB2(), 1e-6);
+    EXPECT_TRUE(filled.getOperationalLimitsGroups1().empty());
+
+    TwoWindingsTransformer t2 = s.newTwoWindingsTransformer().setId("T51").setVoltageLevel1("VL51").setBus1("VL51_B")
+        .setVoltageLevel2("VL52").setBus2("VL52_B").setR(0.5).setX(20).setG(0).setB(0).setRatedU1(400).setRatedU2(225).add();
+    t2.newRatioTapChanger().setLowTapPosition(0).setTapPosition(1)
+        .beginStep().setRho(0.9).setR(0).setX(0).setG(0).setB(0).endStep()
+        .beginStep().setRho(1.1).setR(0).setX(0).setG(0).setB(0).endStep()
+        .add();
+    t2.newPhaseTapChanger().setLowTapPosition(0).setTapPosition(0)
+        .setRegulationMode(PhaseTapChangerRegulationMode::CURRENT_LIMITER).setRegulationValue(500).setRegulating(false)
+        .beginStep().setAlpha(5).setRho(1).setR(0).setX(0).setG(0).setB(0).endStep()
+        .add();
+    TwoWindingsTransformer t2b = s.newTwoWindingsTransformer(t2).setId("T51_COPY").setBus1("VL51_B").setBus2("VL52_B").add();
+    EXPECT_DOUBLE_EQ(t2b.getRatedU2(), 225);
+    EXPECT_FALSE(t2b.hasRatioTapChanger()); // the transformer's values, not its tap changers
+    t2b.newRatioTapChanger(*t2.getRatioTapChanger()).add();
+    EXPECT_DOUBLE_EQ(t2b.getRatioTapChanger()->getStep(1).getRho(), 1.1);
+    t2b.newPhaseTapChanger(*t2.getPhaseTapChanger()).setRegulationValue(600).add(); // a copy, then changed
+    EXPECT_DOUBLE_EQ(t2b.getPhaseTapChanger()->getStep(0).getAlpha(), 5);
+    EXPECT_DOUBLE_EQ(t2b.getPhaseTapChanger()->getRegulationValue(), 600);
+    TwoWindingsTransformerAdder fillT = s.newTwoWindingsTransformer();
+    TwoWindingsTransformerAdder::fillTwoWindingsTransformerAdder(fillT, t2).setId("T51_FILL").setBus1("VL51_B").setBus2("VL52_B");
+    EXPECT_DOUBLE_EQ(fillT.add().getX(), 20);
+
+    OperationalLimitsGroup winter = t2b.newOperationalLimitsGroup2("WINTER");
+    winter.newCurrentLimits(*line.getOperationalLimitsGroup1("DEFAULT")->getCurrentLimits()).add();
+    EXPECT_DOUBLE_EQ(winter.getCurrentLimits()->getPermanentLimit(), 1000);
+
+    VoltageLevel vl = *network.getVoltageLevel("VL51");
+    Generator g = vl.newGenerator().setId("G51").setBus("VL51_B").setMinP(0).setMaxP(100).setTargetP(0).setLocalTargetQ(0).add();
+    ReactiveCapabilityCurve curve = g.newReactiveCapabilityCurve()
+        .beginPoint().setP(0).setMinQ(-10).setMaxQ(10).endPoint()
+        .beginPoint().setP(100).setMinQ(-20).setMaxQ(20).endPoint()
+        .add();
+    Battery battery = vl.newBattery().setId("BAT51").setBus("VL51_B").setMinP(-10).setMaxP(10).setTargetP(0).setLocalTargetQ(0).add();
+    battery.newReactiveCapabilityCurve(curve).add();
+    EXPECT_DOUBLE_EQ(battery.getReactiveLimits<ReactiveCapabilityCurve>().getMaxQ(100), 20);
+
+    s.remove();
+}
+
 } // namespace
 
 #ifdef IIDM_BRIDGE_GRAALVM_ENABLED
@@ -322,6 +382,7 @@ TEST(CreationTest, GraalVM) {
     checkInjections(network);
     checkBranches(network);
     checkTopology(network);
+    checkCopies(network);
     EXPECT_LT(static_cast<GraalVMBackend&>(network.getBackend()).javaHandleCount(), 100);
 }
 #endif
@@ -337,5 +398,6 @@ TEST(CreationTest, JNI) {
     checkInjections(network);
     checkBranches(network);
     checkTopology(network);
+    checkCopies(network);
 }
 #endif

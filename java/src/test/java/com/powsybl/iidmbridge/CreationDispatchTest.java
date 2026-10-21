@@ -313,6 +313,84 @@ class CreationDispatchTest {
             () -> PropertyDispatcher.invokeObject(bb, REL_NBV_SWITCH))));
     }
 
+    // Copies: COPY_OF restarts an adder from powsybl's adder of a copy (a line or a transformer gets the
+    // operational limits of the copied one too); FILL_FROM only sets the values of a line or a transformer
+    @Test void copies() {
+        Substation s = network.newSubstation().setId("S").add();
+        for (String id : new String[] {"VL1", "VL2"}) {
+            s.newVoltageLevel().setId(id).setNominalV(id.equals("VL1") ? 400 : 225).setTopologyKind(TopologyKind.BUS_BREAKER).add()
+                .getBusBreakerView().newBus().setId(id + "_B").add();
+        }
+        Line line = network.newLine().setId("L").setVoltageLevel1("VL1").setBus1("VL1_B").setVoltageLevel2("VL2").setBus2("VL2_B")
+            .setR(1).setX(10).setG1(0).setB1(1e-6).setG2(0).setB2(1e-6).add();
+        line.newOperationalLimitsGroup1("DEFAULT").newCurrentLimits().setPermanentLimit(1000).add();
+        line.setSelectedOperationalLimitsGroup1("DEFAULT");
+
+        Object copy = PropertyDispatcher.invokeObject(network, LINE);
+        PropertyDispatcher.setRelatedObject(copy, COPY_OF, line);
+        PropertyDispatcher.setString(copy, ID, "L_COPY");
+        PropertyDispatcher.setString(copy, BRANCH_BUS1, "VL1_B");
+        PropertyDispatcher.setString(copy, BRANCH_BUS2, "VL2_B");
+        Line copied = (Line) add(copy);
+        assertEquals(10, copied.getX());
+        assertEquals(1000, copied.getOperationalLimitsGroup1("DEFAULT").orElseThrow().getCurrentLimits().orElseThrow().getPermanentLimit());
+        Object filled = PropertyDispatcher.invokeObject(network, LINE);
+        PropertyDispatcher.setRelatedObject(filled, FILL_FROM, line);
+        PropertyDispatcher.setString(filled, ID, "L_FILLED");
+        PropertyDispatcher.setString(filled, BRANCH_BUS1, "VL1_B");
+        PropertyDispatcher.setString(filled, BRANCH_BUS2, "VL2_B");
+        Line filledLine = (Line) add(filled);
+        assertEquals(1e-6, filledLine.getB2());
+        assertTrue(filledLine.getOperationalLimitsGroups1().isEmpty()); // values only
+
+        TwoWindingsTransformer t2 = s.newTwoWindingsTransformer().setId("T2").setVoltageLevel1("VL1").setBus1("VL1_B")
+            .setVoltageLevel2("VL2").setBus2("VL2_B").setR(0.5).setX(20).setG(0).setB(0).setRatedU1(400).setRatedU2(225).add();
+        t2.newRatioTapChanger().setLowTapPosition(0).setTapPosition(1)
+            .beginStep().setRho(0.9).setR(0).setX(0).setG(0).setB(0).endStep()
+            .beginStep().setRho(1.1).setR(0).setX(0).setG(0).setB(0).endStep()
+            .add();
+        Object t2Copy = PropertyDispatcher.invokeObject(s, TWO_WINDINGS_TRANSFORMER);
+        PropertyDispatcher.setRelatedObject(t2Copy, COPY_OF, t2);
+        PropertyDispatcher.setString(t2Copy, ID, "T2_COPY");
+        PropertyDispatcher.setString(t2Copy, BRANCH_BUS1, "VL1_B");
+        PropertyDispatcher.setString(t2Copy, BRANCH_BUS2, "VL2_B");
+        TwoWindingsTransformer t2b = (TwoWindingsTransformer) add(t2Copy);
+        assertEquals(225, t2b.getRatedU2());
+
+        Object rtc = PropertyDispatcher.invokeObject(t2b, RATIO_TAP_CHANGER);
+        PropertyDispatcher.setRelatedObject(rtc, COPY_OF, t2.getRatioTapChanger());
+        add(rtc);
+        assertEquals(1.1, t2b.getRatioTapChanger().getStep(1).getRho());
+        // A copy of another type of object: rejected
+        Object ptc = PropertyDispatcher.invokeObject(t2b, PHASE_TAP_CHANGER);
+        assertEquals(BridgeErrors.PROPERTY_NOT_FOUND, BridgeErrors.kindOf(assertThrows(Throwable.class,
+            () -> PropertyDispatcher.setRelatedObject(ptc, COPY_OF, t2.getRatioTapChanger()))));
+
+        OperationalLimitsGroup group = t2b.newOperationalLimitsGroup2("WINTER");
+        Object limits = PropertyDispatcher.invokeObject(group, CURRENT_LIMITS);
+        PropertyDispatcher.setRelatedObject(limits, COPY_OF, line.getCurrentLimits1().orElseThrow());
+        add(limits);
+        assertEquals(1000, group.getCurrentLimits().orElseThrow().getPermanentLimit());
+
+        Generator g = addGenerator(addVoltageLevelIn(s));
+        g.newReactiveCapabilityCurve()
+            .beginPoint().setP(0).setMinQ(-10).setMaxQ(10).endPoint()
+            .beginPoint().setP(100).setMinQ(-20).setMaxQ(20).endPoint()
+            .add();
+        Generator g2 = g.getTerminal().getVoltageLevel().newGenerator().setId("G2").setBus("B").setMinP(0).setMaxP(100).setTargetP(0)
+            .setLocalTargetQ(0).add();
+        Object curve = PropertyDispatcher.invokeObject(g2, REACTIVE_CAPABILITY_CURVE);
+        PropertyDispatcher.setRelatedObject(curve, COPY_OF, g.getReactiveLimits());
+        add(curve);
+        assertEquals(20, g2.getReactiveLimits(ReactiveCapabilityCurve.class).getMaxQ(100));
+    }
+
+    private VoltageLevel addVoltageLevelIn(Substation s) {
+        VoltageLevel vl = s.newVoltageLevel().setId("VL").setNominalV(400).setTopologyKind(TopologyKind.BUS_BREAKER).add();
+        vl.getBusBreakerView().newBus().setId("B").add();
+        return vl;
+    }
+
     private static Object injection(VoltageLevel vl, int type, String id) {
         Object adder = PropertyDispatcher.invokeObject(vl, type);
         PropertyDispatcher.setString(adder, ID, id);
