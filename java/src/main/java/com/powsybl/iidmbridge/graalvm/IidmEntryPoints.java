@@ -195,6 +195,12 @@ public final class IidmEntryPoints {
         return NetworkRegistry.size();
     }
 
+    /** The hash of the property codes the image was built from (PropertyDispatcher.codesHash). */
+    @CEntryPoint(name = "iidm_codes_hash")
+    public static long codesHash(IsolateThread thread) {
+        return PropertyDispatcher.codesHash();
+    }
+
     // ── Scalar properties ─────────────────────────────────────────────────
 
     @CEntryPoint(name = "iidm_get_double")

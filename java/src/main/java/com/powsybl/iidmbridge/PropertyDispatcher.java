@@ -7,6 +7,7 @@ import com.powsybl.iidm.network.regulation.RegulationMode;
 import com.powsybl.iidm.network.regulation.VoltageRegulation;
 import com.powsybl.iidm.network.regulation.VoltageRegulationHolder;
 import com.powsybl.iidmbridge.graalvm.NetworkRegistry;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
@@ -34,6 +35,22 @@ import static com.powsybl.iidmbridge.PropertyCodes.*;
 public final class PropertyDispatcher {
 
     private PropertyDispatcher() {}
+
+    /**
+     * The hash of the property codes: FNV-1a of each "NAME=value\n", in the order of
+     * PropertyCodes.def. The C++ library compares it with its own when a backend opens, as a jar
+     * or native image built from other codes would read other properties without any error.
+     */
+    public static long codesHash() {
+        long hash = 0xcbf29ce484222325L;
+        for (String code : PropertyCodes.CODES) {
+            for (byte b : (code + "\n").getBytes(StandardCharsets.US_ASCII)) {
+                hash ^= b & 0xff;
+                hash *= 0x100000001b3L;
+            }
+        }
+        return hash;
+    }
 
     // ── Double getters ────────────────────────────────────────────────────
 

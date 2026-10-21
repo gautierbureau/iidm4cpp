@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 #include <iidm/IidmException.h>
 #include "BridgeErrors.h"
+#include "PropertyCodesCheck.h"
+#include <string>
 
 using namespace iidm;
 using namespace iidm::detail;
@@ -35,4 +37,17 @@ TEST(BridgeErrorsTest, MessageIsKept) {
     } catch (const IidmException& e) {
         EXPECT_STREQ(e.what(), "maxTargetP value (500.0) is not between minP and maxP");
     }
+}
+
+// A backend opens only on a Java side built from the property codes of the library
+TEST(BridgeErrorsTest, PropertyCodesCheck) {
+    EXPECT_NO_THROW(checkPropertyCodes(propertyCodesHash(), "The jar"));
+    try {
+        checkPropertyCodes(propertyCodesHash() + 1, "The jar");
+        ADD_FAILURE() << "Java code built from other codes accepted";
+    } catch (const BackendNotAvailableException& e) {
+        EXPECT_EQ(std::string(e.what()).find("The jar was built from other property codes"), 0u) << e.what();
+    }
+    // A Java side older than the check
+    EXPECT_THROW(checkPropertyCodes(0, "The jar"), BackendNotAvailableException);
 }

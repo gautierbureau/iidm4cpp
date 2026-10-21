@@ -113,7 +113,9 @@ returning another wrapper) are defined in `src/X.cpp`.
 **Property codes** — C++/Java communicate via integer keys defined **once** in
 `include/iidm/PropertyCodes.def` (`IIDM_CODE(NAME, value)  // comment`).
 `PropertyCodes.h` expands it into `iidm::prop::NAME`; the Maven build generates
-the Java `PropertyCodes` class from it. There is no second copy to keep in sync.
+the Java `PropertyCodes` class from it. There is no second copy to keep in sync. A backend opens
+only on a jar or native image built from the same codes: both sides hash them
+(`src/PropertyCodesCheck.cpp`, `PropertyDispatcher.codesHash`), and the backend compares the hashes.
 
 **Fluent setters** — setters return `*this` so callers can chain:
 
