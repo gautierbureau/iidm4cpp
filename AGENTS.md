@@ -254,8 +254,14 @@ A field uses the code of the property it sets. The parent's `newX()` is
 `XAdder(backend_->invoke(handle_, prop::X), backend_)`, and `remove()` is
 `backend_->invoke(handle_, prop::ACT_REMOVE)`. On the Java side, `Creation.java` maps each
 (adder, field code) to the powsybl adder method, and `remove` to powsybl's removal. Validation
-stays powsybl's. A change that takes several values at once goes the same way: see
-`VoltageRegulation::setTerminal`.
+stays powsybl's. A change that takes several values at once goes the same way (see
+`VoltageRegulation::setTerminal`): in `Creation.newAdder`, a `PendingCall` names the call's fields
+and makes the call on `ACT_ADD`, without a class of its own:
+
+```java
+case REL_TERMINAL -> run((VoltageRegulation) owner, fields(REL_TERMINAL, VR_TARGET_VALUE),
+    (regulation, c) -> regulation.setTerminal(c.get(REL_TERMINAL), c.dbl(VR_TARGET_VALUE)));
+```
 
 Only current powsybl APIs are ported: never a method marked `@Deprecated`, nor an extension
 from `extensions.removed` (e.g. voltage regulation goes through the 7.4 `VoltageRegulation`

@@ -84,7 +84,8 @@ final class PropertyTable {
             (VoltageRegulationHolderAdder<?> x, double v) -> x.setLocalTargetQ(v));
         doubles(REGULATING_TARGET_V, (VoltageRegulationHolder<?> x) -> x.getRegulatingTargetV(), null, null);
         doubles(REGULATING_TARGET_Q, (VoltageRegulationHolder<?> x) -> x.getRegulatingTargetQ(), null, null);
-        doubles(VR_TARGET_VALUE, VoltageRegulation::getTargetValue, VoltageRegulation::setTargetValue, null);
+        doubles(VR_TARGET_VALUE, VoltageRegulation::getTargetValue, VoltageRegulation::setTargetValue,
+            (VoltageRegulationAdderOrBuilder<?> x, double v) -> x.withTargetValue(v));
         doubles(VR_TARGET_DEADBAND, VoltageRegulation::getTargetDeadband, VoltageRegulation::setTargetDeadband,
             (VoltageRegulationAdderOrBuilder<?> x, double v) -> x.withTargetDeadband(v));
         doubles(VR_SLOPE, VoltageRegulation::getSlope, VoltageRegulation::setSlope,
@@ -235,7 +236,7 @@ final class PropertyTable {
         doubles(POINT_MAX_Q, ReactiveCapabilityCurve.Point::getMaxQ, null, ReactiveCapabilityCurveAdder.PointAdder::setMaxQ);
         doubles(LL_PERMANENT_LIMIT, LoadingLimits::getPermanentLimit, LoadingLimits::setPermanentLimit,
             (LoadingLimitsAdder<?, ?> x, double v) -> x.setPermanentLimit(v));
-        doubles(TL_VALUE, TemporaryLimit::getValue, null, null);
+        doubles(TL_VALUE, TemporaryLimit::getValue, null, (LoadingLimitsAdder.TemporaryLimitAdder<?> x, double v) -> x.setValue(v));
         doubles(AREA_INTERCHANGE_TARGET, (Area x) -> x.getInterchangeTarget().orElse(Double.NaN), Area::setInterchangeTarget,
             AreaAdder::setInterchangeTarget);
         doubles(AREA_AC_INTERCHANGE, Area::getAcInterchange, null, null);
@@ -365,9 +366,12 @@ final class PropertyTable {
             ShuntCompensatorAdder::setSectionCount);
         ints(SHUNT_MAX_SECTION_COUNT, ShuntCompensator::getMaximumSectionCount, ShuntCompensatorLinearModel::setMaximumSectionCount,
             ShuntCompensatorLinearModelAdder::setMaximumSectionCount);
-        ints(IC_NODE1, VoltageLevel.NodeBreakerView.InternalConnection::getNode1, null, null);
-        ints(IC_NODE2, VoltageLevel.NodeBreakerView.InternalConnection::getNode2, null, null);
-        ints(TL_ACCEPTABLE_DURATION, TemporaryLimit::getAcceptableDuration, null, null);
+        ints(IC_NODE1, VoltageLevel.NodeBreakerView.InternalConnection::getNode1, null,
+            VoltageLevel.NodeBreakerView.InternalConnectionAdder::setNode1);
+        ints(IC_NODE2, VoltageLevel.NodeBreakerView.InternalConnection::getNode2, null,
+            VoltageLevel.NodeBreakerView.InternalConnectionAdder::setNode2);
+        ints(TL_ACCEPTABLE_DURATION, TemporaryLimit::getAcceptableDuration, null,
+            (LoadingLimitsAdder.TemporaryLimitAdder<?> x, int v) -> x.setAcceptableDuration(v));
         ints(COMPONENT_NUM, Component::getNum, null, null);
         ints(COMPONENT_SIZE, Component::getSize, null, null);
         ints(TC_LOW_TAP_POSITION, (TapChanger<?, ?, ?, ?> x) -> x.getLowTapPosition(),
@@ -394,7 +398,7 @@ final class PropertyTable {
             BusbarSectionPositionAdder::withBusbarIndex);
         ints(EXT_BSP_SECTION_INDEX, BusbarSectionPosition::getSectionIndex, BusbarSectionPosition::setSectionIndex,
             BusbarSectionPositionAdder::withSectionIndex);
-        ints(EXT_RP_PRIORITY, ReferencePriority::getPriority, null, null);
+        ints(EXT_RP_PRIORITY, ReferencePriority::getPriority, null, ReferencePriorityAdder::setPriority);
         ints(SHUNT_SOLVED_SECTION_COUNT, null, ShuntCompensator::setSolvedSectionCount, ShuntCompensatorAdder::setSolvedSectionCount);
         ints(TC_SOLVED_TAP_POSITION, null, (TapChanger<?, ?, ?, ?> x, int v) -> x.setSolvedTapPosition(v),
             (TapChangerAdder<?, ?, ?, ?, ?, ?> x, int v) -> x.setSolvedTapPosition(v));
@@ -446,7 +450,7 @@ final class PropertyTable {
         ordinals(EXT_FEEDER_DIRECTION, ConnectablePosition.Feeder::getDirection);
 
         // ── Booleans ────────────────────────────────────────────────────────────────────────────────
-        bools(AREA_BOUNDARY_AC, AreaBoundary::isAc, null, null);
+        bools(AREA_BOUNDARY_AC, AreaBoundary::isAc, null, AreaBoundaryAdder::setAc);
         bools(VARIANT_MULTI_THREAD_ACCESS, VariantManager::isVariantMultiThreadAccessAllowed, VariantManager::allowVariantMultiThreadAccess,
             null);
         bools(NETWORK_DETACHABLE, Network::isDetachable, null, null);
@@ -529,8 +533,10 @@ final class PropertyTable {
         bools(REGULATING, null, PhaseTapChanger::setRegulating, PhaseTapChangerAdder::setRegulating);
 
         // ── Strings ─────────────────────────────────────────────────────────────────────────────────
-        strings(ID, (Identifiable<?> x) -> x.getId(), (Identifiable<?> x, String v) -> x.setId(v), null);
-        strings(NAME, (Identifiable<?> x) -> x.getNameOrId(), (Identifiable<?> x, String v) -> x.setName(v), null);
+        strings(ID, (Identifiable<?> x) -> x.getId(), (Identifiable<?> x, String v) -> x.setId(v),
+            (IdentifiableAdder<?, ?> x, String v) -> x.setId(v));
+        strings(NAME, (Identifiable<?> x) -> x.getNameOrId(), (Identifiable<?> x, String v) -> x.setName(v),
+            (IdentifiableAdder<?, ?> x, String v) -> x.setName(v));
         strings(TL_NAME, TemporaryLimit::getName, null, (LoadingLimitsAdder.TemporaryLimitAdder<?> x, String v) -> x.setName(v));
         strings(NETWORK_SOURCE_FORMAT, Network::getSourceFormat, null, null);
         strings(OLG_ID, OperationalLimitsGroup::getId, null, null);
