@@ -12,8 +12,18 @@ double HvdcLine::getR() const {
     return backend_->getDouble(handle_, prop::HVDC_R);
 }
 
+HvdcLine& HvdcLine::setR(double r) {
+    backend_->setDouble(handle_, prop::HVDC_R, r);
+    return *this;
+}
+
 double HvdcLine::getNominalV() const {
     return backend_->getDouble(handle_, prop::HVDC_NOMINAL_V);
+}
+
+HvdcLine& HvdcLine::setNominalV(double nominalV) {
+    backend_->setDouble(handle_, prop::HVDC_NOMINAL_V, nominalV);
+    return *this;
 }
 
 double HvdcLine::getActivePowerSetpoint() const {
@@ -27,6 +37,11 @@ HvdcLine& HvdcLine::setActivePowerSetpoint(double value) {
 
 double HvdcLine::getMaxP() const {
     return backend_->getDouble(handle_, prop::HVDC_MAX_P);
+}
+
+HvdcLine& HvdcLine::setMaxP(double maxP) {
+    backend_->setDouble(handle_, prop::HVDC_MAX_P, maxP);
+    return *this;
 }
 
 HvdcConverterStationMode HvdcLine::getConvertersMode() const {
@@ -44,6 +59,20 @@ HvdcConverterStation HvdcLine::getConverterStation1() const {
 
 HvdcConverterStation HvdcLine::getConverterStation2() const {
     return HvdcConverterStation(backend_->getRelated(handle_, prop::REL_CONVERTER_STATION2), backend_);
+}
+
+HvdcConverterStation HvdcLine::getConverterStation(TwoSides side) const {
+    return HvdcConverterStation(
+        backend_->getRelatedByIndex(handle_, HvdcConverterStation::TYPE, static_cast<int>(side)), backend_);
+}
+
+bool HvdcLine::connectConverterStations() {
+    // The line itself when this connected them (its handle is released right away)
+    return HandleRef(backend_->invoke(handle_, prop::ACT_CONNECT), backend_) != INVALID_HANDLE;
+}
+
+bool HvdcLine::disconnectConverterStations() {
+    return HandleRef(backend_->invoke(handle_, prop::ACT_DISCONNECT), backend_) != INVALID_HANDLE;
 }
 
 void HvdcLine::remove() {

@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <iidm/TwoWindingsTransformer.h>
+#include <iidm/Substation.h>
 #include <iidm/PropertyCodes.h>
 #include "MockBackend.h"
 
@@ -53,6 +54,40 @@ TEST_F(TwoWindingsTransformerTest, GetRatedSAbsent) {
     TwoWindingsTransformer twt(TWT_H, &backend);
     backend.doubles.erase({TWT_H, prop::TWO_WT_RATED_S});
     EXPECT_FALSE(twt.getRatedS().has_value());
+}
+
+TEST_F(TwoWindingsTransformerTest, Setters) {
+    TwoWindingsTransformer twt(TWT_H, &backend);
+    EXPECT_EQ(&twt.setR(2.0).setX(20.0).setG(1e-6).setB(1e-5).setRatedU1(410.0).setRatedU2(230.0).setRatedS(350.0), &twt);
+    EXPECT_DOUBLE_EQ((backend.doubles[{TWT_H, prop::TWO_WT_R}]), 2.0);
+    EXPECT_DOUBLE_EQ((backend.doubles[{TWT_H, prop::TWO_WT_X}]), 20.0);
+    EXPECT_DOUBLE_EQ((backend.doubles[{TWT_H, prop::TWO_WT_G}]), 1e-6);
+    EXPECT_DOUBLE_EQ((backend.doubles[{TWT_H, prop::TWO_WT_B}]), 1e-5);
+    EXPECT_DOUBLE_EQ((backend.doubles[{TWT_H, prop::TWO_WT_RATED_U1}]), 410.0);
+    EXPECT_DOUBLE_EQ((backend.doubles[{TWT_H, prop::TWO_WT_RATED_U2}]), 230.0);
+    EXPECT_DOUBLE_EQ(*twt.getRatedS(), 350.0);
+}
+
+TEST_F(TwoWindingsTransformerTest, Substation) {
+    static constexpr ObjectHandle SUB_H = 40;
+    TwoWindingsTransformer twt(TWT_H, &backend);
+    EXPECT_FALSE(twt.getSubstation());
+    backend.related[{TWT_H, prop::REL_SUBSTATION}] = SUB_H;
+    backend.strings[{SUB_H, prop::ID}] = "S";
+    EXPECT_EQ(twt.getSubstation()->getId(), "S");
+}
+
+TEST_F(TwoWindingsTransformerTest, SolvedValues) {
+    TwoWindingsTransformer twt(TWT_H, &backend);
+    twt.applySolvedValues();
+    twt.setRatioTapPositionToSolvedTapPosition();
+    twt.setPhaseTapPositionToSolvedTapPosition();
+    twt.unsetSolvedValues();
+    ASSERT_EQ(backend.invocations.size(), 4u);
+    EXPECT_EQ(backend.invocations[0], std::make_pair(ObjectHandle(TWT_H), prop::ACT_APPLY_SOLVED_VALUES));
+    EXPECT_EQ(backend.invocations[1], std::make_pair(ObjectHandle(TWT_H), prop::ACT_SET_RATIO_TAP_POSITION_TO_SOLVED_TAP_POSITION));
+    EXPECT_EQ(backend.invocations[2], std::make_pair(ObjectHandle(TWT_H), prop::ACT_SET_PHASE_TAP_POSITION_TO_SOLVED_TAP_POSITION));
+    EXPECT_EQ(backend.invocations[3], std::make_pair(ObjectHandle(TWT_H), prop::ACT_UNSET_SOLVED_VALUES));
 }
 
 TEST_F(TwoWindingsTransformerTest, GetTerminals) {

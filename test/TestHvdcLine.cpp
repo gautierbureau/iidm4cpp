@@ -42,6 +42,32 @@ TEST_F(HvdcLineTest, ConverterStations) {
     EXPECT_EQ(hvdc.getConverterStation2(), HvdcConverterStation(LCC_H, &backend));
 }
 
+TEST_F(HvdcLineTest, Setters) {
+    HvdcLine hvdc(HVDC_HANDLE, &backend);
+    EXPECT_EQ(&hvdc.setR(2.0).setNominalV(400.0).setMaxP(900.0).setActivePowerSetpoint(600.0), &hvdc);
+    EXPECT_DOUBLE_EQ(hvdc.getR(), 2.0);
+    EXPECT_DOUBLE_EQ(hvdc.getNominalV(), 400.0);
+    EXPECT_DOUBLE_EQ(hvdc.getMaxP(), 900.0);
+    EXPECT_DOUBLE_EQ(hvdc.getActivePowerSetpoint(), 600.0);
+}
+
+TEST_F(HvdcLineTest, ConverterStationBySide) {
+    static constexpr ObjectHandle CS2_H = 82;
+    backend.relatedByIndex[std::make_tuple(ObjectHandle(HVDC_HANDLE), prop::HVDC_CONVERTER_STATION, 1)] = CS2_H;
+    HvdcLine hvdc(HVDC_HANDLE, &backend);
+    EXPECT_EQ(hvdc.getConverterStation(TwoSides::TWO), HvdcConverterStation(CS2_H, &backend));
+}
+
+// Connects or disconnects both: the line comes back when this changed them
+TEST_F(HvdcLineTest, ConnectConverterStations) {
+    HvdcLine hvdc(HVDC_HANDLE, &backend);
+    EXPECT_TRUE(hvdc.disconnectConverterStations());
+    EXPECT_EQ(backend.invocations.back(), std::make_pair(ObjectHandle(HVDC_HANDLE), prop::ACT_DISCONNECT));
+    backend.unchanged.insert(ObjectHandle(HVDC_HANDLE));
+    EXPECT_FALSE(hvdc.connectConverterStations());
+    EXPECT_EQ(backend.invocations.back(), std::make_pair(ObjectHandle(HVDC_HANDLE), prop::ACT_CONNECT));
+}
+
 // ── Converter station getHvdcLine ─────────────────────────────────────────────
 
 TEST_F(HvdcLineTest, VscGetHvdcLine) {

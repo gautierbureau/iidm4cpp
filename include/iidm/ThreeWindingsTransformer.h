@@ -60,8 +60,11 @@ public:
     ThreeWindingsTransformer() = default;
     explicit ThreeWindingsTransformer(ObjectHandle handle, BackendProvider* backend) : Connectable(handle, backend) {}
 
-    double     getRatedU0()    const;
-    Substation getSubstation() const;
+    // Empty when it is not in a substation
+    iidm::optional<Substation> getSubstation() const;
+
+    double getRatedU0() const;
+    ThreeWindingsTransformer& setRatedU0(double ratedU0);
 
     Leg getLeg1() const;
     Leg getLeg2() const;
@@ -73,6 +76,15 @@ public:
     Terminal getTerminal(ThreeSides side) const;
     // The terminal in this voltage level
     Terminal getTerminal(const std::string& voltageLevelId) const;
+    // The side of one of its terminals (ValidationException for another terminal)
+    ThreeSides getSide(const Terminal& terminal) const;
+
+    // ── Solved values ────────────────────────────────────────────────────
+    // The solved tap positions of the tap changers of its legs, when set, become their tap
+    // positions: of all of them, of the ratio tap changers, of the phase tap changers
+    void applySolvedValues();
+    void setRatioTapPositionToSolvedTapPosition();
+    void setPhaseTapPositionToSolvedTapPosition();
 
     // ── Extensions ───────────────────────────────────────────────────────
     // An extension's getter throws ExtensionNotFoundException when it is absent

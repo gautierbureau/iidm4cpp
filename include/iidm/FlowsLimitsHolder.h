@@ -6,6 +6,7 @@
 #include <iidm/OperationalLimitsGroup.h>
 #include <iidm/PropertyCodes.h>
 #include <iidm/stdcxx/optional.hpp>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -35,8 +36,9 @@ public:
     std::vector<OperationalLimitsGroup> getAllSelectedOperationalLimitsGroups() const;
     // Selects this group only
     Self& setSelectedOperationalLimitsGroup(const std::string& id);
-    // Selects these groups too
+    // Selects these groups too; those whose id passes the test
     void addSelectedOperationalLimitsGroups(const std::vector<std::string>& ids);
+    void addSelectedOperationalLimitsGroupByPredicate(const std::function<bool(const std::string&)>& idPredicate);
     void deselectOperationalLimitsGroups(const std::vector<std::string>& ids);
     // Deselects every group
     void cancelSelectedOperationalLimitsGroup();

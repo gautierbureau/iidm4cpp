@@ -294,7 +294,10 @@ ThreeWindingsTransformer::Leg (getRatioTapChanger() / getPhaseTapChanger() → o
 ├── getTapPosition() → int (fails when unset)   findTapPosition() → optional<int>
 │   setTapPosition(int) / unsetTapPosition()
 ├── getSolvedTapPosition() → optional<int>      setSolvedTapPosition(int) / unsetSolvedTapPosition()
+├── findSolvedTapPosition() → optional<int>     (the same as getSolvedTapPosition())
 ├── getStep(tapPosition) → step                 getAllSteps() → std::map<int, step> (by tap position)
+├── stepsReplacer(): replaces every step at once, from the low tap position:
+│   tc.stepsReplacer().beginStep().setRho(…)…endStep().beginStep()…endStep().replaceSteps()
 ├── getCurrentStep() / getSolvedCurrentStep() / getNeutralStep() → optional<step>
 ├── isRegulating() / hasLoadTapChangingCapabilities() → bool (+ setter)
 ├── applySolvedValues() / setTapPositionToSolvedTapPosition() / remove()
@@ -303,6 +306,21 @@ ThreeWindingsTransformer::Leg (getRatioTapChanger() / getPhaseTapChanger() → o
 └── PhaseTapChanger: getRegulationMode() / getRegulationValue() / getTargetDeadband() /
     getRegulationTerminal() (+ setters), setRegulating(bool)
 Steps: getRho() / getR() / getX() / getG() / getB() (+ setters), PhaseTapChangerStep::getAlpha()
+
+Line                       getR() / getX() / getG1() / getB1() / getG2() / getB2() (+ setters)
+TwoWindingsTransformer     getR() / getX() / getG() / getB() / getRatedU1() / getRatedU2() →
+│                          double, getRatedS() → optional (+ setters, NaN: no rated S),
+│                          getSubstation() → optional<Substation>
+└── applySolvedValues() / setRatioTapPositionToSolvedTapPosition() /
+    setPhaseTapPositionToSolvedTapPosition()
+ThreeWindingsTransformer   getLegs() / getLeg(side), getTerminal(side or voltage level id),
+│                          getSide(terminal), getRatedU0() (+ setter), getSubstation() → optional
+└── applySolvedValues() / setRatioTapPositionToSolvedTapPosition() /
+    setPhaseTapPositionToSolvedTapPosition()
+HvdcLine                   getR() / getNominalV() / getActivePowerSetpoint() / getMaxP() (+ setters),
+│                          getConvertersMode() (+ setter)
+├── getConverterStation1() / getConverterStation2() / getConverterStation(side)
+└── connectConverterStations() / disconnectConverterStations() → bool (true when this changed them)
 
 ThreeWindingsTransformer::Leg
 ├── getTerminal() / getSide() / getTransformer()
@@ -319,7 +337,8 @@ TwoWindingsTransformer (the same methods, suffixed 1 / 2 or taking the side)
 ├── setSelectedOperationalLimitsGroup(id) / cancelSelectedOperationalLimitsGroup() /
 │   getOrCreateSelectedOperationalLimitsGroup([id])
 ├── several selected groups: getAllSelectedOperationalLimitsGroups(), …Ids(), …IdsOrdered(),
-│   addSelectedOperationalLimitsGroups(ids) / deselectOperationalLimitsGroups(ids)
+│   addSelectedOperationalLimitsGroups(ids) / addSelectedOperationalLimitsGroupByPredicate(test) /
+│   deselectOperationalLimitsGroups(ids)
 └── the limits in force: getCurrentLimits() / getActivePowerLimits() / getApparentPowerLimits()
     (of the selected group), getAllSelected…Limits(), get…LimitsFromId(id)
 

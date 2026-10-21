@@ -6,6 +6,7 @@
 #include <iidm/PropertiesHolder.h>
 #include <iidm/PropertyCodes.h>
 #include <iidm/TapChanger.h>
+#include <iidm/TapChangerStepsReplacer.h>
 #include <iidm/Terminal.h>
 #include <iidm/stdcxx/optional.hpp>
 
@@ -15,7 +16,7 @@ namespace iidm {
 // limits the current, or controls the active power, at its regulation terminal.
 class PhaseTapChanger : public detail::ObjectRef,
                         public detail::PropertiesHolder<PhaseTapChanger>,
-                        public detail::TapChangerMethods<PhaseTapChanger, PhaseTapChangerStep> {
+                        public detail::TapChangerMethods<PhaseTapChanger, PhaseTapChangerStep, PhaseTapChangerStepsReplacer> {
 public:
     static constexpr int TYPE = prop::PHASE_TAP_CHANGER;
 

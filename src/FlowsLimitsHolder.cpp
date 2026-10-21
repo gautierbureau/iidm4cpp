@@ -66,6 +66,17 @@ void FlowsLimitsHolderMethods<Self>::addSelectedOperationalLimitsGroups(const st
 }
 
 template <class Self>
+void FlowsLimitsHolderMethods<Self>::addSelectedOperationalLimitsGroupByPredicate(
+        const std::function<bool(const std::string&)>& idPredicate) {
+    std::vector<std::string> ids;
+    for (const OperationalLimitsGroup& group : getOperationalLimitsGroups()) {
+        std::string id = group.getId();
+        if (idPredicate(id)) ids.push_back(id);
+    }
+    addSelectedOperationalLimitsGroups(ids);
+}
+
+template <class Self>
 void FlowsLimitsHolderMethods<Self>::deselectOperationalLimitsGroups(const std::vector<std::string>& ids) {
     for (const std::string& id : ids) backend()->setString(handle(), prop::DESELECT_OLG, id);
 }

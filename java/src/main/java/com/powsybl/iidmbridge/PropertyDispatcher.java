@@ -179,7 +179,24 @@ public final class PropertyDispatcher {
             case TERMINAL_Q    -> ((Terminal) obj).setQ(value);
             case BUS_V         -> ((Bus) obj).setV(value);
             case BUS_ANGLE     -> ((Bus) obj).setAngle(value);
+            case HVDC_R                     -> ((HvdcLine) obj).setR(value);
+            case HVDC_NOMINAL_V             -> ((HvdcLine) obj).setNominalV(value);
             case HVDC_ACTIVE_POWER_SETPOINT -> ((HvdcLine) obj).setActivePowerSetpoint(value);
+            case HVDC_MAX_P                 -> ((HvdcLine) obj).setMaxP(value);
+            case LINE_R  -> ((Line) obj).setR(value);
+            case LINE_X  -> ((Line) obj).setX(value);
+            case LINE_G1 -> ((Line) obj).setG1(value);
+            case LINE_B1 -> ((Line) obj).setB1(value);
+            case LINE_G2 -> ((Line) obj).setG2(value);
+            case LINE_B2 -> ((Line) obj).setB2(value);
+            case TWO_WT_R        -> ((TwoWindingsTransformer) obj).setR(value);
+            case TWO_WT_X        -> ((TwoWindingsTransformer) obj).setX(value);
+            case TWO_WT_G        -> ((TwoWindingsTransformer) obj).setG(value);
+            case TWO_WT_B        -> ((TwoWindingsTransformer) obj).setB(value);
+            case TWO_WT_RATED_U1 -> ((TwoWindingsTransformer) obj).setRatedU1(value);
+            case TWO_WT_RATED_U2 -> ((TwoWindingsTransformer) obj).setRatedU2(value);
+            case TWO_WT_RATED_S  -> ((TwoWindingsTransformer) obj).setRatedS(value);
+            case THREE_WT_RATED_U0 -> ((ThreeWindingsTransformer) obj).setRatedU0(value);
             case DL_P0 -> ((BoundaryLine) obj).setP0(value);
             case DL_Q0 -> ((BoundaryLine) obj).setQ0(value);
             case CONVERTER_STATION_LOSS_FACTOR -> ((HvdcConverterStation<?>) obj).setLossFactor((float) value);
@@ -872,11 +889,11 @@ public final class PropertyDispatcher {
             case REL_SOLVED_CURRENT_STEP -> tapChanger(obj).getSolvedCurrentStep();
             case REL_NEUTRAL_STEP        -> tapChanger(obj).getNeutralStep().orElse(null);
             case REL_REGULATION_TERMINAL -> ((PhaseTapChanger) obj).getRegulationTerminal();
-            case REL_SUBSTATION -> {
-                if (obj instanceof ThreeWindingsTransformer twt)
-                    yield twt.getLeg1().getTerminal().getVoltageLevel().getSubstation().orElse(null);
-                yield ((VoltageLevel) obj).getSubstation().orElse(null);
-            }
+            case REL_SUBSTATION -> switch (obj) {
+                case TwoWindingsTransformer twt -> twt.getSubstation().orElse(null);
+                case ThreeWindingsTransformer twt -> twt.getSubstation().orElse(null);
+                default -> ((VoltageLevel) obj).getSubstation().orElse(null);
+            };
             case REL_CONNECTABLE_BUS -> ((Terminal) obj).getBusBreakerView().getConnectableBus();
             case REL_REGULATING_TERMINAL -> ((VoltageRegulationHolder<?>) obj).getRegulatingTerminal();
             case REL_SELECTED_OLG -> LimitsDispatch.holder(obj).getSelectedOperationalLimitsGroup().orElse(null);
@@ -957,8 +974,8 @@ public final class PropertyDispatcher {
      */
     public static Object invokeObject(Object obj, int code) {
         return switch (code) {
-            case ACT_CONNECT -> (obj instanceof Terminal t ? t.connect() : ((Connectable<?>) obj).connect()) ? obj : null;
-            case ACT_DISCONNECT -> (obj instanceof Terminal t ? t.disconnect() : ((Connectable<?>) obj).disconnect()) ? obj : null;
+            case ACT_CONNECT -> connect(obj) ? obj : null;
+            case ACT_DISCONNECT -> disconnect(obj) ? obj : null;
             case ACT_SET_TARGET_Q_TO_Q -> {
                 ((VoltageRegulationHolder<?>) obj).setTargetQToQ();
                 yield null;
@@ -1023,6 +1040,16 @@ public final class PropertyDispatcher {
                 tapChanger(obj).setTapPositionToSolvedTapPosition();
                 yield null;
             }
+            case ACT_SET_RATIO_TAP_POSITION_TO_SOLVED_TAP_POSITION -> {
+                if (obj instanceof ThreeWindingsTransformer twt) twt.setRatioTapPositionToSolvedTapPosition();
+                else ((TwoWindingsTransformer) obj).setRatioTapPositionToSolvedTapPosition();
+                yield null;
+            }
+            case ACT_SET_PHASE_TAP_POSITION_TO_SOLVED_TAP_POSITION -> {
+                if (obj instanceof ThreeWindingsTransformer twt) twt.setPhaseTapPositionToSolvedTapPosition();
+                else ((TwoWindingsTransformer) obj).setPhaseTapPositionToSolvedTapPosition();
+                yield null;
+            }
             case ACT_ADD -> Creation.add(obj);
             case ACT_REMOVE -> {
                 Creation.remove(obj);
@@ -1034,6 +1061,23 @@ public final class PropertyDispatcher {
 
     private static long registerOrZero(Object obj) {
         return obj == null ? 0L : NetworkRegistry.register(obj); // 0 = INVALID_HANDLE
+    }
+
+    /** Connects a terminal, a connectable, the converter stations of an HVDC line: whether this changed it. */
+    private static boolean connect(Object obj) {
+        return switch (obj) {
+            case Terminal terminal -> terminal.connect();
+            case HvdcLine line -> line.connectConverterStations();
+            default -> ((Connectable<?>) obj).connect();
+        };
+    }
+
+    private static boolean disconnect(Object obj) {
+        return switch (obj) {
+            case Terminal terminal -> terminal.disconnect();
+            case HvdcLine line -> line.disconnectConverterStations();
+            default -> ((Connectable<?>) obj).disconnect();
+        };
     }
 
     // ── Int list (navigation) ─────────────────────────────────────────────
@@ -1095,6 +1139,7 @@ public final class PropertyDispatcher {
             case FLOWS_LIMITS_HOLDER -> LimitsDispatch.branchSide(obj, index);
             case LOADING_LIMITS -> LimitsDispatch.limits(obj, Creation.enumValue(LimitType.class, index));
             case TEMPORARY_LIMIT -> ((LoadingLimits) obj).getTemporaryLimit(index);
+            case HVDC_CONVERTER_STATION -> ((HvdcLine) obj).getConverterStation(Creation.enumValue(TwoSides.class, index));
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown indexed relation: " + relation);
         };
     }

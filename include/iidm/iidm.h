@@ -45,6 +45,7 @@
 #include <iidm/TapChanger.h>
 #include <iidm/RatioTapChanger.h>
 #include <iidm/PhaseTapChanger.h>
+#include <iidm/TapChangerStepsReplacer.h>
 #include <iidm/TapChangerHolder.h>
 #include <iidm/TwoWindingsTransformer.h>
 #include <iidm/ThreeWindingsTransformer.h>

@@ -134,7 +134,8 @@ IIDM_CODE(LINE_G2,                     704)
 IIDM_CODE(LINE_B2,                     705)
 
 // ── TwoWindingsTransformer ───────────────────────────────────────────────────
-// Its tap changers: getRelated(transformer, RATIO_TAP_CHANGER / PHASE_TAP_CHANGER).
+// Its tap changers: getRelated(transformer, RATIO_TAP_CHANGER / PHASE_TAP_CHANGER); its substation
+// (none when it has none): getRelated(transformer, REL_SUBSTATION).
 IIDM_CODE(TWO_WT_R,                    800)
 IIDM_CODE(TWO_WT_X,                    801)
 IIDM_CODE(TWO_WT_G,                    802)
@@ -174,6 +175,10 @@ IIDM_CODE(TC_SOLVED_TAP_POSITION,      1903) // int (optional: none when unset);
 IIDM_CODE(TC_STEP_COUNT,               1904) // int, read-only
 IIDM_CODE(TC_NEUTRAL_POSITION,         1905) // optional int, read-only: position of the neutral step (rho 1, alpha 0)
 IIDM_CODE(TC_LOAD_TAP_CHANGING_CAPABILITIES, 1906) // bool
+// invoke(tap changer, TC_STEPS_REPLACER) starts the replacement of every step: invoke(replacer,
+// RATIO_TAP_CHANGER_STEP / PHASE_TAP_CHANGER_STEP) starts each new step (STEP_* fields, ACT_ADD:
+// endStep), invoke(replacer, ACT_ADD) replaces the steps (replaceSteps)
+IIDM_CODE(TC_STEPS_REPLACER,           1907)
 IIDM_CODE(PTC_REGULATION_MODE,         1910) // int: PhaseTapChangerRegulationMode ordinal
 IIDM_CODE(PTC_REGULATION_VALUE,        1911) // double
 IIDM_CODE(PTC_TARGET_DEADBAND,         1912) // double, NaN = undefined
@@ -186,6 +191,9 @@ IIDM_CODE(STEP_B,                      1924) // double
 IIDM_CODE(PTC_STEP_ALPHA,              1925) // double: phase tap changer steps only
 
 // ── HvdcLine ─────────────────────────────────────────────────────────────────
+// Its converter stations: getRelated(line, REL_CONVERTER_STATION1 / 2), getRelatedByIndex(line,
+// HVDC_CONVERTER_STATION, side); invoke(line, ACT_CONNECT / ACT_DISCONNECT) connects / disconnects
+// them (connectConverterStations).
 IIDM_CODE(HVDC_R,                      900)
 IIDM_CODE(HVDC_NOMINAL_V,             901)
 IIDM_CODE(HVDC_ACTIVE_POWER_SETPOINT, 902)
@@ -341,7 +349,7 @@ IIDM_CODE(REL_TERMINAL2,               2001)
 IIDM_CODE(REL_TERMINAL,                2002) // injection or regulation → its terminal; branch or 3WT keyed by voltage level id (getRelatedByString)
 IIDM_CODE(REL_BUS,                     2003)
 IIDM_CODE(REL_VOLTAGE_LEVEL,           2004)
-IIDM_CODE(REL_SUBSTATION,              2005)
+IIDM_CODE(REL_SUBSTATION,              2005) // voltage level or transformer → its substation (none without one)
 IIDM_CODE(REL_CONNECTABLE_BUS,         2007) // bus-breaker topology bus (may differ from bus view)
 IIDM_CODE(REL_REGULATING_TERMINAL,     2008) // regulation holder → terminal of a remote regulation, else its own
 IIDM_CODE(REL_SELECTED_OLG,            2014) // flows limits holder → its selected group (see Limits)
@@ -394,8 +402,8 @@ IIDM_CODE(HAS_REGULATING_TERMINAL,     2217) // bool: the regulation has a termi
 IIDM_CODE(ACT_ADD,                     5000) // invoke(adder): adds the object, returns it (INVALID_HANDLE for nested adders)
 IIDM_CODE(ACT_REMOVE,                  5001) // invoke(identifiable): removes it from the network; invoke(tap changer): removes it
 // invoke(terminal or connectable, ACT_CONNECT / ACT_DISCONNECT): connects / disconnects it (every
-// terminal of a connectable); returns the object when this changed it, INVALID_HANDLE when it could
-// not, or already was.
+// terminal of a connectable, the converter stations of an HVDC line); returns the object when this
+// changed it, INVALID_HANDLE when it could not, or already was.
 IIDM_CODE(ACT_CONNECT,                 5002)
 IIDM_CODE(ACT_DISCONNECT,              5003)
 IIDM_CODE(ACT_SET_TARGET_Q_TO_Q,       5004) // invoke(regulation holder): targets Q from the solved Q
@@ -412,6 +420,8 @@ IIDM_CODE(ACT_UNSET_SOLVED_SECTION_COUNT, 5012) // invoke(shunt compensator)
 IIDM_CODE(ACT_SET_SECTION_COUNT_TO_SOLVED_SECTION_COUNT, 5013) // invoke(shunt compensator)
 IIDM_CODE(ACT_UNSET_SOLVED_VALUES,     5014) // invoke(connectable, terminal, bus): unsets its solved values (flows,
                                              // voltages; a shunt's solved section count, a transformer's tap positions)
+IIDM_CODE(ACT_SET_RATIO_TAP_POSITION_TO_SOLVED_TAP_POSITION, 5015) // invoke(2WT or 3WT): of its ratio tap changers
+IIDM_CODE(ACT_SET_PHASE_TAP_POSITION_TO_SOLVED_TAP_POSITION, 5016) // invoke(2WT or 3WT): of its phase tap changers
 
 // TwoWindingsTransformerToBeEstimated (on a two windings transformer)
 IIDM_CODE(TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED, 3700)

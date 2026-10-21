@@ -8,8 +8,8 @@ namespace iidm {
 namespace detail {
 
 // What both kinds of tap changer have (powsybl TapChanger): tap positions, and a step for each of
-// them, from the low to the high tap position.
-template <class Self, class Step>
+// them, from the low to the high tap position; Replacer replaces the steps.
+template <class Self, class Step, class Replacer>
 class TapChangerMethods {
 public:
     int getLowTapPosition() const;
@@ -25,6 +25,7 @@ public:
 
     // The tap position found by a load flow; empty when unset
     iidm::optional<int> getSolvedTapPosition() const;
+    iidm::optional<int> findSolvedTapPosition() const;
     Self& setSolvedTapPosition(int solvedTapPosition);
     Self& unsetSolvedTapPosition();
 
@@ -32,6 +33,8 @@ public:
     Step getStep(int tapPosition) const;
     // Every step, by tap position
     std::map<int, Step> getAllSteps() const;
+    // Replaces every step at once
+    Replacer stepsReplacer();
     // The step at the tap position, at the solved tap position: empty when it is unset
     iidm::optional<Step> getCurrentStep() const;
     iidm::optional<Step> getSolvedCurrentStep() const;

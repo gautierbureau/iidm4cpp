@@ -136,6 +136,12 @@ void BranchMethods<Self>::addSelectedOperationalLimitsGroups(TwoSides side, cons
 }
 
 template <class Self>
+void BranchMethods<Self>::addSelectedOperationalLimitsGroupByPredicate(TwoSides side,
+        const std::function<bool(const std::string&)>& idPredicate) {
+    sideLimits(side).addSelectedOperationalLimitsGroupByPredicate(idPredicate);
+}
+
+template <class Self>
 void BranchMethods<Self>::deselectOperationalLimitsGroups(TwoSides side, const std::vector<std::string>& ids) {
     sideLimits(side).deselectOperationalLimitsGroups(ids);
 }

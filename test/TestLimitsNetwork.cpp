@@ -112,6 +112,9 @@ void checkWriting(BackendProvider& b) {
     t2.addSelectedOperationalLimitsGroups(TwoSides::TWO, {"WINTER", "SUMMER"});
     t2.deselectOperationalLimitsGroups(TwoSides::TWO, {"NEW", "SUMMER"});
     EXPECT_EQ(t2.getAllSelectedOperationalLimitsGroupIds(TwoSides::TWO), (Strings{"WINTER"}));
+    t2.addSelectedOperationalLimitsGroupByPredicate(TwoSides::TWO, [](const std::string& id) { return id.find('E') != std::string::npos; });
+    EXPECT_EQ(t2.getAllSelectedOperationalLimitsGroupIds(TwoSides::TWO), (Strings{"NEW", "SUMMER", "WINTER"}));
+    t2.deselectOperationalLimitsGroups(TwoSides::TWO, {"NEW", "SUMMER"});
     t2.cancelSelectedOperationalLimitsGroup2();
     EXPECT_FALSE(t2.getSelectedOperationalLimitsGroup2());
     EXPECT_TRUE(t2.getAllSelectedOperationalLimitsGroupIds(TwoSides::TWO).empty());
