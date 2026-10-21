@@ -127,4 +127,19 @@ class ComponentAndVariantDispatchTest {
         PropertyDispatcher.setBool(manager, VARIANT_MULTI_THREAD_ACCESS, 0);
         assertFalse(network.getVariantManager().isVariantMultiThreadAccessAllowed());
     }
+
+    /** A call made in steps takes its own fields only; a value of another type fails before the call. */
+    @Test void callFields() {
+        long manager = PropertyDispatcher.getRelated(reg(network), VARIANT_MANAGER);
+        long clone = PropertyDispatcher.invoke(manager, VARIANT_CLONE);
+        assertEquals(BridgeErrors.PROPERTY_NOT_FOUND, BridgeErrors.kindOf(assertThrows(Throwable.class,
+            () -> PropertyDispatcher.setDouble(clone, LOAD_P0, 1))));
+        PropertyDispatcher.setString(clone, VARIANT_SOURCE_ID, "InitialState");
+        PropertyDispatcher.setString(clone, VARIANT_TARGET_ID, "V1");
+        PropertyDispatcher.setInt(clone, VARIANT_TARGET_ID, 2);
+        assertEquals(BridgeErrors.PROPERTY_NOT_FOUND, BridgeErrors.kindOf(assertThrows(Throwable.class,
+            () -> PropertyDispatcher.invoke(clone, ACT_ADD))));
+        // Not even V1
+        assertArrayEquals(new String[] {"InitialState"}, PropertyDispatcher.getStringList(manager, VARIANT_IDS));
+    }
 }
