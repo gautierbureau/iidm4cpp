@@ -58,6 +58,9 @@
 #include <iidm/ReferencePriority.h>
 #include <iidm/ReferencePriorities.h>
 #include <iidm/ReferenceTerminals.h>
+#include <iidm/SecondaryVoltageControl.h>
+#include <iidm/LineSegment.h>
+#include <iidm/LineCouplings.h>
 #include <iidm/Generator.h>
 #include <iidm/Load.h>
 #include <iidm/Line.h>
@@ -149,6 +152,8 @@
 #include <iidm/ReferencePrioritiesAdder.h>
 #include <iidm/ReferenceTerminalsAdder.h>
 #include <iidm/ObservabilityAreaAdder.h>
+#include <iidm/SecondaryVoltageControlAdder.h>
+#include <iidm/LineCouplingsAdder.h>
 #include <iidm/VariantManager.h>
 #include <iidm/Network.h>
 #include <iidm/NetworkFactory.h>

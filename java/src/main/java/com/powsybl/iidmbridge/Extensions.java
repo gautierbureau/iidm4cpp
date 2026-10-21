@@ -61,7 +61,9 @@ final class Extensions {
         type(LINE_POSITION, LinePosition.class, LinePositionAdder.class),
         type(CONNECTABLE_POSITION, ConnectablePosition.class, ConnectablePositionAdder.class),
         type(REFERENCE_PRIORITIES, ReferencePriorities.class, ReferencePrioritiesAdder.class),
-        type(REFERENCE_TERMINALS, ReferenceTerminals.class, ReferenceTerminalsAdder.class));
+        type(REFERENCE_TERMINALS, ReferenceTerminals.class, ReferenceTerminalsAdder.class),
+        type(SECONDARY_VOLTAGE_CONTROL, SecondaryVoltageControl.class, SecondaryVoltageControlAdder.class),
+        type(LINE_COUPLINGS, LineCouplings.class, LineCouplingsAdder.class));
 
     private Extensions() {
     }
@@ -91,9 +93,6 @@ final class Extensions {
     @SuppressWarnings({"unchecked", "rawtypes"})
     static Object newAdder(Object host, int code) {
         Class adder = TYPES.get(code).adder();
-        if (adder == null) {
-            throw new BridgeErrors.PropertyNotFoundException("No adder for extension type: " + code);
-        }
         return ((Extendable) host).newExtension(adder);
     }
 

@@ -852,6 +852,10 @@ TEST(BackendConformanceTest, ReferenceExtensions) {
     checkConformance("data/references_test.xiidm");
 }
 
+TEST(BackendConformanceTest, NetworkExtensions) {
+    checkConformance("data/network_extensions_test.xiidm");
+}
+
 TEST(BackendConformanceTest, CreatedFromScratch) {
     checkConformance("created from scratch", buildNetwork);
 }

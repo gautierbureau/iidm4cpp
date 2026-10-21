@@ -17,9 +17,13 @@
 #include <iidm/Identifiable.h>
 #include <iidm/LccConverterStation.h>
 #include <iidm/Line.h>
+#include <iidm/LineCouplings.h>
+#include <iidm/LineCouplingsAdder.h>
 #include <iidm/Load.h>
 #include <iidm/ReferenceTerminals.h>
 #include <iidm/ReferenceTerminalsAdder.h>
+#include <iidm/SecondaryVoltageControl.h>
+#include <iidm/SecondaryVoltageControlAdder.h>
 #include <iidm/ShuntCompensator.h>
 #include <iidm/StaticVarCompensator.h>
 #include <iidm/Substation.h>
@@ -248,6 +252,15 @@ public:
     ReferenceTerminals getReferenceTerminals() const;
     ReferenceTerminalsAdder newReferenceTerminals();
     void removeReferenceTerminals();
+    bool hasSecondaryVoltageControl() const;
+    SecondaryVoltageControl getSecondaryVoltageControl() const;
+    SecondaryVoltageControlAdder newSecondaryVoltageControl();
+    void removeSecondaryVoltageControl();
+    bool hasLineCouplings() const;
+    LineCouplings getLineCouplings() const;
+    LineCouplingsAdder newLineCouplings();
+    // powsybl removes it, then fails on a bug of its own: PropertyNotFoundException (see README)
+    void removeLineCouplings();
 
     // Backend accessor (advanced usage only)
     BackendProvider& getBackend();
