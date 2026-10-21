@@ -65,6 +65,8 @@ IIDM_CODE(TRIPPING,                    68) // a tripping of an overload manageme
 IIDM_CODE(SWITCH_TRIPPING,             69)
 IIDM_CODE(BRANCH_TRIPPING,             70)
 IIDM_CODE(THREE_WINDINGS_TRANSFORMER_TRIPPING, 71)
+IIDM_CODE(COMPONENT,                   72) // a connected or synchronous component of the bus view
+IIDM_CODE(VARIANT_MANAGER,             73) // getRelated(network, VARIANT_MANAGER): its variant manager
 // Abstract types (Java interfaces)
 IIDM_CODE(IDENTIFIABLE,                43)
 IIDM_CODE(CONNECTABLE,                 44)
@@ -377,6 +379,25 @@ IIDM_CODE(TRIPPING_ELEMENT_ID,         1069) // string: the switch, branch or 3W
 IIDM_CODE(TRIPPING_SIDE,               1070) // int: the side to operate, TwoSides (branch) or ThreeSides (3WT)
                                              // ordinal (also an adder field)
 
+// ── Components ───────────────────────────────────────────────────────────────
+// The connected and synchronous components of the bus view: getRelated(bus, REL_CONNECTED_COMPONENT /
+// REL_SYNCHRONOUS_COMPONENT) the one of a bus (none when it is in none), getChildren(network,
+// REL_CONNECTED_COMPONENT / REL_SYNCHRONOUS_COMPONENT) all of them; getChildren(component, BUS) its buses.
+IIDM_CODE(COMPONENT_NUM,               1080) // int, read-only: 0 for the main component
+IIDM_CODE(COMPONENT_SIZE,              1081) // int, read-only: its number of buses
+
+// ── VariantManager ───────────────────────────────────────────────────────────
+// invoke(manager, VARIANT_CLONE) starts cloneVariant: fields VARIANT_SOURCE_ID, VARIANT_TARGET_ID (each
+// value set adds a target) and VARIANT_MAY_OVERWRITE (false when unset); ACT_ADD clones.
+IIDM_CODE(VARIANT_IDS,                 1085) // string list (sorted)
+IIDM_CODE(WORKING_VARIANT_ID,          1086) // string; set: setWorkingVariant
+IIDM_CODE(REMOVE_VARIANT,              1087) // string, set only: removeVariant
+IIDM_CODE(VARIANT_MULTI_THREAD_ACCESS, 1088) // bool: isVariantMultiThreadAccessAllowed; set: allowVariantMultiThreadAccess
+IIDM_CODE(VARIANT_CLONE,               1089)
+IIDM_CODE(VARIANT_SOURCE_ID,           1090) // string, a field of VARIANT_CLONE
+IIDM_CODE(VARIANT_TARGET_ID,           1091) // string, a field of VARIANT_CLONE: one more target
+IIDM_CODE(VARIANT_MAY_OVERWRITE,       1092) // bool, a field of VARIANT_CLONE
+
 // ── ShuntCompensator ─────────────────────────────────────────────────────────
 // Its model is getRelated(shunt, SHUNT_COMPENSATOR_MODEL); getRelated(shunt, SHUNT_COMPENSATOR_LINEAR_MODEL
 // or SHUNT_COMPENSATOR_NON_LINEAR_MODEL) gives it as a model of that type (getModel(Class):
@@ -560,6 +581,8 @@ IIDM_CODE(REL_BV_CONNECTABLE_BUS,      2039) // terminal → its bus view connec
 IIDM_CODE(REL_BBV_BUSES_OF_BV_BUS,     2040) // VL (keyed by bus view bus id) → list of bus-breaker view buses
 IIDM_CODE(REL_TERMINAL_FROM,           2041) // voltage angle limit → its terminal "from"
 IIDM_CODE(REL_TERMINAL_TO,             2042) // voltage angle limit → its terminal "to"
+IIDM_CODE(REL_CONNECTED_COMPONENT,     2043) // bus → its connected component (see Components)
+IIDM_CODE(REL_SYNCHRONOUS_COMPONENT,   2044) // bus → its synchronous component
 IIDM_CODE(REL_MERGED_BUS,              2035) // VL (keyed by configured bus or busbar section id) → bus view bus
 IIDM_CODE(REL_BBV_SWITCH,              2037) // VL or network: bus-breaker view switches (getChildren), one (getRelatedByString)
 IIDM_CODE(REL_NBV_SWITCH,              2038) // VL: node-breaker view switches (getChildren), one (getRelatedByString)

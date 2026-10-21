@@ -231,6 +231,22 @@ public final class Creation {
         }
     }
 
+    /** VariantManager.cloneVariant(source, targets, mayOverwrite): each target id set adds one. */
+    static final class VariantClone {
+        private final VariantManager manager;
+        private String sourceId;
+        private final java.util.List<String> targetIds = new java.util.ArrayList<>();
+        private boolean mayOverwrite;
+
+        VariantClone(VariantManager manager) {
+            this.manager = manager;
+        }
+
+        void apply() {
+            manager.cloneVariant(Objects.requireNonNull(sourceId, "source variant id"), targetIds, mayOverwrite);
+        }
+    }
+
     /** A new, empty network. */
     public static Network createNetwork(String id) {
         return Network.create(id, SOURCE_FORMAT);
@@ -250,6 +266,7 @@ public final class Creation {
             case AREA_BOUNDARY -> owner instanceof AreaAdder areaAdder ? new NewAreaBoundary(areaAdder) : ((Area) owner).newAreaBoundary();
             case VOLTAGE_ANGLE_LIMIT -> ((Network) owner).newVoltageAngleLimit();
             case OVERLOAD_MANAGEMENT_SYSTEM -> ((Substation) owner).newOverloadManagementSystem();
+            case VARIANT_CLONE -> new VariantClone((VariantManager) owner);
             case SWITCH_TRIPPING -> ((OverloadManagementSystemAdder) owner).newSwitchTripping();
             case BRANCH_TRIPPING -> ((OverloadManagementSystemAdder) owner).newBranchTripping();
             case THREE_WINDINGS_TRANSFORMER_TRIPPING -> ((OverloadManagementSystemAdder) owner).newThreeWindingsTransformerTripping();
@@ -333,6 +350,10 @@ public final class Creation {
                 yield null;
             }
             case TemporaryLimitsCheck check -> check.run();
+            case VariantClone clone -> {
+                clone.apply();
+                yield null;
+            }
             case AreaBoundaryAdder adder -> adder.add(); // the area
             case OverloadManagementSystemAdder.TrippingAdder<?> adder -> {
                 adder.add();
@@ -558,6 +579,7 @@ public final class Creation {
             case EQUIVALENT -> ((ConnectableAdder<?, ?>) a).setEquivalent(value);
             case TERMINAL_CONNECTED -> ((ConnectableMove) a).connected = value;
             case AUTOMATION_SYSTEM_ENABLED -> ((OverloadManagementSystemAdder) a).setEnabled(value);
+            case VARIANT_MAY_OVERWRITE -> ((VariantClone) a).mayOverwrite = value;
             case TRIPPING_OPEN_ACTION -> ((OverloadManagementSystemAdder.TrippingAdder<?>) a).setOpenAction(value);
             case AREA_BOUNDARY_AC -> {
                 if (a instanceof NewAreaBoundary boundary) {
@@ -610,6 +632,8 @@ public final class Creation {
             case AREA_TYPE -> ((AreaAdder) a).setAreaType(value);
             case VAL_ID -> ((VoltageAngleLimitAdder) a).setId(value);
             case OMS_MONITORED_ELEMENT_ID -> ((OverloadManagementSystemAdder) a).setMonitoredElementId(value);
+            case VARIANT_SOURCE_ID -> ((VariantClone) a).sourceId = value;
+            case VARIANT_TARGET_ID -> ((VariantClone) a).targetIds.add(value);
             case TRIPPING_KEY -> ((OverloadManagementSystemAdder.TrippingAdder<?>) a).setKey(value);
             case TRIPPING_NAME -> ((OverloadManagementSystemAdder.TrippingAdder<?>) a).setName(value);
             case TRIPPING_ELEMENT_ID -> {

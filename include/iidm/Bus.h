@@ -1,7 +1,9 @@
 #pragma once
 
+#include <iidm/Component.h>
 #include <iidm/Enums.h>
 #include <iidm/Identifiable.h>
+#include <iidm/stdcxx/optional.hpp>
 #include <vector>
 
 namespace iidm {
@@ -47,6 +49,9 @@ public:
     double getFictitiousQ0() const;
     Bus& setFictitiousQ0(double q0);
 
+    // Its components (those of its bus view bus); empty when it is in none (nothing connected)
+    iidm::optional<Component> getConnectedComponent() const;
+    iidm::optional<Component> getSynchronousComponent() const;
     bool isInMainConnectedComponent() const;
     bool isInMainSynchronousComponent() const;
 

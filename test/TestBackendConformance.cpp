@@ -778,6 +778,8 @@ void buildNetwork(BackendProvider& b) {
         .add();
     vl2.newGenerator().setId("G3").setBus("B2").setMinP(0).setMaxP(10).setTargetP(1).setLocalTargetQ(0).add();
     vl1.newGround().setId("GROUND").setBus("B1b").add();
+    // A second variant, for the walk of the variant manager
+    s.getNetwork().getVariantManager().cloneVariant(VariantManager::INITIAL_VARIANT_ID, "SECOND");
 }
 
 } // namespace

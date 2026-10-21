@@ -348,6 +348,10 @@ Network::BusView Network::getBusView() const {
     return BusView(handle_, backend_);
 }
 
+VariantManager Network::getVariantManager() const {
+    return VariantManager(backend_->getRelated(handle_, prop::VARIANT_MANAGER), backend_);
+}
+
 // ── Validation ───────────────────────────────────────────────────────────────
 
 ValidationLevel Network::getValidationLevel() const {
@@ -503,6 +507,14 @@ std::vector<Bus> Network::BusView::getBuses() const {
 
 iidm::optional<Bus> Network::BusView::getBus(const std::string& id) const {
     return detail::wrapOptional<Bus>(backend_->getRelatedByString(handle_, prop::REL_BV_BUS, id), backend_);
+}
+
+std::vector<Component> Network::BusView::getConnectedComponents() const {
+    return detail::wrapAll<Component>(backend_->getChildren(handle_, prop::REL_CONNECTED_COMPONENT), backend_);
+}
+
+std::vector<Component> Network::BusView::getSynchronousComponents() const {
+    return detail::wrapAll<Component>(backend_->getChildren(handle_, prop::REL_SYNCHRONOUS_COMPONENT), backend_);
 }
 
 } // namespace iidm

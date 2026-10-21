@@ -347,6 +347,8 @@ public final class PropertyDispatcher {
             case IC_NODE2 -> ((VoltageLevel.NodeBreakerView.InternalConnection) obj).getNode2();
             case TL_ACCEPTABLE_DURATION -> ((TemporaryLimit) obj).getAcceptableDuration();
             case OMS_MONITORED_SIDE -> ((OverloadManagementSystem) obj).getMonitoredSide().ordinal();
+            case COMPONENT_NUM  -> ((Component) obj).getNum();
+            case COMPONENT_SIZE -> ((Component) obj).getSize();
             case TRIPPING_TYPE -> ((OverloadManagementSystem.Tripping) obj).getType().ordinal();
             case TRIPPING_SIDE -> obj instanceof OverloadManagementSystem.BranchTripping tripping
                 ? tripping.getSideToOperate().ordinal()
@@ -458,6 +460,9 @@ public final class PropertyDispatcher {
             case AREA_BOUNDARY_AC           -> ((AreaBoundary) obj).isAc();
             case VOLTAGE_ANGLE_LIMIT        -> obj instanceof VoltageAngleLimit;
             case OVERLOAD_MANAGEMENT_SYSTEM -> obj instanceof OverloadManagementSystem;
+            case COMPONENT                  -> obj instanceof Component;
+            case VARIANT_MANAGER            -> obj instanceof VariantManager;
+            case VARIANT_MULTI_THREAD_ACCESS -> ((VariantManager) obj).isVariantMultiThreadAccessAllowed();
             case TRIPPING                   -> obj instanceof OverloadManagementSystem.Tripping;
             case SWITCH_TRIPPING            -> obj instanceof OverloadManagementSystem.SwitchTripping;
             case BRANCH_TRIPPING            -> obj instanceof OverloadManagementSystem.BranchTripping;
@@ -577,6 +582,7 @@ public final class PropertyDispatcher {
             case TC_LOAD_TAP_CHANGING_CAPABILITIES -> tapChanger(obj).setLoadTapChangingCapabilities(bval);
             case GENERATION_VOLTAGE_REGULATION_ON -> ((BoundaryLine.Generation) obj).setVoltageRegulationOn(bval);
             case AUTOMATION_SYSTEM_ENABLED -> ((AutomationSystem<?>) obj).setEnabled(bval);
+            case VARIANT_MULTI_THREAD_ACCESS -> ((VariantManager) obj).allowVariantMultiThreadAccess(bval);
             case TRIPPING_OPEN_ACTION -> ((OverloadManagementSystem.Tripping) obj).setOpenAction(bval);
             case EXT_APC_PARTICIPATE     -> activePowerControl(obj).setParticipate(bval);
             case EXT_HADAPC_ENABLED  -> ((HvdcAngleDroopActivePowerControl) obj).setEnabled(bval);
@@ -632,6 +638,7 @@ public final class PropertyDispatcher {
             case AREA_TYPE -> ((Area) obj).getAreaType();
             case VAL_ID -> ((VoltageAngleLimit) obj).getId();
             case OMS_MONITORED_ELEMENT_ID -> ((OverloadManagementSystem) obj).getMonitoredElementId();
+            case WORKING_VARIANT_ID -> ((VariantManager) obj).getWorkingVariantId();
             case TRIPPING_KEY -> ((OverloadManagementSystem.Tripping) obj).getKey();
             case TRIPPING_NAME -> ((OverloadManagementSystem.Tripping) obj).getNameOrKey();
             case TRIPPING_ELEMENT_ID -> switch (obj) {
@@ -672,6 +679,8 @@ public final class PropertyDispatcher {
             case ID      -> ((Identifiable<?>) obj).setId(value);
             case ADD_GEOGRAPHICAL_TAG -> ((Substation) obj).addGeographicalTag(value);
             case TRIPPING_NAME -> ((OverloadManagementSystem.Tripping) obj).setName(value);
+            case WORKING_VARIANT_ID -> ((VariantManager) obj).setWorkingVariant(value);
+            case REMOVE_VARIANT -> ((VariantManager) obj).removeVariant(value);
             case TRIPPING_ELEMENT_ID -> {
                 switch (obj) {
                     case OverloadManagementSystem.SwitchTripping tripping -> tripping.setSwitchToOperateId(value);
@@ -758,6 +767,7 @@ public final class PropertyDispatcher {
             case ALIASES        -> ((Identifiable<?>) obj).getAliases();
             case NETWORK_COUNTRIES -> ((Network) obj).getCountries().stream().map(Country::name).toList();
             case AREA_TYPE -> StreamSupport.stream(((Network) obj).getAreaTypes().spliterator(), false).toList();
+            case VARIANT_IDS -> ((VariantManager) obj).getVariantIds();
             case SUBSTATION_GEOGRAPHICAL_TAGS -> ((Substation) obj).getGeographicalTags();
             case ALL_SELECTED_OLG_IDS -> LimitsDispatch.holder(obj).getAllSelectedOperationalLimitsGroupIds();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown string list code: " + listCode);
@@ -1055,10 +1065,13 @@ public final class PropertyDispatcher {
             }
             case INTERNAL_CONNECTION -> StreamSupport.stream(
                 ((VoltageLevel) obj).getNodeBreakerView().getInternalConnections().spliterator(), false);
-            case BUS -> {
-                if (obj instanceof Network network) yield network.getBusBreakerView().getBusStream();
-                yield StreamSupport.stream(((VoltageLevel) obj).getBusBreakerView().getBuses().spliterator(), false);
-            }
+            case BUS -> switch (obj) {
+                case Network network -> network.getBusBreakerView().getBusStream();
+                case Component component -> StreamSupport.stream(component.getBuses().spliterator(), false);
+                default -> StreamSupport.stream(((VoltageLevel) obj).getBusBreakerView().getBuses().spliterator(), false);
+            };
+            case REL_CONNECTED_COMPONENT -> ((Network) obj).getBusView().getConnectedComponents().stream();
+            case REL_SYNCHRONOUS_COMPONENT -> ((Network) obj).getBusView().getSynchronousComponents().stream();
             case REL_BV_BUS -> {
                 if (obj instanceof Network network) yield network.getBusView().getBusStream();
                 yield ((VoltageLevel) obj).getBusView().getBusStream();
@@ -1129,6 +1142,9 @@ public final class PropertyDispatcher {
             case TIE_LINE -> ((BoundaryLine) obj).getTieLine().orElse(null);
             case REL_HVDC_LINE -> ((HvdcConverterStation<?>) obj).getHvdcLine();
             case NETWORK -> ((Identifiable<?>) obj).getNetwork();
+            case VARIANT_MANAGER -> ((Network) obj).getVariantManager();
+            case REL_CONNECTED_COMPONENT -> ((Bus) obj).getConnectedComponent();
+            case REL_SYNCHRONOUS_COMPONENT -> ((Bus) obj).getSynchronousComponent();
             case REL_PARENT_NETWORK -> ((Identifiable<?>) obj).getParentNetwork();
             case REL_CONVERTER_STATION1 -> ((HvdcLine) obj).getConverterStation1();
             case REL_CONVERTER_STATION2 -> ((HvdcLine) obj).getConverterStation2();
