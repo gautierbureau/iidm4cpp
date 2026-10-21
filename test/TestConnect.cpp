@@ -38,7 +38,7 @@ TEST(ConnectTest, EveryConnectable) {
     checkConnectAndDisconnect<Generator>();
     checkConnectAndDisconnect<Load>();
     checkConnectAndDisconnect<Battery>();
-    checkConnectAndDisconnect<DanglingLine>();
+    checkConnectAndDisconnect<BoundaryLine>();
     checkConnectAndDisconnect<ShuntCompensator>();
     checkConnectAndDisconnect<StaticVarCompensator>();
     checkConnectAndDisconnect<VscConverterStation>();

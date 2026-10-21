@@ -25,7 +25,7 @@ class Load;
 class Battery;
 class ShuntCompensator;
 class StaticVarCompensator;
-class DanglingLine;
+class BoundaryLine;
 class LccConverterStation;
 class VscConverterStation;
 
@@ -89,7 +89,7 @@ public:
     std::vector<Battery>              getBatteries() const;
     std::vector<ShuntCompensator>     getShuntCompensators() const;
     std::vector<StaticVarCompensator> getStaticVarCompensators() const;
-    std::vector<DanglingLine>         getDanglingLines() const;
+    std::vector<BoundaryLine>         getBoundaryLines() const;
     std::vector<LccConverterStation>  getLccConverterStations() const;
     std::vector<VscConverterStation>  getVscConverterStations() const;
 

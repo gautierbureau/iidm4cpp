@@ -1,6 +1,6 @@
 #include <iidm/FlowsLimitsHolder.h>
 #include <iidm/BackendProvider.h>
-#include <iidm/DanglingLine.h>
+#include <iidm/BoundaryLine.h>
 #include <iidm/PropertyCodes.h>
 #include <iidm/ThreeWindingsTransformer.h>
 #include "Wrap.h"
@@ -163,7 +163,7 @@ std::vector<LoadingLimits> FlowsLimitsHolderMethods<Self>::allSelectedLimits(Lim
 }
 
 template class FlowsLimitsHolderMethods<ThreeWindingsTransformer::Leg>;
-template class FlowsLimitsHolderMethods<DanglingLine>;
+template class FlowsLimitsHolderMethods<BoundaryLine>;
 template class FlowsLimitsHolderMethods<BranchSideLimits>;
 
 } } // namespace iidm::detail

@@ -87,7 +87,7 @@ public:
 - A powsybl interface that unrelated types share (`Branch`: lines and transformers, but also tie
   lines, which are not connectables; `VoltageRegulationHolder`: generators, batteries, SVCs,
   shunts, VSC stations, ratio tap changers; `ReactiveLimitsHolder`; `TapChanger`, `TapChangerStep`,
-  the tap changer holders, `FlowsLimitsHolder`: legs and dangling lines) is a CRTP mixin
+  the tap changer holders, `FlowsLimitsHolder`: legs and boundary lines) is a CRTP mixin
   `detail::XMethods<Self>`, defined in `src/X.cpp` and explicitly instantiated there for each
   class that uses it; plus a class `X` for results of that type when there are some, which every
   implementing class converts to (see `Branch.h`). Two mixins with the same method: a `using`

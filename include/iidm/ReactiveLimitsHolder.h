@@ -10,7 +10,7 @@ namespace iidm {
 namespace detail {
 
 // What has reactive limits (powsybl ReactiveLimitsHolder): generators, batteries, VSC converter
-// stations.
+// stations, the generation of a boundary line.
 template <class Self>
 class ReactiveLimitsHolderMethods {
 public:

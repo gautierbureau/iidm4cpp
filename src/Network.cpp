@@ -159,8 +159,8 @@ std::vector<StaticVarCompensator> Network::getStaticVarCompensators() const {
     return all<StaticVarCompensator>(backend_, handle_);
 }
 
-std::vector<DanglingLine> Network::getDanglingLines() const {
-    return all<DanglingLine>(backend_, handle_);
+std::vector<BoundaryLine> Network::getBoundaryLines() const {
+    return all<BoundaryLine>(backend_, handle_);
 }
 
 std::vector<VscConverterStation> Network::getVscConverterStations() const {
@@ -225,8 +225,8 @@ iidm::optional<HvdcLine> Network::getHvdcLine(const std::string& id) const {
     return find<HvdcLine>(backend_, id);
 }
 
-iidm::optional<DanglingLine> Network::getDanglingLine(const std::string& id) const {
-    return find<DanglingLine>(backend_, id);
+iidm::optional<BoundaryLine> Network::getBoundaryLine(const std::string& id) const {
+    return find<BoundaryLine>(backend_, id);
 }
 
 iidm::optional<ShuntCompensator> Network::getShuntCompensator(const std::string& id) const {

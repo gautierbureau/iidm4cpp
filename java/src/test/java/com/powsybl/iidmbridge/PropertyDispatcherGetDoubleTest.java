@@ -262,20 +262,20 @@ class PropertyDispatcherGetDoubleTest {
         assertEquals(402.0, bat.getLocalTargetV());
     }
 
-    // ── DanglingLine (BoundaryLine in powsybl-core >= 7.4) ───────────────────────────────────────────────────────────────────────────
+    // ── BoundaryLine ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-    @Test void danglingLine_params() {
+    @Test void boundaryLine_params() {
         Substation s = addSubstation();
         VoltageLevel vl = addVoltageLevel(s, 400);
         Bus b = addBus(vl);
         BoundaryLine dl = vl.newBoundaryLine().setId("DL")
                 .setBus(b.getId()).setConnectableBus(b.getId())
                 .setP0(10).setQ0(5).setR(1).setX(5).setG(0).setB(1e-5).add();
-        assertEquals(10.0, PropertyDispatcher.getDouble(reg(dl), DL_P0));
-        assertEquals(5.0,  PropertyDispatcher.getDouble(reg(dl), DL_Q0));
-        assertEquals(1.0,  PropertyDispatcher.getDouble(reg(dl), DL_R));
-        assertEquals(5.0,  PropertyDispatcher.getDouble(reg(dl), DL_X));
-        assertEquals(1e-5, PropertyDispatcher.getDouble(reg(dl), DL_B), 1e-10);
+        assertEquals(10.0, PropertyDispatcher.getDouble(reg(dl), BL_P0));
+        assertEquals(5.0,  PropertyDispatcher.getDouble(reg(dl), BL_Q0));
+        assertEquals(1.0,  PropertyDispatcher.getDouble(reg(dl), BL_R));
+        assertEquals(5.0,  PropertyDispatcher.getDouble(reg(dl), BL_X));
+        assertEquals(1e-5, PropertyDispatcher.getDouble(reg(dl), BL_B), 1e-10);
     }
 
     // ── ShuntCompensator ─────────────────────────────────────────────────────

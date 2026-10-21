@@ -808,6 +808,10 @@ TEST(BackendConformanceTest, Shunts) {
     checkConformance("data/shunts_test.xiidm");
 }
 
+TEST(BackendConformanceTest, BoundaryLines) {
+    checkConformance("data/boundary_lines_test.xiidm");
+}
+
 TEST(BackendConformanceTest, CreatedFromScratch) {
     checkConformance("created from scratch", buildNetwork);
 }

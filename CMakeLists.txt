@@ -113,7 +113,7 @@ set(IIDM_BRIDGE_SOURCES
     src/TwoWindingsTransformer.cpp
     src/ThreeWindingsTransformer.cpp
     src/HvdcLine.cpp
-    src/DanglingLine.cpp
+    src/BoundaryLine.cpp
     src/ShuntCompensator.cpp
     src/ShuntCompensatorModel.cpp
     src/StaticVarCompensator.cpp

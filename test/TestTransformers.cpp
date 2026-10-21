@@ -155,8 +155,8 @@ void checkThreeWindingsTransformer(BackendProvider& b) {
     EXPECT_FALSE(legs[2].getCurrentLimits().has_value());
 }
 
-void checkDanglingLine(BackendProvider& b) {
-    DanglingLine dl(b.findById(prop::DANGLING_LINE, "DL"), &b);
+void checkBoundaryLine(BackendProvider& b) {
+    BoundaryLine dl(b.findById(prop::BOUNDARY_LINE, "DL"), &b);
     EXPECT_EQ(groupIds(dl.getOperationalLimitsGroups()), (std::set<std::string>{"DEFAULT"}));
     EXPECT_EQ(dl.getSelectedOperationalLimitsGroup()->getId(), "DEFAULT");
     EXPECT_DOUBLE_EQ(dl.getCurrentLimits()->getPermanentLimit(), 1000.0);
@@ -255,7 +255,7 @@ void checkTransformers(BackendProvider& b) {
     b.loadNetworkBytes(xiidm.data(), xiidm.size(), "network.xiidm");
     checkTwoWindingsTransformer(b);
     checkThreeWindingsTransformer(b);
-    checkDanglingLine(b);
+    checkBoundaryLine(b);
     checkHandlesAreReleased(b);
     checkTransformerChanges(b);
 }

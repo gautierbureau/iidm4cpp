@@ -16,7 +16,7 @@
 #include <iidm/TwoWindingsTransformer.h>
 #include <iidm/ThreeWindingsTransformer.h>
 #include <iidm/HvdcLine.h>
-#include <iidm/DanglingLine.h>
+#include <iidm/BoundaryLine.h>
 #include <iidm/ShuntCompensator.h>
 #include <iidm/StaticVarCompensator.h>
 #include <iidm/VscConverterStation.h>
@@ -79,7 +79,7 @@ public:
     std::vector<HvdcLine>                getHvdcLines() const;
     std::vector<ShuntCompensator>        getShuntCompensators() const;
     std::vector<StaticVarCompensator>    getStaticVarCompensators() const;
-    std::vector<DanglingLine>            getDanglingLines() const;
+    std::vector<BoundaryLine>            getBoundaryLines() const;
     std::vector<VscConverterStation>     getVscConverterStations() const;
     std::vector<LccConverterStation>     getLccConverterStations() const;
 
@@ -97,7 +97,7 @@ public:
     iidm::optional<TwoWindingsTransformer>  getTwoWindingsTransformer(const std::string& id) const;
     iidm::optional<ThreeWindingsTransformer> getThreeWindingsTransformer(const std::string& id) const;
     iidm::optional<HvdcLine>               getHvdcLine(const std::string& id) const;
-    iidm::optional<DanglingLine>           getDanglingLine(const std::string& id) const;
+    iidm::optional<BoundaryLine>           getBoundaryLine(const std::string& id) const;
     iidm::optional<ShuntCompensator>       getShuntCompensator(const std::string& id) const;
     iidm::optional<StaticVarCompensator>   getStaticVarCompensator(const std::string& id) const;
     iidm::optional<VscConverterStation>    getVscConverterStation(const std::string& id) const;
