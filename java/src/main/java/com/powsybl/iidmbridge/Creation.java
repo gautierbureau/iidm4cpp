@@ -523,6 +523,16 @@ public final class Creation {
             case GENERATOR -> ((VoltageLevel) owner).newGenerator();
             case LOAD -> ((VoltageLevel) owner).newLoad();
             case GROUND -> ((VoltageLevel) owner).newGround();
+            case BATTERY -> ((VoltageLevel) owner).newBattery();
+            case SHUNT_COMPENSATOR -> ((VoltageLevel) owner).newShuntCompensator();
+            case SHUNT_COMPENSATOR_LINEAR_MODEL -> ((ShuntCompensatorAdder) owner).newLinearModel();
+            case SHUNT_COMPENSATOR_NON_LINEAR_MODEL -> ((ShuntCompensatorAdder) owner).newNonLinearModel();
+            case SHUNT_SECTION -> ((ShuntCompensatorNonLinearModelAdder) owner).beginSection();
+            case STATIC_VAR_COMPENSATOR -> ((VoltageLevel) owner).newStaticVarCompensator();
+            case VSC_CONVERTER_STATION -> ((VoltageLevel) owner).newVscConverterStation();
+            case LCC_CONVERTER_STATION -> ((VoltageLevel) owner).newLccConverterStation();
+            case BOUNDARY_LINE -> ((VoltageLevel) owner).newBoundaryLine();
+            case BOUNDARY_LINE_GENERATION -> ((BoundaryLineAdder) owner).newGeneration();
             case TIE_LINE -> ((Network) owner).newTieLine();
             case AREA -> ((Network) owner).newArea();
             case AREA_BOUNDARY -> owner instanceof AreaAdder areaAdder ? new NewAreaBoundary(areaAdder) : ((Area) owner).newAreaBoundary();
@@ -710,6 +720,22 @@ public final class Creation {
                 replacer.replaceSteps();
                 yield null;
             }
+            case ShuntCompensatorLinearModelAdder adder -> {
+                adder.add();
+                yield null;
+            }
+            case ShuntCompensatorNonLinearModelAdder adder -> {
+                adder.add();
+                yield null;
+            }
+            case ShuntCompensatorNonLinearModelAdder.SectionAdder section -> {
+                section.endSection();
+                yield null;
+            }
+            case BoundaryLineAdder.GenerationAdder generation -> {
+                generation.add();
+                yield null;
+            }
             case ZipLoadModelAdder adder -> {
                 adder.add();
                 yield null;
@@ -782,6 +808,28 @@ public final class Creation {
             case LOCAL_TARGET_Q -> ((VoltageRegulationHolderAdder<?>) a).setLocalTargetQ(value);
             case LOAD_P0 -> ((LoadAdder) a).setP0(value);
             case LOAD_Q0 -> ((LoadAdder) a).setQ0(value);
+            case BAT_TARGET_P -> ((BatteryAdder) a).setTargetP(value);
+            case BAT_MIN_P -> ((BatteryAdder) a).setMinP(value);
+            case BAT_MAX_P -> ((BatteryAdder) a).setMaxP(value);
+            case SVC_B_MIN -> ((StaticVarCompensatorAdder) a).setBmin(value);
+            case SVC_B_MAX -> ((StaticVarCompensatorAdder) a).setBmax(value);
+            case CONVERTER_STATION_LOSS_FACTOR -> ((HvdcConverterStationAdder<?, ?>) a).setLossFactor((float) value);
+            case LCC_POWER_FACTOR -> ((LccConverterStationAdder) a).setPowerFactor((float) value);
+            case SHUNT_B_PER_SECTION -> ((ShuntCompensatorLinearModelAdder) a).setBPerSection(value);
+            case SHUNT_G_PER_SECTION -> ((ShuntCompensatorLinearModelAdder) a).setGPerSection(value);
+            case SHUNT_SECTION_B -> ((ShuntCompensatorNonLinearModelAdder.SectionAdder) a).setB(value);
+            case SHUNT_SECTION_G -> ((ShuntCompensatorNonLinearModelAdder.SectionAdder) a).setG(value);
+            case BL_P0 -> ((BoundaryLineAdder) a).setP0(value);
+            case BL_Q0 -> ((BoundaryLineAdder) a).setQ0(value);
+            case BL_R -> ((BoundaryLineAdder) a).setR(value);
+            case BL_X -> ((BoundaryLineAdder) a).setX(value);
+            case BL_G -> ((BoundaryLineAdder) a).setG(value);
+            case BL_B -> ((BoundaryLineAdder) a).setB(value);
+            case GENERATION_TARGET_P -> ((BoundaryLineAdder.GenerationAdder) a).setTargetP(value);
+            case GENERATION_MIN_P -> ((BoundaryLineAdder.GenerationAdder) a).setMinP(value);
+            case GENERATION_MAX_P -> ((BoundaryLineAdder.GenerationAdder) a).setMaxP(value);
+            case GENERATION_TARGET_Q -> ((BoundaryLineAdder.GenerationAdder) a).setTargetQ(value);
+            case GENERATION_TARGET_V -> ((BoundaryLineAdder.GenerationAdder) a).setTargetV(value);
             case VR_TARGET_VALUE -> {
                 if (a instanceof TerminalChange change) {
                     change.targetValue = value;
@@ -954,6 +1002,9 @@ public final class Creation {
             case VL_TOPOLOGY_KIND -> ((VoltageLevelAdder) a).setTopologyKind(enumValue(TopologyKind.class, value));
             case GEN_ENERGY_SOURCE -> ((GeneratorAdder) a).setEnergySource(enumValue(EnergySource.class, value));
             case LOAD_TYPE -> ((LoadAdder) a).setLoadType(enumValue(LoadType.class, value));
+            case SHUNT_SECTION_COUNT -> ((ShuntCompensatorAdder) a).setSectionCount(value);
+            case SHUNT_SOLVED_SECTION_COUNT -> ((ShuntCompensatorAdder) a).setSolvedSectionCount(value);
+            case SHUNT_MAX_SECTION_COUNT -> ((ShuntCompensatorLinearModelAdder) a).setMaximumSectionCount(value);
             case VR_MODE -> ((VoltageRegulationAdderOrBuilder<?>) a).withMode(value < 0 ? null : enumValue(RegulationMode.class, value));
             case OBS_QUALITY_P  -> ((InjectionObservabilityAdder<?>) a).withRedundantP(redundant(value));
             case OBS_QUALITY_Q  -> ((InjectionObservabilityAdder<?>) a).withRedundantQ(redundant(value));
@@ -1025,6 +1076,7 @@ public final class Creation {
                 }
             }
             case GEN_CONDENSER -> ((GeneratorAdder) a).setCondenser(value);
+            case GENERATION_VOLTAGE_REGULATION_ON -> ((BoundaryLineAdder.GenerationAdder) a).setVoltageRegulationOn(value);
             case TC_LOAD_TAP_CHANGING_CAPABILITIES -> ((TapChangerAdder<?, ?, ?, ?, ?, ?>) a).setLoadTapChangingCapabilities(value);
             case REGULATING -> ((PhaseTapChangerAdder) a).setRegulating(value);
             case PLANE_GREATER_OR_EQUAL -> ((NewPlane) a).greaterOrEqual = value;
@@ -1090,6 +1142,7 @@ public final class Creation {
             }
             case TERMINAL_VOLTAGE_LEVEL_ID -> ((ConnectableMove) a).voltageLevelId = value;
             case BOUNDARY_LINE1_ID -> ((TieLineAdder) a).setBoundaryLine1(value);
+            case BL_PAIRING_KEY -> ((BoundaryLineAdder) a).setPairingKey(value);
             case AREA_TYPE -> ((AreaAdder) a).setAreaType(value);
             case VAL_ID -> ((VoltageAngleLimitAdder) a).setId(value);
             case OMS_MONITORED_ELEMENT_ID -> ((OverloadManagementSystemAdder) a).setMonitoredElementId(value);

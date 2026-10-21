@@ -317,7 +317,8 @@ IIDM_CODE(HVDC_CONVERTERS_MODE,        904)
 // generation (INVALID_HANDLE when it has none), on which the GENERATION_* codes and the reactive
 // limits apply; getRelated(line, BOUNDARY) is its boundary, the far end, with the BOUNDARY_* values
 // (getRelated(boundary, BOUNDARY_LINE): its line, REL_VOLTAGE_LEVEL: the network side voltage
-// level). A boundary line is a flows limits holder (see Limits).
+// level). A boundary line is a flows limits holder (see Limits). A new one: invoke(adder,
+// BOUNDARY_LINE_GENERATION) starts its generation (GENERATION_* fields; ACT_ADD returns to it).
 IIDM_CODE(BL_P0,                       1000)
 IIDM_CODE(BL_Q0,                       1001)
 IIDM_CODE(BL_R,                        1002)
@@ -426,7 +427,11 @@ IIDM_CODE(VARIANT_MAY_OVERWRITE,       1092) // bool, a field of VARIANT_CLONE
 // Its model is getRelated(shunt, SHUNT_COMPENSATOR_MODEL); getRelated(shunt, SHUNT_COMPENSATOR_LINEAR_MODEL
 // or SHUNT_COMPENSATOR_NON_LINEAR_MODEL) gives it as a model of that type (getModel(Class):
 // ValidationException when it is of the other one). The sections of a non-linear model are
-// getChildren(model, SHUNT_SECTION), from the first one.
+// getChildren(model, SHUNT_SECTION), from the first one. A new one: invoke(adder,
+// SHUNT_COMPENSATOR_LINEAR_MODEL) starts its linear model (SHUNT_B_PER_SECTION, SHUNT_G_PER_SECTION and
+// SHUNT_MAX_SECTION_COUNT fields), invoke(adder, SHUNT_COMPENSATOR_NON_LINEAR_MODEL) a non-linear one,
+// then invoke(model, SHUNT_SECTION) each section (SHUNT_SECTION_B and SHUNT_SECTION_G); each ACT_ADD
+// returns to the adder above.
 IIDM_CODE(SHUNT_SECTION_COUNT,         1100) // int (optional: none when undefined); unset: ACT_UNSET_SECTION_COUNT
 IIDM_CODE(SHUNT_MAX_SECTION_COUNT,     1101) // int: of the shunt; set: on its linear model (setMaximumSectionCount)
 IIDM_CODE(SHUNT_B_PER_SECTION,         1102) // linear model

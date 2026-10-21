@@ -158,6 +158,12 @@
 #include <iidm/ReactiveCapabilityShapeAdder.h>
 #include <iidm/RatioTapChangerAdder.h>
 #include <iidm/PhaseTapChangerAdder.h>
+#include <iidm/BatteryAdder.h>
+#include <iidm/ShuntCompensatorAdder.h>
+#include <iidm/StaticVarCompensatorAdder.h>
+#include <iidm/VscConverterStationAdder.h>
+#include <iidm/LccConverterStationAdder.h>
+#include <iidm/BoundaryLineAdder.h>
 #include <iidm/LineCouplingsAdder.h>
 #include <iidm/VariantManager.h>
 #include <iidm/Network.h>

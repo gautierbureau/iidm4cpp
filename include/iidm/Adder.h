@@ -61,9 +61,20 @@ protected:
     IdentifiableAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase<Self>(adder, backend) {}
 };
 
+// Equipment (powsybl ConnectableAdder)
+template <class Self>
+class ConnectableAdder : public IdentifiableAdder<Self> {
+public:
+    // An equivalent, from a network reduction for instance
+    Self& setEquivalent(bool equivalent) { return this->boolField(prop::EQUIVALENT, equivalent); }
+
+protected:
+    ConnectableAdder(ObjectHandle adder, BackendProvider* backend) : IdentifiableAdder<Self>(adder, backend) {}
+};
+
 // Equipment with one terminal: where it is connected
 template <class Self>
-class InjectionAdder : public IdentifiableAdder<Self> {
+class InjectionAdder : public ConnectableAdder<Self> {
 public:
     // Bus-breaker topology: the bus it is connected to, and the bus it can be connected to
     Self& setBus(const std::string& busId)            { return this->stringField(prop::TERMINAL_BUS_BREAKER_BUS_ID, busId); }
@@ -72,7 +83,7 @@ public:
     Self& setNode(int node)                           { return this->intField(prop::TERMINAL_NODE, node); }
 
 protected:
-    InjectionAdder(ObjectHandle adder, BackendProvider* backend) : IdentifiableAdder<Self>(adder, backend) {}
+    InjectionAdder(ObjectHandle adder, BackendProvider* backend) : ConnectableAdder<Self>(adder, backend) {}
 };
 
 } // namespace detail

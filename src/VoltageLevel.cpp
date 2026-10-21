@@ -478,6 +478,30 @@ GroundAdder VoltageLevel::newGround() {
     return GroundAdder(backend_->invoke(handle_, prop::GROUND), backend_);
 }
 
+BatteryAdder VoltageLevel::newBattery() {
+    return BatteryAdder(backend_->invoke(handle_, prop::BATTERY), backend_);
+}
+
+ShuntCompensatorAdder VoltageLevel::newShuntCompensator() {
+    return ShuntCompensatorAdder(backend_->invoke(handle_, prop::SHUNT_COMPENSATOR), backend_);
+}
+
+StaticVarCompensatorAdder VoltageLevel::newStaticVarCompensator() {
+    return StaticVarCompensatorAdder(backend_->invoke(handle_, prop::STATIC_VAR_COMPENSATOR), backend_);
+}
+
+VscConverterStationAdder VoltageLevel::newVscConverterStation() {
+    return VscConverterStationAdder(backend_->invoke(handle_, prop::VSC_CONVERTER_STATION), backend_);
+}
+
+LccConverterStationAdder VoltageLevel::newLccConverterStation() {
+    return LccConverterStationAdder(backend_->invoke(handle_, prop::LCC_CONVERTER_STATION), backend_);
+}
+
+BoundaryLineAdder VoltageLevel::newBoundaryLine() {
+    return BoundaryLineAdder(backend_->invoke(handle_, prop::BOUNDARY_LINE), backend_);
+}
+
 void VoltageLevel::remove() {
     backend_->invoke(handle_, prop::ACT_REMOVE);
 }

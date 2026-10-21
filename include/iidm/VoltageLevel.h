@@ -4,9 +4,15 @@
 #include <iidm/Container.h>
 #include <iidm/Enums.h>
 #include <iidm/Identifiable.h>
+#include <iidm/BatteryAdder.h>
+#include <iidm/BoundaryLineAdder.h>
 #include <iidm/Bus.h>
 #include <iidm/BusAdder.h>
 #include <iidm/GeneratorAdder.h>
+#include <iidm/LccConverterStationAdder.h>
+#include <iidm/ShuntCompensatorAdder.h>
+#include <iidm/StaticVarCompensatorAdder.h>
+#include <iidm/VscConverterStationAdder.h>
 #include <iidm/GroundAdder.h>
 #include <iidm/LoadAdder.h>
 #include <iidm/SlackTerminal.h>
@@ -199,9 +205,15 @@ public:
     void removeArea(const Area& area);
 
     // ── Creation and removal ─────────────────────────────────────────────────
-    GeneratorAdder newGenerator();
-    LoadAdder      newLoad();
-    GroundAdder    newGround();
+    GeneratorAdder            newGenerator();
+    LoadAdder                 newLoad();
+    GroundAdder               newGround();
+    BatteryAdder              newBattery();
+    ShuntCompensatorAdder     newShuntCompensator();
+    StaticVarCompensatorAdder newStaticVarCompensator();
+    VscConverterStationAdder  newVscConverterStation();
+    LccConverterStationAdder  newLccConverterStation();
+    BoundaryLineAdder         newBoundaryLine();
     // Removes the voltage level and its equipment; refused (ValidationException) while
     // branches connect it to other voltage levels
     void remove();

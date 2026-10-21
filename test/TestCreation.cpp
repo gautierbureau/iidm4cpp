@@ -164,6 +164,62 @@ void checkCreation(Network& network) {
     EXPECT_TRUE(network.getLoads().empty());
 }
 
+// Every kind of injection, with its nested adders
+void checkInjections(Network& network) {
+    VoltageLevel vl = network.newSubstation().setId("S3").add()
+        .newVoltageLevel().setId("VL3").setNominalV(400).setTopologyKind(TopologyKind::BUS_BREAKER).add();
+    vl.getBusBreakerView().newBus().setId("B3").add();
+
+    Battery battery = vl.newBattery().setId("BAT").setBus("B3").setMinP(-50).setMaxP(50).setTargetP(10)
+        .setLocalTargetQ(0).setEquivalent(true).add();
+    EXPECT_DOUBLE_EQ(battery.getTargetP(), 10);
+    EXPECT_TRUE(battery.isEquivalent());
+
+    ShuntCompensator linear = vl.newShuntCompensator().setId("SC").setBus("B3").setSectionCount(1)
+        .newLinearModel().setBPerSection(1e-5).setGPerSection(0).setMaximumSectionCount(2).add()
+        .add();
+    EXPECT_EQ(linear.getModelType(), ShuntCompensatorModelType::LINEAR);
+    EXPECT_EQ(linear.getMaximumSectionCount(), 2);
+    ShuntCompensator nonLinear = vl.newShuntCompensator().setId("SC2").setBus("B3").setSectionCount(2)
+        .setSolvedSectionCount(1)
+        .newNonLinearModel()
+            .beginSection().setB(1e-5).setG(0).endSection()
+            .beginSection().setB(3e-5).setG(0).endSection()
+            .add()
+        .add();
+    EXPECT_DOUBLE_EQ(nonLinear.getB(), 3e-5);
+    EXPECT_EQ(nonLinear.getModel<ShuntCompensatorNonLinearModel>().getAllSections().size(), 2u);
+    EXPECT_EQ(nonLinear.getSolvedSectionCount(), iidm::optional<int>(1));
+    EXPECT_THROW(vl.newShuntCompensator().setId("SC3").setBus("B3").setSectionCount(0).add(), ValidationException); // no model
+
+    StaticVarCompensator svc = vl.newStaticVarCompensator().setId("SVC").setBus("B3").setBmin(-1e-3).setBmax(1e-3)
+        .setLocalTargetV(400)
+        .newVoltageRegulation().withMode(RegulationMode::VOLTAGE).withRegulating(true).add()
+        .add();
+    EXPECT_DOUBLE_EQ(svc.getBmax(), 1e-3);
+    EXPECT_TRUE(svc.isRegulating());
+
+    VscConverterStation vsc = vl.newVscConverterStation().setId("VSC").setBus("B3").setLossFactor(1.1).setLocalTargetQ(0).add();
+    EXPECT_NEAR(vsc.getLossFactor(), 1.1, 1e-6);
+    LccConverterStation lcc = vl.newLccConverterStation().setId("LCC").setBus("B3").setLossFactor(1.2).setPowerFactor(0.8).add();
+    EXPECT_NEAR(lcc.getPowerFactor(), 0.8, 1e-6);
+
+    BoundaryLine bl = vl.newBoundaryLine().setId("BL").setBus("B3").setP0(10).setQ0(5).setR(1).setX(10).setG(0).setB(0)
+        .setPairingKey("XNODE")
+        .newGeneration().setMinP(0).setMaxP(100).setTargetP(50).setTargetQ(10).setTargetV(400)
+            .setVoltageRegulationOn(false).add()
+        .add();
+    EXPECT_EQ(*bl.getPairingKey(), "XNODE");
+    BoundaryLine::Generation generation = *bl.getGeneration();
+    EXPECT_DOUBLE_EQ(generation.getTargetP(), 50);
+    generation.newMinMaxReactiveLimits().setMinQ(-20).setMaxQ(20).add();
+    EXPECT_DOUBLE_EQ(generation.getReactiveLimits<MinMaxReactiveLimits>().getMaxQ(), 20);
+
+    EXPECT_EQ(vl.getConnectables().size(), 7u);
+    for (Connectable connectable : vl.getConnectables()) connectable.remove();
+    EXPECT_TRUE(vl.getConnectables().empty());
+}
+
 } // namespace
 
 #ifdef IIDM_BRIDGE_GRAALVM_ENABLED
@@ -175,6 +231,7 @@ TEST(CreationTest, GraalVM) {
     options.graalvmLibPath = lib;
     Network network = NetworkFactory::create("created", options);
     checkCreation(network);
+    checkInjections(network);
     EXPECT_LT(static_cast<GraalVMBackend&>(network.getBackend()).javaHandleCount(), 100);
 }
 #endif
@@ -187,5 +244,6 @@ TEST(CreationTest, JNI) {
     options.jniNetworkId = "creation_test";
     Network network = NetworkFactory::create("created", options);
     checkCreation(network);
+    checkInjections(network);
 }
 #endif

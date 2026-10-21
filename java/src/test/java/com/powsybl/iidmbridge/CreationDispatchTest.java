@@ -109,6 +109,91 @@ class CreationDispatchTest {
         assertTrue(PropertyDispatcher.getBool(load, FICTITIOUS));
     }
 
+    // Every kind of injection, with its nested adders: the models and sections of a shunt compensator,
+    // the generation of a boundary line
+    @Test void injections() {
+        VoltageLevel vl = addVoltageLevel();
+        Object bat = injection(vl, BATTERY, "BAT");
+        PropertyDispatcher.setDouble(bat, BAT_MIN_P, -50);
+        PropertyDispatcher.setDouble(bat, BAT_MAX_P, 50);
+        PropertyDispatcher.setDouble(bat, BAT_TARGET_P, 10);
+        PropertyDispatcher.setDouble(bat, LOCAL_TARGET_Q, 0);
+        PropertyDispatcher.setBool(bat, EQUIVALENT, true);
+        Battery battery = (Battery) add(bat);
+        assertEquals(10, battery.getTargetP());
+        assertTrue(battery.isEquivalent());
+
+        Object sc = injection(vl, SHUNT_COMPENSATOR, "SC");
+        PropertyDispatcher.setInt(sc, SHUNT_SECTION_COUNT, 1);
+        Object linear = PropertyDispatcher.invokeObject(sc, SHUNT_COMPENSATOR_LINEAR_MODEL);
+        PropertyDispatcher.setDouble(linear, SHUNT_B_PER_SECTION, 1e-5);
+        PropertyDispatcher.setDouble(linear, SHUNT_G_PER_SECTION, 0);
+        PropertyDispatcher.setInt(linear, SHUNT_MAX_SECTION_COUNT, 2);
+        assertNull(add(linear)); // nested
+        ShuntCompensator shunt = (ShuntCompensator) add(sc);
+        assertEquals(2, shunt.getMaximumSectionCount());
+
+        Object sc2 = injection(vl, SHUNT_COMPENSATOR, "SC2");
+        PropertyDispatcher.setInt(sc2, SHUNT_SECTION_COUNT, 2);
+        PropertyDispatcher.setInt(sc2, SHUNT_SOLVED_SECTION_COUNT, 1);
+        Object nonLinear = PropertyDispatcher.invokeObject(sc2, SHUNT_COMPENSATOR_NON_LINEAR_MODEL);
+        for (double b : new double[] {1e-5, 3e-5}) {
+            Object section = PropertyDispatcher.invokeObject(nonLinear, SHUNT_SECTION);
+            PropertyDispatcher.setDouble(section, SHUNT_SECTION_B, b);
+            PropertyDispatcher.setDouble(section, SHUNT_SECTION_G, 0);
+            assertNull(add(section));
+        }
+        assertNull(add(nonLinear));
+        ShuntCompensator shunt2 = (ShuntCompensator) add(sc2);
+        assertEquals(3e-5, shunt2.getB());
+        assertEquals(1, shunt2.getSolvedSectionCount());
+
+        Object svc = injection(vl, STATIC_VAR_COMPENSATOR, "SVC");
+        PropertyDispatcher.setDouble(svc, SVC_B_MIN, -1e-3);
+        PropertyDispatcher.setDouble(svc, SVC_B_MAX, 1e-3);
+        PropertyDispatcher.setDouble(svc, LOCAL_TARGET_Q, 0);
+        assertEquals(1e-3, ((StaticVarCompensator) add(svc)).getBmax());
+
+        Object vsc = injection(vl, VSC_CONVERTER_STATION, "VSC");
+        PropertyDispatcher.setDouble(vsc, CONVERTER_STATION_LOSS_FACTOR, 1.1);
+        PropertyDispatcher.setDouble(vsc, LOCAL_TARGET_Q, 0);
+        assertEquals(1.1f, ((VscConverterStation) add(vsc)).getLossFactor());
+
+        Object lcc = injection(vl, LCC_CONVERTER_STATION, "LCC");
+        PropertyDispatcher.setDouble(lcc, CONVERTER_STATION_LOSS_FACTOR, 1.2);
+        PropertyDispatcher.setDouble(lcc, LCC_POWER_FACTOR, 0.8);
+        assertEquals(0.8f, ((LccConverterStation) add(lcc)).getPowerFactor());
+
+        Object bl = injection(vl, BOUNDARY_LINE, "BL");
+        for (int code : new int[] {BL_P0, BL_Q0, BL_R, BL_X, BL_G, BL_B}) {
+            PropertyDispatcher.setDouble(bl, code, 1);
+        }
+        PropertyDispatcher.setString(bl, BL_PAIRING_KEY, "XNODE");
+        Object generation = PropertyDispatcher.invokeObject(bl, BOUNDARY_LINE_GENERATION);
+        PropertyDispatcher.setDouble(generation, GENERATION_MIN_P, 0);
+        PropertyDispatcher.setDouble(generation, GENERATION_MAX_P, 100);
+        PropertyDispatcher.setDouble(generation, GENERATION_TARGET_P, 50);
+        PropertyDispatcher.setDouble(generation, GENERATION_TARGET_Q, 10);
+        PropertyDispatcher.setDouble(generation, GENERATION_TARGET_V, 400);
+        PropertyDispatcher.setBool(generation, GENERATION_VOLTAGE_REGULATION_ON, false);
+        assertNull(add(generation));
+        BoundaryLine line = (BoundaryLine) add(bl);
+        assertEquals("XNODE", line.getPairingKey());
+        assertEquals(50, line.getGeneration().getTargetP());
+
+        // powsybl's checks: a shunt without a model
+        Object noModel = injection(vl, SHUNT_COMPENSATOR, "SC3");
+        PropertyDispatcher.setInt(noModel, SHUNT_SECTION_COUNT, 0);
+        assertThrows(ValidationException.class, () -> add(noModel));
+    }
+
+    private static Object injection(VoltageLevel vl, int type, String id) {
+        Object adder = PropertyDispatcher.invokeObject(vl, type);
+        PropertyDispatcher.setString(adder, ID, id);
+        PropertyDispatcher.setString(adder, TERMINAL_BUS_BREAKER_BUS_ID, "B");
+        return adder;
+    }
+
     @Test void voltageRegulationOfAnExistingGenerator() {
         Generator gen = addGenerator(addVoltageLevel());
         PropertyDispatcher.setRelatedObject(gen, VOLTAGE_REGULATION, null);
