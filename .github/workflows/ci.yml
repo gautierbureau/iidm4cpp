@@ -38,9 +38,13 @@ jobs:
   # GTest is fetched automatically via FetchContent when not found locally (or
   # older than 1.10), so no separate GTest installation step is required on any
   # platform.
+  #
+  # With the JAR of the java job, the tests on the real JNI backend (the accessor
+  # table, the *Network tests...) run too, on every platform and C++ standard.
   cpp:
     name: C++ unit tests (${{ matrix.label }})
     runs-on: ${{ matrix.os }}
+    needs: java
     strategy:
       fail-fast: false
       matrix:
@@ -132,7 +136,15 @@ jobs:
       - name: Build
         run: cmake --build build --parallel
 
+      - name: Download JAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: iidm-bridge-java
+          path: java-artifacts
+
       - name: Run unit tests
+        env:
+          IIDM_BRIDGE_JAR: ${{ github.workspace }}/java-artifacts/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar
         run: ctest --test-dir build --output-on-failure --parallel 4
 
       - name: Upload test results
