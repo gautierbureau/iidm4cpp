@@ -24,10 +24,10 @@ public:
     Line getLine1() const;
     Line getLine2() const;
     // Ω
-    double getR() const;
-    MutualCoupling& setR(double r);
-    double getX() const;
-    MutualCoupling& setX(double x);
+    double getR() const { return getDouble(prop::EXT_MC_R); }
+    MutualCoupling& setR(double r) { return setDouble(*this, prop::EXT_MC_R, r); }
+    double getX() const { return getDouble(prop::EXT_MC_X); }
+    MutualCoupling& setX(double x) { return setDouble(*this, prop::EXT_MC_X, x); }
     LineSegment getLine1Segment() const;
     LineSegment getLine2Segment() const;
     MutualCoupling& setLine1Segment(const LineSegment& segment);

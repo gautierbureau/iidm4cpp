@@ -17,13 +17,13 @@ public:
     Battery() = default;
     explicit Battery(ObjectHandle handle, BackendProvider* backend) : Injection(handle, backend) {}
 
-    double getTargetP() const;
-    Battery& setTargetP(double targetP);
+    double getTargetP() const { return getDouble(prop::BAT_TARGET_P); }
+    Battery& setTargetP(double targetP) { return setDouble(*this, prop::BAT_TARGET_P, targetP); }
 
-    double getMinP() const;
-    Battery& setMinP(double minP);
-    double getMaxP() const;
-    Battery& setMaxP(double maxP);
+    double getMinP() const { return getDouble(prop::BAT_MIN_P); }
+    Battery& setMinP(double minP) { return setDouble(*this, prop::BAT_MIN_P, minP); }
+    double getMaxP() const { return getDouble(prop::BAT_MAX_P); }
+    Battery& setMaxP(double maxP) { return setDouble(*this, prop::BAT_MAX_P, maxP); }
 
     // ── Solved values ────────────────────────────────────────────────────
     // Its targets (P, Q) from the solved values: both; the target P (setTargetQToQ() is that of

@@ -17,10 +17,10 @@ public:
         Section() = default;
         explicit Section(ObjectHandle handle, BackendProvider* backend) : ObjectRef(handle, backend) {}
 
-        double getB() const;
-        Section& setB(double b);
-        double getG() const;
-        Section& setG(double g);
+        double getB() const { return getDouble(prop::SHUNT_SECTION_B); }
+        Section& setB(double b) { return setDouble(*this, prop::SHUNT_SECTION_B, b); }
+        double getG() const { return getDouble(prop::SHUNT_SECTION_G); }
+        Section& setG(double g) { return setDouble(*this, prop::SHUNT_SECTION_G, g); }
     };
 
     static constexpr int TYPE = prop::SHUNT_COMPENSATOR_NON_LINEAR_MODEL;

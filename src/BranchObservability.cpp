@@ -8,15 +8,6 @@ namespace iidm {
 BranchObservability::BranchObservability(ObjectHandle handle, BackendProvider* backend)
     : ObjectRef(handle, backend) {}
 
-bool BranchObservability::isObservable() const {
-    return backend_->getBool(handle_, prop::EXT_OBS_OBSERVABLE);
-}
-
-BranchObservability& BranchObservability::setObservable(bool observable) {
-    backend_->setBool(handle_, prop::EXT_OBS_OBSERVABLE, observable);
-    return *this;
-}
-
 iidm::optional<ObservabilityQuality> BranchObservability::getQualityP1() const {
     return detail::getQuality(backend_, handle_, prop::OBS_QUALITY_P1);
 }

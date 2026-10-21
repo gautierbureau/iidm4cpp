@@ -17,7 +17,7 @@ public:
     ReactiveLimits() = default;
     explicit ReactiveLimits(ObjectHandle handle, BackendProvider* backend) : ObjectRef(handle, backend) {}
 
-    ReactiveLimitsKind getKind() const;
+    ReactiveLimitsKind getKind() const { return static_cast<ReactiveLimitsKind>(getInt(prop::RL_KIND)); }
 
     // The limits at an active power
     double getMinQ(double p) const;

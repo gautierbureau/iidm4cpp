@@ -25,8 +25,8 @@ public:
     explicit Measurement(ObjectHandle handle, BackendProvider* backend);
 
     // Empty when it has none
-    iidm::optional<std::string> getId() const;
-    MeasurementType getType() const;
+    iidm::optional<std::string> getId() const { return getOptString(prop::MEAS_ID); }
+    MeasurementType getType() const { return static_cast<MeasurementType>(getInt(prop::MEAS_TYPE)); }
 
     // Sorted
     std::vector<std::string> getPropertyNames() const;
@@ -35,14 +35,16 @@ public:
     Measurement& putProperty(const std::string& name, const std::string& value);
     Measurement& removeProperty(const std::string& name);
 
-    double getValue() const;
-    Measurement& setValue(double value);
+    double getValue() const { return getDouble(prop::MEAS_VALUE); }
+    Measurement& setValue(double value) { return setDouble(*this, prop::MEAS_VALUE, value); }
 
-    double getStandardDeviation() const;
-    Measurement& setStandardDeviation(double standardDeviation);
+    double getStandardDeviation() const { return getDouble(prop::MEAS_STD_DEV); }
+    Measurement& setStandardDeviation(double standardDeviation) {
+        return setDouble(*this, prop::MEAS_STD_DEV, standardDeviation);
+    }
 
-    bool isValueValid() const;
-    Measurement& setValueValid(bool valid);
+    bool isValueValid() const { return getBool(prop::MEAS_VALID); }
+    Measurement& setValueValid(bool valid) { return setBool(*this, prop::MEAS_VALID, valid); }
 
     // Same as powsybl's setValueAndValidity: the measurement is never valid with a stale value.
     Measurement& setValueAndValidity(double value, bool valid);

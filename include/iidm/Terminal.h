@@ -24,7 +24,9 @@ public:
         iidm::optional<Bus> getConnectableBus() const;
         // Another bus of its voltage level to connect to, connected or not as it was (bus-breaker
         // topology only: ValidationException otherwise)
-        BusBreakerView& setConnectableBus(const std::string& busId);
+        BusBreakerView& setConnectableBus(const std::string& busId) {
+            return setString(*this, prop::TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID, busId);
+        }
         // Moves its end of the equipment to a bus of a voltage level with a bus-breaker topology:
         // the equipment gets a new terminal there, and this one is no longer its terminal
         void moveConnectable(const std::string& busId, bool connected);
@@ -47,7 +49,7 @@ public:
         NodeBreakerView() = default;
         explicit NodeBreakerView(ObjectHandle termHandle, BackendProvider* backend) : ObjectRef(termHandle, backend) {}
 
-        int getNode() const;
+        int getNode() const { return getInt(prop::TERMINAL_NODE); }
         // Moves its end of the equipment to a node of a voltage level with a node-breaker
         // topology: the equipment gets a new terminal there, and this one is no longer its terminal
         void moveConnectable(int node, const std::string& voltageLevelId);
@@ -57,18 +59,18 @@ public:
     Terminal() = default;
     explicit Terminal(ObjectHandle handle, BackendProvider* backend) : ObjectRef(handle, backend) {}
 
-    double getP() const;
-    Terminal& setP(double p);
+    double getP() const { return getDouble(prop::TERMINAL_P); }
+    Terminal& setP(double p) { return setDouble(*this, prop::TERMINAL_P, p); }
 
-    double getQ() const;
-    Terminal& setQ(double q);
+    double getQ() const { return getDouble(prop::TERMINAL_Q); }
+    Terminal& setQ(double q) { return setDouble(*this, prop::TERMINAL_Q, q); }
 
     // Current (A), from its flows and the voltage of its bus
-    double getI() const;
+    double getI() const { return getDouble(prop::TERMINAL_I); }
     // Unsets its flows
     void unsetSolvedValues();
 
-    bool isConnected() const;
+    bool isConnected() const { return getBool(prop::TERMINAL_CONNECTED); }
     // Connects (disconnects) it, operating breakers if needed: true when this changed it, false
     // when it could not, or already was
     bool connect();

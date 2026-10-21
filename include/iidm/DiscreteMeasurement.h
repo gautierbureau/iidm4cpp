@@ -26,8 +26,8 @@ public:
     explicit DiscreteMeasurement(ObjectHandle handle, BackendProvider* backend);
 
     // Empty when it has none
-    iidm::optional<std::string> getId() const;
-    DiscreteMeasurementType getType() const;
+    iidm::optional<std::string> getId() const { return getOptString(prop::DMEAS_ID); }
+    DiscreteMeasurementType getType() const { return static_cast<DiscreteMeasurementType>(getInt(prop::DMEAS_TYPE)); }
 
     // Measured tap changer of a TAP_POSITION measurement; empty otherwise.
     iidm::optional<DiscreteMeasurementTapChanger> getTapChanger() const;
@@ -39,20 +39,24 @@ public:
     DiscreteMeasurement& putProperty(const std::string& name, const std::string& value);
     DiscreteMeasurement& removeProperty(const std::string& name);
 
-    DiscreteMeasurementValueType getValueType() const;
+    DiscreteMeasurementValueType getValueType() const {
+        return static_cast<DiscreteMeasurementValueType>(getInt(prop::DMEAS_VALUE_TYPE));
+    }
 
     // Each getter requires the matching value type.
-    std::string getValueAsString() const;
-    int         getValueAsInt() const;
-    bool        getValueAsBoolean() const;
+    std::string getValueAsString() const { return getString(prop::DMEAS_VALUE_STRING); }
+    int         getValueAsInt() const { return getInt(prop::DMEAS_VALUE_INT); }
+    bool        getValueAsBoolean() const { return getBool(prop::DMEAS_VALUE_BOOL); }
 
-    DiscreteMeasurement& setValue(const std::string& value);
+    DiscreteMeasurement& setValue(const std::string& value) {
+        return setString(*this, prop::DMEAS_VALUE_STRING, value);
+    }
     DiscreteMeasurement& setValue(const char* value);   // avoids the const char* → bool conversion
-    DiscreteMeasurement& setValue(int value);
-    DiscreteMeasurement& setValue(bool value);
+    DiscreteMeasurement& setValue(int value) { return setInt(*this, prop::DMEAS_VALUE_INT, value); }
+    DiscreteMeasurement& setValue(bool value) { return setBool(*this, prop::DMEAS_VALUE_BOOL, value); }
 
-    bool isValueValid() const;
-    DiscreteMeasurement& setValueValid(bool valid);
+    bool isValueValid() const { return getBool(prop::DMEAS_VALID); }
+    DiscreteMeasurement& setValueValid(bool valid) { return setBool(*this, prop::DMEAS_VALID, valid); }
 
     // Removes it from its extension
     void remove();

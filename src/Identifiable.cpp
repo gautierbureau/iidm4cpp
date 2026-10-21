@@ -5,47 +5,12 @@
 
 namespace iidm {
 
-std::string Identifiable::getId() const {
-    return backend_->getString(handle_, prop::ID);
-}
-
-Identifiable& Identifiable::setId(const std::string& id) {
-    backend_->setString(handle_, prop::ID, id);
-    return *this;
-}
-
 Network Identifiable::getNetwork() const {
     return Network(backend_->getRelated(handle_, prop::NETWORK), backend_);
 }
 
 Network Identifiable::getParentNetwork() const {
     return Network(backend_->getRelated(handle_, prop::REL_PARENT_NETWORK), backend_);
-}
-
-std::string Identifiable::getNameOrId() const {
-    return backend_->getString(handle_, prop::NAME);
-}
-
-iidm::optional<std::string> Identifiable::getOptionalName() const {
-    return backend_->getOptString(handle_, prop::NAME);
-}
-
-Identifiable& Identifiable::setName(const std::string& name) {
-    backend_->setString(handle_, prop::NAME, name);
-    return *this;
-}
-
-bool Identifiable::isFictitious() const {
-    return backend_->getBool(handle_, prop::FICTITIOUS);
-}
-
-Identifiable& Identifiable::setFictitious(bool fictitious) {
-    backend_->setBool(handle_, prop::FICTITIOUS, fictitious);
-    return *this;
-}
-
-IdentifiableType Identifiable::getType() const {
-    return static_cast<IdentifiableType>(backend_->getInt(handle_, prop::IDENTIFIABLE_TYPE));
 }
 
 // ── Aliases ──────────────────────────────────────────────────────────────────

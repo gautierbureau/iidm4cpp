@@ -29,8 +29,10 @@ public:
         AreaCharacteristics() = default;
         explicit AreaCharacteristics(ObjectHandle handle, BackendProvider* backend);
 
-        int                 getAreaNumber() const;
-        ObservabilityStatus getStatus() const;
+        int                 getAreaNumber() const { return getInt(prop::OBS_AREA_NUMBER); }
+        ObservabilityStatus getStatus() const {
+            return static_cast<ObservabilityStatus>(getInt(prop::OBS_AREA_STATUS));
+        }
 
         // Terminals of the voltage level that belong to the area.
         std::vector<Terminal> getTerminals() const;
@@ -43,7 +45,7 @@ public:
     ObservabilityArea() = default;
     explicit ObservabilityArea(ObjectHandle handle, BackendProvider* backend);
 
-    bool isConsistentWithTopology() const;
+    bool isConsistentWithTopology() const { return getBool(prop::EXT_OBS_AREA_CONSISTENT); }
 
     // By area number
     std::vector<AreaCharacteristics> getObservabilityAreas() const;

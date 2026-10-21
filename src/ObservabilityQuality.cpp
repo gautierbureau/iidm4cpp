@@ -7,15 +7,6 @@ namespace iidm {
 ObservabilityQuality::ObservabilityQuality(ObjectHandle handle, BackendProvider* backend)
     : ObjectRef(handle, backend) {}
 
-double ObservabilityQuality::getStandardDeviation() const {
-    return backend_->getDouble(handle_, prop::OBS_QUALITY_STANDARD_DEVIATION);
-}
-
-ObservabilityQuality& ObservabilityQuality::setStandardDeviation(double standardDeviation) {
-    backend_->setDouble(handle_, prop::OBS_QUALITY_STANDARD_DEVIATION, standardDeviation);
-    return *this;
-}
-
 iidm::optional<bool> ObservabilityQuality::isRedundant() const {
     const int redundant = backend_->getInt(handle_, prop::OBS_QUALITY_REDUNDANT);
     if (redundant < 0) return {};

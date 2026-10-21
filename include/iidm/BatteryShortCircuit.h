@@ -18,16 +18,22 @@ public:
     explicit BatteryShortCircuit(ObjectHandle handle, BackendProvider* backend);
 
     // Direct-axis subtransient reactance (X''d)
-    double getDirectSubtransX() const;
-    BatteryShortCircuit& setDirectSubtransX(double directSubtransX);
+    double getDirectSubtransX() const { return getDouble(prop::EXT_SC_DIRECT_SUBTRANS_X); }
+    BatteryShortCircuit& setDirectSubtransX(double directSubtransX) {
+        return setDouble(*this, prop::EXT_SC_DIRECT_SUBTRANS_X, directSubtransX);
+    }
 
     // Direct-axis transient reactance (X'd)
-    double getDirectTransX() const;
-    BatteryShortCircuit& setDirectTransX(double directTransX);
+    double getDirectTransX() const { return getDouble(prop::EXT_SC_DIRECT_TRANS_X); }
+    BatteryShortCircuit& setDirectTransX(double directTransX) {
+        return setDouble(*this, prop::EXT_SC_DIRECT_TRANS_X, directTransX);
+    }
 
     // Reactance of a step-up transformer that is not modeled (NaN when none)
-    double getStepUpTransformerX() const;
-    BatteryShortCircuit& setStepUpTransformerX(double stepUpTransformerX);
+    double getStepUpTransformerX() const { return getDouble(prop::EXT_SC_STEP_UP_TRANSFORMER_X); }
+    BatteryShortCircuit& setStepUpTransformerX(double stepUpTransformerX) {
+        return setDouble(*this, prop::EXT_SC_STEP_UP_TRANSFORMER_X, stepUpTransformerX);
+    }
 };
 
 } // namespace iidm

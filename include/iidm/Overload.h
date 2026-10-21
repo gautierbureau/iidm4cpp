@@ -23,12 +23,12 @@ public:
     // with an acceptable duration of 0
     TemporaryLimit getTemporaryLimit() const;
     // The limit the flow is over: the permanent limit, or a temporary limit
-    double getPreviousLimit() const;
-    std::string getPreviousLimitName() const;
+    double getPreviousLimit() const { return getDouble(prop::OVERLOAD_PREVIOUS_LIMIT); }
+    std::string getPreviousLimitName() const { return getString(prop::OVERLOAD_PREVIOUS_LIMIT_NAME); }
     // The group of the limits
-    std::string getOperationalLimitsGroupId() const;
+    std::string getOperationalLimitsGroupId() const { return getString(prop::OVERLOAD_OLG_ID); }
     // What the limits were multiplied by (the limit reduction of the check)
-    double getLimitScalingCoefficient() const;
+    double getLimitScalingCoefficient() const { return getDouble(prop::OVERLOAD_LIMIT_SCALING); }
 };
 
 } // namespace iidm

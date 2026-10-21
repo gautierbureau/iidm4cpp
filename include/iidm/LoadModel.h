@@ -16,7 +16,7 @@ public:
     LoadModel() = default;
     explicit LoadModel(ObjectHandle handle, BackendProvider* backend) : ObjectRef(handle, backend) {}
 
-    LoadModelType getType() const;
+    LoadModelType getType() const { return static_cast<LoadModelType>(getInt(prop::LOAD_MODEL_TYPE)); }
 };
 
 // Constant power (c0), current (c1) and impedance (c2) parts of P and Q
@@ -27,18 +27,18 @@ public:
     ZipLoadModel() = default;
     explicit ZipLoadModel(ObjectHandle handle, BackendProvider* backend) : LoadModel(handle, backend) {}
 
-    double getC0p() const;
-    ZipLoadModel& setC0p(double c0p);
-    double getC1p() const;
-    ZipLoadModel& setC1p(double c1p);
-    double getC2p() const;
-    ZipLoadModel& setC2p(double c2p);
-    double getC0q() const;
-    ZipLoadModel& setC0q(double c0q);
-    double getC1q() const;
-    ZipLoadModel& setC1q(double c1q);
-    double getC2q() const;
-    ZipLoadModel& setC2q(double c2q);
+    double getC0p() const { return getDouble(prop::ZIP_C0P); }
+    ZipLoadModel& setC0p(double c0p) { return setDouble(*this, prop::ZIP_C0P, c0p); }
+    double getC1p() const { return getDouble(prop::ZIP_C1P); }
+    ZipLoadModel& setC1p(double c1p) { return setDouble(*this, prop::ZIP_C1P, c1p); }
+    double getC2p() const { return getDouble(prop::ZIP_C2P); }
+    ZipLoadModel& setC2p(double c2p) { return setDouble(*this, prop::ZIP_C2P, c2p); }
+    double getC0q() const { return getDouble(prop::ZIP_C0Q); }
+    ZipLoadModel& setC0q(double c0q) { return setDouble(*this, prop::ZIP_C0Q, c0q); }
+    double getC1q() const { return getDouble(prop::ZIP_C1Q); }
+    ZipLoadModel& setC1q(double c1q) { return setDouble(*this, prop::ZIP_C1Q, c1q); }
+    double getC2q() const { return getDouble(prop::ZIP_C2Q); }
+    ZipLoadModel& setC2q(double c2q) { return setDouble(*this, prop::ZIP_C2Q, c2q); }
 };
 
 // P and Q proportional to a power of the voltage
@@ -49,10 +49,10 @@ public:
     ExponentialLoadModel() = default;
     explicit ExponentialLoadModel(ObjectHandle handle, BackendProvider* backend) : LoadModel(handle, backend) {}
 
-    double getNp() const;
-    ExponentialLoadModel& setNp(double np);
-    double getNq() const;
-    ExponentialLoadModel& setNq(double nq);
+    double getNp() const { return getDouble(prop::EXP_NP); }
+    ExponentialLoadModel& setNp(double np) { return setDouble(*this, prop::EXP_NP, np); }
+    double getNq() const { return getDouble(prop::EXP_NQ); }
+    ExponentialLoadModel& setNq(double nq) { return setDouble(*this, prop::EXP_NQ, nq); }
 };
 
 } // namespace iidm

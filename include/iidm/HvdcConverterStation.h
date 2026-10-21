@@ -17,10 +17,12 @@ public:
     HvdcConverterStation() = default;
     explicit HvdcConverterStation(ObjectHandle handle, BackendProvider* backend) : Injection(handle, backend) {}
 
-    HvdcType getHvdcType() const;
+    HvdcType getHvdcType() const { return static_cast<HvdcType>(getInt(prop::CONVERTER_STATION_HVDC_TYPE)); }
 
-    double getLossFactor() const;
-    HvdcConverterStation& setLossFactor(double lossFactor);
+    double getLossFactor() const { return getDouble(prop::CONVERTER_STATION_LOSS_FACTOR); }
+    HvdcConverterStation& setLossFactor(double lossFactor) {
+        return setDouble(*this, prop::CONVERTER_STATION_LOSS_FACTOR, lossFactor);
+    }
 
     // Empty when the station is not in an HVDC line
     iidm::optional<HvdcLine> getHvdcLine() const;

@@ -37,28 +37,6 @@ Network& Network::operator=(Network&& other) noexcept {
     return *this;
 }
 
-std::string Network::getCaseDate() const {
-    return backend_->getString(handle_, prop::NETWORK_CASE_DATE);
-}
-
-Network& Network::setCaseDate(const std::string& caseDate) {
-    backend_->setString(handle_, prop::NETWORK_CASE_DATE, caseDate);
-    return *this;
-}
-
-int Network::getForecastDistance() const {
-    return backend_->getInt(handle_, prop::NETWORK_FORECAST_DISTANCE);
-}
-
-Network& Network::setForecastDistance(int forecastDistance) {
-    backend_->setInt(handle_, prop::NETWORK_FORECAST_DISTANCE, forecastDistance);
-    return *this;
-}
-
-std::string Network::getSourceFormat() const {
-    return backend_->getString(handle_, prop::NETWORK_SOURCE_FORMAT);
-}
-
 BackendProvider& Network::getBackend() {
     return *backend_;
 }
@@ -137,10 +115,6 @@ Network Network::createSubnetwork(const std::string& subnetworkId, const std::st
 
 Network Network::detach() {
     return Network(backend_->invoke(handle_, prop::ACT_DETACH), backend_);
-}
-
-bool Network::isDetachable() const {
-    return backend_->getBool(handle_, prop::NETWORK_DETACHABLE);
 }
 
 void Network::flatten() {
@@ -415,15 +389,6 @@ VariantManager Network::getVariantManager() const {
 }
 
 // ── Validation ───────────────────────────────────────────────────────────────
-
-ValidationLevel Network::getValidationLevel() const {
-    return static_cast<ValidationLevel>(backend_->getInt(handle_, prop::NETWORK_VALIDATION_LEVEL));
-}
-
-Network& Network::setMinimumAcceptableValidationLevel(ValidationLevel validationLevel) {
-    backend_->setInt(handle_, prop::NETWORK_MIN_VALIDATION_LEVEL, static_cast<int>(validationLevel));
-    return *this;
-}
 
 ValidationLevel Network::runValidationChecks(bool throwsException) {
     return static_cast<ValidationLevel>(static_cast<int>(

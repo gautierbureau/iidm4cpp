@@ -93,17 +93,23 @@ public:
     Network& operator=(const Network&) = delete;
 
     // ISO-8601 date-time, e.g. "2026-01-31T12:00Z"
-    std::string getCaseDate() const;
-    Network& setCaseDate(const std::string& caseDate);
+    std::string getCaseDate() const { return getString(prop::NETWORK_CASE_DATE); }
+    Network& setCaseDate(const std::string& caseDate) { return setString(*this, prop::NETWORK_CASE_DATE, caseDate); }
     // In minutes
-    int getForecastDistance() const;
-    Network& setForecastDistance(int forecastDistance);
-    std::string getSourceFormat() const;
+    int getForecastDistance() const { return getInt(prop::NETWORK_FORECAST_DISTANCE); }
+    Network& setForecastDistance(int forecastDistance) {
+        return setInt(*this, prop::NETWORK_FORECAST_DISTANCE, forecastDistance);
+    }
+    std::string getSourceFormat() const { return getString(prop::NETWORK_SOURCE_FORMAT); }
 
     // ── Validation ───────────────────────────────────────────────────────
-    ValidationLevel getValidationLevel() const;
+    ValidationLevel getValidationLevel() const {
+        return static_cast<ValidationLevel>(getInt(prop::NETWORK_VALIDATION_LEVEL));
+    }
     // The lowest level its values may fall to (EQUIPMENT: steady state values may be missing)
-    Network& setMinimumAcceptableValidationLevel(ValidationLevel validationLevel);
+    Network& setMinimumAcceptableValidationLevel(ValidationLevel validationLevel) {
+        return setInt(*this, prop::NETWORK_MIN_VALIDATION_LEVEL, static_cast<int>(validationLevel));
+    }
     // Validates every value again: the level reached, or ValidationException with throwsException
     ValidationLevel runValidationChecks(bool throwsException = true);
 
@@ -244,7 +250,7 @@ public:
     // when a boundary element cannot be split (see isDetachable()), and for a network that is not a
     // subnetwork.
     Network detach();
-    bool isDetachable() const;
+    bool isDetachable() const { return getBool(prop::NETWORK_DETACHABLE); }
     // Merges its subnetworks into it (ValidationException for a subnetwork)
     void flatten();
     // What links it, or may link it, to another network (sorted by id): for a subnetwork, the lines

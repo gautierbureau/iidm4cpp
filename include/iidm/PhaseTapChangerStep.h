@@ -17,8 +17,8 @@ public:
     explicit PhaseTapChangerStep(ObjectHandle handle, BackendProvider* backend) : ObjectRef(handle, backend) {}
 
     // Phase shift (degrees)
-    double getAlpha() const;
-    PhaseTapChangerStep& setAlpha(double alpha);
+    double getAlpha() const { return getDouble(prop::PTC_STEP_ALPHA); }
+    PhaseTapChangerStep& setAlpha(double alpha) { return setDouble(*this, prop::PTC_STEP_ALPHA, alpha); }
 };
 
 } // namespace iidm

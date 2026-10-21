@@ -4,6 +4,7 @@
 #include <iidm/HandleRef.h>
 #include <iidm/IidmException.h>
 #include <iidm/ObjectHandle.h>
+#include <iidm/PropertyCodes.h>
 #include <string>
 
 namespace iidm {
@@ -40,6 +41,33 @@ protected:
     ObjectRef() = default;
     ObjectRef(ObjectHandle handle, BackendProvider* backend)
         : handle_(handle, backend), backend_(orNullBackend(backend)) {}
+
+    // The accessors of the wrappers, by property code: double getP0() const { return getDouble(prop::LOAD_P0); }
+    double getDouble(int code) const { return backend_->getDouble(handle_, code); }
+    int getInt(int code) const { return backend_->getInt(handle_, code); }
+    bool getBool(int code) const { return backend_->getBool(handle_, code); }
+    std::string getString(int code) const { return backend_->getString(handle_, code); }
+    iidm::optional<double> getOptDouble(int code) const { return backend_->getOptDouble(handle_, code); }
+    iidm::optional<int> getOptInt(int code) const { return backend_->getOptInt(handle_, code); }
+    iidm::optional<std::string> getOptString(int code) const { return backend_->getOptString(handle_, code); }
+
+    // Setters return the wrapper: Load& setP0(double p0) { return setDouble(*this, prop::LOAD_P0, p0); }
+    template <class Self> Self& setDouble(Self& self, int code, double value) {
+        backend_->setDouble(handle_, code, value);
+        return self;
+    }
+    template <class Self> Self& setInt(Self& self, int code, int value) {
+        backend_->setInt(handle_, code, value);
+        return self;
+    }
+    template <class Self> Self& setBool(Self& self, int code, bool value) {
+        backend_->setBool(handle_, code, value);
+        return self;
+    }
+    template <class Self> Self& setString(Self& self, int code, const std::string& value) {
+        backend_->setString(handle_, code, value);
+        return self;
+    }
 
     HandleRef        handle_;
     BackendProvider* backend_ = nullBackend();

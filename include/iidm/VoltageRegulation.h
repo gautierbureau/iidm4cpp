@@ -22,23 +22,27 @@ public:
     explicit VoltageRegulation(ObjectHandle handle, BackendProvider* backend);
 
     // Reactive power targets use the load sign convention
-    double getTargetValue() const;
-    VoltageRegulation& setTargetValue(double targetValue);
+    double getTargetValue() const { return getDouble(prop::VR_TARGET_VALUE); }
+    VoltageRegulation& setTargetValue(double targetValue) {
+        return setDouble(*this, prop::VR_TARGET_VALUE, targetValue);
+    }
 
-    double getTargetDeadband() const;
-    VoltageRegulation& setTargetDeadband(double targetDeadband);
+    double getTargetDeadband() const { return getDouble(prop::VR_TARGET_DEADBAND); }
+    VoltageRegulation& setTargetDeadband(double targetDeadband) {
+        return setDouble(*this, prop::VR_TARGET_DEADBAND, targetDeadband);
+    }
 
     // VOLTAGE_PER_REACTIVE_POWER mode: lambda in U0 = U + lambda * Q
-    double getSlope() const;
-    VoltageRegulation& setSlope(double slope);
+    double getSlope() const { return getDouble(prop::VR_SLOPE); }
+    VoltageRegulation& setSlope(double slope) { return setDouble(*this, prop::VR_SLOPE, slope); }
 
     iidm::optional<RegulationMode> getMode() const;
-    VoltageRegulation& setMode(RegulationMode mode);
+    VoltageRegulation& setMode(RegulationMode mode) { return setInt(*this, prop::VR_MODE, static_cast<int>(mode)); }
 
-    bool isRegulating() const;
-    VoltageRegulation& setRegulating(bool regulating);
+    bool isRegulating() const { return getBool(prop::VR_REGULATING); }
+    VoltageRegulation& setRegulating(bool regulating) { return setBool(*this, prop::VR_REGULATING, regulating); }
 
-    bool isWithTerminal() const;
+    bool isWithTerminal() const { return getBool(prop::VR_WITH_TERMINAL); }
     // Empty for a local regulation
     iidm::optional<Terminal> getTerminal() const;
     // The terminal and the target value change together. A default-constructed Terminal (and a

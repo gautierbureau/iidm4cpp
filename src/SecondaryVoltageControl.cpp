@@ -9,32 +9,6 @@ std::vector<std::string> PilotPoint::getBusbarSectionsOrBusesIds() const {
     return backend_->getStringList(handle_, prop::EXT_SVC_PILOT_POINT_IDS);
 }
 
-double PilotPoint::getTargetV() const {
-    return backend_->getDouble(handle_, prop::EXT_SVC_TARGET_V);
-}
-
-PilotPoint& PilotPoint::setTargetV(double targetV) {
-    backend_->setDouble(handle_, prop::EXT_SVC_TARGET_V, targetV);
-    return *this;
-}
-
-std::string ControlUnit::getId() const {
-    return backend_->getString(handle_, prop::EXT_SVC_UNIT_ID);
-}
-
-bool ControlUnit::isParticipate() const {
-    return backend_->getBool(handle_, prop::EXT_SVC_UNIT_PARTICIPATE);
-}
-
-ControlUnit& ControlUnit::setParticipate(bool participate) {
-    backend_->setBool(handle_, prop::EXT_SVC_UNIT_PARTICIPATE, participate);
-    return *this;
-}
-
-std::string ControlZone::getName() const {
-    return backend_->getString(handle_, prop::EXT_SVC_ZONE_NAME);
-}
-
 PilotPoint ControlZone::getPilotPoint() const {
     return PilotPoint(backend_->getRelated(handle_, prop::PILOT_POINT), backend_);
 }

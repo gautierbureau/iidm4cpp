@@ -19,8 +19,10 @@ public:
     InjectionObservability() = default;
     explicit InjectionObservability(ObjectHandle handle, BackendProvider* backend);
 
-    bool isObservable() const;
-    InjectionObservability& setObservable(bool observable);
+    bool isObservable() const { return getBool(prop::EXT_OBS_OBSERVABLE); }
+    InjectionObservability& setObservable(bool observable) {
+        return setBool(*this, prop::EXT_OBS_OBSERVABLE, observable);
+    }
 
     // Empty when the quality is not defined
     iidm::optional<ObservabilityQuality> getQualityP() const;

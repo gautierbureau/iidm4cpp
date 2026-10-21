@@ -22,15 +22,6 @@ void Connectable::unsetSolvedValues() {
     backend_->invoke(handle_, prop::ACT_UNSET_SOLVED_VALUES);
 }
 
-bool Connectable::isEquivalent() const {
-    return backend_->getBool(handle_, prop::EQUIVALENT);
-}
-
-Connectable& Connectable::setEquivalent(bool equivalent) {
-    backend_->setBool(handle_, prop::EQUIVALENT, equivalent);
-    return *this;
-}
-
 void Connectable::remove() {
     backend_->invoke(handle_, prop::ACT_REMOVE);
 }

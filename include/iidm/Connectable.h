@@ -33,8 +33,8 @@ public:
     void unsetSolvedValues();
 
     // An equivalent, from a network reduction for instance
-    bool isEquivalent() const;
-    Connectable& setEquivalent(bool equivalent);
+    bool isEquivalent() const { return getBool(prop::EQUIVALENT); }
+    Connectable& setEquivalent(bool equivalent) { return setBool(*this, prop::EQUIVALENT, equivalent); }
 
     // Removes it from the network
     void remove();

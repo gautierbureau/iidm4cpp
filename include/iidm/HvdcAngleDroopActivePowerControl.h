@@ -17,14 +17,16 @@ public:
     HvdcAngleDroopActivePowerControl() = default;
     explicit HvdcAngleDroopActivePowerControl(ObjectHandle handle, BackendProvider* backend);
 
-    double getDroop() const;
-    HvdcAngleDroopActivePowerControl& setDroop(double droop);
+    double getDroop() const { return getDouble(prop::EXT_HADAPC_DROOP); }
+    HvdcAngleDroopActivePowerControl& setDroop(double droop) { return setDouble(*this, prop::EXT_HADAPC_DROOP, droop); }
 
-    double getP0() const;
-    HvdcAngleDroopActivePowerControl& setP0(double p0);
+    double getP0() const { return getDouble(prop::EXT_HADAPC_P0); }
+    HvdcAngleDroopActivePowerControl& setP0(double p0) { return setDouble(*this, prop::EXT_HADAPC_P0, p0); }
 
-    bool isEnabled() const;
-    HvdcAngleDroopActivePowerControl& setEnabled(bool enabled);
+    bool isEnabled() const { return getBool(prop::EXT_HADAPC_ENABLED); }
+    HvdcAngleDroopActivePowerControl& setEnabled(bool enabled) {
+        return setBool(*this, prop::EXT_HADAPC_ENABLED, enabled);
+    }
 };
 
 } // namespace iidm

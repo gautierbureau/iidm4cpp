@@ -26,7 +26,7 @@ public:
     // when no variant has a slack terminal any more.
     SlackTerminal& setTerminal(const Terminal& terminal, bool cleanIfEmpty = false);
     // Whether no variant has a slack terminal
-    bool isEmpty() const;
+    bool isEmpty() const { return getBool(prop::EXT_ST_EMPTY); }
 };
 
 } // namespace iidm

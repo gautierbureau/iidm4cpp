@@ -56,7 +56,7 @@ public:
         explicit NodeBreakerView(ObjectHandle vlHandle, BackendProvider* backend);
 
         std::vector<int> getNodes() const;
-        int getMaximumNodeIndex() const;
+        int getMaximumNodeIndex() const { return getInt(prop::VL_NBV_MAXIMUM_NODE_INDEX); }
         // The terminal at a node (empty without one)
         iidm::optional<Terminal> getTerminal(int node) const;
         // Whether an equipment, a switch or an internal connection is at a node
@@ -151,15 +151,19 @@ public:
     // Empty when it is not in a substation
     iidm::optional<Substation> getSubstation() const;
 
-    double getNominalV() const;
-    VoltageLevel& setNominalV(double nominalV);
-    iidm::optional<double> getLowVoltageLimit() const;
+    double getNominalV() const { return getDouble(prop::VL_NOMINAL_V); }
+    VoltageLevel& setNominalV(double nominalV) { return setDouble(*this, prop::VL_NOMINAL_V, nominalV); }
+    iidm::optional<double> getLowVoltageLimit() const { return getOptDouble(prop::VL_LOW_VOLTAGE_LIMIT); }
     // NaN: none
-    VoltageLevel& setLowVoltageLimit(double lowVoltageLimit);
-    iidm::optional<double> getHighVoltageLimit() const;
-    VoltageLevel& setHighVoltageLimit(double highVoltageLimit);
+    VoltageLevel& setLowVoltageLimit(double lowVoltageLimit) {
+        return setDouble(*this, prop::VL_LOW_VOLTAGE_LIMIT, lowVoltageLimit);
+    }
+    iidm::optional<double> getHighVoltageLimit() const { return getOptDouble(prop::VL_HIGH_VOLTAGE_LIMIT); }
+    VoltageLevel& setHighVoltageLimit(double highVoltageLimit) {
+        return setDouble(*this, prop::VL_HIGH_VOLTAGE_LIMIT, highVoltageLimit);
+    }
 
-    TopologyKind getTopologyKind() const;
+    TopologyKind getTopologyKind() const { return static_cast<TopologyKind>(getInt(prop::VL_TOPOLOGY_KIND)); }
     // To bus-breaker topology (powsybl cannot convert to node-breaker yet)
     void convertToTopology(TopologyKind topologyKind);
     // Its topology as text, as powsybl prints it

@@ -11,14 +11,6 @@ namespace iidm {
 DiscreteMeasurement::DiscreteMeasurement(ObjectHandle handle, BackendProvider* backend)
     : ObjectRef(handle, backend) {}
 
-iidm::optional<std::string> DiscreteMeasurement::getId() const {
-    return backend_->getOptString(handle_, prop::DMEAS_ID);
-}
-
-DiscreteMeasurementType DiscreteMeasurement::getType() const {
-    return static_cast<DiscreteMeasurementType>(backend_->getInt(handle_, prop::DMEAS_TYPE));
-}
-
 iidm::optional<DiscreteMeasurementTapChanger> DiscreteMeasurement::getTapChanger() const {
     int tapChanger = backend_->getInt(handle_, prop::DMEAS_TAP_CHANGER);
     if (tapChanger < 0) return {};
@@ -43,48 +35,8 @@ DiscreteMeasurement& DiscreteMeasurement::removeProperty(const std::string& name
     return *this;
 }
 
-DiscreteMeasurementValueType DiscreteMeasurement::getValueType() const {
-    return static_cast<DiscreteMeasurementValueType>(backend_->getInt(handle_, prop::DMEAS_VALUE_TYPE));
-}
-
-std::string DiscreteMeasurement::getValueAsString() const {
-    return backend_->getString(handle_, prop::DMEAS_VALUE_STRING);
-}
-
-int DiscreteMeasurement::getValueAsInt() const {
-    return backend_->getInt(handle_, prop::DMEAS_VALUE_INT);
-}
-
-bool DiscreteMeasurement::getValueAsBoolean() const {
-    return backend_->getBool(handle_, prop::DMEAS_VALUE_BOOL);
-}
-
-DiscreteMeasurement& DiscreteMeasurement::setValue(const std::string& value) {
-    backend_->setString(handle_, prop::DMEAS_VALUE_STRING, value);
-    return *this;
-}
-
 DiscreteMeasurement& DiscreteMeasurement::setValue(const char* value) {
     return setValue(std::string(value));
-}
-
-DiscreteMeasurement& DiscreteMeasurement::setValue(int value) {
-    backend_->setInt(handle_, prop::DMEAS_VALUE_INT, value);
-    return *this;
-}
-
-DiscreteMeasurement& DiscreteMeasurement::setValue(bool value) {
-    backend_->setBool(handle_, prop::DMEAS_VALUE_BOOL, value);
-    return *this;
-}
-
-bool DiscreteMeasurement::isValueValid() const {
-    return backend_->getBool(handle_, prop::DMEAS_VALID);
-}
-
-DiscreteMeasurement& DiscreteMeasurement::setValueValid(bool valid) {
-    backend_->setBool(handle_, prop::DMEAS_VALID, valid);
-    return *this;
 }
 
 void DiscreteMeasurement::remove() {

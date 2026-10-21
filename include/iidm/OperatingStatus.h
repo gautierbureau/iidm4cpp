@@ -20,8 +20,8 @@ public:
     OperatingStatus() = default;
     explicit OperatingStatus(ObjectHandle handle, BackendProvider* backend);
 
-    Status getStatus() const;
-    OperatingStatus& setStatus(Status status);
+    Status getStatus() const { return static_cast<OperatingStatus::Status>(getInt(prop::EXT_OS_STATUS)); }
+    OperatingStatus& setStatus(Status status) { return setInt(*this, prop::EXT_OS_STATUS, static_cast<int>(status)); }
 };
 
 } // namespace iidm

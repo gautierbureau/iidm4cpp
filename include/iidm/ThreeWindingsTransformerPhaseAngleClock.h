@@ -18,11 +18,15 @@ public:
     explicit ThreeWindingsTransformerPhaseAngleClock(ObjectHandle handle, BackendProvider* backend);
 
     // The phase angle clock of legs 2 and 3 (0 to 11: ValidationException otherwise)
-    int getPhaseAngleClockLeg2() const;
-    ThreeWindingsTransformerPhaseAngleClock& setPhaseAngleClockLeg2(int phaseAngleClockLeg2);
+    int getPhaseAngleClockLeg2() const { return getInt(prop::EXT_THREE_WT_PAC_CLOCK_LEG2); }
+    ThreeWindingsTransformerPhaseAngleClock& setPhaseAngleClockLeg2(int phaseAngleClockLeg2) {
+        return setInt(*this, prop::EXT_THREE_WT_PAC_CLOCK_LEG2, phaseAngleClockLeg2);
+    }
 
-    int getPhaseAngleClockLeg3() const;
-    ThreeWindingsTransformerPhaseAngleClock& setPhaseAngleClockLeg3(int phaseAngleClockLeg3);
+    int getPhaseAngleClockLeg3() const { return getInt(prop::EXT_THREE_WT_PAC_CLOCK_LEG3); }
+    ThreeWindingsTransformerPhaseAngleClock& setPhaseAngleClockLeg3(int phaseAngleClockLeg3) {
+        return setInt(*this, prop::EXT_THREE_WT_PAC_CLOCK_LEG3, phaseAngleClockLeg3);
+    }
 };
 
 } // namespace iidm

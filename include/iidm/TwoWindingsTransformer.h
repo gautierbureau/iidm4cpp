@@ -27,21 +27,21 @@ public:
     // Empty when it is not in a substation
     iidm::optional<Substation> getSubstation() const;
 
-    double getR() const;
-    TwoWindingsTransformer& setR(double r);
-    double getX() const;
-    TwoWindingsTransformer& setX(double x);
-    double getG() const;
-    TwoWindingsTransformer& setG(double g);
-    double getB() const;
-    TwoWindingsTransformer& setB(double b);
-    double getRatedU1() const;
-    TwoWindingsTransformer& setRatedU1(double ratedU1);
-    double getRatedU2() const;
-    TwoWindingsTransformer& setRatedU2(double ratedU2);
-    iidm::optional<double> getRatedS() const;
+    double getR() const { return getDouble(prop::TWO_WT_R); }
+    TwoWindingsTransformer& setR(double r) { return setDouble(*this, prop::TWO_WT_R, r); }
+    double getX() const { return getDouble(prop::TWO_WT_X); }
+    TwoWindingsTransformer& setX(double x) { return setDouble(*this, prop::TWO_WT_X, x); }
+    double getG() const { return getDouble(prop::TWO_WT_G); }
+    TwoWindingsTransformer& setG(double g) { return setDouble(*this, prop::TWO_WT_G, g); }
+    double getB() const { return getDouble(prop::TWO_WT_B); }
+    TwoWindingsTransformer& setB(double b) { return setDouble(*this, prop::TWO_WT_B, b); }
+    double getRatedU1() const { return getDouble(prop::TWO_WT_RATED_U1); }
+    TwoWindingsTransformer& setRatedU1(double ratedU1) { return setDouble(*this, prop::TWO_WT_RATED_U1, ratedU1); }
+    double getRatedU2() const { return getDouble(prop::TWO_WT_RATED_U2); }
+    TwoWindingsTransformer& setRatedU2(double ratedU2) { return setDouble(*this, prop::TWO_WT_RATED_U2, ratedU2); }
+    iidm::optional<double> getRatedS() const { return getOptDouble(prop::TWO_WT_RATED_S); }
     // NaN: undefined
-    TwoWindingsTransformer& setRatedS(double ratedS);
+    TwoWindingsTransformer& setRatedS(double ratedS) { return setDouble(*this, prop::TWO_WT_RATED_S, ratedS); }
 
     // ── Solved values ────────────────────────────────────────────────────
     // The solved tap positions of its tap changers, when set, become their tap positions: of both

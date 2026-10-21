@@ -23,27 +23,31 @@ public:
     // ── Section counts ───────────────────────────────────────────────────
     // The number of sections in service: ValidationException when it is undefined, which only a
     // network at the EQUIPMENT validation level accepts (findSectionCount gives it as empty then)
-    int getSectionCount() const;
-    iidm::optional<int> findSectionCount() const;
-    ShuntCompensator& setSectionCount(int count);
+    int getSectionCount() const { return getInt(prop::SHUNT_SECTION_COUNT); }
+    iidm::optional<int> findSectionCount() const { return getOptInt(prop::SHUNT_SECTION_COUNT); }
+    ShuntCompensator& setSectionCount(int count) { return setInt(*this, prop::SHUNT_SECTION_COUNT, count); }
     ShuntCompensator& unsetSectionCount();
     // That of a load flow solution: empty when there is none
-    iidm::optional<int> getSolvedSectionCount() const;
+    iidm::optional<int> getSolvedSectionCount() const { return getOptInt(prop::SHUNT_SOLVED_SECTION_COUNT); }
     iidm::optional<int> findSolvedSectionCount() const;
-    ShuntCompensator& setSolvedSectionCount(int count);
+    ShuntCompensator& setSolvedSectionCount(int count) {
+        return setInt(*this, prop::SHUNT_SOLVED_SECTION_COUNT, count);
+    }
     ShuntCompensator& unsetSolvedSectionCount();
-    int getMaximumSectionCount() const;
+    int getMaximumSectionCount() const { return getInt(prop::SHUNT_MAX_SECTION_COUNT); }
 
     // ── Susceptance and conductance (S) ─────────────────────────────────
     // At the section count (which must be defined); at a section count from 0 to the maximum
     // (ValidationException outside)
-    double getB() const;
-    double getG() const;
+    double getB() const { return getDouble(prop::SHUNT_B); }
+    double getG() const { return getDouble(prop::SHUNT_G); }
     double getB(int sectionCount) const;
     double getG(int sectionCount) const;
 
     // ── Model ────────────────────────────────────────────────────────────
-    ShuntCompensatorModelType getModelType() const;
+    ShuntCompensatorModelType getModelType() const {
+        return static_cast<ShuntCompensatorModelType>(getInt(prop::SHUNT_MODEL_TYPE));
+    }
     ShuntCompensatorModel getModel() const;
     // As a ShuntCompensatorLinearModel or ShuntCompensatorNonLinearModel: ValidationException when
     // it is of the other type

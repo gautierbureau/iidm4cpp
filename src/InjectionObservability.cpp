@@ -8,15 +8,6 @@ namespace iidm {
 InjectionObservability::InjectionObservability(ObjectHandle handle, BackendProvider* backend)
     : ObjectRef(handle, backend) {}
 
-bool InjectionObservability::isObservable() const {
-    return backend_->getBool(handle_, prop::EXT_OBS_OBSERVABLE);
-}
-
-InjectionObservability& InjectionObservability::setObservable(bool observable) {
-    backend_->setBool(handle_, prop::EXT_OBS_OBSERVABLE, observable);
-    return *this;
-}
-
 iidm::optional<ObservabilityQuality> InjectionObservability::getQualityP() const {
     return detail::getQuality(backend_, handle_, prop::OBS_QUALITY_P);
 }

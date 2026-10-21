@@ -83,7 +83,6 @@ set(IIDM_BRIDGE_SOURCES
     src/ReactiveLimits.cpp
     src/ReactiveLimitsHolder.cpp
     src/TapChangerStep.cpp
-    src/PhaseTapChangerStep.cpp
     src/TapChanger.cpp
     src/PhaseTapChanger.cpp
     src/TapChangerHolder.cpp
@@ -124,7 +123,6 @@ set(IIDM_BRIDGE_SOURCES
     src/LoadModel.cpp
     src/Container.cpp
     src/StaticVarCompensator.cpp
-    src/LccConverterStation.cpp
     src/Switch.cpp
     src/BusbarSection.cpp
     src/InternalConnection.cpp

@@ -10,52 +10,10 @@ namespace iidm {
 TemporaryLimit::TemporaryLimit(ObjectHandle handle, BackendProvider* backend)
     : ObjectRef(handle, backend) {}
 
-std::string TemporaryLimit::getName() const {
-    return backend_->getString(handle_, prop::TL_NAME);
-}
-
-double TemporaryLimit::getValue() const {
-    return backend_->getDouble(handle_, prop::TL_VALUE);
-}
-
-int TemporaryLimit::getAcceptableDuration() const {
-    return backend_->getInt(handle_, prop::TL_ACCEPTABLE_DURATION);
-}
-
-bool TemporaryLimit::isFictitious() const {
-    return backend_->getBool(handle_, prop::TL_FICTITIOUS);
-}
-
 // ── LoadingLimits ─────────────────────────────────────────────────────────────
 
 LoadingLimits::LoadingLimits(ObjectHandle handle, BackendProvider* backend)
     : ObjectRef(handle, backend) {}
-
-LimitType LoadingLimits::getLimitType() const {
-    return static_cast<LimitType>(backend_->getInt(handle_, prop::LL_LIMIT_TYPE));
-}
-
-DetectionKind LoadingLimits::getDetectionKind() const {
-    return static_cast<DetectionKind>(backend_->getInt(handle_, prop::LL_DETECTION_KIND));
-}
-
-double LoadingLimits::getPermanentLimit() const {
-    return backend_->getDouble(handle_, prop::LL_PERMANENT_LIMIT);
-}
-
-LoadingLimits& LoadingLimits::setPermanentLimit(double permanentLimit) {
-    backend_->setDouble(handle_, prop::LL_PERMANENT_LIMIT, permanentLimit);
-    return *this;
-}
-
-std::string LoadingLimits::getPermanentLimitName() const {
-    return backend_->getString(handle_, prop::LL_PERMANENT_LIMIT_NAME);
-}
-
-LoadingLimits& LoadingLimits::setPermanentLimitName(const std::string& permanentLimitName) {
-    backend_->setString(handle_, prop::LL_PERMANENT_LIMIT_NAME, permanentLimitName);
-    return *this;
-}
 
 std::vector<TemporaryLimit> LoadingLimits::getTemporaryLimits() const {
     return detail::wrapAll<TemporaryLimit>(backend_->getChildren(handle_, prop::TEMPORARY_LIMIT), backend_);

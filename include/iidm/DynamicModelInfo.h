@@ -19,8 +19,10 @@ public:
     explicit DynamicModelInfo(ObjectHandle handle, BackendProvider* backend);
 
     // The name of the dynamic model
-    std::string getModelName() const;
-    DynamicModelInfo& setModelName(const std::string& modelName);
+    std::string getModelName() const { return getString(prop::EXT_DMI_MODEL_NAME); }
+    DynamicModelInfo& setModelName(const std::string& modelName) {
+        return setString(*this, prop::EXT_DMI_MODEL_NAME, modelName);
+    }
 };
 
 } // namespace iidm

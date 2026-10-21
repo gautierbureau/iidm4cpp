@@ -19,15 +19,15 @@ public:
     explicit TieLine(ObjectHandle handle, BackendProvider* backend) : Identifiable(handle, backend) {}
 
     // Empty when its boundary lines have none
-    iidm::optional<std::string> getPairingKey() const;
+    iidm::optional<std::string> getPairingKey() const { return getOptString(prop::BL_PAIRING_KEY); }
 
     // From those of its boundary lines
-    double getR() const;
-    double getX() const;
-    double getG1() const;
-    double getB1() const;
-    double getG2() const;
-    double getB2() const;
+    double getR() const { return getDouble(prop::LINE_R); }
+    double getX() const { return getDouble(prop::LINE_X); }
+    double getG1() const { return getDouble(prop::LINE_G1); }
+    double getB1() const { return getDouble(prop::LINE_B1); }
+    double getG2() const { return getDouble(prop::LINE_G2); }
+    double getB2() const { return getDouble(prop::LINE_B2); }
 
     BoundaryLine getBoundaryLine1() const;
     BoundaryLine getBoundaryLine2() const;

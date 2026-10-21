@@ -18,38 +18,38 @@ public:
     explicit LineFortescue(ObjectHandle handle, BackendProvider* backend);
 
     // Zero-sequence resistance (Ω)
-    double getRz() const;
-    LineFortescue& setRz(double rz);
+    double getRz() const { return getDouble(prop::EXT_LINE_F_RZ); }
+    LineFortescue& setRz(double rz) { return setDouble(*this, prop::EXT_LINE_F_RZ, rz); }
 
     // Zero-sequence reactance (Ω)
-    double getXz() const;
-    LineFortescue& setXz(double xz);
+    double getXz() const { return getDouble(prop::EXT_LINE_F_XZ); }
+    LineFortescue& setXz(double xz) { return setDouble(*this, prop::EXT_LINE_F_XZ, xz); }
 
     // Zero-sequence shunt conductance of side 1 (S)
-    double getG1z() const;
-    LineFortescue& setG1z(double g1z);
+    double getG1z() const { return getDouble(prop::EXT_LINE_F_G1Z); }
+    LineFortescue& setG1z(double g1z) { return setDouble(*this, prop::EXT_LINE_F_G1Z, g1z); }
 
     // Zero-sequence shunt susceptance of side 1 (S)
-    double getB1z() const;
-    LineFortescue& setB1z(double b1z);
+    double getB1z() const { return getDouble(prop::EXT_LINE_F_B1Z); }
+    LineFortescue& setB1z(double b1z) { return setDouble(*this, prop::EXT_LINE_F_B1Z, b1z); }
 
     // Zero-sequence shunt conductance of side 2 (S)
-    double getG2z() const;
-    LineFortescue& setG2z(double g2z);
+    double getG2z() const { return getDouble(prop::EXT_LINE_F_G2Z); }
+    LineFortescue& setG2z(double g2z) { return setDouble(*this, prop::EXT_LINE_F_G2Z, g2z); }
 
     // Zero-sequence shunt susceptance of side 2 (S)
-    double getB2z() const;
-    LineFortescue& setB2z(double b2z);
+    double getB2z() const { return getDouble(prop::EXT_LINE_F_B2Z); }
+    LineFortescue& setB2z(double b2z) { return setDouble(*this, prop::EXT_LINE_F_B2Z, b2z); }
 
     // Whether phase A is open
-    bool isOpenPhaseA() const;
-    LineFortescue& setOpenPhaseA(bool openPhaseA);
+    bool isOpenPhaseA() const { return getBool(prop::EXT_LINE_F_OPEN_PHASE_A); }
+    LineFortescue& setOpenPhaseA(bool openPhaseA) { return setBool(*this, prop::EXT_LINE_F_OPEN_PHASE_A, openPhaseA); }
 
-    bool isOpenPhaseB() const;
-    LineFortescue& setOpenPhaseB(bool openPhaseB);
+    bool isOpenPhaseB() const { return getBool(prop::EXT_LINE_F_OPEN_PHASE_B); }
+    LineFortescue& setOpenPhaseB(bool openPhaseB) { return setBool(*this, prop::EXT_LINE_F_OPEN_PHASE_B, openPhaseB); }
 
-    bool isOpenPhaseC() const;
-    LineFortescue& setOpenPhaseC(bool openPhaseC);
+    bool isOpenPhaseC() const { return getBool(prop::EXT_LINE_F_OPEN_PHASE_C); }
+    LineFortescue& setOpenPhaseC(bool openPhaseC) { return setBool(*this, prop::EXT_LINE_F_OPEN_PHASE_C, openPhaseC); }
 };
 
 } // namespace iidm

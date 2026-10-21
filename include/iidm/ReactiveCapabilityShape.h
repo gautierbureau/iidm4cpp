@@ -16,15 +16,19 @@ public:
     ReactiveCapabilityShapePlane() = default;
     explicit ReactiveCapabilityShapePlane(ObjectHandle handle, BackendProvider* backend) : ObjectRef(handle, backend) {}
 
-    double getAlpha() const;
-    double getBeta() const;
-    double getGamma() const;
-    double getDelta() const;
-    bool isLessOrEqual() const;
-    bool isGreaterOrEqual() const;
+    double getAlpha() const { return getDouble(prop::PLANE_ALPHA); }
+    double getBeta() const { return getDouble(prop::PLANE_BETA); }
+    double getGamma() const { return getDouble(prop::PLANE_GAMMA); }
+    double getDelta() const { return getDouble(prop::PLANE_DELTA); }
+    bool isLessOrEqual() const { return getBool(prop::PLANE_LESS_OR_EQUAL); }
+    bool isGreaterOrEqual() const { return getBool(prop::PLANE_GREATER_OR_EQUAL); }
     // The inequality made <= gamma, or >= gamma, in place: the shape changes with it
-    ReactiveCapabilityShapePlane& lessOrEqual(double gamma);
-    ReactiveCapabilityShapePlane& greaterOrEqual(double gamma);
+    ReactiveCapabilityShapePlane& lessOrEqual(double gamma) {
+        return setDouble(*this, prop::PLANE_LESS_OR_EQUAL, gamma);
+    }
+    ReactiveCapabilityShapePlane& greaterOrEqual(double gamma) {
+        return setDouble(*this, prop::PLANE_GREATER_OR_EQUAL, gamma);
+    }
 };
 
 // Reactive limits that depend on the active power and the voltage: a polyhedron in the (q, v, p)

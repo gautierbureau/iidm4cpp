@@ -12,8 +12,8 @@ public:
     MinMaxReactiveLimits() = default;
     explicit MinMaxReactiveLimits(ObjectHandle handle, BackendProvider* backend) : ReactiveLimits(handle, backend) {}
 
-    double getMinQ() const;
-    double getMaxQ() const;
+    double getMinQ() const { return getDouble(prop::RL_MIN_Q); }
+    double getMaxQ() const { return getDouble(prop::RL_MAX_Q); }
     using ReactiveLimits::getMinQ;
     using ReactiveLimits::getMaxQ;
 };

@@ -23,18 +23,26 @@ public:
     PhaseTapChanger() = default;
     explicit PhaseTapChanger(ObjectHandle handle, BackendProvider* backend) : ObjectRef(handle, backend) {}
 
-    PhaseTapChanger& setRegulating(bool regulating);
+    PhaseTapChanger& setRegulating(bool regulating) { return setBool(*this, prop::REGULATING, regulating); }
 
-    PhaseTapChangerRegulationMode getRegulationMode() const;
-    PhaseTapChanger& setRegulationMode(PhaseTapChangerRegulationMode regulationMode);
+    PhaseTapChangerRegulationMode getRegulationMode() const {
+        return static_cast<PhaseTapChangerRegulationMode>(getInt(prop::PTC_REGULATION_MODE));
+    }
+    PhaseTapChanger& setRegulationMode(PhaseTapChangerRegulationMode regulationMode) {
+        return setInt(*this, prop::PTC_REGULATION_MODE, static_cast<int>(regulationMode));
+    }
 
     // Current (A) or active power (MW) target, after the regulation mode
-    double getRegulationValue() const;
-    PhaseTapChanger& setRegulationValue(double regulationValue);
+    double getRegulationValue() const { return getDouble(prop::PTC_REGULATION_VALUE); }
+    PhaseTapChanger& setRegulationValue(double regulationValue) {
+        return setDouble(*this, prop::PTC_REGULATION_VALUE, regulationValue);
+    }
 
     // NaN when undefined
-    double getTargetDeadband() const;
-    PhaseTapChanger& setTargetDeadband(double targetDeadband);
+    double getTargetDeadband() const { return getDouble(prop::PTC_TARGET_DEADBAND); }
+    PhaseTapChanger& setTargetDeadband(double targetDeadband) {
+        return setDouble(*this, prop::PTC_TARGET_DEADBAND, targetDeadband);
+    }
 
     // Empty when it has none
     iidm::optional<Terminal> getRegulationTerminal() const;

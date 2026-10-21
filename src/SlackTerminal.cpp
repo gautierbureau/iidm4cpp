@@ -18,8 +18,4 @@ SlackTerminal& SlackTerminal::setTerminal(const Terminal& terminal, bool cleanIf
     return *this;
 }
 
-bool SlackTerminal::isEmpty() const {
-    return backend_->getBool(handle_, prop::EXT_ST_EMPTY);
-}
-
 } // namespace iidm

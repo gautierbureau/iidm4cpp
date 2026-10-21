@@ -19,9 +19,9 @@ public:
     Component() = default;
     explicit Component(ObjectHandle handle, BackendProvider* backend) : ObjectRef(handle, backend) {}
 
-    int getNum() const;
+    int getNum() const { return getInt(prop::COMPONENT_NUM); }
     // Its number of buses
-    int getSize() const;
+    int getSize() const { return getInt(prop::COMPONENT_SIZE); }
     // Its buses, of the bus view (include <iidm/Bus.h> to use it)
     std::vector<Bus> getBuses() const;
 };

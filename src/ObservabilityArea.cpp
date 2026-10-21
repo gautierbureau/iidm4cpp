@@ -10,14 +10,6 @@ namespace iidm {
 ObservabilityArea::AreaCharacteristics::AreaCharacteristics(ObjectHandle handle, BackendProvider* backend)
     : ObjectRef(handle, backend) {}
 
-int ObservabilityArea::AreaCharacteristics::getAreaNumber() const {
-    return backend_->getInt(handle_, prop::OBS_AREA_NUMBER);
-}
-
-ObservabilityStatus ObservabilityArea::AreaCharacteristics::getStatus() const {
-    return static_cast<ObservabilityStatus>(backend_->getInt(handle_, prop::OBS_AREA_STATUS));
-}
-
 std::vector<Terminal> ObservabilityArea::AreaCharacteristics::getTerminals() const {
     return detail::wrapAll<Terminal>(backend_->getChildren(handle_, prop::OBS_AREA_TERMINALS), backend_);
 }
@@ -34,10 +26,6 @@ std::vector<Bus> ObservabilityArea::AreaCharacteristics::getBuses() const {
 
 ObservabilityArea::ObservabilityArea(ObjectHandle handle, BackendProvider* backend)
     : ObjectRef(handle, backend) {}
-
-bool ObservabilityArea::isConsistentWithTopology() const {
-    return backend_->getBool(handle_, prop::EXT_OBS_AREA_CONSISTENT);
-}
 
 std::vector<ObservabilityArea::AreaCharacteristics> ObservabilityArea::getObservabilityAreas() const {
     return detail::wrapAll<AreaCharacteristics>(backend_->getChildren(handle_, AreaCharacteristics::TYPE), backend_);

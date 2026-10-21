@@ -18,8 +18,8 @@ public:
     explicit GeneratorEntsoeCategory(ObjectHandle handle, BackendProvider* backend);
 
     // The ENTSO-E category code of the generator (from 1)
-    int getCode() const;
-    GeneratorEntsoeCategory& setCode(int code);
+    int getCode() const { return getInt(prop::EXT_GEC_CODE); }
+    GeneratorEntsoeCategory& setCode(int code) { return setInt(*this, prop::EXT_GEC_CODE, code); }
 };
 
 } // namespace iidm

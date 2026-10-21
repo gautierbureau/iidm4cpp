@@ -23,9 +23,9 @@ public:
     OperationalLimitsGroup() = default;
     explicit OperationalLimitsGroup(ObjectHandle handle, BackendProvider* backend);
 
-    std::string getId() const;
+    std::string getId() const { return getString(prop::OLG_ID); }
     // Whether it has no limits
-    bool isEmpty() const;
+    bool isEmpty() const { return getBool(prop::OLG_EMPTY); }
 
     // Empty when it has none of that type
     iidm::optional<CurrentLimits> getCurrentLimits() const;

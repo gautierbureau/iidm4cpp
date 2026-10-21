@@ -18,8 +18,10 @@ public:
     explicit ManualFrequencyRestorationReserve(ObjectHandle handle, BackendProvider* backend);
 
     // Whether it takes part in the reserve
-    bool isParticipate() const;
-    ManualFrequencyRestorationReserve& setParticipate(bool participate);
+    bool isParticipate() const { return getBool(prop::EXT_MFRR_PARTICIPATE); }
+    ManualFrequencyRestorationReserve& setParticipate(bool participate) {
+        return setBool(*this, prop::EXT_MFRR_PARTICIPATE, participate);
+    }
 };
 
 } // namespace iidm

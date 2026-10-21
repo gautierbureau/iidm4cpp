@@ -24,13 +24,17 @@ public:
     LoadingLimits() = default;
     explicit LoadingLimits(ObjectHandle handle, BackendProvider* backend);
 
-    LimitType getLimitType() const;
-    DetectionKind getDetectionKind() const;
+    LimitType getLimitType() const { return static_cast<LimitType>(getInt(prop::LL_LIMIT_TYPE)); }
+    DetectionKind getDetectionKind() const { return static_cast<DetectionKind>(getInt(prop::LL_DETECTION_KIND)); }
 
-    double getPermanentLimit() const;
-    LoadingLimits& setPermanentLimit(double permanentLimit);
-    std::string getPermanentLimitName() const;
-    LoadingLimits& setPermanentLimitName(const std::string& permanentLimitName);
+    double getPermanentLimit() const { return getDouble(prop::LL_PERMANENT_LIMIT); }
+    LoadingLimits& setPermanentLimit(double permanentLimit) {
+        return setDouble(*this, prop::LL_PERMANENT_LIMIT, permanentLimit);
+    }
+    std::string getPermanentLimitName() const { return getString(prop::LL_PERMANENT_LIMIT_NAME); }
+    LoadingLimits& setPermanentLimitName(const std::string& permanentLimitName) {
+        return setString(*this, prop::LL_PERMANENT_LIMIT_NAME, permanentLimitName);
+    }
 
     // By decreasing acceptable duration
     std::vector<TemporaryLimit> getTemporaryLimits() const;

@@ -18,14 +18,14 @@ public:
     Load() = default;
     explicit Load(ObjectHandle handle, BackendProvider* backend) : Injection(handle, backend) {}
 
-    double getP0() const;
-    Load& setP0(double p0);
+    double getP0() const { return getDouble(prop::LOAD_P0); }
+    Load& setP0(double p0) { return setDouble(*this, prop::LOAD_P0, p0); }
 
-    double getQ0() const;
-    Load& setQ0(double q0);
+    double getQ0() const { return getDouble(prop::LOAD_Q0); }
+    Load& setQ0(double q0) { return setDouble(*this, prop::LOAD_Q0, q0); }
 
-    LoadType getLoadType() const;
-    Load& setLoadType(LoadType loadType);
+    LoadType getLoadType() const { return static_cast<LoadType>(getInt(prop::LOAD_TYPE)); }
+    Load& setLoadType(LoadType loadType) { return setInt(*this, prop::LOAD_TYPE, static_cast<int>(loadType)); }
 
     // How its power depends on the voltage: empty when it has no model
     iidm::optional<LoadModel> getModel() const;

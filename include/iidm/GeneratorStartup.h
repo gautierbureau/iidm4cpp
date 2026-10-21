@@ -18,24 +18,34 @@ public:
     explicit GeneratorStartup(ObjectHandle handle, BackendProvider* backend);
 
     // The active power target planned by the market (MW)
-    double getPlannedActivePowerSetpoint() const;
-    GeneratorStartup& setPlannedActivePowerSetpoint(double plannedActivePowerSetpoint);
+    double getPlannedActivePowerSetpoint() const { return getDouble(prop::EXT_GS_PLANNED_ACTIVE_POWER_SETPOINT); }
+    GeneratorStartup& setPlannedActivePowerSetpoint(double plannedActivePowerSetpoint) {
+        return setDouble(*this, prop::EXT_GS_PLANNED_ACTIVE_POWER_SETPOINT, plannedActivePowerSetpoint);
+    }
 
     // What it costs to start the generator
-    double getStartupCost() const;
-    GeneratorStartup& setStartupCost(double startupCost);
+    double getStartupCost() const { return getDouble(prop::EXT_GS_STARTUP_COST); }
+    GeneratorStartup& setStartupCost(double startupCost) {
+        return setDouble(*this, prop::EXT_GS_STARTUP_COST, startupCost);
+    }
 
     // What one more unit (in general one MW) costs
-    double getMarginalCost() const;
-    GeneratorStartup& setMarginalCost(double marginalCost);
+    double getMarginalCost() const { return getDouble(prop::EXT_GS_MARGINAL_COST); }
+    GeneratorStartup& setMarginalCost(double marginalCost) {
+        return setDouble(*this, prop::EXT_GS_MARGINAL_COST, marginalCost);
+    }
 
     // Rate of planned unavailability (no unit)
-    double getPlannedOutageRate() const;
-    GeneratorStartup& setPlannedOutageRate(double plannedOutageRate);
+    double getPlannedOutageRate() const { return getDouble(prop::EXT_GS_PLANNED_OUTAGE_RATE); }
+    GeneratorStartup& setPlannedOutageRate(double plannedOutageRate) {
+        return setDouble(*this, prop::EXT_GS_PLANNED_OUTAGE_RATE, plannedOutageRate);
+    }
 
     // Rate of forced unavailability (no unit)
-    double getForcedOutageRate() const;
-    GeneratorStartup& setForcedOutageRate(double forcedOutageRate);
+    double getForcedOutageRate() const { return getDouble(prop::EXT_GS_FORCED_OUTAGE_RATE); }
+    GeneratorStartup& setForcedOutageRate(double forcedOutageRate) {
+        return setDouble(*this, prop::EXT_GS_FORCED_OUTAGE_RATE, forcedOutageRate);
+    }
 };
 
 } // namespace iidm
