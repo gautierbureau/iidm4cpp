@@ -15,6 +15,10 @@ using graal_isolatethread_t = _graal_isolatethread_t;
 
 namespace iidm {
 
+// Backend for the standalone mode: the network lives in an isolate of the native image.
+//
+// Any thread can use it: each call goes through the calling thread's isolate thread. A thread is
+// attached to the isolate on its first call, until it ends or the network is closed.
 class GraalVMBackend : public BackendProvider {
 public:
     explicit GraalVMBackend(const std::string& libraryPath = "");
@@ -69,11 +73,15 @@ public:
 private:
     void init(const std::string& libPath);
     void resolveSymbols();
+    // The isolate thread of the calling thread, attached on its first call
+    graal_isolatethread_t* thread() const;
+    graal_isolatethread_t* attachThread() const;
 
     void* libHandle_ = nullptr;
 
-    graal_isolate_t*       isolate_ = nullptr;
-    graal_isolatethread_t* thread_  = nullptr;
+    graal_isolate_t* isolate_ = nullptr;  // null once closed
+    // The isolate among those the threads are attached to (an id, as an address may be reused); 0 once closed
+    std::uint64_t isolateId_ = 0;
 
     ObjectHandle networkHandle_ = INVALID_HANDLE;
 
@@ -87,6 +95,8 @@ private:
     // Every entry point that can fail returns a status (0 = success, else a BridgeErrorKind)
     // and writes its result through an out-pointer.
     using FnCreateIsolate   = int(*)(void*, graal_isolate_t**, graal_isolatethread_t**);
+    using FnAttachThread    = int(*)(graal_isolate_t*, graal_isolatethread_t**);
+    using FnDetachThread    = int(*)(graal_isolatethread_t*);
     using FnTearDownIsolate = int(*)(graal_isolatethread_t*);
     using FnTakeLastError   = char*(*)(graal_isolatethread_t*);
     using FnFree            = void(*)(graal_isolatethread_t*, void*);
@@ -122,6 +132,8 @@ private:
     using FnEvaluate           = int(*)(graal_isolatethread_t*, ObjectHandle, int, const double*, int, double*);
 
     FnCreateIsolate   fnCreateIsolate_   = nullptr;
+    FnAttachThread    fnAttachThread_    = nullptr;
+    FnDetachThread    fnDetachThread_    = nullptr;
     FnTearDownIsolate fnTearDownIsolate_ = nullptr;
     FnTakeLastError   fnTakeLastError_   = nullptr;
     FnFree            fnFree_            = nullptr;

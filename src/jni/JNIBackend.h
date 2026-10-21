@@ -15,6 +15,9 @@ namespace iidm {
 // Every operation is a single JNI call to the object API of PropertyDispatcher — the same
 // Java dispatch table as the GraalVM backend, so both backends behave identically. Handles
 // are JNI global references, released when the last wrapper using them is destroyed.
+//
+// Any thread can use it: each call goes through the calling thread's JNI environment, and a
+// thread that is not attached to the JVM is attached on its first call, until it ends.
 class JNIBackend : public BackendProvider {
 public:
     explicit JNIBackend(const std::string& networkId = "");
@@ -64,23 +67,24 @@ public:
     void releaseHandle(ObjectHandle h) override;
 
 private:
-    void attachToJVM();
-    void cacheMethodIds();
-    void cacheClass(jclass& out, const char* name);
-    void bindRegisteredNetwork();
+    void findJVM();
+    // The JNI environment of the calling thread, attached to the JVM on its first call
+    JNIEnv* env() const;
+    void cacheMethodIds(JNIEnv* env);
+    void cacheClass(JNIEnv* env, jclass& out, const char* name);
+    void bindRegisteredNetwork(JNIEnv* env);
     // After a network was (re)registered under networkId_: drops the old reference, binds the new one.
-    void rebindNetwork(const char* operation);
+    void rebindNetwork(JNIEnv* env, const char* operation);
 
     // Global reference for a local one (and deletes the local one)
-    ObjectHandle toHandle(jobject local) const;
+    ObjectHandle toHandle(JNIEnv* env, jobject local) const;
     jobject toObject(ObjectHandle h) const;          // throws InvalidHandleException for 0
     jobject toNullableObject(ObjectHandle h) const;  // INVALID_HANDLE → null
-    std::string toString(jstring local) const;       // deletes the local reference
-    jstring newString(const std::string& value) const; // a new local reference (UTF-8 → Java)
+    std::string toString(JNIEnv* env, jstring local) const;       // deletes the local reference
+    jstring newString(JNIEnv* env, const std::string& value) const; // a new local reference (UTF-8 → Java)
 
     std::string  networkId_;
-    JavaVM*      jvm_  = nullptr;
-    JNIEnv*      env_  = nullptr;
+    JavaVM*      jvm_  = nullptr;   // null once closed
     jobject      networkRef_ = nullptr;  // global ref to the Java Network object
 
     JNIMethodCache cache_;

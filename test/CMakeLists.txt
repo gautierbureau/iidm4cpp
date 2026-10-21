@@ -16,6 +16,7 @@ set(TEST_SOURCES
     TestAutomationNetwork.cpp
     TestComponentAndVariant.cpp
     TestVariantsNetwork.cpp
+    TestThreads.cpp
     TestSubnetworks.cpp
     TestSubnetworksNetwork.cpp
     TestDataExtensions.cpp
