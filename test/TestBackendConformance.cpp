@@ -783,6 +783,10 @@ TEST(BackendConformanceTest, ReactiveLimits) {
     checkConformance("data/reactive_limits_test.xiidm");
 }
 
+TEST(BackendConformanceTest, Shunts) {
+    checkConformance("data/shunts_test.xiidm");
+}
+
 TEST(BackendConformanceTest, CreatedFromScratch) {
     checkConformance("created from scratch", buildNetwork);
 }

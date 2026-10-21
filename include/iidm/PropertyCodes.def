@@ -40,13 +40,15 @@ IIDM_CODE(MIN_MAX_REACTIVE_LIMITS,     26)
 IIDM_CODE(REACTIVE_CAPABILITY_CURVE,   27)
 IIDM_CODE(REACTIVE_CAPABILITY_SHAPE,   35)
 IIDM_CODE(REACTIVE_CAPABILITY_SHAPE_PLANE, 36)
-IIDM_CODE(SHUNT_SECTION,               28)
+IIDM_CODE(SHUNT_SECTION,               28) // a section of a non-linear shunt compensator model
 IIDM_CODE(INTERNAL_CONNECTION,         29)
 IIDM_CODE(CURRENT_LIMITS,              30)
 IIDM_CODE(TEMPORARY_LIMIT,             31)
 IIDM_CODE(OPERATIONAL_LIMITS_GROUP,    34)
 IIDM_CODE(ACTIVE_POWER_LIMITS,         49)
 IIDM_CODE(APPARENT_POWER_LIMITS,       50)
+IIDM_CODE(SHUNT_COMPENSATOR_LINEAR_MODEL, 53)
+IIDM_CODE(SHUNT_COMPENSATOR_NON_LINEAR_MODEL, 54)
 // Abstract types (Java interfaces)
 IIDM_CODE(IDENTIFIABLE,                43)
 IIDM_CODE(CONNECTABLE,                 44)
@@ -55,6 +57,7 @@ IIDM_CODE(BRANCH,                      46)
 IIDM_CODE(HVDC_CONVERTER_STATION,      47)
 IIDM_CODE(LOADING_LIMITS,              48) // current, active power or apparent power limits
 IIDM_CODE(FLOWS_LIMITS_HOLDER,         51) // what holds flows limits: a 3WT leg, a dangling line, a branch side
+IIDM_CODE(SHUNT_COMPENSATOR_MODEL,     52) // linear or non-linear
 
 // ── Shared properties (applicable to many types) ────────────────────────────
 IIDM_CODE(ID,                          100)
@@ -198,15 +201,20 @@ IIDM_CODE(DL_G,                        1004)
 IIDM_CODE(DL_B,                        1005)
 
 // ── ShuntCompensator ─────────────────────────────────────────────────────────
-IIDM_CODE(SHUNT_SECTION_COUNT,         1100) // int; optional int: findSectionCount
-IIDM_CODE(SHUNT_MAX_SECTION_COUNT,     1101)
-IIDM_CODE(SHUNT_B_PER_SECTION,         1102)
-IIDM_CODE(SHUNT_G_PER_SECTION,         1103)
-IIDM_CODE(SHUNT_MODEL_KIND,            1104) // 0=LINEAR 1=NON_LINEAR
-IIDM_CODE(SHUNT_SECTION_B,             1105) // on section handle
-IIDM_CODE(SHUNT_SECTION_G,             1106) // on section handle
-IIDM_CODE(SHUNT_B,                     1110) // total B for current section count
-IIDM_CODE(SHUNT_SOLVED_SECTION_COUNT,  1111) // optional int
+// Its model is getRelated(shunt, SHUNT_COMPENSATOR_MODEL); getRelated(shunt, SHUNT_COMPENSATOR_LINEAR_MODEL
+// or SHUNT_COMPENSATOR_NON_LINEAR_MODEL) gives it as a model of that type (getModel(Class):
+// ValidationException when it is of the other one). The sections of a non-linear model are
+// getChildren(model, SHUNT_SECTION), from the first one.
+IIDM_CODE(SHUNT_SECTION_COUNT,         1100) // int (optional: none when undefined); unset: ACT_UNSET_SECTION_COUNT
+IIDM_CODE(SHUNT_MAX_SECTION_COUNT,     1101) // int: of the shunt; set: on its linear model (setMaximumSectionCount)
+IIDM_CODE(SHUNT_B_PER_SECTION,         1102) // linear model
+IIDM_CODE(SHUNT_G_PER_SECTION,         1103) // linear model
+IIDM_CODE(SHUNT_MODEL_TYPE,            1104) // int, read-only: ShuntCompensatorModelType ordinal (0=LINEAR 1=NON_LINEAR)
+IIDM_CODE(SHUNT_SECTION_B,             1105) // section of a non-linear model
+IIDM_CODE(SHUNT_SECTION_G,             1106) // section of a non-linear model
+IIDM_CODE(SHUNT_B,                     1110) // B at the section count; evaluate {sectionCount}: getB(sectionCount)
+IIDM_CODE(SHUNT_SOLVED_SECTION_COUNT,  1111) // int (optional: none when unset); unset: ACT_UNSET_SOLVED_SECTION_COUNT
+IIDM_CODE(SHUNT_G,                     1112) // G at the section count; evaluate {sectionCount}: getG(sectionCount)
 
 // ── StaticVarCompensator ─────────────────────────────────────────────────────
 IIDM_CODE(SVC_B_MIN,                   1200)
@@ -394,10 +402,16 @@ IIDM_CODE(ACT_SET_TARGET_Q_TO_Q,       5004) // invoke(regulation holder): targe
 IIDM_CODE(ACT_SET_TARGET_V_TO_V,       5005) // invoke(regulation holder): targets V from the solved V
 IIDM_CODE(ACT_UNSET_TAP_POSITION,      5006) // invoke(tap changer)
 IIDM_CODE(ACT_UNSET_SOLVED_TAP_POSITION, 5007) // invoke(tap changer)
-IIDM_CODE(ACT_APPLY_SOLVED_VALUES,     5008) // invoke(tap changer): its solved values become its values
+IIDM_CODE(ACT_APPLY_SOLVED_VALUES,     5008) // invoke(tap changer, transformer, generator, battery, load, shunt
+                                             // compensator, dangling line): its solved values become its values
 IIDM_CODE(ACT_SET_TAP_POSITION_TO_SOLVED_TAP_POSITION, 5009) // invoke(tap changer)
 IIDM_CODE(ACT_CLEAN_IF_EMPTY,          5010) // invoke(extension): removes it when empty (Measurements,
                                              // DiscreteMeasurements, SlackTerminal)
+IIDM_CODE(ACT_UNSET_SECTION_COUNT,     5011) // invoke(shunt compensator)
+IIDM_CODE(ACT_UNSET_SOLVED_SECTION_COUNT, 5012) // invoke(shunt compensator)
+IIDM_CODE(ACT_SET_SECTION_COUNT_TO_SOLVED_SECTION_COUNT, 5013) // invoke(shunt compensator)
+IIDM_CODE(ACT_UNSET_SOLVED_VALUES,     5014) // invoke(connectable, terminal, bus): unsets its solved values (flows,
+                                             // voltages; a shunt's solved section count, a transformer's tap positions)
 
 // TwoWindingsTransformerToBeEstimated (on a two windings transformer)
 IIDM_CODE(TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED, 3700)

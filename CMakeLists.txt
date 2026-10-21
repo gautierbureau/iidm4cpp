@@ -115,7 +115,7 @@ set(IIDM_BRIDGE_SOURCES
     src/HvdcLine.cpp
     src/DanglingLine.cpp
     src/ShuntCompensator.cpp
-    src/ShuntCompensatorNonLinearModel.cpp
+    src/ShuntCompensatorModel.cpp
     src/StaticVarCompensator.cpp
     src/LccConverterStation.cpp
     src/Switch.cpp

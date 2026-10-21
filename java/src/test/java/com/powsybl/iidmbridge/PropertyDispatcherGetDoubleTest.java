@@ -1,7 +1,6 @@
 package com.powsybl.iidmbridge;
 
 import com.powsybl.iidm.network.*;
-import com.powsybl.iidm.network.ShuntCompensatorNonLinearModel;
 import com.powsybl.iidm.network.regulation.RegulationMode;
 import com.powsybl.iidmbridge.graalvm.NetworkRegistry;
 import org.junit.jupiter.api.*;
@@ -291,13 +290,15 @@ class PropertyDispatcherGetDoubleTest {
                 .newLinearModel().setBPerSection(12.0).setGPerSection(0.5)
                                   .setMaximumSectionCount(3).add()
                 .add();
-        // SHUNT_B_PER_SECTION must return the per-section value from the linear
-        // model (12.0), not the total B at the current section count (24.0).
+        // SHUNT_B_PER_SECTION is the per-section value of the linear model (12.0), not the
+        // total B at the current section count (24.0).
         long h = reg(sc);
-        assertEquals(12.0, PropertyDispatcher.getDouble(h, SHUNT_B_PER_SECTION));
-        assertEquals(0.5,  PropertyDispatcher.getDouble(h, SHUNT_G_PER_SECTION));
+        long model = PropertyDispatcher.getRelated(h, SHUNT_COMPENSATOR_LINEAR_MODEL);
+        assertEquals(12.0, PropertyDispatcher.getDouble(model, SHUNT_B_PER_SECTION));
+        assertEquals(0.5,  PropertyDispatcher.getDouble(model, SHUNT_G_PER_SECTION));
         // SHUNT_B is the total B at the current section count (sectionCount * bPerSection).
         assertEquals(24.0, PropertyDispatcher.getDouble(h, SHUNT_B));
+        assertEquals(1.0,  PropertyDispatcher.getDouble(h, SHUNT_G));
     }
 
     // ── TwoWindingsTransformer ────────────────────────────────────────────────

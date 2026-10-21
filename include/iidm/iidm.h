@@ -51,6 +51,9 @@
 #include <iidm/HvdcLine.h>
 #include <iidm/DanglingLine.h>
 #include <iidm/ShuntCompensator.h>
+#include <iidm/ShuntCompensatorModel.h>
+#include <iidm/ShuntCompensatorLinearModel.h>
+#include <iidm/ShuntCompensatorNonLinearModel.h>
 #include <iidm/StaticVarCompensator.h>
 #include <iidm/VscConverterStation.h>
 #include <iidm/LccConverterStation.h>

@@ -188,7 +188,8 @@ Identifiable              getId(), getNameOrId(), getOptionalName(), setName(), 
 │                         getType(), properties, aliases, is<T>() / as<T>()
 ├── Network               the root (owns the backend session, §4.3)
 ├── Substation, VoltageLevel, Bus, Switch, HvdcLine
-└── Connectable           getTerminals(), connect() / disconnect(), isEquivalent(), remove()
+└── Connectable           getTerminals(), connect() / disconnect(), isEquivalent(),
+    │                     unsetSolvedValues(), remove()
     ├── Injection         getTerminal()
     │   ├── Generator, Load, Battery, ShuntCompensator, StaticVarCompensator,
     │   │   DanglingLine, BusbarSection
@@ -203,8 +204,8 @@ Branch                    any Line or TwoWindingsTransformer: both convert to a 
 
 Objects that are not identifiables: ThreeWindingsTransformer::Leg, RatioTapChanger,
 PhaseTapChanger and their steps, ReactiveLimits and their points or planes, Terminal,
-VoltageRegulation, OperationalLimitsGroup, LoadingLimits and their temporary limits, the
-extensions...
+VoltageRegulation, OperationalLimitsGroup, LoadingLimits and their temporary limits, shunt
+compensator models and their sections, the extensions...
 ```
 
 - **Base classes, as in powsybl.** A `Generator` is an `Injection`, a `Connectable` and an
@@ -224,9 +225,11 @@ extensions...
   `Injection`, Measurements on `Connectable`, DiscreteMeasurements on `Identifiable`,
   BranchObservability on the branches.
 - **Sub-objects are objects.** A leg of a three windings transformer, a tap changer and its steps,
-  reactive limits and their points, limits groups, limits and their temporary limits are objects
-  of their own, as in powsybl: `twt.getLeg2().getRatioTapChanger()->getStep(-1)`,
-  `gen.getReactiveLimits().getMaxQ(p)`, `line.getCurrentLimits1()->getTemporaryLimit(60)`.
+  reactive limits and their points, limits groups, limits and their temporary limits, a shunt
+  compensator's model are objects of their own, as in powsybl:
+  `twt.getLeg2().getRatioTapChanger()->getStep(-1)`, `gen.getReactiveLimits().getMaxQ(p)`,
+  `line.getCurrentLimits1()->getTemporaryLimit(60)`,
+  `shunt.getModel<ShuntCompensatorLinearModel>().getBPerSection()`.
   `is<T>()` / `as<T>()` work on any of them (`limits.as<ReactiveCapabilityCurve>()`).
 - **Only current powsybl APIs** (powsybl 7.4): `getNameOrId()` / `getOptionalName()` rather than a
   `getName()`, `connect()` returning powsybl's result, the `VoltageRegulation` object of
@@ -328,6 +331,21 @@ LoadingLimits: CurrentLimits, ActivePowerLimits, ApparentPowerLimits
 │   TemporaryLimit getName() / getValue() / getAcceptableDuration() / isFictitious(), properties
 ├── getTemporaryLimitValue(duration) / setTemporaryLimitValue(duration, value)
 └── remove(), properties
+
+ShuntCompensator (+ the voltage regulation holder methods)
+├── getSectionCount() → int (fails when undefined)   findSectionCount() → optional<int>
+│   setSectionCount(int) / unsetSectionCount()       getMaximumSectionCount() → int
+├── getSolvedSectionCount() / findSolvedSectionCount() → optional<int>
+│   setSolvedSectionCount(int) / unsetSolvedSectionCount()
+├── getB() / getG() → double (at the section count), getB(n) / getG(n) (at n sections)
+├── getModelType() → ShuntCompensatorModelType, getModel() → ShuntCompensatorModel,
+│   getModel<M>() → M (ValidationException when the model is of the other type)
+└── applySolvedValues() / setSectionCountToSolvedSectionCount()
+ShuntCompensatorModel (properties)
+├── ShuntCompensatorLinearModel      getBPerSection() / getGPerSection() (+ setters),
+│                                    setMaximumSectionCount(int)
+└── ShuntCompensatorNonLinearModel   getAllSections(), from the first one: Section getB() / getG()
+                                     (+ setters), properties
 
 Load
 ├── getP0() → double             setP0(double)
