@@ -43,13 +43,40 @@ public:
         NodeBreakerView() = default;
         explicit NodeBreakerView(ObjectHandle vlHandle, BackendProvider* backend);
 
-        std::vector<Switch>             getSwitches() const;
-        std::vector<BusbarSection>      getBusbarSections() const;
-        std::vector<InternalConnection> getInternalConnections() const;
-
         std::vector<int> getNodes() const;
+        int getMaximumNodeIndex() const;
+        // The terminal at a node (empty without one)
+        iidm::optional<Terminal> getTerminal(int node) const;
+        // Whether an equipment, a switch or an internal connection is at a node
+        bool hasAttachedEquipment(int node) const;
+
+        // Fictitious injection at a node, load sign convention (0 when none)
+        double getFictitiousP0(int node) const;
+        NodeBreakerView& setFictitiousP0(int node, double p0);
+        double getFictitiousQ0(int node) const;
+        NodeBreakerView& setFictitiousQ0(int node, double q0);
+
+        std::vector<Switch> getSwitches() const;
+        int getSwitchCount() const;
         iidm::optional<Switch> getSwitch(const std::string& id) const;
-        Terminal getTerminal(int node) const;
+        // The switches at a node
+        std::vector<Switch> getSwitches(int node) const;
+        // The nodes of a switch, the terminals there (ValidationException when it has no such switch)
+        int getNode1(const std::string& switchId) const;
+        int getNode2(const std::string& switchId) const;
+        iidm::optional<Terminal> getTerminal1(const std::string& switchId) const;
+        iidm::optional<Terminal> getTerminal2(const std::string& switchId) const;
+        void removeSwitch(const std::string& switchId);
+
+        std::vector<BusbarSection> getBusbarSections() const;
+        int getBusbarSectionCount() const;
+        iidm::optional<BusbarSection> getBusbarSection(const std::string& id) const;
+
+        std::vector<InternalConnection> getInternalConnections() const;
+        int getInternalConnectionCount() const;
+        std::vector<int> getNodesInternalConnectedTo(int node) const;
+        // Removes every internal connection between two nodes
+        void removeInternalConnections(int node1, int node2);
     };
 
     // ── BusBreakerView ───────────────────────────────────────────────────────
@@ -58,17 +85,25 @@ public:
         BusBreakerView() = default;
         explicit BusBreakerView(ObjectHandle vlHandle, BackendProvider* backend);
 
-        std::vector<Bus>    getBuses()    const;
-        std::vector<Switch> getSwitches() const;
-
-        Bus getBus1(const std::string& switchId) const;
-        Bus getBus2(const std::string& switchId) const;
-
+        std::vector<Bus> getBuses() const;
+        int getBusCount() const;
         // Empty when it has no bus with this id
         iidm::optional<Bus> getBus(const std::string& busId) const;
+        // The buses of this view that make a bus of the bus view (sorted by id)
+        std::vector<Bus> getBusesFromBusViewBusId(const std::string& busViewBusId) const;
         BusAdder newBus();
         // Removes a bus that nothing is connected to (else ValidationException)
         void removeBus(const std::string& busId);
+        // Removes every bus, when no switch and no equipment is left (else ValidationException)
+        void removeAllBuses();
+
+        std::vector<Switch> getSwitches() const;
+        int getSwitchCount() const;
+        iidm::optional<Switch> getSwitch(const std::string& id) const;
+        Bus getBus1(const std::string& switchId) const;
+        Bus getBus2(const std::string& switchId) const;
+        void removeSwitch(const std::string& switchId);
+        void removeAllSwitches();
     };
 
     // ── BusView ──────────────────────────────────────────────────────────────
@@ -125,7 +160,7 @@ public:
     std::vector<Battery>              getBatteries() const;
     std::vector<ShuntCompensator>     getShuntCompensators() const;
     std::vector<StaticVarCompensator> getStaticVarCompensators() const;
-    std::vector<BoundaryLine>         getBoundaryLines() const;
+    std::vector<BoundaryLine>         getBoundaryLines(BoundaryLineFilter filter = BoundaryLineFilter::ALL) const;
     std::vector<LccConverterStation>  getLccConverterStations() const;
     std::vector<VscConverterStation>  getVscConverterStations() const;
     std::vector<Line>                 getLines() const;

@@ -35,7 +35,9 @@ import static com.powsybl.iidmbridge.PropertyCodes.*;
  * <p>The same steps apply a change that takes several values at once, which separate setter calls
  * could not do without going through an invalid state: {@code invoke(regulation, REL_TERMINAL)}
  * starts {@code VoltageRegulation.setTerminal(terminal, targetValue)}, whose arguments are then
- * set with REL_TERMINAL and VR_TARGET_VALUE, and ACT_ADD applies it.</p>
+ * set with REL_TERMINAL and VR_TARGET_VALUE, and ACT_ADD applies it. So do moving an equipment's
+ * end ({@code invoke(terminal, MOVE_CONNECTABLE)}), the fictitious injection at a node and the
+ * removal of internal connections (on a voltage level).</p>
  */
 public final class Creation {
 
@@ -97,6 +99,76 @@ public final class Creation {
         }
     }
 
+    /**
+     * Moves the end of an equipment: to a bus, Terminal.BusBreakerView.moveConnectable(busId,
+     * connected); to a node when the node is set, Terminal.NodeBreakerView.moveConnectable(node,
+     * voltageLevelId).
+     */
+    static final class ConnectableMove {
+        private final Terminal terminal;
+        private String busId;
+        private Boolean connected;
+        private Integer node;
+        private String voltageLevelId;
+
+        ConnectableMove(Terminal terminal) {
+            this.terminal = terminal;
+        }
+
+        void apply() {
+            if (node != null) {
+                terminal.getNodeBreakerView().moveConnectable(node, Objects.requireNonNull(voltageLevelId, "voltage level id"));
+            } else {
+                terminal.getBusBreakerView().moveConnectable(Objects.requireNonNull(busId, "bus id"),
+                    Objects.requireNonNull(connected, "connected"));
+            }
+        }
+    }
+
+    /** NodeBreakerView.setFictitiousP0(node, p0), or setFictitiousQ0(node, q0): the code says which. */
+    static final class NodeFictitiousInjection {
+        private final VoltageLevel.NodeBreakerView view;
+        private final int code;
+        private Integer node;
+        private double value = Double.NaN;
+
+        NodeFictitiousInjection(VoltageLevel.NodeBreakerView view, int code) {
+            this.view = view;
+            this.code = code;
+        }
+
+        void setValue(int property, double value) {
+            if (property != code) {
+                throw unknownField("double", property);
+            }
+            this.value = value;
+        }
+
+        void apply() {
+            int at = Objects.requireNonNull(node, "node");
+            if (code == FICTITIOUS_P0) {
+                view.setFictitiousP0(at, value);
+            } else {
+                view.setFictitiousQ0(at, value);
+            }
+        }
+    }
+
+    /** The arguments of NodeBreakerView.removeInternalConnections(node1, node2). */
+    static final class InternalConnectionsRemoval {
+        private final VoltageLevel.NodeBreakerView view;
+        private Integer node1;
+        private Integer node2;
+
+        InternalConnectionsRemoval(VoltageLevel.NodeBreakerView view) {
+            this.view = view;
+        }
+
+        void apply() {
+            view.removeInternalConnections(Objects.requireNonNull(node1, "node1"), Objects.requireNonNull(node2, "node2"));
+        }
+    }
+
     /** A new, empty network. */
     public static Network createNetwork(String id) {
         return Network.create(id, SOURCE_FORMAT);
@@ -139,6 +211,9 @@ public final class Creation {
             case PHASE_TAP_CHANGER_STEP -> ((PhaseTapChangerStepsReplacer) owner).beginStep();
             case ZIP_LOAD_MODEL -> ((LoadAdder) owner).newZipModel();
             case EXPONENTIAL_LOAD_MODEL -> ((LoadAdder) owner).newExponentialModel();
+            case MOVE_CONNECTABLE -> new ConnectableMove((Terminal) owner);
+            case FICTITIOUS_P0, FICTITIOUS_Q0 -> new NodeFictitiousInjection(((VoltageLevel) owner).getNodeBreakerView(), type);
+            case VL_NBV_REMOVE_INTERNAL_CONNECTIONS -> new InternalConnectionsRemoval(((VoltageLevel) owner).getNodeBreakerView());
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown type to create: " + type);
         };
         return new PendingAdd(adder, parent);
@@ -170,6 +245,18 @@ public final class Creation {
             }
             case TemporaryLimitValueChange change -> {
                 change.apply();
+                yield null;
+            }
+            case ConnectableMove move -> {
+                move.apply();
+                yield null;
+            }
+            case NodeFictitiousInjection change -> {
+                change.apply();
+                yield null;
+            }
+            case InternalConnectionsRemoval removal -> {
+                removal.apply();
                 yield null;
             }
             case TapChangerStepAdder<?, ?> step -> {
@@ -305,6 +392,7 @@ public final class Creation {
             case ZIP_C2Q -> ((ZipLoadModelAdder) a).setC2q(value);
             case EXP_NP -> ((ExponentialLoadModelAdder) a).setNp(value);
             case EXP_NQ -> ((ExponentialLoadModelAdder) a).setNq(value);
+            case FICTITIOUS_P0, FICTITIOUS_Q0 -> ((NodeFictitiousInjection) a).setValue(property, value);
             default -> throw unknownField("double", property);
         }
     }
@@ -312,7 +400,15 @@ public final class Creation {
     static void setInt(PendingAdd pending, int property, int value) {
         Object a = pending.adder();
         switch (property) {
-            case TERMINAL_NODE -> ((InjectionAdder<?, ?>) a).setNode(value);
+            case TERMINAL_NODE -> {
+                switch (a) {
+                    case ConnectableMove move -> move.node = value;
+                    case NodeFictitiousInjection change -> change.node = value;
+                    default -> ((InjectionAdder<?, ?>) a).setNode(value);
+                }
+            }
+            case IC_NODE1 -> ((InternalConnectionsRemoval) a).node1 = value;
+            case IC_NODE2 -> ((InternalConnectionsRemoval) a).node2 = value;
             case VL_TOPOLOGY_KIND -> ((VoltageLevelAdder) a).setTopologyKind(enumValue(TopologyKind.class, value));
             case GEN_ENERGY_SOURCE -> ((GeneratorAdder) a).setEnergySource(enumValue(EnergySource.class, value));
             case LOAD_TYPE -> ((LoadAdder) a).setLoadType(enumValue(LoadType.class, value));
@@ -358,6 +454,7 @@ public final class Creation {
                 }
             }
             case EQUIVALENT -> ((ConnectableAdder<?, ?>) a).setEquivalent(value);
+            case TERMINAL_CONNECTED -> ((ConnectableMove) a).connected = value;
             case GEN_CONDENSER -> ((GeneratorAdder) a).setCondenser(value);
             case VR_REGULATING -> ((VoltageRegulationAdderOrBuilder<?>) a).withRegulating(value);
             case EXT_APC_PARTICIPATE -> ((ActivePowerControlAdder<?>) a).withParticipate(value);
@@ -390,7 +487,14 @@ public final class Creation {
             case COUNTRY -> ((SubstationAdder) a).setCountry(Country.valueOf(value));
             case SUBSTATION_TSO -> ((SubstationAdder) a).setTso(value);
             case TERMINAL_BUS_BREAKER_BUS_ID -> ((InjectionAdder<?, ?>) a).setBus(value);
-            case TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID -> ((InjectionAdder<?, ?>) a).setConnectableBus(value);
+            case TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID -> {
+                if (a instanceof ConnectableMove move) {
+                    move.busId = value;
+                } else {
+                    ((InjectionAdder<?, ?>) a).setConnectableBus(value);
+                }
+            }
+            case TERMINAL_VOLTAGE_LEVEL_ID -> ((ConnectableMove) a).voltageLevelId = value;
             case MEAS_ID -> ((MeasurementAdder) a).setId(value);
             case DMEAS_ID -> ((DiscreteMeasurementAdder) a).setId(value);
             case DMEAS_VALUE_STRING -> ((DiscreteMeasurementAdder) a).setValue(value);

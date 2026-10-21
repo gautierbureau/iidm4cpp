@@ -10,6 +10,7 @@ import com.powsybl.iidm.network.regulation.VoltageRegulationHolder;
 import com.powsybl.iidmbridge.graalvm.NetworkRegistry;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.OptionalInt;
 
@@ -66,8 +67,13 @@ public final class PropertyDispatcher {
             case EXP_NQ  -> ((ExponentialLoadModel) obj).getNq();
             case TERMINAL_P    -> ((Terminal) obj).getP();
             case TERMINAL_Q    -> ((Terminal) obj).getQ();
+            case TERMINAL_I    -> ((Terminal) obj).getI();
             case BUS_V         -> ((Bus) obj).getV();
             case BUS_ANGLE     -> ((Bus) obj).getAngle();
+            case BUS_P         -> ((Bus) obj).getP();
+            case BUS_Q         -> ((Bus) obj).getQ();
+            case FICTITIOUS_P0 -> ((Bus) obj).getFictitiousP0();
+            case FICTITIOUS_Q0 -> ((Bus) obj).getFictitiousQ0();
             case VL_NOMINAL_V  -> ((VoltageLevel) obj).getNominalV();
             case VL_LOW_VOLTAGE_LIMIT  -> ((VoltageLevel) obj).getLowVoltageLimit();
             case VL_HIGH_VOLTAGE_LIMIT -> ((VoltageLevel) obj).getHighVoltageLimit();
@@ -205,6 +211,8 @@ public final class PropertyDispatcher {
             case TERMINAL_Q    -> ((Terminal) obj).setQ(value);
             case BUS_V         -> ((Bus) obj).setV(value);
             case BUS_ANGLE     -> ((Bus) obj).setAngle(value);
+            case FICTITIOUS_P0 -> ((Bus) obj).setFictitiousP0(value);
+            case FICTITIOUS_Q0 -> ((Bus) obj).setFictitiousQ0(value);
             case VL_NOMINAL_V          -> ((VoltageLevel) obj).setNominalV(value);
             case VL_LOW_VOLTAGE_LIMIT  -> ((VoltageLevel) obj).setLowVoltageLimit(value);
             case VL_HIGH_VOLTAGE_LIMIT -> ((VoltageLevel) obj).setHighVoltageLimit(value);
@@ -312,6 +320,7 @@ public final class PropertyDispatcher {
             case LOAD_TYPE          -> ((Load) obj).getLoadType().ordinal();
             case LOAD_MODEL_TYPE    -> ((LoadModel) obj).getType().ordinal();
             case VL_TOPOLOGY_KIND   -> ((VoltageLevel) obj).getTopologyKind().ordinal();
+            case VL_NBV_MAXIMUM_NODE_INDEX -> ((VoltageLevel) obj).getNodeBreakerView().getMaximumNodeIndex();
             case HVDC_CONVERTERS_MODE -> ((HvdcLine) obj).getConvertersMode().ordinal();
             case SHUNT_SECTION_COUNT     -> ((ShuntCompensator) obj).getSectionCount(); // fails when undefined
             case SHUNT_MAX_SECTION_COUNT -> ((ShuntCompensator) obj).getMaximumSectionCount();
@@ -472,6 +481,8 @@ public final class PropertyDispatcher {
             case VR_REGULATING              -> ((VoltageRegulation) obj).isRegulating();
             case VR_WITH_TERMINAL           -> ((VoltageRegulation) obj).isWithTerminal();
             case TERMINAL_CONNECTED         -> ((Terminal) obj).isConnected();
+            case BUS_IN_MAIN_CONNECTED_COMPONENT   -> ((Bus) obj).isInMainConnectedComponent();
+            case BUS_IN_MAIN_SYNCHRONOUS_COMPONENT -> ((Bus) obj).isInMainSynchronousComponent();
             case TL_FICTITIOUS -> ((TemporaryLimit) obj).isFictitious();
             case SW_OPEN     -> ((Switch) obj).isOpen();
             case SW_RETAINED -> ((Switch) obj).isRetained();
@@ -547,11 +558,6 @@ public final class PropertyDispatcher {
             case ID   -> ((Identifiable<?>) obj).getId();
             case NAME -> ((Identifiable<?>) obj).getNameOrId();
             case TL_NAME -> ((TemporaryLimit) obj).getName();
-            case TERMINAL_BUS_ID -> {
-                Terminal t = (Terminal) obj;
-                Bus bus = t.getBusView().getConnectableBus();
-                yield bus != null ? bus.getId() : "";
-            }
             case TERMINAL_BUS_BREAKER_BUS_ID -> {
                 Bus bus = ((Terminal) obj).getBusBreakerView().getBus();
                 yield bus != null ? bus.getId() : "";
@@ -603,6 +609,9 @@ public final class PropertyDispatcher {
             case NAME    -> ((Identifiable<?>) obj).setName(value);
             case ID      -> ((Identifiable<?>) obj).setId(value);
             case ADD_GEOGRAPHICAL_TAG -> ((Substation) obj).addGeographicalTag(value);
+            case TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID -> ((Terminal) obj).getBusBreakerView().setConnectableBus(value);
+            case VL_NBV_REMOVE_SWITCH -> ((VoltageLevel) obj).getNodeBreakerView().removeSwitch(value);
+            case VL_BBV_REMOVE_SWITCH -> ((VoltageLevel) obj).getBusBreakerView().removeSwitch(value);
             case BL_PAIRING_KEY -> ((BoundaryLine) obj).setPairingKey(value);
             case COUNTRY -> ((Substation) obj).setCountry(Country.valueOf(value));
             case SUBSTATION_TSO -> ((Substation) obj).setTso(value);
@@ -789,6 +798,19 @@ public final class PropertyDispatcher {
                 if (args.length != 1) throw wrongArgumentCount(code, args);
                 yield childStream(obj, (int) args[0]).count();
             }
+            // At a node of a node-breaker view
+            case FICTITIOUS_P0 -> {
+                if (args.length != 1) throw wrongArgumentCount(code, args);
+                yield ((VoltageLevel) obj).getNodeBreakerView().getFictitiousP0((int) args[0]);
+            }
+            case FICTITIOUS_Q0 -> {
+                if (args.length != 1) throw wrongArgumentCount(code, args);
+                yield ((VoltageLevel) obj).getNodeBreakerView().getFictitiousQ0((int) args[0]);
+            }
+            case VL_NBV_ATTACHED_EQUIPMENT -> {
+                if (args.length != 1) throw wrongArgumentCount(code, args);
+                yield ((VoltageLevel) obj).getNodeBreakerView().hasAttachedEquipment((int) args[0]) ? 1 : 0;
+            }
             case NETWORK_VALIDATION_LEVEL -> {
                 if (args.length != 1) throw wrongArgumentCount(code, args);
                 yield ((Network) obj).runValidationChecks(args[0] != 0).ordinal();
@@ -830,42 +852,51 @@ public final class PropertyDispatcher {
 
     private static Stream<?> childStream(Object obj, int childType) {
         return switch (childType) {
-            case GENERATOR -> {
-                if (obj instanceof VoltageLevel vl) yield StreamSupport.stream(vl.getConnectables(Generator.class).spliterator(), false);
-                yield ((Network) obj).getGeneratorStream();
-            }
-            case LOAD -> {
-                if (obj instanceof VoltageLevel vl) yield StreamSupport.stream(vl.getConnectables(Load.class).spliterator(), false);
-                yield ((Network) obj).getLoadStream();
-            }
-            case BATTERY -> {
-                if (obj instanceof VoltageLevel vl) yield StreamSupport.stream(vl.getConnectables(Battery.class).spliterator(), false);
-                yield ((Network) obj).getBatteryStream();
-            }
-            case SHUNT_COMPENSATOR -> {
-                if (obj instanceof VoltageLevel vl) yield StreamSupport.stream(vl.getConnectables(ShuntCompensator.class).spliterator(), false);
-                yield ((Network) obj).getShuntCompensatorStream();
-            }
-            case STATIC_VAR_COMPENSATOR -> {
-                if (obj instanceof VoltageLevel vl) yield StreamSupport.stream(vl.getConnectables(StaticVarCompensator.class).spliterator(), false);
-                yield ((Network) obj).getStaticVarCompensatorStream();
-            }
-            case BOUNDARY_LINE -> {
-                if (obj instanceof VoltageLevel vl) yield StreamSupport.stream(vl.getConnectables(BoundaryLine.class).spliterator(), false);
-                yield ((Network) obj).getBoundaryLineStream();
-            }
-            case LCC_CONVERTER_STATION -> {
-                if (obj instanceof VoltageLevel vl) yield StreamSupport.stream(vl.getConnectables(LccConverterStation.class).spliterator(), false);
-                yield ((Network) obj).getLccConverterStationStream();
-            }
-            case VSC_CONVERTER_STATION -> {
-                if (obj instanceof VoltageLevel vl) yield StreamSupport.stream(vl.getConnectables(VscConverterStation.class).spliterator(), false);
-                yield ((Network) obj).getVscConverterStationStream();
-            }
-            case LINE -> {
-                if (obj instanceof VoltageLevel vl) yield vl.getLineStream();
-                yield ((Network) obj).getLineStream();
-            }
+            case GENERATOR -> switch (obj) {
+                case VoltageLevel vl -> StreamSupport.stream(vl.getConnectables(Generator.class).spliterator(), false);
+                case Bus bus -> bus.getGeneratorStream();
+                default -> ((Network) obj).getGeneratorStream();
+            };
+            case LOAD -> switch (obj) {
+                case VoltageLevel vl -> StreamSupport.stream(vl.getConnectables(Load.class).spliterator(), false);
+                case Bus bus -> bus.getLoadStream();
+                default -> ((Network) obj).getLoadStream();
+            };
+            case BATTERY -> switch (obj) {
+                case VoltageLevel vl -> StreamSupport.stream(vl.getConnectables(Battery.class).spliterator(), false);
+                case Bus bus -> bus.getBatteryStream();
+                default -> ((Network) obj).getBatteryStream();
+            };
+            case SHUNT_COMPENSATOR -> switch (obj) {
+                case VoltageLevel vl -> StreamSupport.stream(vl.getConnectables(ShuntCompensator.class).spliterator(), false);
+                case Bus bus -> bus.getShuntCompensatorStream();
+                default -> ((Network) obj).getShuntCompensatorStream();
+            };
+            case STATIC_VAR_COMPENSATOR -> switch (obj) {
+                case VoltageLevel vl -> StreamSupport.stream(vl.getConnectables(StaticVarCompensator.class).spliterator(), false);
+                case Bus bus -> bus.getStaticVarCompensatorStream();
+                default -> ((Network) obj).getStaticVarCompensatorStream();
+            };
+            case BOUNDARY_LINE -> switch (obj) {
+                case VoltageLevel vl -> StreamSupport.stream(vl.getConnectables(BoundaryLine.class).spliterator(), false);
+                case Bus bus -> bus.getBoundaryLineStream();
+                default -> ((Network) obj).getBoundaryLineStream();
+            };
+            case LCC_CONVERTER_STATION -> switch (obj) {
+                case VoltageLevel vl -> StreamSupport.stream(vl.getConnectables(LccConverterStation.class).spliterator(), false);
+                case Bus bus -> bus.getLccConverterStationStream();
+                default -> ((Network) obj).getLccConverterStationStream();
+            };
+            case VSC_CONVERTER_STATION -> switch (obj) {
+                case VoltageLevel vl -> StreamSupport.stream(vl.getConnectables(VscConverterStation.class).spliterator(), false);
+                case Bus bus -> bus.getVscConverterStationStream();
+                default -> ((Network) obj).getVscConverterStationStream();
+            };
+            case LINE -> switch (obj) {
+                case VoltageLevel vl -> vl.getLineStream();
+                case Bus bus -> bus.getLineStream();
+                default -> ((Network) obj).getLineStream();
+            };
             case IDENTIFIABLE -> ((Network) obj).getIdentifiables().stream();
             case CONNECTABLE -> {
                 if (obj instanceof VoltageLevel vl) yield vl.getConnectableStream();
@@ -873,7 +904,9 @@ public final class PropertyDispatcher {
             }
             case BRANCH -> ((Network) obj).getBranchStream();
             case HVDC_CONVERTER_STATION -> ((Network) obj).getHvdcConverterStationStream();
-            case TERMINAL -> ((Connectable<?>) obj).getTerminals().stream();
+            case TERMINAL -> obj instanceof Bus bus
+                ? bus.getConnectedTerminalStream()
+                : ((Connectable<?>) obj).getTerminals().stream();
             case SUBSTATION  -> ((Network) obj).getSubstationStream();
             case VOLTAGE_LEVEL -> {
                 if (obj instanceof Substation sub)
@@ -883,11 +916,13 @@ public final class PropertyDispatcher {
             case TWO_WINDINGS_TRANSFORMER -> switch (obj) {
                 case Substation sub -> StreamSupport.stream(sub.getTwoWindingsTransformers().spliterator(), false);
                 case VoltageLevel vl -> vl.getTwoWindingsTransformerStream();
+                case Bus bus -> bus.getTwoWindingsTransformerStream();
                 default -> ((Network) obj).getTwoWindingsTransformerStream();
             };
             case THREE_WINDINGS_TRANSFORMER -> switch (obj) {
                 case Substation sub -> StreamSupport.stream(sub.getThreeWindingsTransformers().spliterator(), false);
                 case VoltageLevel vl -> vl.getThreeWindingsTransformerStream();
+                case Bus bus -> bus.getThreeWindingsTransformerStream();
                 default -> ((Network) obj).getThreeWindingsTransformerStream();
             };
             case HVDC_LINE           -> ((Network) obj).getHvdcLineStream();
@@ -925,6 +960,7 @@ public final class PropertyDispatcher {
             case REL_SELECTED_OLG -> LimitsDispatch.holder(obj).getAllSelectedOperationalLimitsGroups().stream();
             case CURRENT_LIMITS, ACTIVE_POWER_LIMITS, APPARENT_POWER_LIMITS
                 -> LimitsDispatch.holder(obj).getAllSelectedLimits(LimitsDispatch.limitType(childType)).stream();
+            case ELEMENTS -> ((Collection<?>) obj).stream();
             case MEASUREMENT          -> ((Measurements<?>) obj).getMeasurements().stream();
             case DISCRETE_MEASUREMENT -> ((DiscreteMeasurements<?>) obj).getDiscreteMeasurements().stream();
             case AREA_CHARACTERISTICS -> StateEstimationDispatch.observabilityAreas((ObservabilityArea) obj);
@@ -957,10 +993,9 @@ public final class PropertyDispatcher {
                 if (obj instanceof Branch<?> br) yield br.getTerminal2();
                 throw new BridgeErrors.PropertyNotFoundException("Object does not have terminal2: " + obj);
             }
-            case REL_BUS -> {
-                Terminal t = (Terminal) obj;
-                yield t.getBusView().getConnectableBus();
-            }
+            case REL_BUS -> ((Terminal) obj).getBusBreakerView().getBus();
+            case REL_BV_BUS -> ((Terminal) obj).getBusView().getBus();
+            case REL_BV_CONNECTABLE_BUS -> ((Terminal) obj).getBusView().getConnectableBus();
             case REL_VOLTAGE_LEVEL -> switch (obj) {
                 case Bus b -> b.getVoltageLevel();
                 case Switch sw -> sw.getVoltageLevel();
@@ -1136,6 +1171,14 @@ public final class PropertyDispatcher {
                 ((ShuntCompensator) obj).setSectionCountToSolvedSectionCount();
                 yield null;
             }
+            case ACT_REMOVE_ALL_BUSES -> {
+                ((VoltageLevel) obj).getBusBreakerView().removeAllBuses();
+                yield null;
+            }
+            case ACT_REMOVE_ALL_SWITCHES -> {
+                ((VoltageLevel) obj).getBusBreakerView().removeAllSwitches();
+                yield null;
+            }
             case ACT_CLEAN_IF_EMPTY -> {
                 switch (obj) {
                     case Measurements<?> measurements -> measurements.cleanIfEmpty();
@@ -1198,6 +1241,7 @@ public final class PropertyDispatcher {
     public static int[] getIntList(Object obj, int listCode) {
         return switch (listCode) {
             case VL_NBV_NODES -> ((VoltageLevel) obj).getNodeBreakerView().getNodes();
+            case ELEMENTS -> ((Collection<?>) obj).stream().mapToInt(element -> (Integer) element).toArray();
             case REGULATING_MODES -> modes(((VoltageRegulationHolder<?>) obj)::isRegulatingWithMode);
             case WITH_MODES       -> modes(((VoltageRegulationHolder<?>) obj)::isWithMode);
             case OBS_AREA_NODES -> StateEstimationDispatch.observabilityAreaNodes(obj);
@@ -1226,6 +1270,10 @@ public final class PropertyDispatcher {
                 yield ((VoltageLevel) obj).getBusView().getBus(key);
             }
             case REL_MERGED_BUS -> ((VoltageLevel) obj).getBusView().getMergedBus(key);
+            // A set: sorted, so that both backends list it in the same order
+            case REL_BBV_BUSES_OF_BV_BUS -> ((VoltageLevel) obj).getBusBreakerView().getBusesFromBusViewBusId(key).stream()
+                .sorted(Comparator.comparing(Bus::getId)).toList();
+            case BUSBAR_SECTION -> ((VoltageLevel) obj).getNodeBreakerView().getBusbarSection(key);
             case REL_BBV_SWITCH -> ((VoltageLevel) obj).getBusBreakerView().getSwitch(key);
             case REL_NBV_SWITCH -> ((VoltageLevel) obj).getNodeBreakerView().getSwitch(key);
             case CONNECTABLE -> ((VoltageLevel) obj).getConnectable(key, Connectable.class);
@@ -1251,6 +1299,8 @@ public final class PropertyDispatcher {
     public static Object getRelatedObjectByIndex(Object obj, int relation, int index) {
         return switch (relation) {
             case REL_NBV_TERMINAL_AT_NODE -> ((VoltageLevel) obj).getNodeBreakerView().getTerminal(index);
+            case REL_NBV_SWITCH -> ((VoltageLevel) obj).getNodeBreakerView().getSwitches(index);
+            case INTERNAL_CONNECTION -> ((VoltageLevel) obj).getNodeBreakerView().getNodesInternalConnectedTo(index);
             case REL_TERMINAL -> ((ThreeWindingsTransformer) obj).getTerminal(Creation.enumValue(ThreeSides.class, index));
             case THREE_WINDINGS_TRANSFORMER_LEG -> ((ThreeWindingsTransformer) obj).getLeg(Creation.enumValue(ThreeSides.class, index));
             case RATIO_TAP_CHANGER_STEP -> ((RatioTapChanger) obj).getStep(index);

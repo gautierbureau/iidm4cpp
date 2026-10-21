@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iidm/BackendProvider.h>
+#include <iidm/HandleRef.h>
 #include <iidm/PropertyCodes.h>
 #include <iidm/stdcxx/optional.hpp>
 #include <vector>
@@ -26,6 +27,19 @@ iidm::optional<T> wrapOptional(ObjectHandle h, BackendProvider* backend) {
 // The number of objects of a type in an object (a container, a view, a bus)
 inline int countOf(BackendProvider* backend, ObjectHandle h, int type) {
     return static_cast<int>(backend->evaluate(h, prop::CHILD_COUNT, {static_cast<double>(type)}));
+}
+
+// The objects of a list (prop::ELEMENTS) that a lookup returned; the list is released
+template <class T>
+std::vector<T> elementsOf(ObjectHandle list, BackendProvider* backend) {
+    HandleRef owned(list, backend);
+    return wrapAll<T>(backend->getChildren(list, prop::ELEMENTS), backend);
+}
+
+// The numbers of a list that a lookup returned; the list is released
+inline std::vector<int> intElementsOf(ObjectHandle list, BackendProvider* backend) {
+    HandleRef owned(list, backend);
+    return backend->getIntList(list, prop::ELEMENTS);
 }
 
 } } // namespace iidm::detail

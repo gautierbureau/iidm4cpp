@@ -156,6 +156,10 @@ cmake/          CMake helper modules (FindGraalVM.cmake, etc.)
   name or else the id); never invent sentinels for ints (tap positions can be negative).
 - A list of strings: `getStringList` (sets are sorted on the Java side, so that both backends
   give the same order).
+- A list that a keyed or indexed lookup returns (the switches at a node:
+  `getRelatedByIndex(vl, REL_NBV_SWITCH, node)`): an object, whose elements are
+  `getChildren(list, ELEMENTS)`, or `getIntList(list, ELEMENTS)` for numbers; `detail::elementsOf<T>`
+  and `detail::intElementsOf` (`src/Wrap.h`) read it and release it.
 - Values under a key: `getKeyedString` / `setKeyedString` (an empty optional removes the key), as
   for properties (`PROPERTY`) and aliases (`ALIAS_TYPE`).
 - An action: `invoke(object, ACT_...)`; it returns an object, or the object itself for a boolean

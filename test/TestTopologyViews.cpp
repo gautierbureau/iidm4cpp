@@ -55,9 +55,8 @@ protected:
         backend.doubles[{TERM_HANDLE, prop::TERMINAL_P}]        = 100.0;
         backend.ints   [{TERM_HANDLE, prop::TERMINAL_NODE}]      = 7;
         backend.bools  [{TERM_HANDLE, prop::TERMINAL_CONNECTED}] = true;
-        // bus view (merged/calculated bus)
+        // bus-breaker view: the bus it is connected to, the one it can connect to
         backend.related[{TERM_HANDLE, prop::REL_BUS}]            = BUS1;
-        // bus-breaker connectable bus
         backend.related[{TERM_HANDLE, prop::REL_CONNECTABLE_BUS}] = BUS2;
     }
 };
@@ -155,24 +154,23 @@ TEST_F(TopologyViewTest, TerminalBusBreakerViewIsValid) {
 
 TEST_F(TopologyViewTest, TerminalBusBreakerViewGetBus) {
     Terminal t(TERM_HANDLE, &backend);
-    Bus b = t.getBusBreakerView().getBus();
-    EXPECT_TRUE(b.isValid());
-    EXPECT_EQ(b.getId(), "BUS1");
+    iidm::optional<Bus> b = t.getBusBreakerView().getBus();
+    ASSERT_TRUE(b);
+    EXPECT_EQ(b->getId(), "BUS1");
 }
 
 TEST_F(TopologyViewTest, TerminalBusBreakerViewGetConnectableBus) {
     Terminal t(TERM_HANDLE, &backend);
-    Bus b = t.getBusBreakerView().getConnectableBus();
-    EXPECT_TRUE(b.isValid());
-    EXPECT_EQ(b.getId(), "BUS2");
+    iidm::optional<Bus> b = t.getBusBreakerView().getConnectableBus();
+    ASSERT_TRUE(b);
+    EXPECT_EQ(b->getId(), "BUS2");
 }
 
-TEST_F(TopologyViewTest, TerminalBusBreakerViewGetBusInvalidWhenDisconnected) {
+TEST_F(TopologyViewTest, TerminalBusBreakerViewGetBusEmptyWhenDisconnected) {
     MockBackend b2;
-    // No REL_BUS set → INVALID_HANDLE → Bus.isValid() == false
+    // No REL_BUS set → INVALID_HANDLE → no bus
     Terminal t(TERM_HANDLE, &b2);
-    Bus bus = t.getBusBreakerView().getBus();
-    EXPECT_FALSE(bus.isValid());
+    EXPECT_FALSE(t.getBusBreakerView().getBus());
 }
 
 TEST_F(TopologyViewTest, TerminalBusBreakerViewConnectableBusAlwaysPresent) {
@@ -183,9 +181,9 @@ TEST_F(TopologyViewTest, TerminalBusBreakerViewConnectableBusAlwaysPresent) {
     b2.bools[{TERM_HANDLE, prop::TERMINAL_CONNECTED}] = false;
     Terminal t(TERM_HANDLE, &b2);
     EXPECT_FALSE(t.isConnected());
-    Bus connectable = t.getBusBreakerView().getConnectableBus();
-    EXPECT_TRUE(connectable.isValid());
-    EXPECT_EQ(connectable.getId(), "BUS1");
+    iidm::optional<Bus> connectable = t.getBusBreakerView().getConnectableBus();
+    ASSERT_TRUE(connectable);
+    EXPECT_EQ(connectable->getId(), "BUS1");
 }
 
 // ── Consistency with existing VoltageLevel API ────────────────────────────────
@@ -298,9 +296,10 @@ TEST_F(TopologyViewTest, VlNodeBreakerViewGetTerminalAtNode) {
     backend.relatedByIndex[{VL_HANDLE, prop::REL_NBV_TERMINAL_AT_NODE, 7}] = TERM_HANDLE;
     backend.doubles[{TERM_HANDLE, prop::TERMINAL_P}] = 100.0;
     VoltageLevel vl(VL_HANDLE, &backend);
-    Terminal t = vl.getNodeBreakerView().getTerminal(7);
-    EXPECT_TRUE(t.isValid());
-    EXPECT_DOUBLE_EQ(t.getP(), 100.0);
+    iidm::optional<Terminal> t = vl.getNodeBreakerView().getTerminal(7);
+    ASSERT_TRUE(t);
+    EXPECT_DOUBLE_EQ(t->getP(), 100.0);
+    EXPECT_FALSE(vl.getNodeBreakerView().getTerminal(8)); // nothing there
 }
 
 // ── VoltageLevel per-injector getters ─────────────────────────────────────────
@@ -379,4 +378,175 @@ TEST_F(TopologyViewTest, VlGetVscConverterStations) {
     auto vscs = vl.getVscConverterStations();
     ASSERT_EQ(vscs.size(), 1u);
     EXPECT_EQ(vscs[0].getId(), "VSC1");
+}
+
+TEST_F(TopologyViewTest, VlGetBoundaryLinesFiltered) {
+    static constexpr ObjectHandle DL2 = 68;
+    backend.children[{VL_HANDLE, prop::BOUNDARY_LINE}] = {DL1, DL2};
+    backend.strings[{DL1, prop::ID}] = "DL1";
+    backend.strings[{DL2, prop::ID}] = "DL2";
+    backend.bools[{DL2, prop::BL_PAIRED}] = true;
+    VoltageLevel vl(VL_HANDLE, &backend);
+    ASSERT_EQ(vl.getBoundaryLines(BoundaryLineFilter::PAIRED).size(), 1u);
+    EXPECT_EQ(vl.getBoundaryLines(BoundaryLineFilter::PAIRED)[0].getId(), "DL2");
+    EXPECT_EQ(vl.getBoundaryLines(BoundaryLineFilter::UNPAIRED)[0].getId(), "DL1");
+    EXPECT_EQ(vl.getBoundaryLines(BoundaryLineFilter::ALL).size(), 2u);
+}
+
+// ── NodeBreakerView members ───────────────────────────────────────────────────
+
+static constexpr ObjectHandle LIST = 90;
+static constexpr ObjectHandle SW2 = 31;
+
+TEST_F(TopologyViewTest, VlNodeBreakerViewNodes) {
+    backend.ints[{VL_HANDLE, prop::VL_NBV_MAXIMUM_NODE_INDEX}] = 15;
+    backend.evaluations[std::make_tuple(ObjectHandle(VL_HANDLE), prop::VL_NBV_ATTACHED_EQUIPMENT, std::vector<double>{3})] = 1;
+    backend.evaluations[std::make_tuple(ObjectHandle(VL_HANDLE), prop::VL_NBV_ATTACHED_EQUIPMENT, std::vector<double>{4})] = 0;
+    VoltageLevel::NodeBreakerView view = VoltageLevel(VL_HANDLE, &backend).getNodeBreakerView();
+    EXPECT_EQ(view.getMaximumNodeIndex(), 15);
+    EXPECT_TRUE(view.hasAttachedEquipment(3));
+    EXPECT_FALSE(view.hasAttachedEquipment(4));
+}
+
+TEST_F(TopologyViewTest, VlNodeBreakerViewFictitiousInjections) {
+    backend.evaluations[std::make_tuple(ObjectHandle(VL_HANDLE), prop::FICTITIOUS_P0, std::vector<double>{5})] = 1.5;
+    backend.evaluations[std::make_tuple(ObjectHandle(VL_HANDLE), prop::FICTITIOUS_Q0, std::vector<double>{5})] = 0.5;
+    VoltageLevel::NodeBreakerView view = VoltageLevel(VL_HANDLE, &backend).getNodeBreakerView();
+    EXPECT_DOUBLE_EQ(view.getFictitiousP0(5), 1.5);
+    EXPECT_DOUBLE_EQ(view.getFictitiousQ0(5), 0.5);
+
+    // Two values at once: a change on the voltage level
+    view.setFictitiousP0(6, 2.0).setFictitiousQ0(6, 1.0);
+    ObjectHandle change = backend.lastAdder;
+    EXPECT_EQ(backend.invocations[backend.invocations.size() - 2],
+              std::make_pair(ObjectHandle(VL_HANDLE), prop::FICTITIOUS_Q0));
+    EXPECT_EQ((backend.ints[{change, prop::TERMINAL_NODE}]), 6);
+    EXPECT_DOUBLE_EQ((backend.doubles[{change, prop::FICTITIOUS_Q0}]), 1.0);
+    EXPECT_EQ(backend.invocations.back(), std::make_pair(change, prop::ACT_ADD));
+}
+
+TEST_F(TopologyViewTest, VlNodeBreakerViewSwitches) {
+    backend.evaluations[std::make_tuple(ObjectHandle(VL_HANDLE), prop::CHILD_COUNT,
+                                        std::vector<double>{prop::REL_NBV_SWITCH})] = 1;
+    backend.relatedByString[std::make_tuple(ObjectHandle(VL_HANDLE), prop::REL_NBV_SWITCH, std::string("SW1"))] = SW1;
+    backend.ints[{SW1, prop::SW_NODE1}] = 2;
+    backend.ints[{SW1, prop::SW_NODE2}] = 3;
+    backend.relatedByIndex[{VL_HANDLE, prop::REL_NBV_TERMINAL_AT_NODE, 3}] = TERM_HANDLE;
+    // The switches at a node: a list
+    backend.relatedByIndex[{VL_HANDLE, prop::REL_NBV_SWITCH, 2}] = LIST;
+    backend.children[{LIST, prop::ELEMENTS}] = {SW1, SW2};
+    backend.strings[{SW2, prop::ID}] = "SW2";
+
+    VoltageLevel::NodeBreakerView view = VoltageLevel(VL_HANDLE, &backend).getNodeBreakerView();
+    EXPECT_EQ(view.getSwitchCount(), 1);
+    EXPECT_EQ(view.getNode1("SW1"), 2);
+    EXPECT_EQ(view.getNode2("SW1"), 3);
+    EXPECT_THROW(view.getNode1("NONE"), ValidationException);
+    EXPECT_FALSE(view.getTerminal1("SW1")); // nothing at node 2
+    EXPECT_DOUBLE_EQ(view.getTerminal2("SW1")->getP(), 100.0);
+    std::vector<Switch> atNode = view.getSwitches(2);
+    ASSERT_EQ(atNode.size(), 2u);
+    EXPECT_EQ(atNode[1].getId(), "SW2");
+
+    view.removeSwitch("SW1");
+    EXPECT_EQ((backend.strings[{VL_HANDLE, prop::VL_NBV_REMOVE_SWITCH}]), "SW1");
+}
+
+TEST_F(TopologyViewTest, VlNodeBreakerViewBusbarSectionsAndInternalConnections) {
+    backend.relatedByString[std::make_tuple(ObjectHandle(VL_HANDLE), prop::BUSBAR_SECTION, std::string("BBS1"))] = BBS1;
+    backend.evaluations[std::make_tuple(ObjectHandle(VL_HANDLE), prop::CHILD_COUNT,
+                                        std::vector<double>{prop::BUSBAR_SECTION})] = 1;
+    backend.evaluations[std::make_tuple(ObjectHandle(VL_HANDLE), prop::CHILD_COUNT,
+                                        std::vector<double>{prop::INTERNAL_CONNECTION})] = 2;
+    backend.relatedByIndex[{VL_HANDLE, prop::INTERNAL_CONNECTION, 3}] = LIST;
+    backend.intLists[{LIST, prop::ELEMENTS}] = {0, 4};
+
+    VoltageLevel::NodeBreakerView view = VoltageLevel(VL_HANDLE, &backend).getNodeBreakerView();
+    EXPECT_EQ(view.getBusbarSection("BBS1")->getId(), "BBS1");
+    EXPECT_FALSE(view.getBusbarSection("NONE"));
+    EXPECT_EQ(view.getBusbarSectionCount(), 1);
+    EXPECT_EQ(view.getInternalConnectionCount(), 2);
+    EXPECT_EQ(view.getNodesInternalConnectedTo(3), (std::vector<int>{0, 4}));
+
+    view.removeInternalConnections(3, 4);
+    ObjectHandle removal = backend.lastAdder;
+    EXPECT_EQ(backend.invocations[backend.invocations.size() - 2],
+              std::make_pair(ObjectHandle(VL_HANDLE), prop::VL_NBV_REMOVE_INTERNAL_CONNECTIONS));
+    EXPECT_EQ((backend.ints[{removal, prop::IC_NODE1}]), 3);
+    EXPECT_EQ((backend.ints[{removal, prop::IC_NODE2}]), 4);
+    EXPECT_EQ(backend.invocations.back(), std::make_pair(removal, prop::ACT_ADD));
+}
+
+// ── BusBreakerView members ────────────────────────────────────────────────────
+
+TEST_F(TopologyViewTest, VlBusBreakerViewMembers) {
+    backend.evaluations[std::make_tuple(ObjectHandle(VL_HANDLE), prop::CHILD_COUNT, std::vector<double>{prop::BUS})] = 2;
+    backend.evaluations[std::make_tuple(ObjectHandle(VL_HANDLE), prop::CHILD_COUNT,
+                                        std::vector<double>{prop::REL_BBV_SWITCH})] = 1;
+    backend.relatedByString[std::make_tuple(ObjectHandle(VL_HANDLE), prop::REL_BBV_SWITCH, std::string("SW1"))] = SW1;
+    backend.relatedByString[std::make_tuple(ObjectHandle(VL_HANDLE), prop::REL_BBV_BUSES_OF_BV_BUS, std::string("VL1_0"))] = LIST;
+    backend.children[{LIST, prop::ELEMENTS}] = {BUS1, BUS2};
+
+    VoltageLevel::BusBreakerView view = VoltageLevel(VL_HANDLE, &backend).getBusBreakerView();
+    EXPECT_EQ(view.getBusCount(), 2);
+    EXPECT_EQ(view.getSwitchCount(), 1);
+    EXPECT_EQ(view.getSwitch("SW1")->getId(), "SW1");
+    EXPECT_FALSE(view.getSwitch("NONE"));
+    std::vector<Bus> buses = view.getBusesFromBusViewBusId("VL1_0");
+    ASSERT_EQ(buses.size(), 2u);
+    EXPECT_EQ(buses[1].getId(), "BUS2");
+
+    view.removeSwitch("SW1");
+    EXPECT_EQ((backend.strings[{VL_HANDLE, prop::VL_BBV_REMOVE_SWITCH}]), "SW1");
+    view.removeAllSwitches();
+    EXPECT_EQ(backend.invocations.back(), std::make_pair(ObjectHandle(VL_HANDLE), prop::ACT_REMOVE_ALL_SWITCHES));
+    view.removeAllBuses();
+    EXPECT_EQ(backend.invocations.back(), std::make_pair(ObjectHandle(VL_HANDLE), prop::ACT_REMOVE_ALL_BUSES));
+}
+
+// ── Bus members ───────────────────────────────────────────────────────────────
+
+TEST_F(TopologyViewTest, BusValues) {
+    backend.doubles[{BUS1, prop::BUS_P}] = 10.0;
+    backend.doubles[{BUS1, prop::BUS_Q}] = 2.0;
+    backend.bools[{BUS1, prop::BUS_IN_MAIN_CONNECTED_COMPONENT}] = true;
+    Bus bus(BUS1, &backend);
+    EXPECT_DOUBLE_EQ(bus.getP(), 10.0);
+    EXPECT_DOUBLE_EQ(bus.getQ(), 2.0);
+    EXPECT_TRUE(bus.isInMainConnectedComponent());
+    EXPECT_FALSE(bus.isInMainSynchronousComponent());
+    bus.setFictitiousP0(1.5).setFictitiousQ0(0.5);
+    EXPECT_DOUBLE_EQ(bus.getFictitiousP0(), 1.5);
+    EXPECT_DOUBLE_EQ(bus.getFictitiousQ0(), 0.5);
+    bus.unsetSolvedValues();
+    EXPECT_EQ(backend.invocations.back(), std::make_pair(ObjectHandle(BUS1), prop::ACT_UNSET_SOLVED_VALUES));
+}
+
+TEST_F(TopologyViewTest, BusConnectedEquipment) {
+    backend.children[{BUS1, prop::TERMINAL}] = {TERM_HANDLE};
+    backend.evaluations[std::make_tuple(ObjectHandle(BUS1), prop::CHILD_COUNT, std::vector<double>{prop::TERMINAL})] = 1;
+    backend.children[{BUS1, prop::GENERATOR}] = {GEN1};
+    backend.strings[{GEN1, prop::ID}] = "GEN1";
+    backend.children[{BUS1, prop::BOUNDARY_LINE}] = {DL1};
+    backend.bools[{DL1, prop::BL_PAIRED}] = true;
+    Bus bus(BUS1, &backend);
+    ASSERT_EQ(bus.getConnectedTerminals().size(), 1u);
+    EXPECT_DOUBLE_EQ(bus.getConnectedTerminals()[0].getP(), 100.0);
+    EXPECT_EQ(bus.getConnectedTerminalCount(), 1);
+    EXPECT_EQ(bus.getGenerators()[0].getId(), "GEN1");
+    EXPECT_TRUE(bus.getLoads().empty());
+    EXPECT_EQ(bus.getBoundaryLines().size(), 1u);
+    EXPECT_TRUE(bus.getBoundaryLines(BoundaryLineFilter::UNPAIRED).empty());
+}
+
+// ── Terminal::BusView ─────────────────────────────────────────────────────────
+
+TEST_F(TopologyViewTest, TerminalBusView) {
+    backend.related[{TERM_HANDLE, prop::REL_BV_BUS}] = BUS2;
+    backend.related[{TERM_HANDLE, prop::REL_BV_CONNECTABLE_BUS}] = BUS2;
+    Terminal t(TERM_HANDLE, &backend);
+    EXPECT_EQ(t.getBusView().getBus()->getId(), "BUS2");
+    EXPECT_EQ(t.getBusView().getConnectableBus()->getId(), "BUS2");
+    MockBackend disconnected;
+    EXPECT_FALSE(Terminal(TERM_HANDLE, &disconnected).getBusView().getBus());
 }

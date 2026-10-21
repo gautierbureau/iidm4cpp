@@ -54,6 +54,9 @@ enum class ContainerType { NETWORK, SUBSTATION, VOLTAGE_LEVEL };
 enum class ValidationLevel { EQUIPMENT, STEADY_STATE_HYPOTHESIS };
 // Model of the voltage dependence of a load (powsybl LoadModelType)
 enum class LoadModelType { EXPONENTIAL, ZIP };
+// Which boundary lines to list: all of them, those paired in a tie line, the others (powsybl
+// BoundaryLineFilter)
+enum class BoundaryLineFilter { ALL, PAIRED, UNPAIRED };
 
 // ── State estimation extensions (same order as the powsybl-core enums) ──────
 enum class MeasurementType {

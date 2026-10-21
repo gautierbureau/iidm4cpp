@@ -34,9 +34,9 @@
 // int values (node numbers, tap positions) and sides; evaluate with a set of argument lists.
 // invoke(object, TYPE), which starts an adder and changes nothing, is compared the same way. Every
 // value read is then written back with the matching setter: both backends must accept or reject it
-// alike, and read back the same value. Then every action (ACT_*) that changes an object's values
-// (solved values applied or unset, tap positions unset...) is applied to every object, with the
-// same outcome. Both networks must then save to the same XIIDM; last, every identifiable is removed
+// alike, and read back the same value. Then every other action (ACT_*: solved values applied or
+// unset, tap positions unset, all the switches of a voltage level removed...) is applied to every
+// object, with the same outcome. Both networks must then save to the same XIIDM; last, every identifiable is removed
 // (in reverse visit order), with the same outcome, and the XIIDM compared again. One case builds
 // its network through the C++ adders instead of loading it.
 //
@@ -476,8 +476,8 @@ private:
         }
     }
 
-    // The actions that change values, on every object; adding, removing and connecting are
-    // compared elsewhere
+    // The other actions (solved values, tap positions, all the buses or switches of a voltage
+    // level...), on every object; adding, removing an object and connecting are compared elsewhere
     void applyActions(Twin& twin) {
         for (const Code& code : codes_) {
             if (!isAction(code) || code.value == prop::ACT_ADD || code.value == prop::ACT_REMOVE

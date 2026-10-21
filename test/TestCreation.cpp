@@ -49,7 +49,7 @@ void checkCreation(Network& network) {
     EXPECT_DOUBLE_EQ(g.getTargetP(), 100);
     EXPECT_DOUBLE_EQ(g.getRatedS(), 250);
     EXPECT_FALSE(g.isCondenser());
-    EXPECT_EQ(g.getTerminal().getBusBreakerView().getConnectableBus().getId(), "B");
+    EXPECT_EQ(g.getTerminal().getBusBreakerView().getConnectableBus()->getId(), "B");
     EXPECT_TRUE(g.isRegulating());
     EXPECT_DOUBLE_EQ(g.getRegulatingTargetV(), 405);
     EXPECT_EQ(load.getNameOrId(), "load");

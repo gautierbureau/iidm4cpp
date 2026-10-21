@@ -391,9 +391,21 @@ VoltageLevel
 ├── getSubstation() → optional, getNominalV() / getLow…/getHighVoltageLimit() (+ setters)
 ├── getTopologyKind(), convertToTopology(kind), printTopology([out])
 ├── getConnectables() / getConnectable(id), getGenerators(), getLoads(), getLines(),
-│   getTwoWindingsTransformers()… (+ counts)
-└── getNodeBreakerView() / getBusBreakerView() / getBusView() (getBuses(), getBus(id),
-    getMergedBus(configured bus or busbar section id))
+│   getTwoWindingsTransformers()… (+ counts), getBoundaryLines([BoundaryLineFilter])
+├── getNodeBreakerView()
+│   ├── getNodes(), getMaximumNodeIndex(), getTerminal(node) → optional, hasAttachedEquipment(node)
+│   ├── getFictitiousP0(node) / getFictitiousQ0(node) (+ setters)
+│   ├── getSwitches([node]), getSwitch(id), getNode1/2(switch id), getTerminal1/2(switch id),
+│   │   removeSwitch(id) (+ count)
+│   ├── getBusbarSections() / getBusbarSection(id) (+ count)
+│   └── getInternalConnections() (+ count), getNodesInternalConnectedTo(node),
+│       removeInternalConnections(node1, node2)
+├── getBusBreakerView()
+│   ├── getBuses() / getBus(id) (+ count), getBusesFromBusViewBusId(id), newBus(),
+│   │   removeBus(id) / removeAllBuses()
+│   └── getSwitches() / getSwitch(id) (+ count), getBus1/2(switch id), removeSwitch(id) /
+│       removeAllSwitches()
+└── getBusView(): getBuses(), getBus(id), getMergedBus(configured bus or busbar section id)
 Switch            isOpen() / isRetained() (+ setters), getKind(), getVoltageLevel()
 
 Load
@@ -406,17 +418,23 @@ Load
 └── applySolvedValues() / setP0ToP() / setQ0ToQ()
 
 Terminal
-├── getConnectable() → Connectable
+├── getConnectable() → Connectable, getVoltageLevel()
 ├── getSide() → optional<ThreeSides>   (empty for an injection)
-├── getBusView() → Bus
-├── getP() → double              setP(double)
-├── getQ() → double              setQ(double)
-├── isConnected() → bool
-└── connect() / disconnect() → bool    (true when this changed it)
+├── getP() / getQ() → double (+ setters), getI() → double (A), unsetSolvedValues()
+├── isConnected() → bool, connect() / disconnect() → bool    (true when this changed it)
+├── getBusBreakerView(): getBus() / getConnectableBus() → optional<Bus>, setConnectableBus(id),
+│   moveConnectable(bus id, connected)
+├── getBusView(): getBus() / getConnectableBus() → optional<Bus>
+└── getNodeBreakerView(): getNode(), moveConnectable(node, voltage level id)
+    (a move gives the equipment a new terminal: get it again from the equipment)
 
-Bus (from a bus-breaker view, or a terminal)
-├── getV() → double              setV(double)
-└── getAngle() → double          setAngle(double)
+Bus (of a bus-breaker view or of a bus view)
+├── getV() / getAngle() → double (+ setters), unsetSolvedValues()
+├── getP() / getQ() → double (its equipment, load sign convention)
+├── getFictitiousP0() / getFictitiousQ0() → double (+ setters)
+├── isInMainConnectedComponent() / isInMainSynchronousComponent() → bool
+└── getConnectedTerminals() (+ count), getLines(), getGenerators(), getLoads()…,
+    getBoundaryLines([BoundaryLineFilter])
 ```
 
 ### 4.2 Handle Model

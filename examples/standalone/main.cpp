@@ -164,8 +164,7 @@ static void printNetwork(iidm::Network& network) {
         std::cout << "  " << vl.getId()
                   << "  nominalV=" << vl.getNominalV() << " kV";
         if (vl.hasSlackTerminal()) {
-            iidm::optional<iidm::Terminal> slack = vl.getSlackTerminal().getTerminal();
-            std::cout << "  slackTerminal.busId=" << (slack ? slack->getBusId() : "-");
+            std::cout << "  slackTerminal.busId=" << example::slackBusId(vl.getSlackTerminal());
         }
         std::cout << "\n";
         // Report buses (bus-breaker view)

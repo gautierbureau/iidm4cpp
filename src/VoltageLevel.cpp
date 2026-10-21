@@ -1,6 +1,7 @@
 #include <iidm/VoltageLevel.h>
 #include <iidm/SlackTerminal.h>
 #include <iidm/BackendProvider.h>
+#include <iidm/HandleRef.h>
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
 #include <iidm/Bus.h>
@@ -21,6 +22,7 @@
 #include <iidm/ThreeWindingsTransformer.h>
 #include <iidm/Substation.h>
 #include <iostream>
+#include "BoundaryLineFilter.h"
 #include "Extensions.h"
 #include "Wrap.h"
 
@@ -31,37 +33,123 @@ namespace iidm {
 VoltageLevel::NodeBreakerView::NodeBreakerView(ObjectHandle h, BackendProvider* b)
     : ObjectRef(h, b) {}
 
+std::vector<int> VoltageLevel::NodeBreakerView::getNodes() const {
+    return backend_->getIntList(handle_, prop::VL_NBV_NODES);
+}
+
+int VoltageLevel::NodeBreakerView::getMaximumNodeIndex() const {
+    return backend_->getInt(handle_, prop::VL_NBV_MAXIMUM_NODE_INDEX);
+}
+
+iidm::optional<Terminal> VoltageLevel::NodeBreakerView::getTerminal(int node) const {
+    return detail::wrapOptional<Terminal>(backend_->getRelatedByIndex(handle_, prop::REL_NBV_TERMINAL_AT_NODE, node), backend_);
+}
+
+bool VoltageLevel::NodeBreakerView::hasAttachedEquipment(int node) const {
+    return backend_->evaluate(handle_, prop::VL_NBV_ATTACHED_EQUIPMENT, {static_cast<double>(node)}) != 0;
+}
+
+double VoltageLevel::NodeBreakerView::getFictitiousP0(int node) const {
+    return backend_->evaluate(handle_, prop::FICTITIOUS_P0, {static_cast<double>(node)});
+}
+
+VoltageLevel::NodeBreakerView& VoltageLevel::NodeBreakerView::setFictitiousP0(int node, double p0) {
+    // Two values at once: a change, applied by ACT_ADD
+    HandleRef change(backend_->invoke(handle_, prop::FICTITIOUS_P0), backend_);
+    backend_->setInt(change, prop::TERMINAL_NODE, node);
+    backend_->setDouble(change, prop::FICTITIOUS_P0, p0);
+    backend_->invoke(change, prop::ACT_ADD);
+    return *this;
+}
+
+double VoltageLevel::NodeBreakerView::getFictitiousQ0(int node) const {
+    return backend_->evaluate(handle_, prop::FICTITIOUS_Q0, {static_cast<double>(node)});
+}
+
+VoltageLevel::NodeBreakerView& VoltageLevel::NodeBreakerView::setFictitiousQ0(int node, double q0) {
+    HandleRef change(backend_->invoke(handle_, prop::FICTITIOUS_Q0), backend_);
+    backend_->setInt(change, prop::TERMINAL_NODE, node);
+    backend_->setDouble(change, prop::FICTITIOUS_Q0, q0);
+    backend_->invoke(change, prop::ACT_ADD);
+    return *this;
+}
+
 std::vector<Switch> VoltageLevel::NodeBreakerView::getSwitches() const {
     return detail::wrapAll<Switch>(backend_->getChildren(handle_, prop::REL_NBV_SWITCH), backend_);
 }
 
-std::vector<BusbarSection> VoltageLevel::NodeBreakerView::getBusbarSections() const {
-    auto handles = backend_->getChildren(handle_, prop::BUSBAR_SECTION);
-    std::vector<BusbarSection> result;
-    result.reserve(handles.size());
-    for (auto h : handles) result.emplace_back(h, backend_);
-    return result;
-}
-
-std::vector<InternalConnection> VoltageLevel::NodeBreakerView::getInternalConnections() const {
-    auto handles = backend_->getChildren(handle_, prop::INTERNAL_CONNECTION);
-    std::vector<InternalConnection> result;
-    result.reserve(handles.size());
-    for (auto h : handles) result.emplace_back(h, backend_);
-    return result;
-}
-
-std::vector<int> VoltageLevel::NodeBreakerView::getNodes() const {
-    return backend_->getIntList(handle_, prop::VL_NBV_NODES);
+int VoltageLevel::NodeBreakerView::getSwitchCount() const {
+    return detail::countOf(backend_, handle_, prop::REL_NBV_SWITCH);
 }
 
 iidm::optional<Switch> VoltageLevel::NodeBreakerView::getSwitch(const std::string& id) const {
     return detail::wrapOptional<Switch>(backend_->getRelatedByString(handle_, prop::REL_NBV_SWITCH, id), backend_);
 }
 
-Terminal VoltageLevel::NodeBreakerView::getTerminal(int node) const {
-    ObjectHandle h = backend_->getRelatedByIndex(handle_, prop::REL_NBV_TERMINAL_AT_NODE, node);
-    return Terminal(h, backend_);
+std::vector<Switch> VoltageLevel::NodeBreakerView::getSwitches(int node) const {
+    return detail::elementsOf<Switch>(backend_->getRelatedByIndex(handle_, prop::REL_NBV_SWITCH, node), backend_);
+}
+
+namespace {
+
+// A switch of a node-breaker view, which must have it (powsybl's message otherwise)
+Switch existingSwitch(const VoltageLevel::NodeBreakerView& view, const std::string& switchId) {
+    iidm::optional<Switch> sw = view.getSwitch(switchId);
+    if (!sw) throw ValidationException("Switch " + switchId + " not found");
+    return *sw;
+}
+
+} // namespace
+
+int VoltageLevel::NodeBreakerView::getNode1(const std::string& switchId) const {
+    return existingSwitch(*this, switchId).getNode1();
+}
+
+int VoltageLevel::NodeBreakerView::getNode2(const std::string& switchId) const {
+    return existingSwitch(*this, switchId).getNode2();
+}
+
+iidm::optional<Terminal> VoltageLevel::NodeBreakerView::getTerminal1(const std::string& switchId) const {
+    return getTerminal(getNode1(switchId));
+}
+
+iidm::optional<Terminal> VoltageLevel::NodeBreakerView::getTerminal2(const std::string& switchId) const {
+    return getTerminal(getNode2(switchId));
+}
+
+void VoltageLevel::NodeBreakerView::removeSwitch(const std::string& switchId) {
+    backend_->setString(handle_, prop::VL_NBV_REMOVE_SWITCH, switchId);
+}
+
+std::vector<BusbarSection> VoltageLevel::NodeBreakerView::getBusbarSections() const {
+    return detail::wrapAll<BusbarSection>(backend_->getChildren(handle_, prop::BUSBAR_SECTION), backend_);
+}
+
+int VoltageLevel::NodeBreakerView::getBusbarSectionCount() const {
+    return detail::countOf(backend_, handle_, prop::BUSBAR_SECTION);
+}
+
+iidm::optional<BusbarSection> VoltageLevel::NodeBreakerView::getBusbarSection(const std::string& id) const {
+    return detail::wrapOptional<BusbarSection>(backend_->getRelatedByString(handle_, prop::BUSBAR_SECTION, id), backend_);
+}
+
+std::vector<InternalConnection> VoltageLevel::NodeBreakerView::getInternalConnections() const {
+    return detail::wrapAll<InternalConnection>(backend_->getChildren(handle_, prop::INTERNAL_CONNECTION), backend_);
+}
+
+int VoltageLevel::NodeBreakerView::getInternalConnectionCount() const {
+    return detail::countOf(backend_, handle_, prop::INTERNAL_CONNECTION);
+}
+
+std::vector<int> VoltageLevel::NodeBreakerView::getNodesInternalConnectedTo(int node) const {
+    return detail::intElementsOf(backend_->getRelatedByIndex(handle_, prop::INTERNAL_CONNECTION, node), backend_);
+}
+
+void VoltageLevel::NodeBreakerView::removeInternalConnections(int node1, int node2) {
+    HandleRef removal(backend_->invoke(handle_, prop::VL_NBV_REMOVE_INTERNAL_CONNECTIONS), backend_);
+    backend_->setInt(removal, prop::IC_NODE1, node1);
+    backend_->setInt(removal, prop::IC_NODE2, node2);
+    backend_->invoke(removal, prop::ACT_ADD);
 }
 
 // ── BusBreakerView ────────────────────────────────────────────────────────────
@@ -70,27 +158,19 @@ VoltageLevel::BusBreakerView::BusBreakerView(ObjectHandle h, BackendProvider* b)
     : ObjectRef(h, b) {}
 
 std::vector<Bus> VoltageLevel::BusBreakerView::getBuses() const {
-    auto handles = backend_->getChildren(handle_, prop::BUS);
-    std::vector<Bus> result;
-    result.reserve(handles.size());
-    for (auto h : handles) result.emplace_back(h, backend_);
-    return result;
+    return detail::wrapAll<Bus>(backend_->getChildren(handle_, prop::BUS), backend_);
 }
 
-std::vector<Switch> VoltageLevel::BusBreakerView::getSwitches() const {
-    return detail::wrapAll<Switch>(backend_->getChildren(handle_, prop::REL_BBV_SWITCH), backend_);
-}
-
-Bus VoltageLevel::BusBreakerView::getBus1(const std::string& switchId) const {
-    return Bus(backend_->getRelatedByString(handle_, prop::REL_VL_BBV_BUS1, switchId), backend_);
-}
-
-Bus VoltageLevel::BusBreakerView::getBus2(const std::string& switchId) const {
-    return Bus(backend_->getRelatedByString(handle_, prop::REL_VL_BBV_BUS2, switchId), backend_);
+int VoltageLevel::BusBreakerView::getBusCount() const {
+    return detail::countOf(backend_, handle_, prop::BUS);
 }
 
 iidm::optional<Bus> VoltageLevel::BusBreakerView::getBus(const std::string& busId) const {
     return detail::wrapOptional<Bus>(backend_->getRelatedByString(handle_, prop::REL_BBV_BUS, busId), backend_);
+}
+
+std::vector<Bus> VoltageLevel::BusBreakerView::getBusesFromBusViewBusId(const std::string& busViewBusId) const {
+    return detail::elementsOf<Bus>(backend_->getRelatedByString(handle_, prop::REL_BBV_BUSES_OF_BV_BUS, busViewBusId), backend_);
 }
 
 BusAdder VoltageLevel::BusBreakerView::newBus() {
@@ -101,6 +181,38 @@ void VoltageLevel::BusBreakerView::removeBus(const std::string& busId) {
     iidm::optional<Bus> bus = getBus(busId);
     if (!bus) throw ValidationException("Bus " + busId + " not found");
     backend_->invoke(detail::Access::handle(*bus), prop::ACT_REMOVE);
+}
+
+void VoltageLevel::BusBreakerView::removeAllBuses() {
+    backend_->invoke(handle_, prop::ACT_REMOVE_ALL_BUSES);
+}
+
+std::vector<Switch> VoltageLevel::BusBreakerView::getSwitches() const {
+    return detail::wrapAll<Switch>(backend_->getChildren(handle_, prop::REL_BBV_SWITCH), backend_);
+}
+
+int VoltageLevel::BusBreakerView::getSwitchCount() const {
+    return detail::countOf(backend_, handle_, prop::REL_BBV_SWITCH);
+}
+
+iidm::optional<Switch> VoltageLevel::BusBreakerView::getSwitch(const std::string& id) const {
+    return detail::wrapOptional<Switch>(backend_->getRelatedByString(handle_, prop::REL_BBV_SWITCH, id), backend_);
+}
+
+Bus VoltageLevel::BusBreakerView::getBus1(const std::string& switchId) const {
+    return Bus(backend_->getRelatedByString(handle_, prop::REL_VL_BBV_BUS1, switchId), backend_);
+}
+
+Bus VoltageLevel::BusBreakerView::getBus2(const std::string& switchId) const {
+    return Bus(backend_->getRelatedByString(handle_, prop::REL_VL_BBV_BUS2, switchId), backend_);
+}
+
+void VoltageLevel::BusBreakerView::removeSwitch(const std::string& switchId) {
+    backend_->setString(handle_, prop::VL_BBV_REMOVE_SWITCH, switchId);
+}
+
+void VoltageLevel::BusBreakerView::removeAllSwitches() {
+    backend_->invoke(handle_, prop::ACT_REMOVE_ALL_SWITCHES);
 }
 
 // ── BusView ───────────────────────────────────────────────────────────────────
@@ -250,12 +362,9 @@ std::vector<StaticVarCompensator> VoltageLevel::getStaticVarCompensators() const
     return result;
 }
 
-std::vector<BoundaryLine> VoltageLevel::getBoundaryLines() const {
-    auto handles = backend_->getChildren(handle_, prop::BOUNDARY_LINE);
-    std::vector<BoundaryLine> result;
-    result.reserve(handles.size());
-    for (auto h : handles) result.emplace_back(h, backend_);
-    return result;
+std::vector<BoundaryLine> VoltageLevel::getBoundaryLines(BoundaryLineFilter filter) const {
+    return detail::filterBoundaryLines(
+        detail::wrapAll<BoundaryLine>(backend_->getChildren(handle_, prop::BOUNDARY_LINE), backend_), filter);
 }
 
 std::vector<LccConverterStation> VoltageLevel::getLccConverterStations() const {

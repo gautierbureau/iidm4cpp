@@ -19,6 +19,15 @@ inline std::string slackConnectableId(const iidm::SlackTerminal& slackTerminal) 
     return terminal ? terminal->getConnectable().getId() : "-";
 }
 
+// The bus view bus that the slack terminal of the current variant can connect to: "" when it has
+// none, "-" when there is no slack terminal
+inline std::string slackBusId(const iidm::SlackTerminal& slackTerminal) {
+    iidm::optional<iidm::Terminal> terminal = slackTerminal.getTerminal();
+    if (!terminal) return "-";
+    iidm::optional<iidm::Bus> bus = terminal->getBusView().getConnectableBus();
+    return bus ? bus->getId() : "";
+}
+
 inline void editActivePowerControlAndSlackTerminal(iidm::Network& network, const std::string& prefix) {
     for (auto& gen : network.getGenerators()) {
         if (!gen.hasActivePowerControl()) continue;
