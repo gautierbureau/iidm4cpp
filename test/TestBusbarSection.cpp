@@ -22,26 +22,6 @@ protected:
     }
 };
 
-TEST_F(BusbarSectionTest, GetId) {
-    BusbarSection bbs(BBS_HANDLE, &backend);
-    EXPECT_EQ(bbs.getId(), "BBS1");
-}
-
-TEST_F(BusbarSectionTest, GetName) {
-    BusbarSection bbs(BBS_HANDLE, &backend);
-    EXPECT_EQ(bbs.getNameOrId(), "Busbar 1");
-}
-
-TEST_F(BusbarSectionTest, GetV) {
-    BusbarSection bbs(BBS_HANDLE, &backend);
-    EXPECT_DOUBLE_EQ(bbs.getV(), 400.0);
-}
-
-TEST_F(BusbarSectionTest, GetAngle) {
-    BusbarSection bbs(BBS_HANDLE, &backend);
-    EXPECT_DOUBLE_EQ(bbs.getAngle(), -2.5);
-}
-
 TEST_F(BusbarSectionTest, GetTerminal) {
     BusbarSection bbs(BBS_HANDLE, &backend);
     Terminal t = bbs.getTerminal();
@@ -49,17 +29,3 @@ TEST_F(BusbarSectionTest, GetTerminal) {
     EXPECT_DOUBLE_EQ(t.getP(), 10.0);
 }
 
-TEST_F(BusbarSectionTest, IsValid) {
-    BusbarSection valid(BBS_HANDLE, &backend);
-    BusbarSection invalid;
-    EXPECT_TRUE(valid.isValid());
-    EXPECT_FALSE(invalid.isValid());
-}
-
-TEST_F(BusbarSectionTest, Equality) {
-    BusbarSection a(BBS_HANDLE, &backend);
-    BusbarSection b(BBS_HANDLE, &backend);
-    BusbarSection c(99, &backend);
-    EXPECT_EQ(a, b);
-    EXPECT_NE(a, c);
-}

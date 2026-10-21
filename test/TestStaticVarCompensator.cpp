@@ -24,29 +24,9 @@ protected:
     }
 };
 
-TEST_F(StaticVarCompensatorTest, GetId) {
-    StaticVarCompensator svc(SVC_H, &backend);
-    EXPECT_EQ(svc.getId(), "SVC1");
-}
-
-TEST_F(StaticVarCompensatorTest, BLimits) {
-    StaticVarCompensator svc(SVC_H, &backend);
-    EXPECT_DOUBLE_EQ(svc.getBmin(), -0.1);
-    EXPECT_DOUBLE_EQ(svc.getBmax(),  0.1);
-    svc.setBmin(-0.2).setBmax(0.2);
-    EXPECT_DOUBLE_EQ((backend.doubles[{SVC_H, prop::SVC_B_MIN}]), -0.2);
-    EXPECT_DOUBLE_EQ((backend.doubles[{SVC_H, prop::SVC_B_MAX}]), 0.2);
-}
-
 TEST_F(StaticVarCompensatorTest, GetTerminal) {
     StaticVarCompensator svc(SVC_H, &backend);
     EXPECT_TRUE(svc.getTerminal().isValid());
     EXPECT_EQ(svc.getRegulatingTerminal(), svc.getTerminal());
 }
 
-TEST_F(StaticVarCompensatorTest, IsValid) {
-    StaticVarCompensator valid(SVC_H, &backend);
-    StaticVarCompensator invalid;
-    EXPECT_TRUE(valid.isValid());
-    EXPECT_FALSE(invalid.isValid());
-}

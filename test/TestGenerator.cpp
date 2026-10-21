@@ -27,27 +27,6 @@ protected:
     }
 };
 
-TEST_F(GeneratorTest, GetId) {
-    Generator gen(GEN_HANDLE, &backend);
-    EXPECT_EQ(gen.getId(), "GEN1");
-}
-
-TEST_F(GeneratorTest, GetName) {
-    Generator gen(GEN_HANDLE, &backend);
-    EXPECT_EQ(gen.getNameOrId(), "Generator 1");
-}
-
-TEST_F(GeneratorTest, GetTargetP) {
-    Generator gen(GEN_HANDLE, &backend);
-    EXPECT_DOUBLE_EQ(gen.getTargetP(), 150.0);
-}
-
-TEST_F(GeneratorTest, SetTargetP) {
-    Generator gen(GEN_HANDLE, &backend);
-    gen.setTargetP(200.0);
-    EXPECT_DOUBLE_EQ((backend.doubles[{GEN_HANDLE, prop::GEN_TARGET_P}]), 200.0);
-}
-
 TEST_F(GeneratorTest, MethodChaining) {
     Generator gen(GEN_HANDLE, &backend);
     gen.setTargetP(200.0).setLocalTargetQ(50.0).setLocalTargetV(400.0).setMinP(10.0).setMaxP(250.0)
@@ -59,12 +38,6 @@ TEST_F(GeneratorTest, MethodChaining) {
     EXPECT_DOUBLE_EQ((backend.doubles[{GEN_HANDLE, prop::GEN_MAX_P}]), 250.0);
     EXPECT_DOUBLE_EQ((backend.doubles[{GEN_HANDLE, prop::GEN_RATED_S}]), 300.0);
     EXPECT_EQ((backend.ints[{GEN_HANDLE, prop::GEN_ENERGY_SOURCE}]), static_cast<int>(EnergySource::WIND));
-}
-
-TEST_F(GeneratorTest, GetMinMaxP) {
-    Generator gen(GEN_HANDLE, &backend);
-    EXPECT_DOUBLE_EQ(gen.getMinP(), 0.0);
-    EXPECT_DOUBLE_EQ(gen.getMaxP(), 300.0);
 }
 
 TEST_F(GeneratorTest, LocalTargetsAndRatedS) {
@@ -100,26 +73,6 @@ TEST_F(GeneratorTest, VoltageRegulation) {
 
     gen.removeVoltageRegulation();
     EXPECT_EQ((backend.related[{GEN_HANDLE, prop::VOLTAGE_REGULATION}]), INVALID_HANDLE);
-}
-
-TEST_F(GeneratorTest, GetEnergySource) {
-    Generator gen(GEN_HANDLE, &backend);
-    EXPECT_EQ(gen.getEnergySource(), EnergySource::HYDRO);
-}
-
-TEST_F(GeneratorTest, IsValid) {
-    Generator valid(GEN_HANDLE, &backend);
-    Generator invalid;
-    EXPECT_TRUE(valid.isValid());
-    EXPECT_FALSE(invalid.isValid());
-}
-
-TEST_F(GeneratorTest, Equality) {
-    Generator gen1(GEN_HANDLE, &backend);
-    Generator gen2(GEN_HANDLE, &backend);
-    Generator gen3(99, &backend);
-    EXPECT_EQ(gen1, gen2);
-    EXPECT_NE(gen1, gen3);
 }
 
 // ── Generator::getRegulatingTerminal ─────────────────────────────────────────

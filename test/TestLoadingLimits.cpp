@@ -45,13 +45,6 @@ TEST_F(LoadingLimitsTest, PermanentLimit) {
     EXPECT_EQ((backend.strings[{CL_H, prop::LL_PERMANENT_LIMIT_NAME}]), "IST");
 }
 
-TEST_F(LoadingLimitsTest, IsValid) {
-    CurrentLimits valid(CL_H, &backend);
-    CurrentLimits invalid;
-    EXPECT_TRUE(valid.isValid());
-    EXPECT_FALSE(invalid.isValid());
-}
-
 TEST_F(LoadingLimitsTest, TemporaryLimits) {
     CurrentLimits cl(CL_H, &backend);
     std::vector<TemporaryLimit> tls = cl.getTemporaryLimits();

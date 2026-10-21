@@ -64,36 +64,6 @@ TEST_F(AsymmetricalExtensionsTest, GeneratorAndLine) {
     EXPECT_TRUE((backend.bools[{ADDER_HANDLE, prop::EXT_LINE_F_OPEN_PHASE_C}]));
 }
 
-TEST_F(AsymmetricalExtensionsTest, Load) {
-    attach(prop::LOAD_ASYMMETRICAL);
-    backend.ints[{EXT_HANDLE, prop::EXT_LA_CONNECTION_TYPE}] = static_cast<int>(LoadConnectionType::DELTA);
-    LoadAsymmetrical la = Load(HOST_HANDLE, &backend).getExtension<LoadAsymmetrical>();
-    EXPECT_EQ(la.getConnectionType(), LoadConnectionType::DELTA);
-    la.setConnectionType(LoadConnectionType::Y).setDeltaPc(3).setDeltaQb(0.2);
-    EXPECT_EQ((backend.ints[{EXT_HANDLE, prop::EXT_LA_CONNECTION_TYPE}]), 0);
-    EXPECT_DOUBLE_EQ(la.getDeltaPc(), 3.0);
-    Load(HOST_HANDLE, &backend).newExtension<LoadAsymmetricalAdder>().withConnectionType(LoadConnectionType::DELTA).withDeltaQa(0.1);
-    EXPECT_EQ((backend.ints[{ADDER_HANDLE, prop::EXT_LA_CONNECTION_TYPE}]), 1);
-}
-
-TEST_F(AsymmetricalExtensionsTest, TwoWindingsTransformer) {
-    attach(prop::TWO_WINDINGS_TRANSFORMER_FORTESCUE);
-    TwoWindingsTransformerFortescue tf = TwoWindingsTransformer(HOST_HANDLE, &backend).getExtension<TwoWindingsTransformerFortescue>();
-    tf.setConnectionType1(WindingConnectionType::Y_GROUNDED).setConnectionType2(WindingConnectionType::DELTA)
-      .setFreeFluxes(true).setXm(500).setGroundingX2(0.04);
-    EXPECT_EQ((backend.ints[{EXT_HANDLE, prop::EXT_TWO_WTF_CONNECTION_TYPE1}]), 1);
-    EXPECT_EQ(tf.getConnectionType2(), WindingConnectionType::DELTA);
-    EXPECT_TRUE(tf.isFreeFluxes());
-    EXPECT_DOUBLE_EQ(tf.getGroundingX2(), 0.04);
-
-    attach(prop::TWO_WINDINGS_TRANSFORMER_PHASE_ANGLE_CLOCK);
-    backend.ints[{EXT_HANDLE, prop::EXT_TWO_WT_PAC_CLOCK}] = 11;
-    TwoWindingsTransformer t2(HOST_HANDLE, &backend);
-    EXPECT_EQ(t2.getExtension<TwoWindingsTransformerPhaseAngleClock>().getPhaseAngleClock(), 11);
-    t2.newExtension<TwoWindingsTransformerPhaseAngleClockAdder>().withPhaseAngleClock(5);
-    EXPECT_EQ((backend.ints[{ADDER_HANDLE, prop::EXT_TWO_WT_PAC_CLOCK}]), 5);
-}
-
 TEST_F(AsymmetricalExtensionsTest, ThreeWindingsTransformer) {
     attach(prop::THREE_WINDINGS_TRANSFORMER_FORTESCUE);
     backend.relatedByIndex[std::make_tuple(ObjectHandle(EXT_HANDLE), prop::LEG_FORTESCUE, 1)] = LEG_HANDLE;

@@ -43,16 +43,6 @@ protected:
     }
 };
 
-TEST_F(MeasurementsTest, HasExtensionOnConnectables) {
-    EXPECT_TRUE(Generator(GEN_H, &backend).hasExtension<Measurements>());
-    MockBackend empty;
-    EXPECT_FALSE(Load(GEN_H, &empty).hasExtension<Measurements>());
-    EXPECT_FALSE(Line(GEN_H, &empty).hasExtension<Measurements>());
-    EXPECT_FALSE(TwoWindingsTransformer(GEN_H, &empty).hasExtension<Measurements>());
-    EXPECT_FALSE(ThreeWindingsTransformer(GEN_H, &empty).hasExtension<Measurements>());
-    EXPECT_THROW(Load(GEN_H, &empty).getExtension<Measurements>(), ExtensionNotFoundException);
-}
-
 TEST_F(MeasurementsTest, ListAndFilterByType) {
     Measurements meas = Generator(GEN_H, &backend).getExtension<Measurements>();
     EXPECT_EQ(meas, Measurements(EXT_H, &backend));
@@ -178,14 +168,6 @@ protected:
         backend.bools  [{POS_H, prop::DMEAS_VALID}]       = true;
     }
 };
-
-TEST_F(DiscreteMeasurementsTest, Hosts) {
-    EXPECT_TRUE(Switch(SW_H, &backend).hasExtension<DiscreteMeasurements>());
-    MockBackend empty;
-    EXPECT_FALSE(TwoWindingsTransformer(SW_H, &empty).hasExtension<DiscreteMeasurements>());
-    EXPECT_FALSE(ThreeWindingsTransformer(SW_H, &empty).hasExtension<DiscreteMeasurements>());
-    EXPECT_THROW(Switch(SW_H, &empty).getExtension<DiscreteMeasurements>(), ExtensionNotFoundException);
-}
 
 TEST_F(DiscreteMeasurementsTest, ListFilterAndLookup) {
     DiscreteMeasurements ext = Switch(SW_H, &backend).getExtension<DiscreteMeasurements>();

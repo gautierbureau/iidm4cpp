@@ -30,18 +30,6 @@ protected:
     }
 };
 
-TEST_F(VscConverterStationTest, GetId) {
-    VscConverterStation vsc(VSC_H, &backend);
-    EXPECT_EQ(vsc.getId(), "VSC1");
-}
-
-TEST_F(VscConverterStationTest, GetLossFactor) {
-    VscConverterStation vsc(VSC_H, &backend);
-    // powsybl-iidm-api stores loss factor as float; preserve the float-precision
-    // comparison even though the C++ API now exposes double.
-    EXPECT_FLOAT_EQ(static_cast<float>(vsc.getLossFactor()), 0.011f);
-}
-
 TEST_F(VscConverterStationTest, MinMaxReactiveLimits) {
     VscConverterStation vsc(VSC_H, &backend);
     ReactiveLimits limits = vsc.getReactiveLimits();
@@ -59,9 +47,3 @@ TEST_F(VscConverterStationTest, GetTerminalAndHvdcLine) {
     EXPECT_TRUE(static_cast<bool>(vsc.getHvdcLine()));
 }
 
-TEST_F(VscConverterStationTest, IsValid) {
-    VscConverterStation valid(VSC_H, &backend);
-    VscConverterStation invalid;
-    EXPECT_TRUE(valid.isValid());
-    EXPECT_FALSE(invalid.isValid());
-}

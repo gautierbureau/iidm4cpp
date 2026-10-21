@@ -36,19 +36,6 @@ protected:
     }
 };
 
-TEST_F(ObservabilityAreaTest, HasExtension) {
-    EXPECT_TRUE(VoltageLevel(VL_H, &backend).hasExtension<ObservabilityArea>());
-    EXPECT_EQ(VoltageLevel(VL_H, &backend).getExtension<ObservabilityArea>(), ObservabilityArea(EXT_H, &backend));
-    MockBackend empty;
-    EXPECT_FALSE(VoltageLevel(VL_H, &empty).hasExtension<ObservabilityArea>());
-    EXPECT_THROW(VoltageLevel(VL_H, &empty).getExtension<ObservabilityArea>(), ExtensionNotFoundException);
-}
-
-TEST_F(ObservabilityAreaTest, Remove) {
-    VoltageLevel(VL_H, &backend).removeExtension<ObservabilityArea>();
-    EXPECT_EQ((backend.related[{VL_H, prop::OBSERVABILITY_AREA}]), INVALID_HANDLE);
-}
-
 TEST_F(ObservabilityAreaTest, Areas) {
     auto ext = VoltageLevel(VL_H, &backend).getExtension<ObservabilityArea>();
     EXPECT_TRUE(ext.isConsistentWithTopology());

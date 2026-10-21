@@ -96,30 +96,6 @@ TEST_F(DataExtensionsTest, ShortCircuits) {
     EXPECT_DOUBLE_EQ((backend.doubles[{EXT_HANDLE, prop::EXT_ISC_IP_MIN}]), 1000.0);
 }
 
-TEST_F(DataExtensionsTest, GeneratorData) {
-    Generator gen(GEN_HANDLE, &backend);
-    attach(GEN_HANDLE, prop::GENERATOR_ENTSOE_CATEGORY);
-    backend.ints[{EXT_HANDLE, prop::EXT_GEC_CODE}] = 4;
-    EXPECT_EQ(gen.getExtension<GeneratorEntsoeCategory>().getCode(), 4);
-    gen.getExtension<GeneratorEntsoeCategory>().setCode(7);
-    EXPECT_EQ((backend.ints[{EXT_HANDLE, prop::EXT_GEC_CODE}]), 7);
-    gen.newExtension<GeneratorEntsoeCategoryAdder>().withCode(9);
-    EXPECT_EQ((backend.ints[{ADDER_HANDLE, prop::EXT_GEC_CODE}]), 9);
-
-    attach(GEN_HANDLE, prop::GENERATOR_STARTUP);
-    GeneratorStartup startup = gen.getExtension<GeneratorStartup>();
-    startup.setPlannedActivePowerSetpoint(180).setMarginalCost(30).setPlannedOutageRate(0.1).setForcedOutageRate(0.05);
-    EXPECT_DOUBLE_EQ(startup.getPlannedActivePowerSetpoint(), 180.0);
-    EXPECT_DOUBLE_EQ(startup.getMarginalCost(), 30.0);
-    EXPECT_DOUBLE_EQ(startup.getForcedOutageRate(), 0.05);
-
-    attach(GEN_HANDLE, prop::MANUAL_FREQUENCY_RESTORATION_RESERVE);
-    ManualFrequencyRestorationReserve reserve = gen.getExtension<ManualFrequencyRestorationReserve>();
-    EXPECT_FALSE(reserve.isParticipate());
-    reserve.setParticipate(true);
-    EXPECT_TRUE(reserve.isParticipate());
-}
-
 TEST_F(DataExtensionsTest, LoadAndCompensatorData) {
     attach(LOAD_HANDLE, prop::LOAD_DETAIL);
     LoadDetail detail = Load(LOAD_HANDLE, &backend).getExtension<LoadDetail>();
@@ -141,22 +117,3 @@ TEST_F(DataExtensionsTest, LoadAndCompensatorData) {
     EXPECT_DOUBLE_EQ(automaton.getLowVoltageThreshold(), 370.0);
 }
 
-TEST_F(DataExtensionsTest, StatusAndModel) {
-    Identifiable line(LINE_HANDLE, &backend);
-    attach(LINE_HANDLE, prop::OPERATING_STATUS);
-    backend.ints[{EXT_HANDLE, prop::EXT_OS_STATUS}] = static_cast<int>(OperatingStatus::Status::PLANNED_OUTAGE);
-    OperatingStatus status = line.getExtension<OperatingStatus>();
-    EXPECT_EQ(status.getStatus(), OperatingStatus::Status::PLANNED_OUTAGE);
-    status.setStatus(OperatingStatus::Status::FORCED_OUTAGE);
-    EXPECT_EQ((backend.ints[{EXT_HANDLE, prop::EXT_OS_STATUS}]), 2);
-    line.newExtension<OperatingStatusAdder>().withStatus(OperatingStatus::Status::IN_OPERATION);
-    EXPECT_EQ((backend.ints[{ADDER_HANDLE, prop::EXT_OS_STATUS}]), 0);
-
-    Generator gen(GEN_HANDLE, &backend);
-    attach(GEN_HANDLE, prop::DYNAMIC_MODEL_INFO);
-    DynamicModelInfo info = gen.getExtension<DynamicModelInfo>();
-    info.setModelName("GeneratorSynchronous");
-    EXPECT_EQ(info.getModelName(), "GeneratorSynchronous");
-    gen.newExtension<DynamicModelInfoAdder>().setModelName("Fictitious");
-    EXPECT_EQ((backend.strings[{ADDER_HANDLE + 1, prop::EXT_DMI_MODEL_NAME}]), "Fictitious");
-}

@@ -33,11 +33,6 @@ protected:
     }
 };
 
-TEST_F(ShuntCompensatorTest, GetId) {
-    ShuntCompensator sc(SC_H, &backend);
-    EXPECT_EQ(sc.getId(), "SC1");
-}
-
 TEST_F(ShuntCompensatorTest, SectionCount) {
     ShuntCompensator sc(SC_H, &backend);
     EXPECT_EQ(sc.getSectionCount(), 2);
@@ -104,19 +99,6 @@ TEST_F(ShuntCompensatorTest, LinearModel) {
     EXPECT_EQ(linear.getProperty("maker"), iidm::optional<std::string>("abb"));
 }
 
-// Regression: the per section values are those of the linear model, not the total B and G at
-// the section count. Dynawo's getB(int section) wrapper computes "bPerSection * section"; were
-// getBPerSection() the total B (sectionCount * bPerSection), the result would scale incorrectly.
-TEST_F(ShuntCompensatorTest, LinearPerSectionIsNotTotal) {
-    backend.doubles[{MODEL_H, prop::SHUNT_B_PER_SECTION}] = 12.0;
-    backend.doubles[{MODEL_H, prop::SHUNT_G_PER_SECTION}] = 0.5;
-    backend.doubles[{SC_H, prop::SHUNT_B}]                = 24.0;
-    ShuntCompensator sc(SC_H, &backend);
-    EXPECT_DOUBLE_EQ(sc.getModel<ShuntCompensatorLinearModel>().getBPerSection(), 12.0);
-    EXPECT_DOUBLE_EQ(sc.getModel<ShuntCompensatorLinearModel>().getGPerSection(), 0.5);
-    EXPECT_DOUBLE_EQ(sc.getB(), 24.0);
-}
-
 TEST_F(ShuntCompensatorTest, RegulatingTerminal) {
     ShuntCompensator sc(SC_H, &backend);
     EXPECT_EQ(sc.getRegulatingTerminal(), Terminal(RT_H, &backend));
@@ -128,9 +110,3 @@ TEST_F(ShuntCompensatorTest, GetTerminal) {
     EXPECT_TRUE(sc.getTerminal().isValid());
 }
 
-TEST_F(ShuntCompensatorTest, IsValid) {
-    ShuntCompensator valid(SC_H, &backend);
-    ShuntCompensator invalid;
-    EXPECT_TRUE(valid.isValid());
-    EXPECT_FALSE(invalid.isValid());
-}

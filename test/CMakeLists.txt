@@ -38,9 +38,6 @@ set(TEST_SOURCES
     TestTopologyNetwork.cpp
     TestGenerator.cpp
     TestActivePowerControl.cpp
-    TestCoordinatedReactiveControl.cpp
-    TestHvdcAngleDroopActivePowerControl.cpp
-    TestHvdcOperatorActivePowerRange.cpp
     TestSlackTerminal.cpp
     TestToBeEstimated.cpp
     TestObservability.cpp
@@ -50,7 +47,6 @@ set(TEST_SOURCES
     TestTerminal.cpp
     TestBus.cpp
     TestLine.cpp
-    TestSwitch.cpp
     TestTwoWindingsTransformer.cpp
     TestBusbarSection.cpp
     TestConnect.cpp
@@ -77,6 +73,7 @@ set(TEST_SOURCES
     TestCreation.cpp
     TestNullBackend.cpp
     TestHandleRef.cpp
+    TestAccessors.cpp
 )
 
 add_executable(iidmbridge_tests ${TEST_SOURCES})

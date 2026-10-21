@@ -35,12 +35,6 @@ static Network makeTestNetwork() {
     return NetworkFactory::createFromBackend(std::move(backend));
 }
 
-TEST(NetworkTest, GetIdName) {
-    auto net = makeTestNetwork();
-    EXPECT_EQ(net.getId(),   "test-network");
-    EXPECT_EQ(net.getNameOrId(), "Test Network");
-}
-
 TEST(NetworkTest, GetGenerators) {
     auto net = makeTestNetwork();
     auto gens = net.getGenerators();

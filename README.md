@@ -1131,7 +1131,7 @@ The state estimation extensions are exercised end to end by
 | Codes: the type code, then one per property | `include/iidm/PropertyCodes.def` (one line each) |
 | C++ extension wrapper and adder | `include/iidm/MyExt.h` + `src/MyExt.cpp`, `include/iidm/MyExtAdder.h` (+ `CMakeLists.txt`, `iidm.h`) |
 | The type (extension and adder interfaces), then one line per property: getter, setter, adder field | `Extensions.java`, `PropertyTable.java` (`PropertyDispatcher.java` / `Creation.java` for what takes more than one call) — serve **both** backends |
-| C++ unit tests | `test/TestMyExt.cpp` with `MockBackend` |
+| C++ tests | The extension in `test/CompleteNetwork.h`, a line per property in `test/TestAccessors.cpp`; `test/TestMyExt.cpp` with `MockBackend` for methods with logic of their own |
 | Java dispatcher tests | `java/src/test/...` (covers the handle and object APIs) |
 
 ### 5.5 Backend Selection Strategy
@@ -1566,12 +1566,13 @@ iidm-bridge-cpp/
 │
 ├── test/
 │   ├── CMakeLists.txt
-│   ├── TestGraalVMBackend.cpp
-│   ├── TestJNIBackend.cpp
-│   ├── TestNetwork.cpp
-│   ├── TestGenerator.cpp
-│   └── resources/
-│       └── ieee14.xiidm
+│   ├── MockBackend.h             # Fakes the backend for the unit tests
+│   ├── CompleteNetwork.h         # Every type of object, built through the C++ adders
+│   ├── TestAccessors.cpp         # Every one-line accessor, on the real backends
+│   ├── TestBackendConformance.cpp
+│   ├── TestGenerator.cpp         # One per component, with MockBackend
+│   ├── TestInjectionsNetwork.cpp # One per area, on the real backends
+│   └── data/                     # Test networks (*.xiidm)
 │
 ├── cmake/
 │   ├── FindGraalVM.cmake
@@ -1760,21 +1761,26 @@ iidm::Network network = iidm::NetworkFactory::wrap("case1", opts);
 
 ### Unit tests (C++ / GoogleTest)
 
-Each component class has a dedicated test file. Tests run against a small
-embedded XIIDM test network (`ieee14.xiidm`). Both backends are tested
-independently.
+`test/TestFoo.cpp` tests the methods of a component that have logic of their own (several calls,
+conversions, validation, errors) against `MockBackend` (`test/MockBackend.h`), which fakes the
+backend: they need no external file and run on every platform of the `cpp` job. The other tests
+need the real backends and are skipped without them: `test/TestFooNetwork.cpp` runs a scenario on
+a test network (`test/data/*.xiidm`) on GraalVM and on JNI (see `test/RealBackends.h`).
 
+### Accessor table
+
+`test/TestAccessors.cpp` checks every accessor that is one property code (the one-line getters and
+setters of the headers) on each real backend, one line per accessor:
+
+```cpp
+WRITE(load, getP0, setP0, 80.0, 81.0);   // reads 80 in the network, sets 81 and reads it back
+READ(bbs, getV, NAN);                    // no load flow ran
 ```
-TestGraalVMBackend   — backend protocol tests (load, getDouble, setDouble, …)
-TestJNIBackend       — same protocol, against a JVM launched in-process
-TestNetwork          — Network traversal, getGenerator by id, …
-TestGenerator        — all getter/setter round-trips
-TestLoad             — P0/Q0 round-trips
-TestLine             — R/X/B1/B2 round-trips
-TestTerminal         — P/Q/connected state
-TestBus              — V/angle round-trips
-TestBackendSelector  — AUTO mode picks JNI when JVM present, GraalVM otherwise
-```
+
+Its objects are those of the network that `test/CompleteNetwork.h` builds through the C++ adders,
+with every type of object and every extension. An accessor with the code of another property reads
+another value, fails as a code of another type of object, or writes what its getter does not read
+back.
 
 ### Integration tests
 

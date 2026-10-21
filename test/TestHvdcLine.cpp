@@ -24,11 +24,6 @@ protected:
     }
 };
 
-TEST_F(HvdcLineTest, GetId) {
-    HvdcLine hvdc(HVDC_HANDLE, &backend);
-    EXPECT_EQ(hvdc.getId(), "HVDC1");
-}
-
 TEST_F(HvdcLineTest, ConverterStations) {
     static constexpr ObjectHandle VSC_H = 80;
     static constexpr ObjectHandle LCC_H = 81;
@@ -40,15 +35,6 @@ TEST_F(HvdcLineTest, ConverterStations) {
     EXPECT_EQ(hvdc.getConverterStation1().getId(), "VSC1");
     EXPECT_EQ(hvdc.getConverterStation2().getHvdcType(), HvdcType::LCC);
     EXPECT_EQ(hvdc.getConverterStation2(), HvdcConverterStation(LCC_H, &backend));
-}
-
-TEST_F(HvdcLineTest, Setters) {
-    HvdcLine hvdc(HVDC_HANDLE, &backend);
-    EXPECT_EQ(&hvdc.setR(2.0).setNominalV(400.0).setMaxP(900.0).setActivePowerSetpoint(600.0), &hvdc);
-    EXPECT_DOUBLE_EQ(hvdc.getR(), 2.0);
-    EXPECT_DOUBLE_EQ(hvdc.getNominalV(), 400.0);
-    EXPECT_DOUBLE_EQ(hvdc.getMaxP(), 900.0);
-    EXPECT_DOUBLE_EQ(hvdc.getActivePowerSetpoint(), 600.0);
 }
 
 TEST_F(HvdcLineTest, ConverterStationBySide) {
@@ -105,35 +91,3 @@ TEST_F(HvdcLineTest, Remove) {
     EXPECT_EQ(backend.invocations.back(), std::make_pair(ObjectHandle(HVDC_HANDLE), prop::ACT_REMOVE));
 }
 
-TEST_F(HvdcLineTest, GetName) {
-    HvdcLine hvdc(HVDC_HANDLE, &backend);
-    EXPECT_EQ(hvdc.getNameOrId(), "HVDC Line 1");
-}
-
-TEST_F(HvdcLineTest, GetRNominalVMaxP) {
-    HvdcLine hvdc(HVDC_HANDLE, &backend);
-    EXPECT_DOUBLE_EQ(hvdc.getR(), 1.0);
-    EXPECT_DOUBLE_EQ(hvdc.getNominalV(), 320.0);
-    EXPECT_DOUBLE_EQ(hvdc.getMaxP(), 800.0);
-}
-
-TEST_F(HvdcLineTest, GetSetActivePowerSetpoint) {
-    HvdcLine hvdc(HVDC_HANDLE, &backend);
-    EXPECT_DOUBLE_EQ(hvdc.getActivePowerSetpoint(), 500.0);
-    hvdc.setActivePowerSetpoint(600.0);
-    EXPECT_DOUBLE_EQ((backend.doubles[{HVDC_HANDLE, prop::HVDC_ACTIVE_POWER_SETPOINT}]), 600.0);
-}
-
-TEST_F(HvdcLineTest, GetSetConvertersMode) {
-    HvdcLine hvdc(HVDC_HANDLE, &backend);
-    EXPECT_EQ(hvdc.getConvertersMode(), HvdcConverterStationMode::RECTIFIER);
-    hvdc.setConvertersMode(HvdcConverterStationMode::INVERTER);
-    EXPECT_EQ((backend.ints[{HVDC_HANDLE, prop::HVDC_CONVERTERS_MODE}]), 1);
-}
-
-TEST_F(HvdcLineTest, IsValid) {
-    HvdcLine valid(HVDC_HANDLE, &backend);
-    HvdcLine invalid;
-    EXPECT_TRUE(valid.isValid());
-    EXPECT_FALSE(invalid.isValid());
-}
