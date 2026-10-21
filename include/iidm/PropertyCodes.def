@@ -90,6 +90,11 @@ IIDM_CODE(CHILD_COUNT,                 126)
 IIDM_CODE(PROPERTY,                    130) // keyed by property name: its value (none when absent); set none: removeProperty
 IIDM_CODE(PROPERTY_NAMES,              131) // string list (sorted)
 
+// ── Lists ────────────────────────────────────────────────────────────────────
+// Some lookups give a list (the switches at a node...): an object, whose elements are
+// getChildren(list, ELEMENTS), or getIntList(list, ELEMENTS) for numbers.
+IIDM_CODE(ELEMENTS,                    135)
+
 // ── Connectable ──────────────────────────────────────────────────────────────
 IIDM_CODE(EQUIVALENT,                  140) // bool: an equivalent, from a network reduction (also an adder field)
 
@@ -136,29 +141,63 @@ IIDM_CODE(EXP_NP,                      316) // double, exponential load model: P
 IIDM_CODE(EXP_NQ,                      317) // double: Q exponent
 
 // ── Terminal ─────────────────────────────────────────────────────────────────
+// Its buses: getRelated(terminal, REL_BUS / REL_CONNECTABLE_BUS) in the bus-breaker view,
+// getRelated(terminal, REL_BV_BUS / REL_BV_CONNECTABLE_BUS) in the bus view (none when it has none).
 IIDM_CODE(TERMINAL_P,                  400)
 IIDM_CODE(TERMINAL_Q,                  401)
 IIDM_CODE(TERMINAL_CONNECTED,          402) // bool, read-only: connect with invoke(terminal, ACT_CONNECT)
-IIDM_CODE(TERMINAL_BUS_ID,            403)
 IIDM_CODE(TERMINAL_NODE,               404) // node number (node-breaker topology)
 IIDM_CODE(TERMINAL_BUS_BREAKER_BUS_ID, 406) // string: bus-breaker view bus ("" when disconnected); adders: setBus
-IIDM_CODE(TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID, 407) // string: bus-breaker view connectable bus; adders: setConnectableBus
+IIDM_CODE(TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID, 407) // string: bus-breaker view connectable bus ("" when none);
+                                            // set: setConnectableBus; adders: setConnectableBus
 IIDM_CODE(TERMINAL_SIDE,               408) // int: ThreeSides ordinal, -1 for an injection's terminal
+IIDM_CODE(TERMINAL_I,                  409) // double, read-only: current (A)
+// invoke(terminal, MOVE_CONNECTABLE) starts moving its end of the equipment: to a bus (fields
+// TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID and TERMINAL_CONNECTED: BusBreakerView.moveConnectable)
+// or to a node (TERMINAL_NODE and TERMINAL_VOLTAGE_LEVEL_ID: NodeBreakerView.moveConnectable);
+// invoke(change, ACT_ADD) moves it.
+IIDM_CODE(MOVE_CONNECTABLE,            410)
+IIDM_CODE(TERMINAL_VOLTAGE_LEVEL_ID,   411) // string, a field of MOVE_CONNECTABLE: the voltage level
 
 // ── Bus ──────────────────────────────────────────────────────────────────────
+// Its connected terminals: getChildren(bus, TERMINAL); its equipment: getChildren(bus, LINE /
+// GENERATOR / LOAD...). invoke(bus, ACT_UNSET_SOLVED_VALUES) unsets its voltage and angle.
 IIDM_CODE(BUS_V,                       500)
 IIDM_CODE(BUS_ANGLE,                   501)
+IIDM_CODE(BUS_P,                       502) // double, read-only: active power of its equipment (load sign convention)
+IIDM_CODE(BUS_Q,                       503) // double, read-only
+// Its fictitious injection, load sign convention (a node's: see VoltageLevel)
+IIDM_CODE(FICTITIOUS_P0,               504) // double
+IIDM_CODE(FICTITIOUS_Q0,               505) // double
+IIDM_CODE(BUS_IN_MAIN_CONNECTED_COMPONENT, 506) // bool, read-only
+IIDM_CODE(BUS_IN_MAIN_SYNCHRONOUS_COMPONENT, 507) // bool, read-only
 
 // ── VoltageLevel ─────────────────────────────────────────────────────────────
 // Its bus view buses: getChildren(vl, REL_BV_BUS), getRelatedByString(vl, REL_BV_BUS, id);
 // getRelatedByString(vl, REL_MERGED_BUS, busbar section id): getMergedBus;
 // getRelatedByString(vl, CONNECTABLE, id): getConnectable(id).
+// Its node-breaker view: getRelatedByString(vl, BUSBAR_SECTION, id) a busbar section;
+// getRelatedByIndex(vl, REL_NBV_TERMINAL_AT_NODE, node) the terminal at a node (none without one);
+// getRelatedByIndex(vl, REL_NBV_SWITCH, node) the list of the switches at a node, and
+// getRelatedByIndex(vl, INTERNAL_CONNECTION, node) the list of the nodes internally connected to
+// it (see ELEMENTS). The fictitious injection at a node: evaluate(vl, FICTITIOUS_P0 / FICTITIOUS_Q0,
+// {node}); invoke(vl, FICTITIOUS_P0 / FICTITIOUS_Q0) starts changing it (fields TERMINAL_NODE and
+// FICTITIOUS_P0 / FICTITIOUS_Q0, then ACT_ADD).
+// Its bus-breaker view: getRelatedByString(vl, REL_BBV_BUSES_OF_BV_BUS, bus view bus id) the list of
+// the bus-breaker view buses in a bus view bus (sorted by id).
 IIDM_CODE(VL_NOMINAL_V,                600)
 IIDM_CODE(VL_LOW_VOLTAGE_LIMIT,        601)
 IIDM_CODE(VL_HIGH_VOLTAGE_LIMIT,       602)
 IIDM_CODE(VL_TOPOLOGY_KIND,            603) // int: TopologyKind ordinal; set: convertToTopology
 IIDM_CODE(VL_TOPOLOGY_TEXT,            605) // string, read-only: printTopology
 IIDM_CODE(VL_NBV_NODES,               604) // int list: node numbers in NodeBreakerView
+IIDM_CODE(VL_NBV_MAXIMUM_NODE_INDEX,   606) // int, read-only
+IIDM_CODE(VL_NBV_ATTACHED_EQUIPMENT,   607) // evaluate(vl, it, {node}): hasAttachedEquipment, 1 when an equipment,
+                                            // a switch or an internal connection is at the node, else 0
+IIDM_CODE(VL_NBV_REMOVE_SWITCH,        608) // string, set only: getNodeBreakerView().removeSwitch(id)
+IIDM_CODE(VL_BBV_REMOVE_SWITCH,        609) // string, set only: getBusBreakerView().removeSwitch(id)
+// invoke(vl, it) starts removeInternalConnections(node1, node2): fields IC_NODE1 and IC_NODE2, then ACT_ADD
+IIDM_CODE(VL_NBV_REMOVE_INTERNAL_CONNECTIONS, 610)
 
 // ── Line ─────────────────────────────────────────────────────────────────────
 IIDM_CODE(LINE_R,                      700)
@@ -400,10 +439,10 @@ IIDM_CODE(ALL_SELECTED_OLG_IDS_ORDERED, 1987) // string list, on a holder (in se
 IIDM_CODE(REL_TERMINAL1,               2000)
 IIDM_CODE(REL_TERMINAL2,               2001)
 IIDM_CODE(REL_TERMINAL,                2002) // injection or regulation → its terminal; branch or 3WT keyed by voltage level id (getRelatedByString)
-IIDM_CODE(REL_BUS,                     2003)
+IIDM_CODE(REL_BUS,                     2003) // terminal → its bus-breaker view bus (none when disconnected)
 IIDM_CODE(REL_VOLTAGE_LEVEL,           2004)
 IIDM_CODE(REL_SUBSTATION,              2005) // voltage level or transformer → its substation (none without one)
-IIDM_CODE(REL_CONNECTABLE_BUS,         2007) // bus-breaker topology bus (may differ from bus view)
+IIDM_CODE(REL_CONNECTABLE_BUS,         2007) // terminal → its bus-breaker view connectable bus (none without one)
 IIDM_CODE(REL_REGULATING_TERMINAL,     2008) // regulation holder → terminal of a remote regulation, else its own
 IIDM_CODE(REL_SELECTED_OLG,            2014) // flows limits holder → its selected group (see Limits)
 IIDM_CODE(REL_HVDC_LINE,               2016) // converter station → its HvdcLine (none when not in an HVDC line)
@@ -417,7 +456,10 @@ IIDM_CODE(REL_CONVERTER_STATION1,      2030) // HvdcLine → converter station 1
 IIDM_CODE(REL_CONVERTER_STATION2,      2031) // HvdcLine → converter station 2
 IIDM_CODE(REL_OTHER_CONVERTER_STATION, 2032) // converter station → the other station of its HVDC line (none without line)
 IIDM_CODE(REL_BBV_BUS,                 2033) // VL or network (keyed by bus id) → bus-breaker view bus (getRelatedByString)
-IIDM_CODE(REL_BV_BUS,                  2034) // VL or network: bus view buses (getChildren), one (getRelatedByString)
+IIDM_CODE(REL_BV_BUS,                  2034) // VL or network: bus view buses (getChildren), one (getRelatedByString);
+                                            // terminal → its bus view bus (none when disconnected)
+IIDM_CODE(REL_BV_CONNECTABLE_BUS,      2039) // terminal → its bus view connectable bus (none without one)
+IIDM_CODE(REL_BBV_BUSES_OF_BV_BUS,     2040) // VL (keyed by bus view bus id) → list of bus-breaker view buses
 IIDM_CODE(REL_MERGED_BUS,              2035) // VL (keyed by configured bus or busbar section id) → bus view bus
 IIDM_CODE(REL_BBV_SWITCH,              2037) // VL or network: bus-breaker view switches (getChildren), one (getRelatedByString)
 IIDM_CODE(REL_NBV_SWITCH,              2038) // VL: node-breaker view switches (getChildren), one (getRelatedByString)
@@ -484,6 +526,8 @@ IIDM_CODE(ACT_SET_RATIO_TAP_POSITION_TO_SOLVED_TAP_POSITION, 5015) // invoke(2WT
 IIDM_CODE(ACT_SET_PHASE_TAP_POSITION_TO_SOLVED_TAP_POSITION, 5016) // invoke(2WT or 3WT): of its phase tap changers
 IIDM_CODE(ACT_SET_TARGET_P_TO_P,       5017) // invoke(generator, battery): targets P from the solved P;
                                              // invoke(boundary line): its generation's; invoke(load): P0
+IIDM_CODE(ACT_REMOVE_ALL_BUSES,        5018) // invoke(voltage level): those of its bus-breaker view
+IIDM_CODE(ACT_REMOVE_ALL_SWITCHES,     5019) // invoke(voltage level): those of its bus-breaker view
 
 // TwoWindingsTransformerToBeEstimated (on a two windings transformer)
 IIDM_CODE(TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED, 3700)

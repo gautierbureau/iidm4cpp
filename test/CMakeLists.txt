@@ -16,6 +16,7 @@ set(TEST_SOURCES
     TestContainers.cpp
     TestContainersNetwork.cpp
     TestTopologyViews.cpp
+    TestTopologyNetwork.cpp
     TestGenerator.cpp
     TestActivePowerControl.cpp
     TestCoordinatedReactiveControl.cpp

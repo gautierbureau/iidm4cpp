@@ -74,9 +74,8 @@ static std::string runEmbedded(const char* networkId) {
         // Voltage levels: report SlackTerminal
         for (const auto& vl : network.getVoltageLevels()) {
             if (!vl.hasSlackTerminal()) continue;
-            iidm::optional<iidm::Terminal> slack = vl.getSlackTerminal().getTerminal();
             std::cout << "[C++] VoltageLevel " << vl.getId()
-                      << " slackTerminal.busId=" << (slack ? slack->getBusId() : "-") << "\n";
+                      << " slackTerminal.busId=" << example::slackBusId(vl.getSlackTerminal()) << "\n";
         }
 
         // ActivePowerControl (all fields) and SlackTerminal.setTerminal

@@ -17,7 +17,7 @@ protected:
         backend.doubles[{TERM_HANDLE, prop::TERMINAL_P}] = 55.0;
         backend.doubles[{TERM_HANDLE, prop::TERMINAL_Q}] = 10.0;
         backend.bools  [{TERM_HANDLE, prop::TERMINAL_CONNECTED}] = true;
-        backend.related[{TERM_HANDLE, prop::REL_BUS}] = BUS_HANDLE;
+        backend.related[{TERM_HANDLE, prop::REL_BV_BUS}] = BUS_HANDLE;
         backend.doubles[{BUS_HANDLE,  prop::BUS_V}]     = 1.02;
         backend.doubles[{BUS_HANDLE,  prop::BUS_ANGLE}]  = 0.05;
     }
@@ -54,10 +54,43 @@ TEST_F(TerminalTest, ConnectAndDisconnect) {
 
 TEST_F(TerminalTest, GetBusView) {
     Terminal term(TERM_HANDLE, &backend);
-    Bus bus = term.getBusView();
-    EXPECT_TRUE(bus.isValid());
-    EXPECT_DOUBLE_EQ(bus.getV(), 1.02);
-    EXPECT_DOUBLE_EQ(bus.getAngle(), 0.05);
+    iidm::optional<Bus> bus = term.getBusView().getBus();
+    ASSERT_TRUE(bus);
+    EXPECT_DOUBLE_EQ(bus->getV(), 1.02);
+    EXPECT_DOUBLE_EQ(bus->getAngle(), 0.05);
+    EXPECT_FALSE(term.getBusView().getConnectableBus()); // none set
+    backend.related[{TERM_HANDLE, prop::REL_BV_CONNECTABLE_BUS}] = BUS_HANDLE;
+    EXPECT_EQ(*term.getBusView().getConnectableBus(), *bus);
+}
+
+TEST_F(TerminalTest, CurrentAndSolvedValues) {
+    backend.doubles[{TERM_HANDLE, prop::TERMINAL_I}] = 80.5;
+    Terminal term(TERM_HANDLE, &backend);
+    EXPECT_DOUBLE_EQ(term.getI(), 80.5);
+    term.unsetSolvedValues();
+    EXPECT_EQ(backend.invocations.back(), std::make_pair(ObjectHandle(TERM_HANDLE), prop::ACT_UNSET_SOLVED_VALUES));
+}
+
+TEST_F(TerminalTest, ConnectableBusAndMoves) {
+    Terminal term(TERM_HANDLE, &backend);
+    term.getBusBreakerView().setConnectableBus("B2");
+    EXPECT_EQ((backend.strings[{TERM_HANDLE, prop::TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID}]), "B2");
+
+    // A move: a change on the terminal, with its fields, then applied
+    term.getBusBreakerView().moveConnectable("B3", true);
+    ObjectHandle move = backend.lastAdder;
+    EXPECT_EQ(backend.invocations[backend.invocations.size() - 2],
+              std::make_pair(ObjectHandle(TERM_HANDLE), prop::MOVE_CONNECTABLE));
+    EXPECT_EQ((backend.strings[{move, prop::TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID}]), "B3");
+    EXPECT_TRUE((backend.bools[{move, prop::TERMINAL_CONNECTED}]));
+    EXPECT_EQ(backend.invocations.back(), std::make_pair(move, prop::ACT_ADD));
+
+    term.getNodeBreakerView().moveConnectable(12, "VL2");
+    move = backend.lastAdder;
+    EXPECT_EQ((backend.ints[{move, prop::TERMINAL_NODE}]), 12);
+    EXPECT_EQ((backend.strings[{move, prop::TERMINAL_VOLTAGE_LEVEL_ID}]), "VL2");
+    EXPECT_EQ(backend.invocations.back(), std::make_pair(move, prop::ACT_ADD));
+    EXPECT_EQ(backend.liveHandleCount(), 1u); // the changes are released
 }
 
 TEST_F(TerminalTest, ConnectableAndSide) {

@@ -119,7 +119,7 @@ public:
     std::vector<HvdcLine>                getHvdcLines() const;
     std::vector<ShuntCompensator>        getShuntCompensators() const;
     std::vector<StaticVarCompensator>    getStaticVarCompensators() const;
-    std::vector<BoundaryLine>            getBoundaryLines() const;
+    std::vector<BoundaryLine>            getBoundaryLines(BoundaryLineFilter filter = BoundaryLineFilter::ALL) const;
     std::vector<VscConverterStation>     getVscConverterStations() const;
     std::vector<LccConverterStation>     getLccConverterStations() const;
     std::vector<Switch>                  getSwitches() const;

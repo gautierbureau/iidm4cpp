@@ -2,6 +2,7 @@
 #include <iidm/BackendProvider.h>
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
+#include "BoundaryLineFilter.h"
 #include "Wrap.h"
 
 #include <algorithm>
@@ -160,8 +161,8 @@ std::vector<StaticVarCompensator> Network::getStaticVarCompensators() const {
     return all<StaticVarCompensator>(backend_, handle_);
 }
 
-std::vector<BoundaryLine> Network::getBoundaryLines() const {
-    return all<BoundaryLine>(backend_, handle_);
+std::vector<BoundaryLine> Network::getBoundaryLines(BoundaryLineFilter filter) const {
+    return detail::filterBoundaryLines(all<BoundaryLine>(backend_, handle_), filter);
 }
 
 std::vector<VscConverterStation> Network::getVscConverterStations() const {

@@ -2,7 +2,10 @@
 #include <iidm/BackendProvider.h>
 #include <iidm/PropertyCodes.h>
 #include <iidm/VoltageLevel.h>
+#include "BoundaryLineFilter.h"
 #include "Wrap.h"
+
+#include <algorithm>
 
 namespace iidm {
 
@@ -183,6 +186,15 @@ BoundaryLine Boundary::getBoundaryLine() const {
 
 VoltageLevel Boundary::getNetworkSideVoltageLevel() const {
     return VoltageLevel(backend_->getRelated(handle_, prop::REL_VOLTAGE_LEVEL), backend_);
+}
+
+std::vector<BoundaryLine> detail::filterBoundaryLines(std::vector<BoundaryLine> lines, BoundaryLineFilter filter) {
+    if (filter == BoundaryLineFilter::ALL) return lines;
+    const bool paired = filter == BoundaryLineFilter::PAIRED;
+    lines.erase(std::remove_if(lines.begin(), lines.end(),
+                               [paired](const BoundaryLine& line) { return line.isPaired() != paired; }),
+                lines.end());
+    return lines;
 }
 
 } // namespace iidm
