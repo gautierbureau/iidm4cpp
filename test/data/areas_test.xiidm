@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iidm:network xmlns:iidm="http://www.powsybl.org/schema/iidm/1_18" id="areas_test" caseDate="2026-01-31T12:00:00.000Z" forecastDistance="0" sourceFormat="test" minimumValidationLevel="STEADY_STATE_HYPOTHESIS">
+    <iidm:substation id="S1" country="FR">
+        <iidm:voltageLevel id="VL1" nominalV="400.0" topologyKind="BUS_BREAKER">
+            <iidm:busBreakerTopology>
+                <iidm:bus id="B1" v="400.0" angle="0.0"/>
+            </iidm:busBreakerTopology>
+            <iidm:generator id="G1" energySource="OTHER" minP="0.0" maxP="500.0" targetP="200.0" localTargetV="400.0" bus="B1" connectableBus="B1" p="-200.0" q="-30.0">
+                <iidm:minMaxReactiveLimits minQ="-1.7976931348623157E308" maxQ="1.7976931348623157E308"/>
+                <iidm:voltageRegulation mode="VOLTAGE" regulating="true"/>
+            </iidm:generator>
+        </iidm:voltageLevel>
+        <iidm:voltageLevel id="VL2" nominalV="400.0" topologyKind="BUS_BREAKER">
+            <iidm:busBreakerTopology>
+                <iidm:bus id="B2" v="399.0" angle="-1.0"/>
+            </iidm:busBreakerTopology>
+            <iidm:boundaryLine id="BL" p0="50.0" q0="5.0" r="1.0" x="10.0" bus="B2" connectableBus="B2" p="50.5" q="5.2"/>
+        </iidm:voltageLevel>
+    </iidm:substation>
+    <iidm:substation id="S2" country="BE">
+        <iidm:voltageLevel id="VL3" nominalV="400.0" topologyKind="BUS_BREAKER">
+            <iidm:busBreakerTopology>
+                <iidm:bus id="B3" v="398.0" angle="-2.0"/>
+            </iidm:busBreakerTopology>
+            <iidm:load id="L3" loadType="UNDEFINED" p0="150.0" q0="20.0" bus="B3" connectableBus="B3" p="150.0" q="20.0"/>
+        </iidm:voltageLevel>
+    </iidm:substation>
+    <iidm:line id="L12" r="1.0" x="10.0" voltageLevelId1="VL1" bus1="B1" connectableBus1="B1" voltageLevelId2="VL2" bus2="B2" connectableBus2="B2" p1="100.0" q1="10.0" p2="-99.5" q2="-9.0"/>
+    <iidm:line id="L23" r="1.0" x="10.0" voltageLevelId1="VL2" bus1="B2" connectableBus1="B2" voltageLevelId2="VL3" bus2="B3" connectableBus2="B3" p1="99.5" q1="9.0" p2="-99.0" q2="-8.5"/>
+    <iidm:area id="CA_FR" name="France" areaType="ControlArea" interchangeTarget="-100.0">
+        <iidm:property name="tso" value="RTE"/>
+        <iidm:voltageLevelRef id="VL1"/>
+        <iidm:voltageLevelRef id="VL2"/>
+        <iidm:areaBoundary ac="true" type="terminalRef" id="L23" side="ONE"/>
+        <iidm:areaBoundary ac="false" type="boundaryRef" id="BL"/>
+    </iidm:area>
+    <iidm:area id="CA_BE" areaType="ControlArea">
+        <iidm:voltageLevelRef id="VL3"/>
+        <iidm:areaBoundary ac="true" type="terminalRef" id="L23" side="TWO"/>
+    </iidm:area>
+    <iidm:area id="BZ" areaType="BiddingZone">
+        <iidm:voltageLevelRef id="VL1"/>
+        <iidm:voltageLevelRef id="VL3"/>
+        <iidm:voltageLevelRef id="VL2"/>
+    </iidm:area>
+    <iidm:voltageAngleLimit id="VAL13" lowLimit="-10.0" highLimit="15.0">
+        <iidm:from id="L12" side="ONE"/>
+        <iidm:to id="L23" side="TWO"/>
+    </iidm:voltageAngleLimit>
+    <iidm:voltageAngleLimit id="VAL_HIGH" highLimit="30.0">
+        <iidm:from id="L12" side="TWO"/>
+        <iidm:to id="L23" side="ONE"/>
+    </iidm:voltageAngleLimit>
+</iidm:network>

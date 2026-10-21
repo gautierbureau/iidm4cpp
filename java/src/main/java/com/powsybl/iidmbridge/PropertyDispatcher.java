@@ -166,6 +166,15 @@ public final class PropertyDispatcher {
             case LL_PERMANENT_LIMIT -> ((LoadingLimits) obj).getPermanentLimit();
             // TemporaryLimit
             case TL_VALUE -> ((TemporaryLimit) obj).getValue();
+            // Areas, voltage angle limits
+            case AREA_INTERCHANGE_TARGET -> ((Area) obj).getInterchangeTarget().orElse(Double.NaN);
+            case AREA_AC_INTERCHANGE     -> ((Area) obj).getAcInterchange();
+            case AREA_DC_INTERCHANGE     -> ((Area) obj).getDcInterchange();
+            case AREA_INTERCHANGE        -> ((Area) obj).getInterchange();
+            case AREA_BOUNDARY_P         -> ((AreaBoundary) obj).getP();
+            case AREA_BOUNDARY_Q         -> ((AreaBoundary) obj).getQ();
+            case VAL_LOW_LIMIT  -> ((VoltageAngleLimit) obj).getLowLimit().orElse(Double.NaN);
+            case VAL_HIGH_LIMIT -> ((VoltageAngleLimit) obj).getHighLimit().orElse(Double.NaN);
             // Overload
             case OVERLOAD_PREVIOUS_LIMIT -> ((Overload) obj).getPreviousLimit();
             case OVERLOAD_LIMIT_SCALING  -> ((Overload) obj).getLimitScalingCoefficient();
@@ -215,6 +224,7 @@ public final class PropertyDispatcher {
             case BUS_V         -> ((Bus) obj).setV(value);
             case BUS_ANGLE     -> ((Bus) obj).setAngle(value);
             case FICTITIOUS_P0 -> ((Bus) obj).setFictitiousP0(value);
+            case AREA_INTERCHANGE_TARGET -> ((Area) obj).setInterchangeTarget(value);
             case FICTITIOUS_Q0 -> ((Bus) obj).setFictitiousQ0(value);
             case VL_NOMINAL_V          -> ((VoltageLevel) obj).setNominalV(value);
             case VL_LOW_VOLTAGE_LIMIT  -> ((VoltageLevel) obj).setLowVoltageLimit(value);
@@ -428,6 +438,10 @@ public final class PropertyDispatcher {
             case BOUNDARY_LINE_GENERATION   -> obj instanceof BoundaryLine.Generation;
             case BOUNDARY                   -> obj instanceof Boundary;
             case TIE_LINE                   -> obj instanceof TieLine;
+            case AREA                       -> obj instanceof Area;
+            case AREA_BOUNDARY              -> obj instanceof AreaBoundary;
+            case AREA_BOUNDARY_AC           -> ((AreaBoundary) obj).isAc();
+            case VOLTAGE_ANGLE_LIMIT        -> obj instanceof VoltageAngleLimit;
             case GROUND                     -> obj instanceof Ground;
             case BL_PAIRED                  -> ((BoundaryLine) obj).isPaired();
             case GENERATION_VOLTAGE_REGULATION_ON -> ((BoundaryLine.Generation) obj).isVoltageRegulationOn();
@@ -591,6 +605,8 @@ public final class PropertyDispatcher {
             }
             case OLG_ID -> ((OperationalLimitsGroup) obj).getId();
             case OVERLOAD_PREVIOUS_LIMIT_NAME -> ((Overload) obj).getPreviousLimitName();
+            case AREA_TYPE -> ((Area) obj).getAreaType();
+            case VAL_ID -> ((VoltageAngleLimit) obj).getId();
             case OVERLOAD_OLG_ID -> ((Overload) obj).getOperationalLimitsGroupId();
             case LL_PERMANENT_LIMIT_NAME -> ((LoadingLimits) obj).getPermanentLimitName();
             case BL_PAIRING_KEY -> pairingKey(obj);
@@ -701,6 +717,7 @@ public final class PropertyDispatcher {
             };
             case ALIASES        -> ((Identifiable<?>) obj).getAliases();
             case NETWORK_COUNTRIES -> ((Network) obj).getCountries().stream().map(Country::name).toList();
+            case AREA_TYPE -> StreamSupport.stream(((Network) obj).getAreaTypes().spliterator(), false).toList();
             case SUBSTATION_GEOGRAPHICAL_TAGS -> ((Substation) obj).getGeographicalTags();
             case ALL_SELECTED_OLG_IDS -> LimitsDispatch.holder(obj).getAllSelectedOperationalLimitsGroupIds();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown string list code: " + listCode);
@@ -945,11 +962,19 @@ public final class PropertyDispatcher {
                 ? bus.getConnectedTerminalStream()
                 : ((Connectable<?>) obj).getTerminals().stream();
             case SUBSTATION  -> ((Network) obj).getSubstationStream();
-            case VOLTAGE_LEVEL -> {
-                if (obj instanceof Substation sub)
-                    yield StreamSupport.stream(sub.getVoltageLevels().spliterator(), false);
-                yield ((Network) obj).getVoltageLevelStream();
+            case VOLTAGE_LEVEL -> switch (obj) {
+                case Substation sub -> StreamSupport.stream(sub.getVoltageLevels().spliterator(), false);
+                // A set: sorted, so that both backends list it in the same order
+                case Area area -> StreamSupport.stream(area.getVoltageLevels().spliterator(), false)
+                    .sorted(Comparator.comparing(VoltageLevel::getId));
+                default -> ((Network) obj).getVoltageLevelStream();
+            };
+            case AREA -> {
+                if (obj instanceof VoltageLevel vl) yield vl.getAreasStream();
+                yield ((Network) obj).getAreaStream();
             }
+            case AREA_BOUNDARY -> StreamSupport.stream(((Area) obj).getAreaBoundaries().spliterator(), false);
+            case VOLTAGE_ANGLE_LIMIT -> ((Network) obj).getVoltageAngleLimitsStream();
             case TWO_WINDINGS_TRANSFORMER -> switch (obj) {
                 case Substation sub -> StreamSupport.stream(sub.getTwoWindingsTransformers().spliterator(), false);
                 case VoltageLevel vl -> vl.getTwoWindingsTransformerStream();
@@ -1025,6 +1050,7 @@ public final class PropertyDispatcher {
                 if (obj instanceof VoltageRegulation vr) yield vr.getTerminal();
                 if (obj instanceof ThreeWindingsTransformer.Leg leg) yield leg.getTerminal();
                 if (obj instanceof SlackTerminal st) yield st.getTerminal();
+                if (obj instanceof AreaBoundary boundary) yield boundary.getTerminal().orElse(null);
                 throw new BridgeErrors.PropertyNotFoundException("Object does not have a single terminal: " + obj);
             }
             case REL_TERMINAL1 -> {
@@ -1046,7 +1072,12 @@ public final class PropertyDispatcher {
             };
             case BOUNDARY_LINE_GENERATION -> ((BoundaryLine) obj).getGeneration();
             case LOAD_MODEL -> ((Load) obj).getModel().orElse(null);
-            case BOUNDARY -> ((BoundaryLine) obj).getBoundary();
+            case BOUNDARY -> obj instanceof AreaBoundary boundary
+                ? boundary.getBoundary().orElse(null)
+                : ((BoundaryLine) obj).getBoundary();
+            case AREA -> ((AreaBoundary) obj).getArea();
+            case REL_TERMINAL_FROM -> ((VoltageAngleLimit) obj).getTerminalFrom();
+            case REL_TERMINAL_TO -> ((VoltageAngleLimit) obj).getTerminalTo();
             case BOUNDARY_LINE -> ((Boundary) obj).getBoundaryLine();
             case TIE_LINE -> ((BoundaryLine) obj).getTieLine().orElse(null);
             case REL_HVDC_LINE -> ((HvdcConverterStation<?>) obj).getHvdcLine();
@@ -1121,6 +1152,14 @@ public final class PropertyDispatcher {
         switch (relation) {
             case REL_TERMINAL -> ((SlackTerminal) obj).setTerminal((Terminal) value);
             case REL_REGULATION_TERMINAL -> ((PhaseTapChanger) obj).setRegulationTerminal((Terminal) value);
+            case ADD_VOLTAGE_LEVEL    -> ((Area) obj).addVoltageLevel((VoltageLevel) value);
+            case REMOVE_VOLTAGE_LEVEL -> ((Area) obj).removeVoltageLevel((VoltageLevel) value);
+            case ADD_AREA             -> ((VoltageLevel) obj).addArea((Area) value);
+            case REMOVE_AREA          -> ((VoltageLevel) obj).removeArea((Area) value);
+            case REMOVE_AREA_BOUNDARY -> {
+                if (value instanceof Terminal terminal) ((Area) obj).removeAreaBoundary(terminal);
+                else ((Area) obj).removeAreaBoundary((Boundary) value);
+            }
             // Only clearing (INVALID_HANDLE): new ones are created with invoke
             case VOLTAGE_REGULATION, ACTIVE_POWER_CONTROL, COORDINATED_REACTIVE_CONTROL,
                  HVDC_ANGLE_DROOP_ACTIVE_POWER_CONTROL, HVDC_OPERATOR_ACTIVE_POWER_RANGE, SLACK_TERMINAL,
@@ -1325,6 +1364,7 @@ public final class PropertyDispatcher {
                 .sorted(Comparator.comparing(Bus::getId)).toList();
             case BUSBAR_SECTION -> ((VoltageLevel) obj).getNodeBreakerView().getBusbarSection(key);
             case BOUNDARY_LINE -> ((TieLine) obj).getBoundaryLine(key);
+            case AREA -> ((VoltageLevel) obj).getArea(key).orElse(null);
             case REL_BBV_SWITCH -> ((VoltageLevel) obj).getBusBreakerView().getSwitch(key);
             case REL_NBV_SWITCH -> ((VoltageLevel) obj).getNodeBreakerView().getSwitch(key);
             case CONNECTABLE -> ((VoltageLevel) obj).getConnectable(key, Connectable.class);
@@ -1382,6 +1422,8 @@ public final class PropertyDispatcher {
             case THREE_WINDINGS_TRANSFORMER -> network.getThreeWindingsTransformer(id);
             case HVDC_LINE                  -> network.getHvdcLine(id);
             case TIE_LINE                   -> network.getTieLine(id);
+            case AREA                       -> network.getArea(id);
+            case VOLTAGE_ANGLE_LIMIT        -> network.getVoltageAngleLimit(id);
             case GROUND                     -> network.getGround(id);
             case BOUNDARY_LINE              -> network.getBoundaryLine(id);
             case SHUNT_COMPENSATOR          -> network.getShuntCompensator(id);

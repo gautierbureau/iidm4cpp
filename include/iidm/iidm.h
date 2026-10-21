@@ -56,6 +56,9 @@
 #include <iidm/TieLineAdder.h>
 #include <iidm/Ground.h>
 #include <iidm/GroundAdder.h>
+#include <iidm/Area.h>
+#include <iidm/AreaAdder.h>
+#include <iidm/VoltageAngleLimit.h>
 #include <iidm/ShuntCompensator.h>
 #include <iidm/LoadModel.h>
 #include <iidm/Container.h>

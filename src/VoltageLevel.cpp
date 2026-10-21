@@ -21,6 +21,7 @@
 #include <iidm/TwoWindingsTransformer.h>
 #include <iidm/ThreeWindingsTransformer.h>
 #include <iidm/Substation.h>
+#include <iidm/Area.h>
 #include <iostream>
 #include "BoundaryLineFilter.h"
 #include "Extensions.h"
@@ -443,6 +444,22 @@ int VoltageLevel::getGroundCount() const {
 
 VoltageLevel::BusView VoltageLevel::getBusView() const {
     return BusView(handle_, backend_);
+}
+
+std::vector<Area> VoltageLevel::getAreas() const {
+    return detail::wrapAll<Area>(backend_->getChildren(handle_, prop::AREA), backend_);
+}
+
+iidm::optional<Area> VoltageLevel::getArea(const std::string& areaType) const {
+    return detail::wrapOptional<Area>(backend_->getRelatedByString(handle_, prop::AREA, areaType), backend_);
+}
+
+void VoltageLevel::addArea(const Area& area) {
+    backend_->setRelated(handle_, prop::ADD_AREA, detail::Access::handle(area));
+}
+
+void VoltageLevel::removeArea(const Area& area) {
+    backend_->setRelated(handle_, prop::REMOVE_AREA, detail::Access::handle(area));
 }
 
 VoltageLevel::NodeBreakerView VoltageLevel::getNodeBreakerView() const {

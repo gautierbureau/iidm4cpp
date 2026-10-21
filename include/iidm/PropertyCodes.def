@@ -57,6 +57,9 @@ IIDM_CODE(NETWORK,                     60) // getRelated(identifiable, NETWORK):
 IIDM_CODE(OVERLOAD,                    61) // an overload found by an overload check (see Overloads)
 IIDM_CODE(TIE_LINE,                    62)
 IIDM_CODE(GROUND,                      63)
+IIDM_CODE(AREA,                        64)
+IIDM_CODE(AREA_BOUNDARY,               65) // a boundary of an area: a terminal, or the boundary of a boundary line
+IIDM_CODE(VOLTAGE_ANGLE_LIMIT,         66)
 // Abstract types (Java interfaces)
 IIDM_CODE(IDENTIFIABLE,                43)
 IIDM_CODE(CONNECTABLE,                 44)
@@ -313,6 +316,41 @@ IIDM_CODE(BOUNDARY_I,                  1024) // double, read-only
 IIDM_CODE(BOUNDARY_LINE1_ID,           1030) // string, a field of the tie line adder: setBoundaryLine1
 IIDM_CODE(BOUNDARY_LINE2_ID,           1031) // string, a field of the tie line adder: setBoundaryLine2
 
+// ── Areas ────────────────────────────────────────────────────────────────────
+// An area groups voltage levels: getChildren(area, VOLTAGE_LEVEL) (sorted by id), getChildren(vl,
+// AREA), getRelatedByString(vl, AREA, area type) its area of a type (none without one);
+// setRelated(area, ADD_VOLTAGE_LEVEL / REMOVE_VOLTAGE_LEVEL, vl) and setRelated(vl, ADD_AREA /
+// REMOVE_AREA, area) add or remove one. Its boundaries: getChildren(area, AREA_BOUNDARY);
+// invoke(area, AREA_BOUNDARY) starts a new one (setRelated fields REL_TERMINAL or BOUNDARY, and
+// AREA_BOUNDARY_AC; ACT_ADD returns the area); setRelated(area, REMOVE_AREA_BOUNDARY, terminal or
+// boundary) removes one. On a boundary: getRelated(boundary, AREA) its area, getRelated(boundary,
+// REL_TERMINAL / BOUNDARY) what it is (none for the other). The area adder (invoke(network, AREA)):
+// AREA_TYPE, AREA_INTERCHANGE_TARGET, setRelated(adder, ADD_VOLTAGE_LEVEL, vl), and invoke(adder,
+// AREA_BOUNDARY) per boundary (nested: REL_TERMINAL or BOUNDARY, AREA_BOUNDARY_AC, ACT_ADD).
+IIDM_CODE(AREA_TYPE,                   1040) // string (also an adder field); string list, on a network: its area types
+IIDM_CODE(AREA_INTERCHANGE_TARGET,     1041) // double, optional (NaN: none; also an adder field)
+IIDM_CODE(AREA_AC_INTERCHANGE,         1042) // double, read-only
+IIDM_CODE(AREA_DC_INTERCHANGE,         1043) // double, read-only
+IIDM_CODE(AREA_INTERCHANGE,            1044) // double, read-only
+IIDM_CODE(AREA_BOUNDARY_AC,            1045) // bool, on an area boundary (also an adder field)
+IIDM_CODE(AREA_BOUNDARY_P,             1046) // double, read-only, on an area boundary
+IIDM_CODE(AREA_BOUNDARY_Q,             1047) // double, read-only, on an area boundary
+IIDM_CODE(ADD_VOLTAGE_LEVEL,           1048) // set only (setRelated), on an area or its adder
+IIDM_CODE(REMOVE_VOLTAGE_LEVEL,        1049) // set only, on an area
+IIDM_CODE(ADD_AREA,                    1050) // set only, on a voltage level
+IIDM_CODE(REMOVE_AREA,                 1051) // set only, on a voltage level
+IIDM_CODE(REMOVE_AREA_BOUNDARY,        1052) // set only, on an area: the terminal or boundary of one of its boundaries
+
+// ── VoltageAngleLimit ────────────────────────────────────────────────────────
+// A limit of the voltage angle difference between two terminals (operational limits: LL_LIMIT_TYPE,
+// properties, invoke(limit, ACT_REMOVE)): getChildren(network, VOLTAGE_ANGLE_LIMIT), findById(<it>,
+// id); getRelated(limit, REL_TERMINAL_FROM / REL_TERMINAL_TO) its terminals. Its adder: invoke(network,
+// VOLTAGE_ANGLE_LIMIT), fields VAL_ID, REL_TERMINAL_FROM and REL_TERMINAL_TO (setRelated),
+// VAL_LOW_LIMIT, VAL_HIGH_LIMIT, properties.
+IIDM_CODE(VAL_ID,                      1055) // string (also an adder field)
+IIDM_CODE(VAL_LOW_LIMIT,               1056) // double, optional (none when unset; also an adder field)
+IIDM_CODE(VAL_HIGH_LIMIT,              1057) // double, optional (none when unset; also an adder field)
+
 // ── ShuntCompensator ─────────────────────────────────────────────────────────
 // Its model is getRelated(shunt, SHUNT_COMPENSATOR_MODEL); getRelated(shunt, SHUNT_COMPENSATOR_LINEAR_MODEL
 // or SHUNT_COMPENSATOR_NON_LINEAR_MODEL) gives it as a model of that type (getModel(Class):
@@ -494,6 +532,8 @@ IIDM_CODE(REL_BV_BUS,                  2034) // VL or network: bus view buses (g
                                             // terminal → its bus view bus (none when disconnected)
 IIDM_CODE(REL_BV_CONNECTABLE_BUS,      2039) // terminal → its bus view connectable bus (none without one)
 IIDM_CODE(REL_BBV_BUSES_OF_BV_BUS,     2040) // VL (keyed by bus view bus id) → list of bus-breaker view buses
+IIDM_CODE(REL_TERMINAL_FROM,           2041) // voltage angle limit → its terminal "from"
+IIDM_CODE(REL_TERMINAL_TO,             2042) // voltage angle limit → its terminal "to"
 IIDM_CODE(REL_MERGED_BUS,              2035) // VL (keyed by configured bus or busbar section id) → bus view bus
 IIDM_CODE(REL_BBV_SWITCH,              2037) // VL or network: bus-breaker view switches (getChildren), one (getRelatedByString)
 IIDM_CODE(REL_NBV_SWITCH,              2038) // VL: node-breaker view switches (getChildren), one (getRelatedByString)

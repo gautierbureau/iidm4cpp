@@ -189,6 +189,7 @@ Identifiable              getId(), getNameOrId(), getOptionalName(), setName(), 
 ├── Network               the root (owns the backend session, §4.3)
 ├── Substation, VoltageLevel, Bus, Switch, HvdcLine
 ├── TieLine               + the Branch methods (two boundary lines paired)
+├── Area
 └── Connectable           getTerminals(), connect() / disconnect(), isEquivalent(),
     │                     unsetSolvedValues(), remove()
     ├── Injection         getTerminal()
@@ -383,6 +384,22 @@ TieLine (+ the Branch methods)
 ├── connectBoundaryLines() / disconnectBoundaryLines() → bool
 └── remove([updateBoundaryLines]) (Network::newTieLine(): setBoundaryLine1/2(id))
 Ground                     an injection (VoltageLevel::newGround(), getGrounds())
+
+Area (Network::newArea(): setAreaType(), setInterchangeTarget(), addVoltageLevel(vl),
+│    addAreaBoundary(terminal or boundary, ac))
+├── getAreaType(), getVoltageLevels() (sorted by id), addVoltageLevel(vl) / removeVoltageLevel(vl)
+├── getAreaBoundaries(), getAreaBoundary(terminal or boundary) → optional, newAreaBoundary(),
+│   removeAreaBoundary(terminal or boundary)
+├── getInterchangeTarget() → optional (+ setter), getAcInterchange() / getDcInterchange() /
+│   getInterchange()
+└── remove()
+AreaBoundary               getArea(), getTerminal() / getBoundary() → optional, isAc(), getP() /
+                           getQ(), properties
+VoltageLevel: getAreas(), getArea(type) → optional, addArea(area) / removeArea(area);
+Network: getAreas() / getArea(id) / getAreaCount(), getAreaTypes() / getAreaTypeCount()
+VoltageAngleLimit          getId(), getLimitType(), getTerminalFrom() / getTerminalTo(),
+                           getLowLimit() / getHighLimit() → optional, properties, remove()
+                           (Network::newVoltageAngleLimit(): setId(), from(t), to(t), setLow/HighLimit())
 
 ShuntCompensator (+ the voltage regulation holder methods)
 ├── getSectionCount() → int (fails when undefined)   findSectionCount() → optional<int>

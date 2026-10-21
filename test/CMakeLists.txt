@@ -10,6 +10,8 @@ set(TEST_SOURCES
     TestTransformers.cpp
     TestLimitsNetwork.cpp
     TestOverloads.cpp
+    TestArea.cpp
+    TestAreasNetwork.cpp
     TestShuntsNetwork.cpp
     TestLinesNetwork.cpp
     TestBoundaryLinesNetwork.cpp

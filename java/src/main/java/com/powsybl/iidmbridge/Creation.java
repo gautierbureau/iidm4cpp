@@ -210,6 +210,27 @@ public final class Creation {
         }
     }
 
+    /** One boundary of a new area: AreaAdder.addAreaBoundary(terminal or boundary, ac). */
+    static final class NewAreaBoundary {
+        private final AreaAdder adder;
+        private Terminal terminal;
+        private Boundary boundary;
+        private Boolean ac;
+
+        NewAreaBoundary(AreaAdder adder) {
+            this.adder = adder;
+        }
+
+        void apply() {
+            boolean isAc = Objects.requireNonNull(ac, "ac");
+            if (terminal != null) {
+                adder.addAreaBoundary(terminal, isAc);
+            } else {
+                adder.addAreaBoundary(Objects.requireNonNull(boundary, "terminal or boundary"), isAc);
+            }
+        }
+    }
+
     /** A new, empty network. */
     public static Network createNetwork(String id) {
         return Network.create(id, SOURCE_FORMAT);
@@ -225,6 +246,9 @@ public final class Creation {
             case LOAD -> ((VoltageLevel) owner).newLoad();
             case GROUND -> ((VoltageLevel) owner).newGround();
             case TIE_LINE -> ((Network) owner).newTieLine();
+            case AREA -> ((Network) owner).newArea();
+            case AREA_BOUNDARY -> owner instanceof AreaAdder areaAdder ? new NewAreaBoundary(areaAdder) : ((Area) owner).newAreaBoundary();
+            case VOLTAGE_ANGLE_LIMIT -> ((Network) owner).newVoltageAngleLimit();
             case VOLTAGE_REGULATION -> owner instanceof VoltageRegulationHolderAdder<?> holderAdder
                 ? holderAdder.newVoltageRegulation()
                 : ((VoltageRegulationHolder<?>) owner).newVoltageRegulation();
@@ -305,6 +329,11 @@ public final class Creation {
                 yield null;
             }
             case TemporaryLimitsCheck check -> check.run();
+            case AreaBoundaryAdder adder -> adder.add(); // the area
+            case NewAreaBoundary boundary -> {
+                boundary.apply();
+                yield null;
+            }
             case TapChangerStepAdder<?, ?> step -> {
                 step.endStep();
                 yield null;
@@ -342,6 +371,7 @@ public final class Creation {
             case HvdcLine hvdcLine -> hvdcLine.remove();
             case Bus bus -> bus.getVoltageLevel().getBusBreakerView().removeBus(bus.getId());
             case TieLine tieLine -> tieLine.remove();
+            case Area area -> area.remove();
             default -> throw new BridgeErrors.PropertyNotFoundException("Cannot remove " + obj);
         }
     }
@@ -441,6 +471,9 @@ public final class Creation {
             case EXP_NQ -> ((ExponentialLoadModelAdder) a).setNq(value);
             case FICTITIOUS_P0, FICTITIOUS_Q0 -> ((NodeFictitiousInjection) a).setValue(property, value);
             case LIMIT_REDUCTION -> ((TemporaryLimitsCheck) a).limitReduction = value;
+            case AREA_INTERCHANGE_TARGET -> ((AreaAdder) a).setInterchangeTarget(value);
+            case VAL_LOW_LIMIT -> ((VoltageAngleLimitAdder) a).setLowLimit(value);
+            case VAL_HIGH_LIMIT -> ((VoltageAngleLimitAdder) a).setHighLimit(value);
             default -> throw unknownField("double", property);
         }
     }
@@ -505,6 +538,13 @@ public final class Creation {
             }
             case EQUIVALENT -> ((ConnectableAdder<?, ?>) a).setEquivalent(value);
             case TERMINAL_CONNECTED -> ((ConnectableMove) a).connected = value;
+            case AREA_BOUNDARY_AC -> {
+                if (a instanceof NewAreaBoundary boundary) {
+                    boundary.ac = value;
+                } else {
+                    ((AreaBoundaryAdder) a).setAc(value);
+                }
+            }
             case GEN_CONDENSER -> ((GeneratorAdder) a).setCondenser(value);
             case VR_REGULATING -> ((VoltageRegulationAdderOrBuilder<?>) a).withRegulating(value);
             case EXT_APC_PARTICIPATE -> ((ActivePowerControlAdder<?>) a).withParticipate(value);
@@ -546,6 +586,8 @@ public final class Creation {
             }
             case TERMINAL_VOLTAGE_LEVEL_ID -> ((ConnectableMove) a).voltageLevelId = value;
             case BOUNDARY_LINE1_ID -> ((TieLineAdder) a).setBoundaryLine1(value);
+            case AREA_TYPE -> ((AreaAdder) a).setAreaType(value);
+            case VAL_ID -> ((VoltageAngleLimitAdder) a).setId(value);
             case BOUNDARY_LINE2_ID -> ((TieLineAdder) a).setBoundaryLine2(value);
             case MEAS_ID -> ((MeasurementAdder) a).setId(value);
             case DMEAS_ID -> ((DiscreteMeasurementAdder) a).setId(value);
@@ -585,9 +627,21 @@ public final class Creation {
                 switch (a) {
                     case TerminalChange change -> change.terminal = (Terminal) value;
                     case SlackTerminalAdder adder -> adder.withTerminal((Terminal) value);
+                    case AreaBoundaryAdder adder -> adder.setTerminal((Terminal) value);
+                    case NewAreaBoundary boundary -> boundary.terminal = (Terminal) value;
                     default -> ((VoltageRegulationAdderOrBuilder<?>) a).withTerminal((Terminal) value);
                 }
             }
+            case BOUNDARY -> {
+                if (a instanceof NewAreaBoundary boundary) {
+                    boundary.boundary = (Boundary) value;
+                } else {
+                    ((AreaBoundaryAdder) a).setBoundary((Boundary) value);
+                }
+            }
+            case REL_TERMINAL_FROM -> ((VoltageAngleLimitAdder) a).from((Terminal) value);
+            case REL_TERMINAL_TO -> ((VoltageAngleLimitAdder) a).to((Terminal) value);
+            case ADD_VOLTAGE_LEVEL -> ((AreaAdder) a).addVoltageLevel((VoltageLevel) value);
             default -> throw unknownField("related object", relation);
         }
     }
