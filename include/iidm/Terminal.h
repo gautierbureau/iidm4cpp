@@ -24,7 +24,7 @@ public:
         iidm::optional<Bus> getConnectableBus() const;
         // Another bus of its voltage level to connect to, connected or not as it was (bus-breaker
         // topology only: ValidationException otherwise)
-        void setConnectableBus(const std::string& busId);
+        BusBreakerView& setConnectableBus(const std::string& busId);
         // Moves its end of the equipment to a bus of a voltage level with a bus-breaker topology:
         // the equipment gets a new terminal there, and this one is no longer its terminal
         void moveConnectable(const std::string& busId, bool connected);
