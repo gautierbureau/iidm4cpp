@@ -463,6 +463,7 @@ public final class PropertyDispatcher {
             case COMPONENT                  -> obj instanceof Component;
             case VARIANT_MANAGER            -> obj instanceof VariantManager;
             case VARIANT_MULTI_THREAD_ACCESS -> ((VariantManager) obj).isVariantMultiThreadAccessAllowed();
+            case NETWORK_DETACHABLE         -> ((Network) obj).isDetachable();
             case TRIPPING                   -> obj instanceof OverloadManagementSystem.Tripping;
             case SWITCH_TRIPPING            -> obj instanceof OverloadManagementSystem.SwitchTripping;
             case BRANCH_TRIPPING            -> obj instanceof OverloadManagementSystem.BranchTripping;
@@ -1071,6 +1072,10 @@ public final class PropertyDispatcher {
                 default -> StreamSupport.stream(((VoltageLevel) obj).getBusBreakerView().getBuses().spliterator(), false);
             };
             case REL_CONNECTED_COMPONENT -> ((Network) obj).getBusView().getConnectedComponents().stream();
+            case NETWORK -> ((Network) obj).getSubnetworks().stream();
+            // A set: sorted, so that both backends list it in the same order
+            case BOUNDARY_ELEMENT -> ((Network) obj).getBoundaryElements().stream()
+                .sorted(Comparator.comparing(Identifiable::getId));
             case REL_SYNCHRONOUS_COMPONENT -> ((Network) obj).getBusView().getSynchronousComponents().stream();
             case REL_BV_BUS -> {
                 if (obj instanceof Network network) yield network.getBusView().getBusStream();
@@ -1331,6 +1336,11 @@ public final class PropertyDispatcher {
                 ((TieLine) obj).remove(true);
                 yield null;
             }
+            case ACT_DETACH -> ((Network) obj).detach();
+            case ACT_FLATTEN -> {
+                ((Network) obj).flatten();
+                yield null;
+            }
             case ACT_CLEAN_IF_EMPTY -> {
                 switch (obj) {
                     case Measurements<?> measurements -> measurements.cleanIfEmpty();
@@ -1410,19 +1420,20 @@ public final class PropertyDispatcher {
     }
 
     public static Object getRelatedObjectByString(Object obj, int relation, String key) {
+        if (obj instanceof Network network) {
+            return switch (relation) {
+                case REL_BBV_BUS -> network.getBusBreakerView().getBus(key);
+                case REL_BV_BUS -> network.getBusView().getBus(key);
+                default -> findObjectById(network, relation, key); // in this network only
+            };
+        }
         return switch (relation) {
             case REL_TERMINAL -> {
                 if (obj instanceof Branch<?> branch) yield branch.getTerminal(key);
                 yield ((ThreeWindingsTransformer) obj).getTerminal(key);
             }
-            case REL_BBV_BUS -> {
-                if (obj instanceof Network network) yield network.getBusBreakerView().getBus(key);
-                yield ((VoltageLevel) obj).getBusBreakerView().getBus(key);
-            }
-            case REL_BV_BUS -> {
-                if (obj instanceof Network network) yield network.getBusView().getBus(key);
-                yield ((VoltageLevel) obj).getBusView().getBus(key);
-            }
+            case REL_BBV_BUS -> ((VoltageLevel) obj).getBusBreakerView().getBus(key);
+            case REL_BV_BUS -> ((VoltageLevel) obj).getBusView().getBus(key);
             case REL_MERGED_BUS -> ((VoltageLevel) obj).getBusView().getMergedBus(key);
             // A set: sorted, so that both backends list it in the same order
             case REL_BBV_BUSES_OF_BV_BUS -> ((VoltageLevel) obj).getBusBreakerView().getBusesFromBusViewBusId(key).stream()
@@ -1506,6 +1517,7 @@ public final class PropertyDispatcher {
             case INJECTION                  -> network.getConnectable(id) instanceof Injection<?> injection ? injection : null;
             case BRANCH                     -> network.getBranch(id);
             case HVDC_CONVERTER_STATION     -> network.getHvdcConverterStation(id);
+            case NETWORK                    -> network.getSubnetwork(id);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown object type: " + objectType);
         };
     }

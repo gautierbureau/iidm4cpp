@@ -54,11 +54,11 @@ void JNIBackend::cacheMethodIds() {
     cache_.registry_get = env_->GetStaticMethodID(cache_.iidmRegistryClass,
         "get", "(Ljava/lang/String;)Lcom/powsybl/iidm/network/Network;");
     cache_.registry_save = env_->GetStaticMethodID(cache_.iidmRegistryClass,
-        "save", "(Ljava/lang/String;Ljava/lang/String;)V");
+        "save", "(Lcom/powsybl/iidm/network/Network;Ljava/lang/String;)V");
     cache_.registry_loadFromBytes = env_->GetStaticMethodID(cache_.iidmRegistryClass,
         "loadFromBytes", "(Ljava/lang/String;[BLjava/lang/String;)V");
     cache_.registry_saveToBytes = env_->GetStaticMethodID(cache_.iidmRegistryClass,
-        "saveToBytes", "(Ljava/lang/String;Ljava/lang/String;)[B");
+        "saveToBytes", "(Lcom/powsybl/iidm/network/Network;Ljava/lang/String;)[B");
     cache_.registry_createNetwork = env_->GetStaticMethodID(cache_.iidmRegistryClass,
         "createNetwork", "(Ljava/lang/String;Ljava/lang/String;)V");
     cache_.registry_fromUtf8 = env_->GetStaticMethodID(cache_.iidmRegistryClass,
@@ -127,11 +127,10 @@ void JNIBackend::loadNetwork(const std::string& filePath) {
                      slash == std::string::npos ? filePath : filePath.substr(slash + 1));
 }
 
-void JNIBackend::saveNetwork(const std::string& filePath) {
-    jstring jId   = newString(networkId_);
+void JNIBackend::saveNetwork(ObjectHandle network, const std::string& filePath) {
+    jobject obj = toObject(network);
     jstring jPath = newString(filePath);
-    env_->CallStaticVoidMethod(cache_.iidmRegistryClass, cache_.registry_save, jId, jPath);
-    env_->DeleteLocalRef(jId);
+    env_->CallStaticVoidMethod(cache_.iidmRegistryClass, cache_.registry_save, obj, jPath);
     env_->DeleteLocalRef(jPath);
     checkJNIException(env_);
 }
@@ -180,13 +179,12 @@ void JNIBackend::rebindNetwork(const char* operation) {
     }
 }
 
-std::string JNIBackend::saveNetworkBytes(const std::string& filenameHint) const {
-    jstring jId   = newString(networkId_);
+std::string JNIBackend::saveNetworkBytes(ObjectHandle network, const std::string& filenameHint) const {
+    jobject obj = toObject(network);
     jstring jHint = newString(filenameHint);
     jobject result = env_->CallStaticObjectMethod(cache_.iidmRegistryClass,
-                                                  cache_.registry_saveToBytes, jId, jHint);
+                                                  cache_.registry_saveToBytes, obj, jHint);
     env_->DeleteLocalRef(jHint);
-    env_->DeleteLocalRef(jId);
     checkJNIException(env_);
     if (!result) {
         throw IidmException("Java returned null bytes for network save");

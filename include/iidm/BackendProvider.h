@@ -124,16 +124,18 @@ public:
     virtual void createNetwork(const std::string& id) {
         throw IidmException("createNetwork not supported by this backend (network " + id + ")");
     }
-    virtual void saveNetwork(const std::string& filePath) = 0;
+    // Saves a network of this backend to an XIIDM file: its network (getNetworkHandle()), one of
+    // its subnetworks, or a network detached from it.
+    virtual void saveNetwork(ObjectHandle network, const std::string& filePath) = 0;
 
     // ── In-memory load/save ──────────────────────────────────────────────
     // Load a network from an in-memory byte buffer. `filenameHint` lets
     // PowSyBl pick the right importer (e.g. "network.xiidm").
     virtual void loadNetworkBytes(const char* data, std::size_t length,
                                   const std::string& filenameHint) = 0;
-    // Serialize the current network into an in-memory byte buffer.
+    // Serialize a network of this backend (as for saveNetwork) into an in-memory byte buffer.
     // `filenameHint` selects the export format (only "*.xiidm" is supported today).
-    virtual std::string saveNetworkBytes(const std::string& filenameHint) const = 0;
+    virtual std::string saveNetworkBytes(ObjectHandle network, const std::string& filenameHint) const = 0;
 
     virtual void close() = 0;
 

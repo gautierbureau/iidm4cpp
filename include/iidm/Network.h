@@ -212,6 +212,34 @@ public:
     AreaAdder         newArea();
     VoltageAngleLimitAdder newVoltageAngleLimit();
 
+    // ── Subnetworks ──────────────────────────────────────────────────────────
+    // A network made of networks: each subnetwork holds its own substations, voltage levels...;
+    // the network holds them all and what links them (the getParentNetwork() of an object is its
+    // subnetwork, if any). Subnetworks and detached networks are views, like getNetwork() (they live
+    // in this network's backend session). Lookups by id and saves apply to the network they are
+    // called on: a subnetwork finds and saves its own objects only.
+    // In creation order (none for a subnetwork)
+    std::vector<Network> getSubnetworks() const;
+    // Empty when there is no such subnetwork
+    iidm::optional<Network> getSubnetwork(const std::string& id) const;
+    // A new, empty subnetwork
+    Network createSubnetwork(const std::string& subnetworkId, const std::string& name,
+                             const std::string& sourceFormat);
+    // Makes this subnetwork a network of its own, its boundary elements split (a line becomes two
+    // paired boundary lines...), and returns it: this subnetwork is then empty. ValidationException
+    // when a boundary element cannot be split (see isDetachable()), and for a network that is not a
+    // subnetwork.
+    Network detach();
+    bool isDetachable() const;
+    // Merges its subnetworks into it (ValidationException for a subnetwork)
+    void flatten();
+    // What links it, or may link it, to another network (sorted by id): for a subnetwork, the lines
+    // and HVDC lines to another subnetwork and its boundary lines (unpaired, or paired in a tie line
+    // to another subnetwork: that tie line is a boundary element too, but not listed); for a
+    // network, its unpaired boundary lines
+    std::vector<Identifiable> getBoundaryElements() const;
+    bool isBoundaryElement(const Identifiable& identifiable) const;
+
     // Backend accessor (advanced usage only)
     BackendProvider& getBackend();
 
