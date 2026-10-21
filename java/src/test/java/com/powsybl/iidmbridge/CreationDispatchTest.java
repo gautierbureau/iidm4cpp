@@ -187,6 +187,87 @@ class CreationDispatchTest {
         assertThrows(ValidationException.class, () -> add(noModel));
     }
 
+    // Lines, transformers and HVDC lines: where each side of a branch is connected, the legs of a three
+    // windings transformer, the converter stations of an HVDC line
+    @Test void branches() {
+        Substation s = network.newSubstation().setId("S").add();
+        String[] ids = {"VL1", "VL2", "VL3"};
+        double[] nominalV = {400, 225, 63};
+        for (int i = 0; i < 3; i++) {
+            s.newVoltageLevel().setId(ids[i]).setNominalV(nominalV[i]).setTopologyKind(TopologyKind.BUS_BREAKER).add()
+                .getBusBreakerView().newBus().setId(ids[i] + "_B").add();
+        }
+        Object line = PropertyDispatcher.invokeObject(network, LINE);
+        PropertyDispatcher.setString(line, ID, "L");
+        PropertyDispatcher.setString(line, BRANCH_VOLTAGE_LEVEL1, "VL1");
+        PropertyDispatcher.setString(line, BRANCH_BUS1, "VL1_B");
+        PropertyDispatcher.setString(line, BRANCH_CONNECTABLE_BUS1, "VL1_B");
+        PropertyDispatcher.setString(line, BRANCH_VOLTAGE_LEVEL2, "VL2");
+        PropertyDispatcher.setString(line, BRANCH_CONNECTABLE_BUS2, "VL2_B");
+        for (int code : new int[] {LINE_R, LINE_X, LINE_G1, LINE_B1, LINE_G2, LINE_B2}) {
+            PropertyDispatcher.setDouble(line, code, 1);
+        }
+        Line l = (Line) add(line);
+        assertEquals("VL2_B", l.getTerminal2().getBusBreakerView().getConnectableBus().getId());
+        assertFalse(l.getTerminal2().isConnected()); // no bus: disconnected
+
+        Object t2 = PropertyDispatcher.invokeObject(s, TWO_WINDINGS_TRANSFORMER);
+        PropertyDispatcher.setString(t2, ID, "T2");
+        PropertyDispatcher.setString(t2, BRANCH_VOLTAGE_LEVEL1, "VL1");
+        PropertyDispatcher.setString(t2, BRANCH_BUS1, "VL1_B");
+        PropertyDispatcher.setString(t2, BRANCH_VOLTAGE_LEVEL2, "VL2");
+        PropertyDispatcher.setString(t2, BRANCH_BUS2, "VL2_B");
+        PropertyDispatcher.setDouble(t2, TWO_WT_R, 0.5);
+        PropertyDispatcher.setDouble(t2, TWO_WT_X, 20);
+        PropertyDispatcher.setDouble(t2, TWO_WT_G, 0);
+        PropertyDispatcher.setDouble(t2, TWO_WT_B, 0);
+        PropertyDispatcher.setDouble(t2, TWO_WT_RATED_U1, 400);
+        PropertyDispatcher.setDouble(t2, TWO_WT_RATED_U2, 225);
+        PropertyDispatcher.setDouble(t2, TWO_WT_RATED_S, 300);
+        assertEquals(300, ((TwoWindingsTransformer) add(t2)).getRatedS());
+
+        Object t3 = PropertyDispatcher.invokeObject(s, THREE_WINDINGS_TRANSFORMER);
+        PropertyDispatcher.setString(t3, ID, "T3");
+        PropertyDispatcher.setDouble(t3, THREE_WT_RATED_U0, 400);
+        for (int side = 0; side < 3; side++) {
+            Object leg = PropertyDispatcher.invokeObject(t3, THREE_WINDINGS_TRANSFORMER_LEG);
+            PropertyDispatcher.setInt(leg, LEG_SIDE, side);
+            PropertyDispatcher.setDouble(leg, LEG_R, side + 1);
+            PropertyDispatcher.setDouble(leg, LEG_X, 10);
+            PropertyDispatcher.setDouble(leg, LEG_G, 0);
+            PropertyDispatcher.setDouble(leg, LEG_B, 0);
+            PropertyDispatcher.setDouble(leg, LEG_RATED_U, nominalV[side]);
+            PropertyDispatcher.setString(leg, TERMINAL_VOLTAGE_LEVEL_ID, ids[side]);
+            PropertyDispatcher.setString(leg, TERMINAL_BUS_BREAKER_BUS_ID, ids[side] + "_B");
+            assertNull(add(leg)); // nested
+        }
+        ThreeWindingsTransformer twt3 = (ThreeWindingsTransformer) add(t3);
+        assertEquals(3, twt3.getLeg3().getR());
+        assertEquals("VL3", twt3.getLeg3().getTerminal().getVoltageLevel().getId());
+        // A leg's field before its side: rejected
+        Object noSide = PropertyDispatcher.invokeObject(PropertyDispatcher.invokeObject(s, THREE_WINDINGS_TRANSFORMER),
+            THREE_WINDINGS_TRANSFORMER_LEG);
+        assertEquals(BridgeErrors.VALIDATION, BridgeErrors.kindOf(assertThrows(Throwable.class,
+            () -> PropertyDispatcher.setDouble(noSide, LEG_R, 1))));
+
+        for (int i = 1; i <= 2; i++) {
+            network.getVoltageLevel("VL" + i).newVscConverterStation().setId("VSC" + i).setBus("VL" + i + "_B")
+                .setLossFactor(1).setLocalTargetQ(0).add();
+        }
+        Object hvdc = PropertyDispatcher.invokeObject(network, HVDC_LINE);
+        PropertyDispatcher.setString(hvdc, ID, "HVDC");
+        PropertyDispatcher.setDouble(hvdc, HVDC_R, 1);
+        PropertyDispatcher.setDouble(hvdc, HVDC_NOMINAL_V, 400);
+        PropertyDispatcher.setDouble(hvdc, HVDC_ACTIVE_POWER_SETPOINT, 100);
+        PropertyDispatcher.setDouble(hvdc, HVDC_MAX_P, 200);
+        PropertyDispatcher.setInt(hvdc, HVDC_CONVERTERS_MODE, HvdcLine.ConvertersMode.SIDE_1_INVERTER_SIDE_2_RECTIFIER.ordinal());
+        PropertyDispatcher.setString(hvdc, HVDC_CONVERTER_STATION_ID1, "VSC1");
+        PropertyDispatcher.setString(hvdc, HVDC_CONVERTER_STATION_ID2, "VSC2");
+        HvdcLine hvdcLine = (HvdcLine) add(hvdc);
+        assertSame(network.getVscConverterStation("VSC2"), hvdcLine.getConverterStation2());
+        assertEquals(HvdcLine.ConvertersMode.SIDE_1_INVERTER_SIDE_2_RECTIFIER, hvdcLine.getConvertersMode());
+    }
+
     private static Object injection(VoltageLevel vl, int type, String id) {
         Object adder = PropertyDispatcher.invokeObject(vl, type);
         PropertyDispatcher.setString(adder, ID, id);

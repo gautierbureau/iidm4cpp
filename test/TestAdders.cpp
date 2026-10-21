@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <iidm/iidm.h>
 #include "MockBackend.h"
+#include <memory>
 #include <utility>
 
 // Each adder starts with invoke(parent, TYPE), sends each field with the code of the property it
@@ -246,4 +247,57 @@ TEST_F(AddersTest, BoundaryLineGeneration) {
     EXPECT_TRUE((backend.bools[{line + 1, prop::GENERATION_VOLTAGE_REGULATION_ON}]));
     EXPECT_EQ(backend.invocations[2], call(line + 1, prop::ACT_ADD));
     EXPECT_EQ(backend.invocations[3], call(line, prop::ACT_ADD));
+}
+
+TEST_F(AddersTest, Branches) {
+    static constexpr ObjectHandle NETWORK = 1; // the mock's network
+    static constexpr ObjectHandle S = 30;
+    std::unique_ptr<MockBackend> mock(new MockBackend());
+    MockBackend& b = *mock;
+    Network network = NetworkFactory::createFromBackend(std::move(mock));
+    network.newLine().setId("L").setVoltageLevel1("VL1").setBus1("B1").setConnectableBus1("B1").setVoltageLevel2("VL2")
+        .setNode2(4).setR(1).setX(10).setG1(0).setB1(1e-6).setG2(0).setB2(2e-6).setEquivalent(true).add();
+    ObjectHandle a = b.lastAdder;
+    EXPECT_EQ(b.invocations[0], call(NETWORK, prop::LINE));
+    EXPECT_EQ((b.strings[{a, prop::BRANCH_VOLTAGE_LEVEL1}]), "VL1");
+    EXPECT_EQ((b.strings[{a, prop::BRANCH_BUS1}]), "B1");
+    EXPECT_EQ((b.strings[{a, prop::BRANCH_CONNECTABLE_BUS1}]), "B1");
+    EXPECT_EQ((b.strings[{a, prop::BRANCH_VOLTAGE_LEVEL2}]), "VL2");
+    EXPECT_EQ((b.ints[{a, prop::BRANCH_NODE2}]), 4);
+    EXPECT_DOUBLE_EQ((b.doubles[{a, prop::LINE_B2}]), 2e-6);
+    EXPECT_TRUE((b.bools[{a, prop::EQUIVALENT}]));
+
+    Substation s(S, &b);
+    s.newTwoWindingsTransformer().setId("T2").setRatedU1(400).setRatedU2(225).setRatedS(300).setR(0.5).add();
+    a = b.lastAdder;
+    EXPECT_EQ(b.invocations[2], call(S, prop::TWO_WINDINGS_TRANSFORMER));
+    EXPECT_DOUBLE_EQ((b.doubles[{a, prop::TWO_WT_RATED_U2}]), 225);
+    EXPECT_DOUBLE_EQ((b.doubles[{a, prop::TWO_WT_RATED_S}]), 300);
+
+    b.invocations.clear();
+    s.newThreeWindingsTransformer().setId("T3").setRatedU0(400)
+        .newLeg1().setR(0.1).setX(5).setRatedU(400).setRatedS(200).setVoltageLevel("VL1").setBus("B1").add()
+        .newLeg3().setNode(7).setVoltageLevel("VL3").add()
+        .add();
+    const ObjectHandle t3 = b.lastAdder - 2; // the transformer, then its legs
+    EXPECT_EQ(b.invocations[0], call(S, prop::THREE_WINDINGS_TRANSFORMER));
+    EXPECT_DOUBLE_EQ((b.doubles[{t3, prop::THREE_WT_RATED_U0}]), 400);
+    EXPECT_EQ(b.invocations[1], call(t3, prop::THREE_WINDINGS_TRANSFORMER_LEG));
+    EXPECT_EQ((b.ints[{t3 + 1, prop::LEG_SIDE}]), 0);
+    EXPECT_DOUBLE_EQ((b.doubles[{t3 + 1, prop::LEG_RATED_S}]), 200);
+    EXPECT_EQ((b.strings[{t3 + 1, prop::TERMINAL_VOLTAGE_LEVEL_ID}]), "VL1");
+    EXPECT_EQ((b.strings[{t3 + 1, prop::TERMINAL_BUS_BREAKER_BUS_ID}]), "B1");
+    EXPECT_EQ(b.invocations[2], call(t3 + 1, prop::ACT_ADD));
+    EXPECT_EQ((b.ints[{t3 + 2, prop::LEG_SIDE}]), 2);
+    EXPECT_EQ((b.ints[{t3 + 2, prop::TERMINAL_NODE}]), 7);
+    EXPECT_EQ(b.invocations[5], call(t3, prop::ACT_ADD));
+
+    network.newHvdcLine().setId("HVDC").setR(1).setNominalV(400).setActivePowerSetpoint(100).setMaxP(200)
+        .setConvertersMode(HvdcConverterStationMode::INVERTER).setConverterStationId1("VSC1").setConverterStationId2("VSC2")
+        .add();
+    a = b.lastAdder;
+    EXPECT_EQ(b.invocations[6], call(NETWORK, prop::HVDC_LINE));
+    EXPECT_EQ((b.ints[{a, prop::HVDC_CONVERTERS_MODE}]), static_cast<int>(HvdcConverterStationMode::INVERTER));
+    EXPECT_EQ((b.strings[{a, prop::HVDC_CONVERTER_STATION_ID2}]), "VSC2");
+    EXPECT_DOUBLE_EQ((b.doubles[{a, prop::HVDC_ACTIVE_POWER_SETPOINT}]), 100);
 }

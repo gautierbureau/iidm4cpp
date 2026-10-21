@@ -86,5 +86,24 @@ protected:
     InjectionAdder(ObjectHandle adder, BackendProvider* backend) : ConnectableAdder<Self>(adder, backend) {}
 };
 
+// Equipment with two sides (powsybl BranchAdder): where each side is connected
+template <class Self>
+class BranchAdder : public ConnectableAdder<Self> {
+public:
+    Self& setVoltageLevel1(const std::string& voltageLevelId) { return this->stringField(prop::BRANCH_VOLTAGE_LEVEL1, voltageLevelId); }
+    Self& setVoltageLevel2(const std::string& voltageLevelId) { return this->stringField(prop::BRANCH_VOLTAGE_LEVEL2, voltageLevelId); }
+    // Bus-breaker topology: the bus a side is connected to, and the bus it can be connected to
+    Self& setBus1(const std::string& busId)            { return this->stringField(prop::BRANCH_BUS1, busId); }
+    Self& setBus2(const std::string& busId)            { return this->stringField(prop::BRANCH_BUS2, busId); }
+    Self& setConnectableBus1(const std::string& busId) { return this->stringField(prop::BRANCH_CONNECTABLE_BUS1, busId); }
+    Self& setConnectableBus2(const std::string& busId) { return this->stringField(prop::BRANCH_CONNECTABLE_BUS2, busId); }
+    // Node-breaker topology
+    Self& setNode1(int node) { return this->intField(prop::BRANCH_NODE1, node); }
+    Self& setNode2(int node) { return this->intField(prop::BRANCH_NODE2, node); }
+
+protected:
+    BranchAdder(ObjectHandle adder, BackendProvider* backend) : ConnectableAdder<Self>(adder, backend) {}
+};
+
 } // namespace detail
 } // namespace iidm

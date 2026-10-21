@@ -705,8 +705,8 @@ g.removeActivePowerControl();
   generation, grounds, tie lines, areas and their boundaries, voltage angle limits, overload
   management systems and their trippings, operational limits groups and their limits, voltage
   regulations, tap changers and their steps (or a new set of steps), reactive limits (min-max, curve,
-  shape), and every extension. Not yet: lines, transformers, HVDC lines, busbar sections, switches and
-  internal connections.
+  shape), lines, two and three windings transformers, HVDC lines, and every extension. Not yet: busbar
+  sections, switches and internal connections.
 
 Underneath, there is one backend primitive, `invoke(handle, code)` (§5.1): `invoke(parent, TYPE)`
 returns a Java adder, the adder's fields are set with the usual setters and the object's own

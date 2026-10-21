@@ -220,6 +220,60 @@ void checkInjections(Network& network) {
     EXPECT_TRUE(vl.getConnectables().empty());
 }
 
+// Lines, transformers and HVDC lines
+void checkBranches(Network& network) {
+    Substation s = network.newSubstation().setId("S4").add();
+    const char* const ids[] = {"VL41", "VL42", "VL43"};
+    const double nominalV[] = {400, 225, 63};
+    for (int i = 0; i < 3; ++i) {
+        s.newVoltageLevel().setId(ids[i]).setNominalV(nominalV[i]).setTopologyKind(TopologyKind::BUS_BREAKER).add()
+            .getBusBreakerView().newBus().setId(std::string(ids[i]) + "_B").add();
+    }
+    Line line = network.newLine().setId("L41").setVoltageLevel1("VL41").setBus1("VL41_B").setConnectableBus1("VL41_B")
+        .setVoltageLevel2("VL42").setBus2("VL42_B").setR(1).setX(10).setG1(0).setB1(1e-6).setG2(0).setB2(2e-6).add();
+    EXPECT_EQ(line.getTerminal2().getVoltageLevel().getId(), "VL42");
+    EXPECT_DOUBLE_EQ(line.getB2(), 2e-6);
+    EXPECT_THROW(network.newLine().setId("L42").setVoltageLevel1("VL41").setBus1("VL41_B").setR(1).setX(1).add(),
+                 ValidationException); // no side 2
+
+    TwoWindingsTransformer t2 = s.newTwoWindingsTransformer().setId("T41").setVoltageLevel1("VL41").setBus1("VL41_B")
+        .setVoltageLevel2("VL42").setBus2("VL42_B").setR(0.5).setX(20).setG(0).setB(0).setRatedU1(400).setRatedU2(225)
+        .setRatedS(300).add();
+    EXPECT_EQ(t2.getRatedS(), iidm::optional<double>(300.0));
+    EXPECT_EQ(*t2.getSubstation(), s);
+
+    ThreeWindingsTransformer t3 = s.newThreeWindingsTransformer().setId("T43").setRatedU0(400)
+        .newLeg1().setR(0.1).setX(5).setG(0).setB(0).setRatedU(400).setRatedS(200).setVoltageLevel("VL41").setBus("VL41_B").add()
+        .newLeg2().setR(0.2).setX(6).setG(0).setB(0).setRatedU(225).setVoltageLevel("VL42").setBus("VL42_B").add()
+        .newLeg3().setR(0.3).setX(7).setG(0).setB(0).setRatedU(63).setVoltageLevel("VL43").setConnectableBus("VL43_B").add()
+        .add();
+    EXPECT_DOUBLE_EQ(t3.getLeg3().getR(), 0.3);
+    EXPECT_EQ(t3.getLeg1().getRatedS(), iidm::optional<double>(200.0));
+    EXPECT_FALSE(t3.getLeg3().getTerminal().isConnected());
+    EXPECT_THROW(s.newThreeWindingsTransformer().setId("T44").newLeg1().setR(1).add().add(), ValidationException);
+
+    network.getVoltageLevel("VL41")->newVscConverterStation().setId("VSC41").setBus("VL41_B").setLossFactor(1)
+        .setLocalTargetQ(0).add();
+    network.getVoltageLevel("VL42")->newVscConverterStation().setId("VSC42").setBus("VL42_B").setLossFactor(1)
+        .setLocalTargetQ(0).add();
+    HvdcLine hvdc = network.newHvdcLine().setId("HVDC4").setR(1).setNominalV(400).setActivePowerSetpoint(100).setMaxP(200)
+        .setConvertersMode(HvdcConverterStationMode::RECTIFIER).setConverterStationId1("VSC41").setConverterStationId2("VSC42")
+        .add();
+    EXPECT_EQ(hvdc.getConverterStation2().getId(), "VSC42");
+    EXPECT_EQ(hvdc.getConvertersMode(), HvdcConverterStationMode::RECTIFIER);
+    EXPECT_THROW(network.newHvdcLine().setId("HVDC5").setR(1).setNominalV(400).setActivePowerSetpoint(0).setMaxP(1)
+                     .setConvertersMode(HvdcConverterStationMode::RECTIFIER).setConverterStationId1("VSC41")
+                     .setConverterStationId2("NOPE").add(),
+                 ValidationException);
+
+    hvdc.remove();
+    t3.remove();
+    t2.remove();
+    line.remove();
+    s.remove();
+    EXPECT_FALSE(network.getSubstation("S4"));
+}
+
 } // namespace
 
 #ifdef IIDM_BRIDGE_GRAALVM_ENABLED
@@ -232,6 +286,7 @@ TEST(CreationTest, GraalVM) {
     Network network = NetworkFactory::create("created", options);
     checkCreation(network);
     checkInjections(network);
+    checkBranches(network);
     EXPECT_LT(static_cast<GraalVMBackend&>(network.getBackend()).javaHandleCount(), 100);
 }
 #endif
@@ -245,5 +300,6 @@ TEST(CreationTest, JNI) {
     Network network = NetworkFactory::create("created", options);
     checkCreation(network);
     checkInjections(network);
+    checkBranches(network);
 }
 #endif

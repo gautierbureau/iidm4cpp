@@ -7,6 +7,8 @@
 #include <iidm/OverloadManagementSystemAdder.h>
 #include <iidm/SubstationPosition.h>
 #include <iidm/SubstationPositionAdder.h>
+#include <iidm/ThreeWindingsTransformerAdder.h>
+#include <iidm/TwoWindingsTransformerAdder.h>
 #include <iidm/VoltageLevel.h>
 #include <iidm/VoltageLevelAdder.h>
 #include <iidm/stdcxx/optional.hpp>
@@ -42,6 +44,9 @@ public:
     std::vector<ThreeWindingsTransformer> getThreeWindingsTransformers() const;
     int getThreeWindingsTransformerCount() const;
     VoltageLevelAdder newVoltageLevel();
+    // Transformers between its voltage levels
+    TwoWindingsTransformerAdder newTwoWindingsTransformer();
+    ThreeWindingsTransformerAdder newThreeWindingsTransformer();
     std::vector<OverloadManagementSystem> getOverloadManagementSystems() const;
     int getOverloadManagementSystemCount() const;
     OverloadManagementSystemAdder newOverloadManagementSystem();
