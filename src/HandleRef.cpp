@@ -63,13 +63,23 @@ std::size_t HandleTracker::liveHandleCount() const {
     return counts_.size();
 }
 
+HandleTracker::~HandleTracker() = default;
+
+void HandleTracker::keep(std::unique_ptr<BackendProvider> closed) {
+    // The tracker owns the backend now: the backend only keeps a weak reference to it
+    std::shared_ptr<HandleTracker> tracker = std::move(closed->tracker_);
+    closed->keptBy_ = tracker;
+    tracker->kept_ = std::move(closed);
+}
+
 } // namespace detail
 
 // ── HandleRef ─────────────────────────────────────────────────────────────────
 
 HandleRef::HandleRef(ObjectHandle handle, BackendProvider* backend)
     : handle_(handle) {
-    if (handle_ != INVALID_HANDLE && backend) {
+    // An invalid handle holds the tracker too, uncounted: it keeps the backend of a destroyed network
+    if (backend) {
         tracker_ = backend->handleTracker();
         retain();
     }
@@ -108,12 +118,12 @@ HandleRef::~HandleRef() {
 }
 
 void HandleRef::retain() {
-    if (tracker_) tracker_->retain(handle_);
+    if (tracker_ && handle_ != INVALID_HANDLE) tracker_->retain(handle_);
 }
 
 void HandleRef::release() noexcept {
     if (tracker_) {
-        tracker_->release(handle_);
+        if (handle_ != INVALID_HANDLE) tracker_->release(handle_);
         tracker_.reset();
     }
 }

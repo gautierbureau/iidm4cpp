@@ -122,3 +122,33 @@ TEST(HandleRefTest, WrappersMayOutliveTheirBackend) {
     // Destroying the wrapper after its backend must not touch the dead backend
     EXPECT_NO_THROW(survivor = Generator());
 }
+
+// The objects of a network may outlive it: its closed backend stays for them (those with an invalid
+// handle too), and goes with the last of them
+TEST(HandleRefTest, ObjectsKeepTheBackendOfTheirDestroyedNetwork) {
+    struct Backend : RecordingBackend {
+        bool* destroyed;
+        explicit Backend(bool* flag) : destroyed(flag) {}
+        ~Backend() override { *destroyed = true; }
+    };
+    bool destroyed = false;
+    Backend* backend = new Backend(&destroyed);
+    Generator g;
+    Terminal absent;
+    {
+        Network network = NetworkFactory::createFromBackend(std::unique_ptr<BackendProvider>(backend));
+        g = Generator(10, backend);
+        absent = Terminal(INVALID_HANDLE, backend);
+    }
+    EXPECT_FALSE(destroyed);
+    EXPECT_EQ(backend->releases(10), 1); // closed: its handles released
+    g = Generator();
+    EXPECT_FALSE(destroyed);
+    absent = Terminal();
+    EXPECT_TRUE(destroyed);
+
+    // Without objects left, it goes with the network
+    destroyed = false;
+    { Network network = NetworkFactory::createFromBackend(std::unique_ptr<BackendProvider>(new Backend(&destroyed))); }
+    EXPECT_TRUE(destroyed);
+}

@@ -3,6 +3,7 @@
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
 #include "BoundaryLineFilter.h"
+#include "HandleTracker.h"
 #include "Wrap.h"
 
 #include <algorithm>
@@ -10,14 +11,23 @@
 
 namespace iidm {
 
+namespace {
+
+// The objects of a network may outlive it: its closed backend stays for them, answering them with
+// InvalidHandleException, and goes with the last of them
+void retire(std::unique_ptr<BackendProvider> backend) {
+    backend->close();
+    detail::HandleTracker::keep(std::move(backend));
+}
+
+} // namespace
+
 // The base class is built before owned_ takes the backend over
 Network::Network(std::unique_ptr<BackendProvider> backend)
     : Identifiable(backend->getNetworkHandle(), backend.get()), owned_(std::move(backend)) {}
 
 Network::~Network() {
-    if (owned_) {
-        owned_->close();
-    }
+    if (owned_) retire(std::move(owned_));
 }
 
 // A moved-from Network is bound to no backend: using it throws InvalidHandleException
@@ -29,7 +39,7 @@ Network::Network(Network&& other) noexcept
 Network& Network::operator=(Network&& other) noexcept {
     if (this != &other) {
         Identifiable::operator=(std::move(other));
-        if (owned_) owned_->close();
+        if (owned_) retire(std::move(owned_));
         owned_ = std::move(other.owned_);
         other.backend_ = detail::nullBackend();
     }

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <iidm/iidm.h>
 #include "RealBackends.h"
+#include <memory>
 #include <string>
 
 #ifdef IIDM_BRIDGE_GRAALVM_ENABLED
@@ -111,6 +112,22 @@ void checkHandlesAreReleased(BackendProvider& b) {
     (void)sum;
 }
 
+// Objects used after their network is destroyed throw, rather than reach a freed backend
+void checkObjectsOutliveTheirNetwork(std::unique_ptr<BackendProvider> backend) {
+    std::string xiidm = readTestNetwork();
+    backend->loadNetworkBytes(xiidm.data(), xiidm.size(), "network.xiidm");
+    Generator gen;
+    {
+        Network network = NetworkFactory::createFromBackend(std::move(backend));
+        gen = *network.getGenerator("G");
+        EXPECT_EQ(gen.getId(), "G");
+    }
+    EXPECT_TRUE(gen.isValid());
+    EXPECT_THROW(gen.getTargetP(), InvalidHandleException);
+    EXPECT_THROW(gen.getTerminal(), InvalidHandleException);
+    EXPECT_THROW(gen.setTargetP(1), InvalidHandleException);
+}
+
 } // namespace
 
 #ifdef IIDM_BRIDGE_GRAALVM_ENABLED
@@ -129,6 +146,12 @@ TEST(BackendHandlesTest, GraalVM) {
     // The Java-side registry does not grow either (network + a few live wrappers)
     EXPECT_LT(backend.javaHandleCount(), 100);
 }
+
+TEST(BackendHandlesTest, GraalVMObjectsOutliveTheirNetwork) {
+    const char* lib = envPath("IIDM_BRIDGE_GRAALVM_LIB");
+    if (!lib) GTEST_SKIP() << "IIDM_BRIDGE_GRAALVM_LIB not set";
+    checkObjectsOutliveTheirNetwork(std::unique_ptr<BackendProvider>(new GraalVMBackend(lib)));
+}
 #endif
 
 #ifdef IIDM_BRIDGE_JNI_ENABLED
@@ -144,5 +167,10 @@ TEST(BackendHandlesTest, JNI) {
     if (!ensureJvm()) GTEST_SKIP() << "IIDM_BRIDGE_JAR not set";
     JNIBackend backend("backend_handles_test");
     checkHandlesAreReleased(backend);
+}
+
+TEST(BackendHandlesTest, JNIObjectsOutliveTheirNetwork) {
+    if (!ensureJvm()) GTEST_SKIP() << "IIDM_BRIDGE_JAR not set";
+    checkObjectsOutliveTheirNetwork(std::unique_ptr<BackendProvider>(new JNIBackend("backend_outlived_test")));
 }
 #endif

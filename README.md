@@ -177,7 +177,8 @@ overrides the mode.
 ### Good to know
 
 - **Lifetime.** A `Network` owns its backend session and cannot be copied; the objects taken from
-  it are light handles to the Java objects, valid while it lives.
+  it are light handles to the Java objects, valid while it lives. Used after it is destroyed, they
+  throw `InvalidHandleException`.
 - **Beyond reading.** `NetworkFactory::create(id)` makes an empty network; adders shaped like
   powsybl's create objects (`network.newSubstation().setId("S")...add()`), `remove()` removes
   them. Variants come from `network.getVariantManager()`; `NetworkFactory::loadFromBytes` and
@@ -198,7 +199,7 @@ aborts the process.
 | `ValidationException` | powsybl rejects the call: invalid value, id already used, refused removal... |
 | `PropertyNotFoundException` | The method does not apply to this object (`as<T>()` of another type), an optional part is absent |
 | `ExtensionNotFoundException` | `getExtension<X>()` on an object without X (a `PropertyNotFoundException`) |
-| `InvalidHandleException` | The object belongs to no network (default-constructed, or a moved-from `Network`) |
+| `InvalidHandleException` | The object belongs to no network (default-constructed, or a moved-from `Network`), or its network was destroyed |
 | `NetworkNotFoundException` | `NetworkFactory::wrap(id)`: no network registered under that id |
 
 ### Extensions

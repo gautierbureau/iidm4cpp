@@ -450,8 +450,10 @@ handle and a code of `PropertyCodes.def`:
 - Every handle that a backend returns holds a reference on the Java side. `HandleRef` counts the
   wrappers of each handle (copies, and sub-wrappers built from it) and releases the reference with
   the last one; closing the backend releases the handles still held.
-- Wrappers keep a plain pointer to the backend of their network: never use an object after its
-  `Network` is destroyed.
+- Wrappers keep a plain pointer to the backend of their network. When the `Network` is destroyed,
+  its closed backend goes to the `HandleTracker` that the network's wrappers share
+  (`HandleTracker::keep`) and is freed with the last of them: an object used after its `Network`
+  is destroyed throws `InvalidHandleException`.
 
 ### AUTO backend selection
 

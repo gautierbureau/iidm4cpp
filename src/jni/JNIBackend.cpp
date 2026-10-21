@@ -62,7 +62,7 @@ void JNIBackend::findJVM() {
 }
 
 JNIEnv* JNIBackend::env() const {
-    if (!jvm_) throw IidmException("The JNI backend is closed");
+    if (!jvm_) throw InvalidHandleException("The network of this object is closed");
     JNIEnv* env = nullptr;
     const jint status = jvm_->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_8);
     if (status == JNI_OK) return env;
