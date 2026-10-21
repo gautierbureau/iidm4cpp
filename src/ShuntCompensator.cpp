@@ -1,10 +1,10 @@
 #include <iidm/ShuntCompensator.h>
-#include <iidm/ShuntCompensatorNonLinearModel.h>
 #include <iidm/BackendProvider.h>
-#include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
 
 namespace iidm {
+
+// ── Section counts ───────────────────────────────────────────────────────────
 
 int ShuntCompensator::getSectionCount() const {
     return backend_->getInt(handle_, prop::SHUNT_SECTION_COUNT);
@@ -19,8 +19,17 @@ ShuntCompensator& ShuntCompensator::setSectionCount(int count) {
     return *this;
 }
 
+ShuntCompensator& ShuntCompensator::unsetSectionCount() {
+    backend_->invoke(handle_, prop::ACT_UNSET_SECTION_COUNT);
+    return *this;
+}
+
 iidm::optional<int> ShuntCompensator::getSolvedSectionCount() const {
     return backend_->getOptInt(handle_, prop::SHUNT_SOLVED_SECTION_COUNT);
+}
+
+iidm::optional<int> ShuntCompensator::findSolvedSectionCount() const {
+    return getSolvedSectionCount();
 }
 
 ShuntCompensator& ShuntCompensator::setSolvedSectionCount(int count) {
@@ -28,32 +37,51 @@ ShuntCompensator& ShuntCompensator::setSolvedSectionCount(int count) {
     return *this;
 }
 
+ShuntCompensator& ShuntCompensator::unsetSolvedSectionCount() {
+    backend_->invoke(handle_, prop::ACT_UNSET_SOLVED_SECTION_COUNT);
+    return *this;
+}
+
 int ShuntCompensator::getMaximumSectionCount() const {
     return backend_->getInt(handle_, prop::SHUNT_MAX_SECTION_COUNT);
 }
 
-bool ShuntCompensator::hasLinearModel() const {
-    return backend_->getInt(handle_, prop::SHUNT_MODEL_KIND) == 0;
-}
-
-double ShuntCompensator::getBPerSection() const {
-    return backend_->getDouble(handle_, prop::SHUNT_B_PER_SECTION);
-}
-
-double ShuntCompensator::getGPerSection() const {
-    return backend_->getDouble(handle_, prop::SHUNT_G_PER_SECTION);
-}
+// ── Susceptance and conductance ──────────────────────────────────────────────
 
 double ShuntCompensator::getB() const {
     return backend_->getDouble(handle_, prop::SHUNT_B);
 }
 
-bool ShuntCompensator::hasNonLinearModel() const {
-    return backend_->getInt(handle_, prop::SHUNT_MODEL_KIND) == 1;
+double ShuntCompensator::getG() const {
+    return backend_->getDouble(handle_, prop::SHUNT_G);
 }
 
-ShuntCompensatorNonLinearModel ShuntCompensator::getNonLinearModel() const {
-    return ShuntCompensatorNonLinearModel(handle_, backend_);
+double ShuntCompensator::getB(int sectionCount) const {
+    return backend_->evaluate(handle_, prop::SHUNT_B, {static_cast<double>(sectionCount)});
+}
+
+double ShuntCompensator::getG(int sectionCount) const {
+    return backend_->evaluate(handle_, prop::SHUNT_G, {static_cast<double>(sectionCount)});
+}
+
+// ── Model ────────────────────────────────────────────────────────────────────
+
+ShuntCompensatorModelType ShuntCompensator::getModelType() const {
+    return static_cast<ShuntCompensatorModelType>(backend_->getInt(handle_, prop::SHUNT_MODEL_TYPE));
+}
+
+ShuntCompensatorModel ShuntCompensator::getModel() const {
+    return ShuntCompensatorModel(backend_->getRelated(handle_, ShuntCompensatorModel::TYPE), backend_);
+}
+
+// ── Solved values ────────────────────────────────────────────────────────────
+
+void ShuntCompensator::applySolvedValues() {
+    backend_->invoke(handle_, prop::ACT_APPLY_SOLVED_VALUES);
+}
+
+void ShuntCompensator::setSectionCountToSolvedSectionCount() {
+    backend_->invoke(handle_, prop::ACT_SET_SECTION_COUNT_TO_SOLVED_SECTION_COUNT);
 }
 
 } // namespace iidm

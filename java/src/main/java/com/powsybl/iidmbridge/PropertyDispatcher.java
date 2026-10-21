@@ -1,7 +1,6 @@
 package com.powsybl.iidmbridge;
 
 import com.powsybl.iidm.network.*;
-import com.powsybl.iidm.network.ShuntCompensatorNonLinearModel;
 import com.powsybl.iidm.network.LoadingLimits.TemporaryLimit;
 import com.powsybl.iidm.network.extensions.*;
 import com.powsybl.commons.extensions.Extendable;
@@ -101,8 +100,12 @@ public final class PropertyDispatcher {
             case DL_X  -> ((BoundaryLine) obj).getX();
             case DL_G  -> ((BoundaryLine) obj).getG();
             case DL_B  -> ((BoundaryLine) obj).getB();
-            case SHUNT_B_PER_SECTION -> ((ShuntCompensator) obj).getModel(ShuntCompensatorLinearModel.class).getBPerSection();
-            case SHUNT_G_PER_SECTION -> ((ShuntCompensator) obj).getModel(ShuntCompensatorLinearModel.class).getGPerSection();
+            case SHUNT_B -> ((ShuntCompensator) obj).getB();
+            case SHUNT_G -> ((ShuntCompensator) obj).getG();
+            case SHUNT_B_PER_SECTION -> ((ShuntCompensatorLinearModel) obj).getBPerSection();
+            case SHUNT_G_PER_SECTION -> ((ShuntCompensatorLinearModel) obj).getGPerSection();
+            case SHUNT_SECTION_B -> ((ShuntCompensatorNonLinearModel.Section) obj).getB();
+            case SHUNT_SECTION_G -> ((ShuntCompensatorNonLinearModel.Section) obj).getG();
             case SVC_B_MIN                   -> ((StaticVarCompensator) obj).getBmin();
             case SVC_B_MAX                   -> ((StaticVarCompensator) obj).getBmax();
             case CONVERTER_STATION_LOSS_FACTOR -> ((HvdcConverterStation<?>) obj).getLossFactor();
@@ -122,8 +125,6 @@ public final class PropertyDispatcher {
             case BAT_TARGET_P -> ((Battery) obj).getTargetP();
             case BAT_MIN_P    -> ((Battery) obj).getMinP();
             case BAT_MAX_P    -> ((Battery) obj).getMaxP();
-            // ShuntCompensator total B for current section count
-            case SHUNT_B -> ((ShuntCompensator) obj).getB();
             // Generator reactive limits (min-max kind)
             // Reactive limits
             case RL_MIN_Q    -> ((MinMaxReactiveLimits) obj).getMinQ();
@@ -143,9 +144,6 @@ public final class PropertyDispatcher {
             case TL_VALUE -> ((TemporaryLimit) obj).getValue();
             // ThreeWT
             case THREE_WT_RATED_U0 -> ((ThreeWindingsTransformer) obj).getRatedU0();
-            // ShuntCompensatorNonLinearModel.Section (non-linear model)
-            case SHUNT_SECTION_B -> ((ShuntCompensatorNonLinearModel.Section) obj).getB();
-            case SHUNT_SECTION_G -> ((ShuntCompensatorNonLinearModel.Section) obj).getG();
             // State estimation extensions
             case OBS_QUALITY_STANDARD_DEVIATION -> ((ObservabilityQuality<?>) obj).getStandardDeviation();
             case MEAS_VALUE   -> ((Measurement) obj).getValue();
@@ -185,6 +183,10 @@ public final class PropertyDispatcher {
             case DL_P0 -> ((BoundaryLine) obj).setP0(value);
             case DL_Q0 -> ((BoundaryLine) obj).setQ0(value);
             case CONVERTER_STATION_LOSS_FACTOR -> ((HvdcConverterStation<?>) obj).setLossFactor((float) value);
+            case SHUNT_B_PER_SECTION -> ((ShuntCompensatorLinearModel) obj).setBPerSection(value);
+            case SHUNT_G_PER_SECTION -> ((ShuntCompensatorLinearModel) obj).setGPerSection(value);
+            case SHUNT_SECTION_B -> ((ShuntCompensatorNonLinearModel.Section) obj).setB(value);
+            case SHUNT_SECTION_G -> ((ShuntCompensatorNonLinearModel.Section) obj).setG(value);
             case SVC_B_MIN -> ((StaticVarCompensator) obj).setBmin(value);
             case SVC_B_MAX -> ((StaticVarCompensator) obj).setBmax(value);
             case EXT_APC_DROOP -> activePowerControl(obj).setDroop(value);
@@ -250,8 +252,9 @@ public final class PropertyDispatcher {
             case LOAD_TYPE          -> ((Load) obj).getLoadType().ordinal();
             case VL_TOPOLOGY_KIND   -> ((VoltageLevel) obj).getTopologyKind().ordinal();
             case HVDC_CONVERTERS_MODE -> ((HvdcLine) obj).getConvertersMode().ordinal();
-            case SHUNT_SECTION_COUNT     -> ((ShuntCompensator) obj).getSectionCount();
+            case SHUNT_SECTION_COUNT     -> ((ShuntCompensator) obj).getSectionCount(); // fails when undefined
             case SHUNT_MAX_SECTION_COUNT -> ((ShuntCompensator) obj).getMaximumSectionCount();
+            case SHUNT_MODEL_TYPE        -> ((ShuntCompensator) obj).getModelType().ordinal();
             case SW_KIND  -> ((Switch) obj).getKind().ordinal();
             case SW_NODE1 -> ((Switch) obj).getVoltageLevel().getNodeBreakerView().getNode1(((Switch) obj).getId());
             case SW_NODE2 -> ((Switch) obj).getVoltageLevel().getNodeBreakerView().getNode2(((Switch) obj).getId());
@@ -268,8 +271,6 @@ public final class PropertyDispatcher {
             case LEG_SIDE             -> ((ThreeWindingsTransformer.Leg) obj).getSide().ordinal();
             case RL_KIND           -> ((ReactiveLimits) obj).getKind().ordinal();
             case CURVE_POINT_COUNT -> ((ReactiveCapabilityCurve) obj).getPointCount();
-            // Shunt model kind: 0=LINEAR, 1=NON_LINEAR
-            case SHUNT_MODEL_KIND -> ((ShuntCompensator) obj).getModelType().ordinal();
             // Terminal node number (node-breaker topology)
             case TERMINAL_NODE -> ((Terminal) obj).getNodeBreakerView().getNode();
             // State estimation extensions
@@ -303,9 +304,9 @@ public final class PropertyDispatcher {
             case VR_MODE -> ((VoltageRegulation) obj).setMode(value < 0 ? null : Creation.enumValue(RegulationMode.class, value));
             case HVDC_CONVERTERS_MODE ->
                 ((HvdcLine) obj).setConvertersMode(HvdcLine.ConvertersMode.values()[value]);
-            case SHUNT_SECTION_COUNT ->
-                ((ShuntCompensator) obj).setSectionCount(value);
+            case SHUNT_SECTION_COUNT        -> ((ShuntCompensator) obj).setSectionCount(value);
             case SHUNT_SOLVED_SECTION_COUNT -> ((ShuntCompensator) obj).setSolvedSectionCount(value);
+            case SHUNT_MAX_SECTION_COUNT    -> ((ShuntCompensatorLinearModel) obj).setMaximumSectionCount(value);
             case TC_LOW_TAP_POSITION    -> tapChanger(obj).setLowTapPosition(value);
             case TC_TAP_POSITION        -> tapChanger(obj).setTapPosition(value);
             case TC_SOLVED_TAP_POSITION -> tapChanger(obj).setSolvedTapPosition(value);
@@ -341,6 +342,10 @@ public final class PropertyDispatcher {
             case HVDC_LINE                  -> obj instanceof HvdcLine;
             case DANGLING_LINE              -> obj instanceof BoundaryLine;
             case SHUNT_COMPENSATOR          -> obj instanceof ShuntCompensator;
+            case SHUNT_COMPENSATOR_MODEL    -> obj instanceof ShuntCompensatorModel;
+            case SHUNT_COMPENSATOR_LINEAR_MODEL -> obj instanceof ShuntCompensatorLinearModel;
+            case SHUNT_COMPENSATOR_NON_LINEAR_MODEL -> obj instanceof ShuntCompensatorNonLinearModel;
+            case SHUNT_SECTION              -> obj instanceof ShuntCompensatorNonLinearModel.Section;
             case STATIC_VAR_COMPENSATOR     -> obj instanceof StaticVarCompensator;
             case VSC_CONVERTER_STATION      -> obj instanceof VscConverterStation;
             case LCC_CONVERTER_STATION      -> obj instanceof LccConverterStation;
@@ -686,6 +691,14 @@ public final class PropertyDispatcher {
                 if (args.length != 1) throw wrongArgumentCount(code, args);
                 yield ((LoadingLimits) obj).getTemporaryLimitValue((int) args[0]);
             }
+            case SHUNT_B -> {
+                if (args.length != 1) throw wrongArgumentCount(code, args);
+                yield ((ShuntCompensator) obj).getB((int) args[0]);
+            }
+            case SHUNT_G -> {
+                if (args.length != 1) throw wrongArgumentCount(code, args);
+                yield ((ShuntCompensator) obj).getG((int) args[0]);
+            }
             case SHAPE_IS_INSIDE -> {
                 ReactiveCapabilityShape shape = (ReactiveCapabilityShape) obj;
                 if (args.length != 3) throw wrongArgumentCount(code, args);
@@ -802,10 +815,7 @@ public final class PropertyDispatcher {
             case THREE_WINDINGS_TRANSFORMER_LEG -> ((ThreeWindingsTransformer) obj).getLegs().stream();
             case RATIO_TAP_CHANGER_STEP -> steps((RatioTapChanger) obj);
             case PHASE_TAP_CHANGER_STEP -> steps((PhaseTapChanger) obj);
-            case SHUNT_SECTION -> {
-                ShuntCompensator sc = (ShuntCompensator) obj;
-                yield sc.getModel(ShuntCompensatorNonLinearModel.class).getAllSections().stream();
-            }
+            case SHUNT_SECTION -> ((ShuntCompensatorNonLinearModel) obj).getAllSections().stream();
             case TEMPORARY_LIMIT -> ((LoadingLimits) obj).getTemporaryLimits().stream();
             case OPERATIONAL_LIMITS_GROUP -> LimitsDispatch.holder(obj).getOperationalLimitsGroups().stream();
             case REL_SELECTED_OLG -> LimitsDispatch.holder(obj).getAllSelectedOperationalLimitsGroups().stream();
@@ -893,6 +903,9 @@ public final class PropertyDispatcher {
             case OBS_QUALITY_P2 -> ((BranchObservability<?>) obj).getNullableQualityP2();
             case OBS_QUALITY_Q1 -> ((BranchObservability<?>) obj).getNullableQualityQ1();
             case OBS_QUALITY_Q2 -> ((BranchObservability<?>) obj).getNullableQualityQ2();
+            case SHUNT_COMPENSATOR_MODEL   -> ((ShuntCompensator) obj).getModel();
+            case SHUNT_COMPENSATOR_LINEAR_MODEL -> ((ShuntCompensator) obj).getModel(ShuntCompensatorLinearModel.class);
+            case SHUNT_COMPENSATOR_NON_LINEAR_MODEL -> ((ShuntCompensator) obj).getModel(ShuntCompensatorNonLinearModel.class);
             case REACTIVE_LIMITS           -> ((ReactiveLimitsHolder) obj).getReactiveLimits();
             case MIN_MAX_REACTIVE_LIMITS   -> ((ReactiveLimitsHolder) obj).getReactiveLimits(MinMaxReactiveLimits.class);
             case REACTIVE_CAPABILITY_CURVE -> ((ReactiveLimitsHolder) obj).getReactiveLimits(ReactiveCapabilityCurve.class);
@@ -963,7 +976,38 @@ public final class PropertyDispatcher {
                 yield null;
             }
             case ACT_APPLY_SOLVED_VALUES -> {
-                tapChanger(obj).applySolvedValues();
+                switch (obj) {
+                    case TapChanger<?, ?, ?, ?> tapChanger -> tapChanger.applySolvedValues();
+                    case TwoWindingsTransformer transformer -> transformer.applySolvedValues();
+                    case ThreeWindingsTransformer transformer -> transformer.applySolvedValues();
+                    case Generator generator -> generator.applySolvedValues();
+                    case Battery battery -> battery.applySolvedValues();
+                    case Load load -> load.applySolvedValues();
+                    case ShuntCompensator shunt -> shunt.applySolvedValues();
+                    case BoundaryLine line -> line.applySolvedValues();
+                    default -> throw new BridgeErrors.PropertyNotFoundException("No solved values to apply: " + obj);
+                }
+                yield null;
+            }
+            case ACT_UNSET_SOLVED_VALUES -> {
+                switch (obj) {
+                    case Connectable<?> connectable -> connectable.unsetSolvedValues();
+                    case Terminal terminal -> terminal.unsetSolvedValues();
+                    case Bus bus -> bus.unsetSolvedValues();
+                    default -> throw new BridgeErrors.PropertyNotFoundException("No solved values to unset: " + obj);
+                }
+                yield null;
+            }
+            case ACT_UNSET_SECTION_COUNT -> {
+                ((ShuntCompensator) obj).unsetSectionCount();
+                yield null;
+            }
+            case ACT_UNSET_SOLVED_SECTION_COUNT -> {
+                ((ShuntCompensator) obj).unsetSolvedSectionCount();
+                yield null;
+            }
+            case ACT_SET_SECTION_COUNT_TO_SOLVED_SECTION_COUNT -> {
+                ((ShuntCompensator) obj).setSectionCountToSolvedSectionCount();
                 yield null;
             }
             case ACT_CLEAN_IF_EMPTY -> {

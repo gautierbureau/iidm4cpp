@@ -45,6 +45,8 @@ enum class RegulationMode { VOLTAGE, REACTIVE_POWER, VOLTAGE_PER_REACTIVE_POWER 
 enum class LimitType { ACTIVE_POWER, APPARENT_POWER, CURRENT, VOLTAGE, VOLTAGE_ANGLE };
 // Whether limits are maximums (HIGH) or minimums (LOW) (powsybl DetectionKind)
 enum class DetectionKind { HIGH, LOW };
+// Model of a shunt compensator's sections (powsybl ShuntCompensatorModelType)
+enum class ShuntCompensatorModelType { LINEAR, NON_LINEAR };
 
 // ── State estimation extensions (same order as the powsybl-core enums) ──────
 enum class MeasurementType {

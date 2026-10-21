@@ -11,6 +11,7 @@ using namespace iidm::test;
 static constexpr ObjectHandle SHUNT_HANDLE = 50;
 static constexpr ObjectHandle SEC1_HANDLE  = 51;
 static constexpr ObjectHandle SEC2_HANDLE  = 52;
+static constexpr ObjectHandle MODEL_HANDLE = 53;
 
 class ShuntNonLinearTest : public ::testing::Test {
 protected:
@@ -19,12 +20,14 @@ protected:
     void SetUp() override {
         backend.strings[{SHUNT_HANDLE, prop::ID}]   = "SC1";
         backend.strings[{SHUNT_HANDLE, prop::NAME}]  = "Shunt 1";
-        backend.ints[{SHUNT_HANDLE, prop::SHUNT_MODEL_KIND}] = 1; // NON_LINEAR
+        backend.ints[{SHUNT_HANDLE, prop::SHUNT_MODEL_TYPE}] = static_cast<int>(ShuntCompensatorModelType::NON_LINEAR);
         backend.ints[{SHUNT_HANDLE, prop::SHUNT_SECTION_COUNT}]     = 2;
         backend.ints[{SHUNT_HANDLE, prop::SHUNT_MAX_SECTION_COUNT}] = 3;
+        backend.related[{SHUNT_HANDLE, prop::SHUNT_COMPENSATOR_NON_LINEAR_MODEL}] = MODEL_HANDLE;
+        backend.bools[{MODEL_HANDLE, prop::SHUNT_COMPENSATOR_NON_LINEAR_MODEL}] = true;
 
         // Two non-linear sections
-        backend.children[{SHUNT_HANDLE, prop::SHUNT_SECTION}] = {SEC1_HANDLE, SEC2_HANDLE};
+        backend.children[{MODEL_HANDLE, prop::SHUNT_SECTION}] = {SEC1_HANDLE, SEC2_HANDLE};
         backend.doubles[{SEC1_HANDLE, prop::SHUNT_SECTION_B}] = 1e-4;
         backend.doubles[{SEC1_HANDLE, prop::SHUNT_SECTION_G}] = 0.0;
         backend.doubles[{SEC2_HANDLE, prop::SHUNT_SECTION_B}] = 2e-4;
@@ -32,38 +35,39 @@ protected:
     }
 };
 
-TEST_F(ShuntNonLinearTest, HasNonLinearModel) {
+TEST_F(ShuntNonLinearTest, ModelType) {
     ShuntCompensator sc(SHUNT_HANDLE, &backend);
-    EXPECT_TRUE(sc.hasNonLinearModel());
-    EXPECT_FALSE(sc.hasLinearModel());
+    EXPECT_EQ(sc.getModelType(), ShuntCompensatorModelType::NON_LINEAR);
+    ShuntCompensatorNonLinearModel model = sc.getModel<ShuntCompensatorNonLinearModel>();
+    EXPECT_TRUE(model.isValid());
+    EXPECT_TRUE(model.is<ShuntCompensatorNonLinearModel>());
+    EXPECT_FALSE(model.is<ShuntCompensatorLinearModel>());
 }
 
 TEST_F(ShuntNonLinearTest, GetAllSections) {
     ShuntCompensator sc(SHUNT_HANDLE, &backend);
-    auto model = sc.getNonLinearModel();
-    EXPECT_TRUE(model.isValid());
-    auto sections = model.getAllSections();
+    std::vector<ShuntCompensatorNonLinearModel::Section> sections
+        = sc.getModel<ShuntCompensatorNonLinearModel>().getAllSections();
     ASSERT_EQ(sections.size(), 2u);
-    EXPECT_DOUBLE_EQ(sections[0].b, 1e-4);
-    EXPECT_DOUBLE_EQ(sections[0].g, 0.0);
-    EXPECT_DOUBLE_EQ(sections[1].b, 2e-4);
-    EXPECT_DOUBLE_EQ(sections[1].g, 1e-5);
+    EXPECT_DOUBLE_EQ(sections[0].getB(), 1e-4);
+    EXPECT_DOUBLE_EQ(sections[0].getG(), 0.0);
+    EXPECT_DOUBLE_EQ(sections[1].getB(), 2e-4);
+    EXPECT_DOUBLE_EQ(sections[1].getG(), 1e-5);
 }
 
-TEST_F(ShuntNonLinearTest, LinearModelWhenKindIsZero) {
-    MockBackend b2;
-    b2.ints[{SHUNT_HANDLE, prop::SHUNT_MODEL_KIND}] = 0; // LINEAR
-    ShuntCompensator sc(SHUNT_HANDLE, &b2);
-    EXPECT_TRUE(sc.hasLinearModel());
-    EXPECT_FALSE(sc.hasNonLinearModel());
+TEST_F(ShuntNonLinearTest, SetSections) {
+    ShuntCompensatorNonLinearModel::Section section(SEC2_HANDLE, &backend);
+    EXPECT_EQ(&section.setB(3e-4).setG(2e-5), &section);
+    EXPECT_DOUBLE_EQ((backend.doubles[{SEC2_HANDLE, prop::SHUNT_SECTION_B}]), 3e-4);
+    EXPECT_DOUBLE_EQ((backend.doubles[{SEC2_HANDLE, prop::SHUNT_SECTION_G}]), 2e-5);
+    section.setProperty("stage", "second");
+    EXPECT_EQ(section.getProperty("stage"), iidm::optional<std::string>("second"));
 }
 
 TEST_F(ShuntNonLinearTest, EmptySectionsWhenNoneRegistered) {
     MockBackend b2;
-    b2.ints[{SHUNT_HANDLE, prop::SHUNT_MODEL_KIND}] = 1;
-    ShuntCompensator sc(SHUNT_HANDLE, &b2);
-    auto sections = sc.getNonLinearModel().getAllSections();
-    EXPECT_EQ(sections.size(), 0u);
+    ShuntCompensatorNonLinearModel model(MODEL_HANDLE, &b2);
+    EXPECT_TRUE(model.getAllSections().empty());
 }
 
 // ── Regulating terminal (the voltage regulation: see TestVoltageRegulationHolder) ──

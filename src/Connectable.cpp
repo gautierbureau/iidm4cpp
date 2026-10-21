@@ -18,6 +18,10 @@ bool Connectable::disconnect() {
     return HandleRef(backend_->invoke(handle_, prop::ACT_DISCONNECT), backend_) != INVALID_HANDLE;
 }
 
+void Connectable::unsetSolvedValues() {
+    backend_->invoke(handle_, prop::ACT_UNSET_SOLVED_VALUES);
+}
+
 bool Connectable::isEquivalent() const {
     return backend_->getBool(handle_, prop::EQUIVALENT);
 }

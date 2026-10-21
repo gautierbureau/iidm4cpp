@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iidm:network xmlns:iidm="http://www.powsybl.org/schema/iidm/equipment/1_18" id="shunts_test" caseDate="2026-01-31T12:00:00.000Z" forecastDistance="0" sourceFormat="test" minimumValidationLevel="EQUIPMENT">
+    <iidm:substation id="S" country="FR">
+        <iidm:voltageLevel id="VL" nominalV="225.0" topologyKind="BUS_BREAKER">
+            <iidm:busBreakerTopology>
+                <iidm:bus id="B"/>
+            </iidm:busBreakerTopology>
+            <iidm:load id="L" loadType="UNDEFINED" p0="100.0" q0="30.0" bus="B" connectableBus="B"/>
+            <iidm:shuntCompensator id="SC_LINEAR" sectionCount="2" solvedSectionCount="3" localTargetV="226.0" bus="B" connectableBus="B">
+                <iidm:shuntLinearModel bPerSection="0.001" gPerSection="1.0E-5" maximumSectionCount="4">
+                    <iidm:property name="maker" value="abb"/>
+                </iidm:shuntLinearModel>
+                <iidm:voltageRegulation targetValue="226.0" targetDeadband="2.0" mode="VOLTAGE" regulating="true"/>
+            </iidm:shuntCompensator>
+            <iidm:shuntCompensator id="SC_NON_LINEAR" sectionCount="1" bus="B" connectableBus="B" q="-2.5">
+                <iidm:shuntNonLinearModel>
+                    <iidm:property name="stages" value="3"/>
+                    <iidm:section b="0.001" g="0.0"/>
+                    <iidm:section b="0.0025" g="1.0E-5"/>
+                    <iidm:section b="0.004" g="2.0E-5"/>
+                </iidm:shuntNonLinearModel>
+            </iidm:shuntCompensator>
+            <iidm:shuntCompensator id="SC_UNSET" bus="B" connectableBus="B">
+                <iidm:shuntLinearModel bPerSection="0.002" maximumSectionCount="1"/>
+            </iidm:shuntCompensator>
+        </iidm:voltageLevel>
+    </iidm:substation>
+</iidm:network>

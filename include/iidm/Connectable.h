@@ -24,6 +24,10 @@ public:
     bool connect();
     bool disconnect();
 
+    // Unsets its solved values: the flows at its terminals, and those of its own (a shunt
+    // compensator's solved section count, a transformer's solved tap positions)
+    void unsetSolvedValues();
+
     // An equivalent, from a network reduction for instance
     bool isEquivalent() const;
     Connectable& setEquivalent(bool equivalent);

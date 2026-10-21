@@ -135,12 +135,13 @@ static void printNetwork(iidm::Network& network) {
         std::cout << "  " << sc.getId()
                   << "  sections=" << sc.getSectionCount()
                   << "/" << sc.getMaximumSectionCount();
-        if (sc.hasLinearModel())
-            std::cout << "  [linear: B/section=" << sc.getBPerSection() << "]";
-        if (sc.hasNonLinearModel()) {
-            auto sections = sc.getNonLinearModel().getAllSections();
-            std::cout << "  [non-linear: " << sections.size() << " section(s)]";
-        }
+        if (sc.getModelType() == iidm::ShuntCompensatorModelType::LINEAR)
+            std::cout << "  [linear: B/section="
+                      << sc.getModel<iidm::ShuntCompensatorLinearModel>().getBPerSection() << "]";
+        else
+            std::cout << "  [non-linear: "
+                      << sc.getModel<iidm::ShuntCompensatorNonLinearModel>().getAllSections().size()
+                      << " section(s)]";
         std::cout << "\n";
     }
 
