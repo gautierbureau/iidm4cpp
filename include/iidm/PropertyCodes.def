@@ -19,7 +19,7 @@ IIDM_CODE(LINE,                        5)
 IIDM_CODE(TWO_WINDINGS_TRANSFORMER,    6)
 IIDM_CODE(THREE_WINDINGS_TRANSFORMER,  7)
 IIDM_CODE(HVDC_LINE,                   8)
-IIDM_CODE(DANGLING_LINE,               9)
+IIDM_CODE(BOUNDARY_LINE,               9)
 IIDM_CODE(SHUNT_COMPENSATOR,           10)
 IIDM_CODE(STATIC_VAR_COMPENSATOR,      11)
 IIDM_CODE(VSC_CONVERTER_STATION,       12)
@@ -49,6 +49,8 @@ IIDM_CODE(ACTIVE_POWER_LIMITS,         49)
 IIDM_CODE(APPARENT_POWER_LIMITS,       50)
 IIDM_CODE(SHUNT_COMPENSATOR_LINEAR_MODEL, 53)
 IIDM_CODE(SHUNT_COMPENSATOR_NON_LINEAR_MODEL, 54)
+IIDM_CODE(BOUNDARY_LINE_GENERATION,    55) // the generation of a boundary line
+IIDM_CODE(BOUNDARY,                    56) // the far end of a boundary line
 // Abstract types (Java interfaces)
 IIDM_CODE(IDENTIFIABLE,                43)
 IIDM_CODE(CONNECTABLE,                 44)
@@ -56,7 +58,7 @@ IIDM_CODE(INJECTION,                   45)
 IIDM_CODE(BRANCH,                      46)
 IIDM_CODE(HVDC_CONVERTER_STATION,      47)
 IIDM_CODE(LOADING_LIMITS,              48) // current, active power or apparent power limits
-IIDM_CODE(FLOWS_LIMITS_HOLDER,         51) // what holds flows limits: a 3WT leg, a dangling line, a branch side
+IIDM_CODE(FLOWS_LIMITS_HOLDER,         51) // what holds flows limits: a 3WT leg, a boundary line, a branch side
 IIDM_CODE(SHUNT_COMPENSATOR_MODEL,     52) // linear or non-linear
 
 // ── Shared properties (applicable to many types) ────────────────────────────
@@ -200,13 +202,31 @@ IIDM_CODE(HVDC_ACTIVE_POWER_SETPOINT, 902)
 IIDM_CODE(HVDC_MAX_P,                  903)
 IIDM_CODE(HVDC_CONVERTERS_MODE,        904)
 
-// ── DanglingLine ─────────────────────────────────────────────────────────────
-IIDM_CODE(DL_P0,                       1000)
-IIDM_CODE(DL_Q0,                       1001)
-IIDM_CODE(DL_R,                        1002)
-IIDM_CODE(DL_X,                        1003)
-IIDM_CODE(DL_G,                        1004)
-IIDM_CODE(DL_B,                        1005)
+// ── BoundaryLine (powsybl 7.4; DanglingLine before) ──────────────────────────
+// A line to the outside of the network. getRelated(line, BOUNDARY_LINE_GENERATION) is its
+// generation (INVALID_HANDLE when it has none), on which the GENERATION_* codes and the reactive
+// limits apply; getRelated(line, BOUNDARY) is its boundary, the far end, with the BOUNDARY_* values
+// (getRelated(boundary, BOUNDARY_LINE): its line, REL_VOLTAGE_LEVEL: the network side voltage
+// level). A boundary line is a flows limits holder (see Limits).
+IIDM_CODE(BL_P0,                       1000)
+IIDM_CODE(BL_Q0,                       1001)
+IIDM_CODE(BL_R,                        1002)
+IIDM_CODE(BL_X,                        1003)
+IIDM_CODE(BL_G,                        1004)
+IIDM_CODE(BL_B,                        1005)
+IIDM_CODE(BL_PAIRED,                   1006) // bool, read-only: in a tie line
+IIDM_CODE(BL_PAIRING_KEY,              1007) // string (none when it has none)
+IIDM_CODE(GENERATION_TARGET_P,         1010) // double
+IIDM_CODE(GENERATION_MIN_P,            1011) // double
+IIDM_CODE(GENERATION_MAX_P,            1012) // double
+IIDM_CODE(GENERATION_TARGET_Q,         1013) // double
+IIDM_CODE(GENERATION_TARGET_V,         1014) // double
+IIDM_CODE(GENERATION_VOLTAGE_REGULATION_ON, 1015) // bool
+IIDM_CODE(BOUNDARY_V,                  1020) // double, read-only
+IIDM_CODE(BOUNDARY_ANGLE,              1021) // double, read-only
+IIDM_CODE(BOUNDARY_P,                  1022) // double, read-only
+IIDM_CODE(BOUNDARY_Q,                  1023) // double, read-only
+IIDM_CODE(BOUNDARY_I,                  1024) // double, read-only
 
 // ── ShuntCompensator ─────────────────────────────────────────────────────────
 // Its model is getRelated(shunt, SHUNT_COMPENSATOR_MODEL); getRelated(shunt, SHUNT_COMPENSATOR_LINEAR_MODEL
@@ -307,7 +327,7 @@ IIDM_CODE(SLACK_TERMINAL,             3500)
 IIDM_CODE(EXT_ST_EMPTY,               3501) // bool, read-only: no terminal in any variant
 
 // ── Limits ───────────────────────────────────────────────────────────────────
-// A flows limits holder (FLOWS_LIMITS_HOLDER) is a 3WT leg, a dangling line, or one side of a
+// A flows limits holder (FLOWS_LIMITS_HOLDER) is a 3WT leg, a boundary line, or one side of a
 // branch: getRelatedByIndex(branch, FLOWS_LIMITS_HOLDER, side) (TwoSides ordinal). Its groups:
 // getChildren(holder, OPERATIONAL_LIMITS_GROUP), getRelatedByString(holder, OPERATIONAL_LIMITS_GROUP,
 // id) one of them, invoke(holder, OPERATIONAL_LIMITS_GROUP) a new one (adder field OLG_ID). The
@@ -406,12 +426,14 @@ IIDM_CODE(ACT_REMOVE,                  5001) // invoke(identifiable): removes it
 // changed it, INVALID_HANDLE when it could not, or already was.
 IIDM_CODE(ACT_CONNECT,                 5002)
 IIDM_CODE(ACT_DISCONNECT,              5003)
-IIDM_CODE(ACT_SET_TARGET_Q_TO_Q,       5004) // invoke(regulation holder): targets Q from the solved Q
-IIDM_CODE(ACT_SET_TARGET_V_TO_V,       5005) // invoke(regulation holder): targets V from the solved V
+IIDM_CODE(ACT_SET_TARGET_Q_TO_Q,       5004) // invoke(regulation holder): targets Q from the solved Q;
+                                             // invoke(boundary line): its generation's
+IIDM_CODE(ACT_SET_TARGET_V_TO_V,       5005) // invoke(regulation holder): targets V from the solved V;
+                                             // invoke(boundary line): its generation's
 IIDM_CODE(ACT_UNSET_TAP_POSITION,      5006) // invoke(tap changer)
 IIDM_CODE(ACT_UNSET_SOLVED_TAP_POSITION, 5007) // invoke(tap changer)
 IIDM_CODE(ACT_APPLY_SOLVED_VALUES,     5008) // invoke(tap changer, transformer, generator, battery, load, shunt
-                                             // compensator, dangling line): its solved values become its values
+                                             // compensator, boundary line): its solved values become its values
 IIDM_CODE(ACT_SET_TAP_POSITION_TO_SOLVED_TAP_POSITION, 5009) // invoke(tap changer)
 IIDM_CODE(ACT_CLEAN_IF_EMPTY,          5010) // invoke(extension): removes it when empty (Measurements,
                                              // DiscreteMeasurements, SlackTerminal)
@@ -422,6 +444,8 @@ IIDM_CODE(ACT_UNSET_SOLVED_VALUES,     5014) // invoke(connectable, terminal, bu
                                              // voltages; a shunt's solved section count, a transformer's tap positions)
 IIDM_CODE(ACT_SET_RATIO_TAP_POSITION_TO_SOLVED_TAP_POSITION, 5015) // invoke(2WT or 3WT): of its ratio tap changers
 IIDM_CODE(ACT_SET_PHASE_TAP_POSITION_TO_SOLVED_TAP_POSITION, 5016) // invoke(2WT or 3WT): of its phase tap changers
+IIDM_CODE(ACT_SET_TARGET_P_TO_P,       5017) // invoke(generator, battery): targets P from the solved P;
+                                             // invoke(boundary line): its generation's
 
 // TwoWindingsTransformerToBeEstimated (on a two windings transformer)
 IIDM_CODE(TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED, 3700)

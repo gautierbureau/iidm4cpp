@@ -192,7 +192,7 @@ Identifiable              getId(), getNameOrId(), getOptionalName(), setName(), 
     │                     unsetSolvedValues(), remove()
     ├── Injection         getTerminal()
     │   ├── Generator, Load, Battery, ShuntCompensator, StaticVarCompensator,
-    │   │   DanglingLine, BusbarSection
+    │   │   BoundaryLine, BusbarSection
     │   └── HvdcConverterStation    getHvdcType(), getLossFactor(), getHvdcLine(),
     │       │                       getOtherConverterStation()
     │       └── VscConverterStation, LccConverterStation
@@ -259,7 +259,7 @@ Generator
 ├── isCondenser() → bool
 └── + the voltage regulation holder and reactive limits holder methods (below)
 
-Reactive limits holders: Generator, Battery, VscConverterStation
+Reactive limits holders: Generator, Battery, VscConverterStation, BoundaryLine::Generation
 ├── getReactiveLimits() → ReactiveLimits
 └── getReactiveLimits<L>() → L, for L = MinMaxReactiveLimits, ReactiveCapabilityCurve or
     ReactiveCapabilityShape (ValidationException when they are of another kind)
@@ -329,7 +329,7 @@ ThreeWindingsTransformer::Leg
 ├── its limits, as a flows limits holder (below)
 └── getLimits(type) / getAllSelectedLimits(type) → LoadingLimits of a LimitType
 
-Flows limits holders: ThreeWindingsTransformer::Leg, DanglingLine, and each side of a Line or
+Flows limits holders: ThreeWindingsTransformer::Leg, BoundaryLine, and each side of a Line or
 TwoWindingsTransformer (the same methods, suffixed 1 / 2 or taking the side)
 ├── getOperationalLimitsGroups() / getOperationalLimitsGroup(id) → groups
 ├── newOperationalLimitsGroup(id) / removeOperationalLimitsGroup(id)
@@ -350,6 +350,15 @@ LoadingLimits: CurrentLimits, ActivePowerLimits, ApparentPowerLimits
 │   TemporaryLimit getName() / getValue() / getAcceptableDuration() / isFictitious(), properties
 ├── getTemporaryLimitValue(duration) / setTemporaryLimitValue(duration, value)
 └── remove(), properties
+
+BoundaryLine (powsybl 7.4; DanglingLine before) (+ the flows limits holder methods)
+├── getP0() / getQ0() / getR() / getX() / getG() / getB() → double (+ setters)
+├── isPaired() → bool (in a tie line), getPairingKey() → optional<string> (+ setter)
+├── getGeneration() → optional<BoundaryLine::Generation>: getTargetP() / getMinP() / getMaxP() /
+│   getTargetQ() / getTargetV() → double, isVoltageRegulationOn() (+ setters), reactive limits
+├── getBoundary() → Boundary, the far end: getV() / getAngle() / getP() / getQ() / getI(),
+│   getBoundaryLine(), getNetworkSideVoltageLevel()
+└── applySolvedValues() / setGenerationTargetPToP() / …TargetQToQ() / …TargetVToV()
 
 ShuntCompensator (+ the voltage regulation holder methods)
 ├── getSectionCount() → int (fails when undefined)   findSectionCount() → optional<int>
@@ -1358,7 +1367,7 @@ iidm-bridge-cpp/
 │       ├── TwoWindingsTransformer.h
 │       ├── ThreeWindingsTransformer.h
 │       ├── HvdcLine.h
-│       ├── DanglingLine.h
+│       ├── BoundaryLine.h
 │       ├── ShuntCompensator.h
 │       ├── StaticVarCompensator.h
 │       ├── VscConverterStation.h
@@ -1678,7 +1687,7 @@ the `iidm4cpp` baseline to validate the migration.
 
 - [ ] `ThreeWindingsTransformer`
 - [ ] `HvdcLine`, `VscConverterStation`, `LccConverterStation`
-- [ ] `DanglingLine`
+- [ ] `BoundaryLine`
 - [ ] `ShuntCompensator`, `StaticVarCompensator`
 - [ ] `Switch` (bus-breaker and node-breaker views)
 - [ ] `ConnectedComponent` and `SynchronousComponent`

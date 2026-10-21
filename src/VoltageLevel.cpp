@@ -13,7 +13,7 @@
 #include <iidm/Battery.h>
 #include <iidm/ShuntCompensator.h>
 #include <iidm/StaticVarCompensator.h>
-#include <iidm/DanglingLine.h>
+#include <iidm/BoundaryLine.h>
 #include <iidm/LccConverterStation.h>
 #include <iidm/VscConverterStation.h>
 #include "Extensions.h"
@@ -190,9 +190,9 @@ std::vector<StaticVarCompensator> VoltageLevel::getStaticVarCompensators() const
     return result;
 }
 
-std::vector<DanglingLine> VoltageLevel::getDanglingLines() const {
-    auto handles = backend_->getChildren(handle_, prop::DANGLING_LINE);
-    std::vector<DanglingLine> result;
+std::vector<BoundaryLine> VoltageLevel::getBoundaryLines() const {
+    auto handles = backend_->getChildren(handle_, prop::BOUNDARY_LINE);
+    std::vector<BoundaryLine> result;
     result.reserve(handles.size());
     for (auto h : handles) result.emplace_back(h, backend_);
     return result;

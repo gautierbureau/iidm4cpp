@@ -1,5 +1,6 @@
 #include <iidm/ReactiveLimitsHolder.h>
 #include <iidm/Battery.h>
+#include <iidm/BoundaryLine.h>
 #include <iidm/BackendProvider.h>
 #include <iidm/Generator.h>
 #include <iidm/PropertyCodes.h>
@@ -15,5 +16,6 @@ ReactiveLimits ReactiveLimitsHolderMethods<Self>::getReactiveLimits() const {
 template class ReactiveLimitsHolderMethods<Generator>;
 template class ReactiveLimitsHolderMethods<Battery>;
 template class ReactiveLimitsHolderMethods<VscConverterStation>;
+template class ReactiveLimitsHolderMethods<BoundaryLine::Generation>;
 
 } } // namespace iidm::detail

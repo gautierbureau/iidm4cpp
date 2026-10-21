@@ -94,12 +94,22 @@ public final class PropertyDispatcher {
             case HVDC_NOMINAL_V             -> ((HvdcLine) obj).getNominalV();
             case HVDC_ACTIVE_POWER_SETPOINT -> ((HvdcLine) obj).getActivePowerSetpoint();
             case HVDC_MAX_P                 -> ((HvdcLine) obj).getMaxP();
-            case DL_P0 -> ((BoundaryLine) obj).getP0();
-            case DL_Q0 -> ((BoundaryLine) obj).getQ0();
-            case DL_R  -> ((BoundaryLine) obj).getR();
-            case DL_X  -> ((BoundaryLine) obj).getX();
-            case DL_G  -> ((BoundaryLine) obj).getG();
-            case DL_B  -> ((BoundaryLine) obj).getB();
+            case BL_P0 -> ((BoundaryLine) obj).getP0();
+            case BL_Q0 -> ((BoundaryLine) obj).getQ0();
+            case BL_R  -> ((BoundaryLine) obj).getR();
+            case BL_X  -> ((BoundaryLine) obj).getX();
+            case BL_G  -> ((BoundaryLine) obj).getG();
+            case BL_B  -> ((BoundaryLine) obj).getB();
+            case GENERATION_TARGET_P -> ((BoundaryLine.Generation) obj).getTargetP();
+            case GENERATION_MIN_P    -> ((BoundaryLine.Generation) obj).getMinP();
+            case GENERATION_MAX_P    -> ((BoundaryLine.Generation) obj).getMaxP();
+            case GENERATION_TARGET_Q -> ((BoundaryLine.Generation) obj).getTargetQ();
+            case GENERATION_TARGET_V -> ((BoundaryLine.Generation) obj).getTargetV();
+            case BOUNDARY_V     -> ((Boundary) obj).getV();
+            case BOUNDARY_ANGLE -> ((Boundary) obj).getAngle();
+            case BOUNDARY_P     -> ((Boundary) obj).getP();
+            case BOUNDARY_Q     -> ((Boundary) obj).getQ();
+            case BOUNDARY_I     -> ((Boundary) obj).getI();
             case SHUNT_B -> ((ShuntCompensator) obj).getB();
             case SHUNT_G -> ((ShuntCompensator) obj).getG();
             case SHUNT_B_PER_SECTION -> ((ShuntCompensatorLinearModel) obj).getBPerSection();
@@ -197,8 +207,17 @@ public final class PropertyDispatcher {
             case TWO_WT_RATED_U2 -> ((TwoWindingsTransformer) obj).setRatedU2(value);
             case TWO_WT_RATED_S  -> ((TwoWindingsTransformer) obj).setRatedS(value);
             case THREE_WT_RATED_U0 -> ((ThreeWindingsTransformer) obj).setRatedU0(value);
-            case DL_P0 -> ((BoundaryLine) obj).setP0(value);
-            case DL_Q0 -> ((BoundaryLine) obj).setQ0(value);
+            case BL_P0 -> ((BoundaryLine) obj).setP0(value);
+            case BL_Q0 -> ((BoundaryLine) obj).setQ0(value);
+            case BL_R  -> ((BoundaryLine) obj).setR(value);
+            case BL_X  -> ((BoundaryLine) obj).setX(value);
+            case BL_G  -> ((BoundaryLine) obj).setG(value);
+            case BL_B  -> ((BoundaryLine) obj).setB(value);
+            case GENERATION_TARGET_P -> ((BoundaryLine.Generation) obj).setTargetP(value);
+            case GENERATION_MIN_P    -> ((BoundaryLine.Generation) obj).setMinP(value);
+            case GENERATION_MAX_P    -> ((BoundaryLine.Generation) obj).setMaxP(value);
+            case GENERATION_TARGET_Q -> ((BoundaryLine.Generation) obj).setTargetQ(value);
+            case GENERATION_TARGET_V -> ((BoundaryLine.Generation) obj).setTargetV(value);
             case CONVERTER_STATION_LOSS_FACTOR -> ((HvdcConverterStation<?>) obj).setLossFactor((float) value);
             case SHUNT_B_PER_SECTION -> ((ShuntCompensatorLinearModel) obj).setBPerSection(value);
             case SHUNT_G_PER_SECTION -> ((ShuntCompensatorLinearModel) obj).setGPerSection(value);
@@ -357,7 +376,11 @@ public final class PropertyDispatcher {
             case TWO_WINDINGS_TRANSFORMER   -> obj instanceof TwoWindingsTransformer;
             case THREE_WINDINGS_TRANSFORMER -> obj instanceof ThreeWindingsTransformer;
             case HVDC_LINE                  -> obj instanceof HvdcLine;
-            case DANGLING_LINE              -> obj instanceof BoundaryLine;
+            case BOUNDARY_LINE              -> obj instanceof BoundaryLine;
+            case BOUNDARY_LINE_GENERATION   -> obj instanceof BoundaryLine.Generation;
+            case BOUNDARY                   -> obj instanceof Boundary;
+            case BL_PAIRED                  -> ((BoundaryLine) obj).isPaired();
+            case GENERATION_VOLTAGE_REGULATION_ON -> ((BoundaryLine.Generation) obj).isVoltageRegulationOn();
             case SHUNT_COMPENSATOR          -> obj instanceof ShuntCompensator;
             case SHUNT_COMPENSATOR_MODEL    -> obj instanceof ShuntCompensatorModel;
             case SHUNT_COMPENSATOR_LINEAR_MODEL -> obj instanceof ShuntCompensatorLinearModel;
@@ -460,6 +483,7 @@ public final class PropertyDispatcher {
             case SW_RETAINED -> ((Switch) obj).setRetained(bval);
             case REGULATING -> ((PhaseTapChanger) obj).setRegulating(bval);
             case TC_LOAD_TAP_CHANGING_CAPABILITIES -> tapChanger(obj).setLoadTapChangingCapabilities(bval);
+            case GENERATION_VOLTAGE_REGULATION_ON -> ((BoundaryLine.Generation) obj).setVoltageRegulationOn(bval);
             case EXT_APC_PARTICIPATE     -> activePowerControl(obj).setParticipate(bval);
             case EXT_HADAPC_ENABLED  -> ((HvdcAngleDroopActivePowerControl) obj).setEnabled(bval);
             case EXT_TWO_WT_TBE_RTC  -> ((TwoWindingsTransformerToBeEstimated) obj).shouldEstimateRatioTapChanger(bval);
@@ -511,6 +535,7 @@ public final class PropertyDispatcher {
             case NETWORK_SOURCE_FORMAT -> ((Network) obj).getSourceFormat();
             case OLG_ID -> ((OperationalLimitsGroup) obj).getId();
             case LL_PERMANENT_LIMIT_NAME -> ((LoadingLimits) obj).getPermanentLimitName();
+            case BL_PAIRING_KEY -> ((BoundaryLine) obj).getPairingKey();
             case SELECTED_OLG_ID -> LimitsDispatch.holder(obj).getSelectedOperationalLimitsGroupId().orElse(null);
             case COUNTRY -> ((Substation) obj).getCountry().map(Country::name).orElse("");
             case MEAS_ID            -> ((Measurement) obj).getId();
@@ -538,6 +563,7 @@ public final class PropertyDispatcher {
         }
         switch (property) {
             case NAME    -> ((Identifiable<?>) obj).setName(value);
+            case BL_PAIRING_KEY -> ((BoundaryLine) obj).setPairingKey(value);
             case COUNTRY -> ((Substation) obj).setCountry(Country.valueOf(value));
             case SUBSTATION_TSO -> ((Substation) obj).setTso(value);
             case NETWORK_CASE_DATE -> ((Network) obj).setCaseDate(java.time.ZonedDateTime.parse(value));
@@ -588,6 +614,7 @@ public final class PropertyDispatcher {
             case MEAS_ID        -> ((Measurement) obj).getId();
             case DMEAS_ID       -> ((DiscreteMeasurement) obj).getId();
             case SELECTED_OLG_ID -> LimitsDispatch.holder(obj).getSelectedOperationalLimitsGroupId().orElse(null);
+            case BL_PAIRING_KEY -> ((BoundaryLine) obj).getPairingKey();
             default -> getString(obj, property);
         };
     }
@@ -773,7 +800,7 @@ public final class PropertyDispatcher {
                 if (obj instanceof VoltageLevel vl) yield StreamSupport.stream(vl.getConnectables(StaticVarCompensator.class).spliterator(), false);
                 yield ((Network) obj).getStaticVarCompensatorStream();
             }
-            case DANGLING_LINE -> {
+            case BOUNDARY_LINE -> {
                 if (obj instanceof VoltageLevel vl) yield StreamSupport.stream(vl.getConnectables(BoundaryLine.class).spliterator(), false);
                 yield ((Network) obj).getBoundaryLineStream();
             }
@@ -874,10 +901,14 @@ public final class PropertyDispatcher {
                 Terminal t = (Terminal) obj;
                 yield t.getBusView().getConnectableBus();
             }
-            case REL_VOLTAGE_LEVEL -> {
-                if (obj instanceof Bus b) yield b.getVoltageLevel();
-                yield ((Terminal) obj).getVoltageLevel();
-            }
+            case REL_VOLTAGE_LEVEL -> switch (obj) {
+                case Bus b -> b.getVoltageLevel();
+                case Boundary boundary -> boundary.getNetworkSideVoltageLevel();
+                default -> ((Terminal) obj).getVoltageLevel();
+            };
+            case BOUNDARY_LINE_GENERATION -> ((BoundaryLine) obj).getGeneration();
+            case BOUNDARY -> ((BoundaryLine) obj).getBoundary();
+            case BOUNDARY_LINE -> ((Boundary) obj).getBoundaryLine();
             case REL_HVDC_LINE -> ((HvdcConverterStation<?>) obj).getHvdcLine();
             case REL_CONVERTER_STATION1 -> ((HvdcLine) obj).getConverterStation1();
             case REL_CONVERTER_STATION2 -> ((HvdcLine) obj).getConverterStation2();
@@ -976,12 +1007,22 @@ public final class PropertyDispatcher {
         return switch (code) {
             case ACT_CONNECT -> connect(obj) ? obj : null;
             case ACT_DISCONNECT -> disconnect(obj) ? obj : null;
+            case ACT_SET_TARGET_P_TO_P -> {
+                switch (obj) {
+                    case Generator generator -> generator.setTargetPToP();
+                    case Battery battery -> battery.setTargetPToP();
+                    default -> ((BoundaryLine) obj).setGenerationTargetPToP();
+                }
+                yield null;
+            }
             case ACT_SET_TARGET_Q_TO_Q -> {
-                ((VoltageRegulationHolder<?>) obj).setTargetQToQ();
+                if (obj instanceof BoundaryLine line) line.setGenerationTargetQToQ();
+                else ((VoltageRegulationHolder<?>) obj).setTargetQToQ();
                 yield null;
             }
             case ACT_SET_TARGET_V_TO_V -> {
-                ((VoltageRegulationHolder<?>) obj).setTargetVToV();
+                if (obj instanceof BoundaryLine line) line.setGenerationTargetVToV();
+                else ((VoltageRegulationHolder<?>) obj).setTargetVToV();
                 yield null;
             }
             case ACT_UNSET_TAP_POSITION -> {
@@ -1159,7 +1200,7 @@ public final class PropertyDispatcher {
             case TWO_WINDINGS_TRANSFORMER   -> network.getTwoWindingsTransformer(id);
             case THREE_WINDINGS_TRANSFORMER -> network.getThreeWindingsTransformer(id);
             case HVDC_LINE                  -> network.getHvdcLine(id);
-            case DANGLING_LINE              -> network.getBoundaryLine(id);
+            case BOUNDARY_LINE              -> network.getBoundaryLine(id);
             case SHUNT_COMPENSATOR          -> network.getShuntCompensator(id);
             case STATIC_VAR_COMPENSATOR     -> network.getStaticVarCompensator(id);
             case VSC_CONVERTER_STATION      -> network.getVscConverterStation(id);

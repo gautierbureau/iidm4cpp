@@ -50,7 +50,7 @@
 #include <iidm/TwoWindingsTransformer.h>
 #include <iidm/ThreeWindingsTransformer.h>
 #include <iidm/HvdcLine.h>
-#include <iidm/DanglingLine.h>
+#include <iidm/BoundaryLine.h>
 #include <iidm/ShuntCompensator.h>
 #include <iidm/ShuntCompensatorModel.h>
 #include <iidm/ShuntCompensatorLinearModel.h>

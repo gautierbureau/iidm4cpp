@@ -175,14 +175,14 @@ TEST(NetworkTest, GetHvdcLines) {
     EXPECT_EQ(hvdcs[0].getId(), "HVDC1");
 }
 
-TEST(NetworkTest, GetDanglingLines) {
+TEST(NetworkTest, GetBoundaryLines) {
     auto b = std::make_unique<MockBackend>();
     b->strings[{1, prop::ID}] = "N";
-    b->children[{1, prop::DANGLING_LINE}] = {70};
+    b->children[{1, prop::BOUNDARY_LINE}] = {70};
     b->strings[{70, prop::ID}] = "DL1";
-    b->doubles[{70, prop::DL_P0}] = 50.0;
+    b->doubles[{70, prop::BL_P0}] = 50.0;
     auto net = NetworkFactory::createFromBackend(std::move(b));
-    auto dls = net.getDanglingLines();
+    auto dls = net.getBoundaryLines();
     ASSERT_EQ(dls.size(), 1u);
     EXPECT_EQ(dls[0].getId(), "DL1");
 }
@@ -292,14 +292,14 @@ TEST(NetworkTest, GetHvdcLineById) {
     EXPECT_FALSE(net.getHvdcLine("MISSING").has_value());
 }
 
-TEST(NetworkTest, GetDanglingLineById) {
+TEST(NetworkTest, GetBoundaryLineById) {
     auto b = std::make_unique<MockBackend>();
     b->strings[{1, prop::ID}] = "N";
     b->strings[{70, prop::ID}] = "DL1";
-    b->byId[{prop::DANGLING_LINE, "DL1"}] = 70;
+    b->byId[{prop::BOUNDARY_LINE, "DL1"}] = 70;
     auto net = NetworkFactory::createFromBackend(std::move(b));
-    ASSERT_TRUE(net.getDanglingLine("DL1").has_value());
-    EXPECT_FALSE(net.getDanglingLine("MISSING").has_value());
+    ASSERT_TRUE(net.getBoundaryLine("DL1").has_value());
+    EXPECT_FALSE(net.getBoundaryLine("MISSING").has_value());
 }
 
 TEST(NetworkTest, GetShuntCompensatorById) {

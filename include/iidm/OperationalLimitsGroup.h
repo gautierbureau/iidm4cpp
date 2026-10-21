@@ -14,7 +14,7 @@ namespace iidm {
 
 class BackendProvider;
 
-// A set of limits of a flows limits holder (branch side, 3WT leg, dangling line), at most one of
+// A set of limits of a flows limits holder (branch side, 3WT leg, boundary line), at most one of
 // each type: the limits in force are those of the holder's selected group(s).
 class OperationalLimitsGroup : public detail::ObjectRef, public detail::PropertiesHolder<OperationalLimitsGroup> {
 public:

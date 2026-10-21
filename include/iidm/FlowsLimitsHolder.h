@@ -14,7 +14,7 @@ namespace iidm {
 namespace detail {
 
 // The limits of what has one set of them (powsybl FlowsLimitsHolder): three windings transformer
-// legs, dangling lines, and each side of a branch (see BranchMethods). The limits are in groups,
+// legs, boundary lines, and each side of a branch (see BranchMethods). The limits are in groups,
 // of which one or more are selected: their limits are those in force.
 template <class Self>
 class FlowsLimitsHolderMethods {

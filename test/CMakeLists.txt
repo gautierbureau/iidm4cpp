@@ -11,6 +11,7 @@ set(TEST_SOURCES
     TestLimitsNetwork.cpp
     TestShuntsNetwork.cpp
     TestLinesNetwork.cpp
+    TestBoundaryLinesNetwork.cpp
     TestTopologyViews.cpp
     TestGenerator.cpp
     TestActivePowerControl.cpp
@@ -40,7 +41,7 @@ set(TEST_SOURCES
     TestLccConverterStation.cpp
     TestVscConverterStation.cpp
     TestHvdcLine.cpp
-    TestDanglingLine.cpp
+    TestBoundaryLine.cpp
     TestSubstation.cpp
     TestLoadingLimits.cpp
     TestEnums.cpp

@@ -7,7 +7,7 @@
 #include <iidm/Battery.h>
 #include <iidm/ShuntCompensator.h>
 #include <iidm/StaticVarCompensator.h>
-#include <iidm/DanglingLine.h>
+#include <iidm/BoundaryLine.h>
 #include <iidm/LccConverterStation.h>
 #include <iidm/VscConverterStation.h>
 #include <iidm/PropertyCodes.h>
@@ -352,11 +352,11 @@ TEST_F(TopologyViewTest, VlGetStaticVarCompensators) {
     EXPECT_EQ(svcs[0].getId(), "SVC1");
 }
 
-TEST_F(TopologyViewTest, VlGetDanglingLines) {
-    backend.children[{VL_HANDLE, prop::DANGLING_LINE}] = {DL1};
+TEST_F(TopologyViewTest, VlGetBoundaryLines) {
+    backend.children[{VL_HANDLE, prop::BOUNDARY_LINE}] = {DL1};
     backend.strings[{DL1, prop::ID}] = "DL1";
     VoltageLevel vl(VL_HANDLE, &backend);
-    auto dls = vl.getDanglingLines();
+    auto dls = vl.getBoundaryLines();
     ASSERT_EQ(dls.size(), 1u);
     EXPECT_EQ(dls[0].getId(), "DL1");
 }

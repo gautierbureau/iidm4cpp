@@ -77,7 +77,7 @@ void checkReading(BackendProvider& b) {
     EXPECT_DOUBLE_EQ(t3.getLeg1().getLimits(LimitType::CURRENT)->getPermanentLimit(), 400.0);
     EXPECT_EQ(t3.getLeg1().getAllSelectedLimits(LimitType::CURRENT).size(), 1u);
     EXPECT_DOUBLE_EQ(t3.getLeg1().getCurrentLimitsFromId("SUMMER")->getPermanentLimit(), 350.0);
-    DanglingLine dl(b.findById(prop::DANGLING_LINE, "DL"), &b);
+    BoundaryLine dl(b.findById(prop::BOUNDARY_LINE, "DL"), &b);
     EXPECT_EQ(dl.getAllSelectedOperationalLimitsGroupIds(), (Strings{"DEFAULT"}));
 }
 
@@ -128,7 +128,7 @@ void checkWriting(BackendProvider& b) {
     t2.getActivePowerLimits1()->remove();
     EXPECT_FALSE(t2.getActivePowerLimits1());
 
-    DanglingLine dl(b.findById(prop::DANGLING_LINE, "DL"), &b);
+    BoundaryLine dl(b.findById(prop::BOUNDARY_LINE, "DL"), &b);
     dl.newOperationalLimitsGroup("EXTRA").newActivePowerLimits().setPermanentLimit(10.0).add();
     dl.setSelectedOperationalLimitsGroup("EXTRA");
     EXPECT_DOUBLE_EQ(dl.getActivePowerLimits()->getPermanentLimit(), 10.0);
