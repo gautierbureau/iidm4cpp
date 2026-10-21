@@ -1,1892 +1,247 @@
-# iidm-bridge-cpp
+# iidm-bridge
 
-> A C++ bridge library providing object-oriented getter/setter access to
-> PowSyBl IIDM network components, delegating all heavy lifting to the Java
-> implementation via either a **GraalVM native image** (standalone mode) or
-> **direct JNI** (embedded mode), while exposing a single, unified API to its
-> consumers (e.g. Dynawo).
+[![CI](https://github.com/gautierbureau/iidm4cpp/actions/workflows/ci.yml/badge.svg)](https://github.com/gautierbureau/iidm4cpp/actions/workflows/ci.yml)
 
----
+The [PowSyBl](https://www.powsybl.org) IIDM network model for C++, served by powsybl-core itself.
 
-## Table of Contents
+iidm-bridge replaces [powsybl-iidm4cpp](https://github.com/powsybl/powsybl-iidm4cpp), the C++
+reimplementation of the IIDM network model. It reimplements nothing: every call goes to the Java
+network model of [powsybl-core](https://github.com/powsybl/powsybl-core) 7.4, through one of two
+backends that share one Java dispatch table (`PropertyDispatcher`):
 
-1. [Motivation & Context](#1-motivation--context)
-2. [Design Goals and Non-Goals](#2-design-goals-and-non-goals)
-3. [High-Level Architecture](#3-high-level-architecture)
-4. [C++ Public API Design](#4-c-public-api-design)
-   - 4.1 [Network Components](#41-network-components)
-   - 4.2 [Handle Model](#42-handle-model)
-   - 4.3 [Network & NetworkFactory](#43-network--networkfactory)
-   - 4.4 [Value Types and Enumerations](#44-value-types-and-enumerations)
-5. [Backend Abstraction Layer](#5-backend-abstraction-layer)
-   - 5.1 [BackendProvider Interface](#51-backendprovider-interface)
-   - 5.2 [GraalVM Native Image Backend](#52-graalvm-native-image-backend)
-   - 5.3 [JNI Embedded Backend](#53-jni-embedded-backend)
-   - 5.4 [Extensions](#54-extensions)
-   - 5.5 [Backend Selection Strategy](#55-backend-selection-strategy)
-6. [Java-Side Design](#6-java-side-design)
-   - 6.1 [GraalVM Entry Points](#61-graalvm-entry-points)
-   - 6.2 [JNI Registry for Embedded Mode](#62-jni-registry-for-embedded-mode)
-7. [Lifecycle and Memory Management](#7-lifecycle-and-memory-management)
-8. [Thread Safety](#8-thread-safety)
-9. [Error Handling](#9-error-handling)
-10. [Directory Layout](#10-directory-layout)
-11. [Build System (CMake)](#11-build-system-cmake)
-12. [Integration with Dynawo](#12-integration-with-dynawo)
-13. [Testing Strategy](#13-testing-strategy)
-14. [Comparison with libiidm4cpp and pypowsybl](#14-comparison-with-libiidm4cpp-and-pypowsybl)
-15. [Roadmap](#15-roadmap)
+- **Standalone mode (GraalVM):** the Java side compiled into a native library,
+  `libpowsybl-iidm-native`, that the C++ library loads with `dlopen`. No JVM is started.
+- **Embedded mode (JNI):** the C++ code runs next to a JVM that already exists (Dynawo launched
+  from Java, for example) and works on the network objects of that JVM, without a copy.
 
----
+Both modes have the same C++ API. It follows powsybl's interfaces (`Network`, `Generator`, `Load`,
+`Line`...) in `namespace iidm`, with the headers in [`include/iidm`](include/iidm), and covers the
+whole IIDM network model and every extension of powsybl-core 7.4 (the DC detailed model apart):
+reading and changing values, creating objects through adders, removing them, variants, and use
+from any thread. Validation stays powsybl's.
 
-## 1. Motivation & Context
+## Requirements
 
-### The problem with libiidm4cpp
+- A C++17 compiler, or a C++11/14 one with the [Boost](https://www.boost.org) headers
+  (`iidm::optional` is then `boost::optional`). CI builds with GCC, Clang and MSVC.
+- [CMake](https://cmake.org) 3.14.5 or later.
+- A JDK 21 and [Maven](https://maven.apache.org), for the Java side (built into a fat jar with
+  powsybl-core) and the JNI backend.
+- [GraalVM](https://www.graalvm.org) for JDK 21 with `native-image`, for the native image of the
+  standalone mode: Linux and macOS (Windows builds the JNI backend only).
 
-[`powsybl-iidm4cpp`](https://github.com/powsybl/powsybl-iidm4cpp) is a
-full reimplementation of the PowSyBl IIDM data model in C++. Maintaining
-feature parity with the reference Java implementation
-([`powsybl-core/iidm`](https://github.com/powsybl/powsybl-core/tree/main/iidm))
-is a continuous, expensive effort:
+## Build
 
-- Every new IIDM feature or extension must be ported twice.
-- Bugs fixed in Java silently persist in C++.
-- Serialization formats (XIIDM, CGMES) must also be duplicated.
-- Dynawo consumes only a **small subset** of the full model: it reads
-  topology, calls a handful of getters to inspect initial conditions, and
-  calls setters during simulation to update operating points. There is no
-  need to reproduce the full object graph.
+With the default options, CMake builds everything: both backends, the jar (with Maven) and the
+native image (with `native-image`). Both tools must be on the `PATH`:
 
-### The opportunity
-
-GraalVM Native Image can compile a Java library into a **standalone shared
-library** (`.so` / `.dylib` / `.dll`) that exposes a plain C API callable
-from any native language. This is exactly the mechanism used by
-[pypowsybl](https://github.com/powsybl/pypowsybl) to give Python access to
-PowSyBl without reimplementing anything.
-
-At the same time, when Dynawo is invoked from a Java orchestration layer
-(e.g. a dynamic simulation runner), the network is **already loaded in the
-JVM**. In that case it is wasteful to serialize it to disk, deserialize it
-again through the native image, and maintain a second copy in memory. JNI
-lets the C++ code attach to the running JVM and read the objects that are
-already there.
-
-### The solution
-
-`iidm-bridge-cpp` provides:
-
-- A **uniform C++ API** (`Network`, `Generator`, `Load`, `Line`, …) whose
-  objects are light handles to Java-side state.
-- A **GraalVM backend** for the standalone case (Dynawo called from a shell
-  script, no JVM in sight).
-- A **JNI backend** for the embedded case (Dynawo called from a Java
-  program that already owns the network object).
-- A **strategy layer** that selects the right backend transparently at
-  runtime, so that Dynawo code never needs to know which mode it is running
-  in.
-
----
-
-## 2. Design Goals and Non-Goals
-
-### Goals
-
-| Goal | Rationale |
-|---|---|
-| Expose the current IIDM API from C++: reading, changing, creating and removing objects | The C++ code uses IIDM as Java code would; deprecated powsybl APIs are not ported |
-| Single C++ API surface for both modes | Dynawo code has zero `#ifdef STANDALONE` branches |
-| Delegate all business logic to Java | Correctness, extensions, and future IIDM revisions are free |
-| Zero-copy in embedded mode | The JVM already owns the data; the C++ layer only borrows references |
-| Lightweight compile footprint | The library itself has no heavy dependencies beyond the JNI headers and (optionally) the GraalVM SDK headers |
-| CMake-compatible | Drop-in replacement for the `iidm4cpp` CMake target in Dynawo |
-
-### Non-Goals
-
-- **A full IIDM reimplementation**. That is explicitly what we are moving
-  away from: validation, defaults and id checks stay in powsybl, including
-  when objects are created from C++ (the C++ adders forward to powsybl's
-  adders).
-- **Python or other language bindings**. This library targets C++ consumers
-  only. pypowsybl covers Python.
-- **Replacing the Java serialization layer**. File I/O remains Java's
-  responsibility.
-
----
-
-## 3. High-Level Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        Dynawo (C++ simulation core)                     │
-│                                                                         │
-│  iidm::Network  iidm::Generator  iidm::Load  iidm::Line  …             │
-│         │               │               │          │                    │
-└─────────┼───────────────┼───────────────┼──────────┼────────────────────┘
-          │               │     C++ public API        │
-          ▼               ▼               ▼           ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                     iidm-bridge-cpp  (this library)                     │
-│                                                                         │
-│  ┌──────────────────────────────────────────────────────────────────┐   │
-│  │                   BackendProvider  (interface)                   │   │
-│  │  getDouble(handle, property)   setDouble(handle, property, val)  │   │
-│  │  getString(handle, property)   getChildren(handle, type)  …      │   │
-│  └──────────────────────────────────────────────────────────────────┘   │
-│           │                                        │                    │
-│    ┌──────┴──────┐                        ┌────────┴──────┐             │
-│    │  GraalVM    │                        │  JNI          │             │
-│    │  Backend    │                        │  Backend      │             │
-│    └──────┬──────┘                        └────────┬──────┘             │
-└───────────┼────────────────────────────────────────┼────────────────────┘
-            │  C ABI (GraalVM native image exports)  │  JNI calls
-            ▼                                        ▼
-┌─────────────────────────┐           ┌──────────────────────────────────┐
-│  libpowsybl-iidm.so     │           │  JVM (already running)           │
-│  (native-image output)  │           │                                  │
-│                         │           │  com.powsybl.iidm.network.*      │
-│  Full powsybl-core IIDM │           │  Network, Generator, Load, …     │
-│  compiled to native     │           │  (loaded by the Java program)    │
-└─────────────────────────┘           └──────────────────────────────────┘
+```bash
+export JAVA_HOME=/path/to/graalvm-jdk-21
+export PATH=$JAVA_HOME/bin:$PATH
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel 4
 ```
 
-### Runtime mode selection
+This gives the library `build/libiidmbridge.so`, the native image
+`build/graalvm-native/libpowsybl-iidm-native.so`, the jar
+`java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar` and the examples in `build/examples`
+(Linux names throughout: on macOS, read `.dylib` and `DYLD_LIBRARY_PATH`).
 
-```
-                      ┌─────────────────────────────┐
-                      │  NetworkFactory::load(path)  │
-                      └──────────────┬──────────────┘
-                                     │
-              ┌──────────────────────▼──────────────────────┐
-              │   Is a JVM reachable via JNI_GetCreatedJavaVMs?  │
-              └──────────────┬───────────────┬──────────────┘
-                         YES │               │ NO
-                             ▼               ▼
-                    ┌────────────┐   ┌────────────────┐
-                    │ JNIBackend │   │ GraalVMBackend │
-                    └────────────┘   └────────────────┘
+The JNI backend alone needs any JDK 21 and Maven (the jar is still built: the JVM needs it):
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release \
+      -DIIDM_BRIDGE_ENABLE_GRAALVM=OFF -DIIDM_BRIDGE_BUILD_NATIVE=OFF
+cmake --build build --parallel 4
 ```
 
-The selection can also be forced explicitly via an environment variable
-`IIDM_BRIDGE_MODE=graalvm|jni` or via a compile-time default.
+Add `-DIIDM_BRIDGE_BUILD_TESTS=ON` to either for the [tests](#tests). The main options:
 
----
-
-## 4. C++ Public API Design
-
-All public headers live under `include/iidm/`. The library is compiled as
-a shared library (`libiidmbridge.so`).
-
-### 4.1 Network Components
-
-The public classes mirror the powsybl IIDM interfaces. Each object is a **thin value**: the handle
-of a Java object and the backend that holds it, nothing else (§4.2). Objects are obtained from a
-`Network` or from other objects; they are cheap to copy, and valid while the `Network` lives.
-
-```
-Identifiable              getId(), getNameOrId(), getOptionalName(), setName(), isFictitious(),
-│                         getType(), properties, aliases, is<T>() / as<T>()
-├── Network               the root (owns the backend session, §4.3)
-├── Substation, VoltageLevel, Bus, Switch, HvdcLine
-├── TieLine               + the Branch methods (two boundary lines paired)
-├── Area
-├── OverloadManagementSystem
-└── Connectable           getTerminals(), connect() / disconnect(), isEquivalent(),
-    │                     unsetSolvedValues(), remove()
-    ├── Injection         getTerminal()
-    │   ├── Generator, Load, Battery, ShuntCompensator, StaticVarCompensator,
-    │   │   BoundaryLine, BusbarSection, Ground
-    │   └── HvdcConverterStation    getHvdcType(), getLossFactor(), getHvdcLine(),
-    │       │                       getOtherConverterStation()
-    │       └── VscConverterStation, LccConverterStation
-    ├── Line, TwoWindingsTransformer   + the Branch methods: getTerminal1/2(),
-    │                                    getTerminal(side or voltage level id), limits and
-    │                                    operational limits groups of each side
-    └── ThreeWindingsTransformer   getLegs(), getLeg(side), getTerminal(side or voltage level id)
-Branch                    any Line, TwoWindingsTransformer or TieLine: each converts to a Branch
-
-Objects that are not identifiables: ThreeWindingsTransformer::Leg, RatioTapChanger,
-PhaseTapChanger and their steps, ReactiveLimits and their points or planes, Terminal,
-VoltageRegulation, OperationalLimitsGroup, LoadingLimits and their temporary limits, shunt
-compensator models and their sections, the extensions...
-```
-
-- **Base classes, as in powsybl.** A `Generator` is an `Injection`, a `Connectable` and an
-  `Identifiable`: it converts to any of them without losing anything, and generic code takes a
-  `const Connectable&`. `Branch` is the exception: in powsybl a branch is not always a
-  connectable (a tie line), so its methods come from a mixin (`detail::BranchMethods`) and
-  `Branch` is a separate class that `Line` and `TwoWindingsTransformer` convert to.
-- **Polymorphic results.** `Network::getIdentifiable(id)`, `getConnectable(id)`, `getBranch(id)`,
-  `getIdentifiables()`, `getConnectables()`, `getBranches()`, `getHvdcConverterStations()`,
-  `VoltageLevel::getConnectables()`, `Terminal::getConnectable()`, `HvdcLine::getConverterStation1()`
-  return the base class. `getType()` gives the powsybl `IdentifiableType`; `is<T>()` tells whether
-  the object is a `T` (Java `instanceof`), and `as<T>()` returns it as one
-  (`PropertyNotFoundException` when it is not).
-- **Equality is identity.** `a == b` when both stand for the same Java object, whatever the
-  handles (each lookup returns a new handle).
-- **Extensions on their powsybl host type.** ActivePowerControl and InjectionObservability are on
-  `Injection`, Measurements on `Connectable`, DiscreteMeasurements on `Identifiable`,
-  BranchObservability on the branches.
-- **Sub-objects are objects.** A leg of a three windings transformer, a tap changer and its steps,
-  reactive limits and their points, limits groups, limits and their temporary limits, a shunt
-  compensator's model are objects of their own, as in powsybl:
-  `twt.getLeg2().getRatioTapChanger()->getStep(-1)`, `gen.getReactiveLimits().getMaxQ(p)`,
-  `line.getCurrentLimits1()->getTemporaryLimit(60)`,
-  `shunt.getModel<ShuntCompensatorLinearModel>().getBPerSection()`.
-  `is<T>()` / `as<T>()` work on any of them (`limits.as<ReactiveCapabilityCurve>()`).
-- **Only current powsybl APIs** (powsybl 7.4): `getNameOrId()` / `getOptionalName()` rather than a
-  `getName()`, `connect()` returning powsybl's result, the `VoltageRegulation` object of
-  generators and of ratio tap changers.
-
-```cpp
-for (const Connectable& c : network.getVoltageLevel("VL1")->getConnectables()) {
-    if (c.is<Generator>()) {
-        Generator g = c.as<Generator>();
-        g.setTargetP(g.getTargetP() + 10);
-    }
-}
-Connectable owner = terminal.getConnectable();
-
-g.setProperty("owner", "EDF");
-iidm::optional<std::string> owner = g.getProperty("owner"); // empty when absent
-g.addAlias("G1-code", "code");                               // type "" for none
-iidm::optional<Identifiable> same = network.getIdentifiable("G1-code");
-```
-
-The main types:
-
-```
-Generator
-├── getTargetP() / getMinP() / getMaxP() / getRatedS() → double   (+ setters)
-├── getEnergySource() → EnergySource                               (+ setter)
-├── isCondenser() → bool
-├── applySolvedValues() / setTargetPToP()
-└── + the voltage regulation holder and reactive limits holder methods (below)
-
-Battery     getTargetP() / getMinP() / getMaxP() (+ setters), applySolvedValues() / setTargetPToP(),
-            + the voltage regulation holder and reactive limits holder methods
-LccConverterStation   getPowerFactor() (+ setter), + the HvdcConverterStation methods
-
-Reactive limits holders: Generator, Battery, VscConverterStation, BoundaryLine::Generation
-├── getReactiveLimits() → ReactiveLimits
-└── getReactiveLimits<L>() → L, for L = MinMaxReactiveLimits, ReactiveCapabilityCurve or
-    ReactiveCapabilityShape (ValidationException when they are of another kind)
-
-ReactiveLimits                  getKind() → ReactiveLimitsKind, getMinQ(p) / getMaxQ(p),
-│                               is<L>() / as<L>(), properties
-├── MinMaxReactiveLimits        getMinQ() / getMaxQ()
-├── ReactiveCapabilityCurve     getPoints() (by increasing p: getP(), getMinQ(), getMaxQ()),
-│                               getPointCount(), getMinP() / getMaxP(),
-│                               getMinQ(p, extrapolateReactiveLimitSlope) / getMaxQ(…)
-└── ReactiveCapabilityShape     getMinQ(p, v) / getMaxQ(p, v), isInside(p, q, v), getPlanes()
-
-Voltage regulation holders: Generator, Battery, StaticVarCompensator, ShuntCompensator,
-VscConverterStation, RatioTapChanger (powsybl 7.4 VoltageRegulationHolder)
-├── getLocalTargetV() / getLocalTargetQ() → double                (+ setters)
-├── getVoltageRegulation() → optional<VoltageRegulation>
-├── newVoltageRegulation() / removeVoltageRegulation()
-├── isRegulating() / isRegulatingWithMode(mode) / isWithMode(mode) → bool
-├── getRegulatingTargetV() / getRegulatingTargetQ() → double
-├── getRegulatingTerminal() → Terminal / hasRegulatingTerminal() → bool
-└── setTargetQToQ() / setTargetVToV()
-
-VoltageRegulation (powsybl 7.4 core model)
-├── getMode() → optional<RegulationMode>       setMode(RegulationMode)
-├── isRegulating() → bool                      setRegulating(bool)
-├── getTargetValue() / getTargetDeadband() / getSlope() → double (+ setters)
-└── getTerminal() → optional<Terminal>         setTerminal(Terminal, targetValue)
-
-Tap changers: RatioTapChanger and PhaseTapChanger, of a TwoWindingsTransformer or of a
-ThreeWindingsTransformer::Leg (getRatioTapChanger() / getPhaseTapChanger() → optional)
-├── getLowTapPosition() (+ setter) / getHighTapPosition() / getStepCount() → int
-├── getTapPosition() → int (fails when unset)   findTapPosition() → optional<int>
-│   setTapPosition(int) / unsetTapPosition()
-├── getSolvedTapPosition() → optional<int>      setSolvedTapPosition(int) / unsetSolvedTapPosition()
-├── findSolvedTapPosition() → optional<int>     (the same as getSolvedTapPosition())
-├── getStep(tapPosition) → step                 getAllSteps() → std::map<int, step> (by tap position)
-├── stepsReplacer(): replaces every step at once, from the low tap position:
-│   tc.stepsReplacer().beginStep().setRho(…)…endStep().beginStep()…endStep().replaceSteps()
-├── getCurrentStep() / getSolvedCurrentStep() / getNeutralStep() → optional<step>
-├── isRegulating() / hasLoadTapChangingCapabilities() → bool (+ setter)
-├── applySolvedValues() / setTapPositionToSolvedTapPosition() / remove()
-├── RatioTapChanger: + the voltage regulation holder methods (it regulates through its
-│   VoltageRegulation)
-└── PhaseTapChanger: getRegulationMode() / getRegulationValue() / getTargetDeadband() /
-    getRegulationTerminal() (+ setters), setRegulating(bool)
-Steps: getRho() / getR() / getX() / getG() / getB() (+ setters), PhaseTapChangerStep::getAlpha()
-
-Line                       getR() / getX() / getG1() / getB1() / getG2() / getB2() (+ setters)
-TwoWindingsTransformer     getR() / getX() / getG() / getB() / getRatedU1() / getRatedU2() →
-│                          double, getRatedS() → optional (+ setters, NaN: no rated S),
-│                          getSubstation() → optional<Substation>
-└── applySolvedValues() / setRatioTapPositionToSolvedTapPosition() /
-    setPhaseTapPositionToSolvedTapPosition()
-ThreeWindingsTransformer   getLegs() / getLeg(side), getTerminal(side or voltage level id),
-│                          getSide(terminal), getRatedU0() (+ setter), getSubstation() → optional
-└── applySolvedValues() / setRatioTapPositionToSolvedTapPosition() /
-    setPhaseTapPositionToSolvedTapPosition()
-HvdcLine                   getR() / getNominalV() / getActivePowerSetpoint() / getMaxP() (+ setters),
-│                          getConvertersMode() (+ setter)
-├── getConverterStation1() / getConverterStation2() / getConverterStation(side)
-└── connectConverterStations() / disconnectConverterStations() → bool (true when this changed them)
-
-ThreeWindingsTransformer::Leg
-├── getTerminal() / getSide() / getTransformer()
-├── getR() / getX() / getG() / getB() / getRatedU() → double, getRatedS() → optional (+ setters)
-├── its tap changers, as a TwoWindingsTransformer
-├── its limits, as a flows limits holder (below)
-└── getLimits(type) / getAllSelectedLimits(type) → LoadingLimits of a LimitType
-
-Flows limits holders: ThreeWindingsTransformer::Leg, BoundaryLine, and each side of a Line or
-TwoWindingsTransformer (the same methods, suffixed 1 / 2 or taking the side)
-├── getOperationalLimitsGroups() / getOperationalLimitsGroup(id) → groups
-├── newOperationalLimitsGroup(id) / removeOperationalLimitsGroup(id)
-├── getSelectedOperationalLimitsGroup() / getSelectedOperationalLimitsGroupId() → optional
-├── setSelectedOperationalLimitsGroup(id) / cancelSelectedOperationalLimitsGroup() /
-│   getOrCreateSelectedOperationalLimitsGroup([id])
-├── several selected groups: getAllSelectedOperationalLimitsGroups(), …Ids(), …IdsOrdered(),
-│   addSelectedOperationalLimitsGroups(ids) / addSelectedOperationalLimitsGroupByPredicate(test) /
-│   deselectOperationalLimitsGroups(ids)
-└── the limits in force: getCurrentLimits() / getActivePowerLimits() / getApparentPowerLimits()
-    (of the selected group), getAllSelected…Limits(), get…LimitsFromId(id)
-
-OperationalLimitsGroup     getId(), isEmpty(), properties; get / new / remove the current,
-                           active power and apparent power limits; getLoadingLimits(type)
-LoadingLimits: CurrentLimits, ActivePowerLimits, ApparentPowerLimits
-├── getPermanentLimit() / getPermanentLimitName() (+ setters), getLimitType(), getDetectionKind()
-├── getTemporaryLimits() (by decreasing acceptable duration) / getTemporaryLimit(duration):
-│   TemporaryLimit getName() / getValue() / getAcceptableDuration() / isFictitious(), properties
-├── getTemporaryLimitValue(duration) / setTemporaryLimitValue(duration, value)
-└── remove(), properties
-
-Overloads of a Line, TwoWindingsTransformer or ThreeWindingsTransformer (a flow over the limits in
-force; with a limit reduction, over these limits multiplied by it)
-├── isOverloaded([limitReductionValue]) → bool, getOverloadDuration() → int (seconds)
-├── checkPermanentLimit(side, [limitReductionValue,] type) → bool, and per side:
-│   checkPermanentLimit1/2/3([limitReductionValue,] type)
-├── checkTemporaryLimits(side, [limitReductionValue,] type) → optional<Overload> (+ per side),
-│   checkAllTemporaryLimits(side, [limitReductionValue,] type) → Overloads of the selected groups
-└── Overload: getTemporaryLimit(), getPreviousLimit() / getPreviousLimitName(),
-    getOperationalLimitsGroupId(), getLimitScalingCoefficient()
-
-BoundaryLine (powsybl 7.4; DanglingLine before) (+ the flows limits holder methods)
-├── getP0() / getQ0() / getR() / getX() / getG() / getB() → double (+ setters)
-├── isPaired() → bool (in a tie line), getPairingKey() → optional<string> (+ setter)
-├── getGeneration() → optional<BoundaryLine::Generation>: getTargetP() / getMinP() / getMaxP() /
-│   getTargetQ() / getTargetV() → double, isVoltageRegulationOn() (+ setters), reactive limits
-├── getBoundary() → Boundary, the far end: getV() / getAngle() / getP() / getQ() / getI(),
-│   getBoundaryLine(), getNetworkSideVoltageLevel()
-├── getTieLine() → optional<TieLine>
-└── applySolvedValues() / setGenerationTargetPToP() / …TargetQToQ() / …TargetVToV()
-TieLine (+ the Branch methods)
-├── getPairingKey() → optional<string>, getR() / getX() / getG1() / getB1() / getG2() / getB2()
-├── getBoundaryLine1() / getBoundaryLine2() / getBoundaryLine(side) / getBoundaryLine(voltage
-│   level id) → optional
-├── connectBoundaryLines() / disconnectBoundaryLines() → bool
-└── remove([updateBoundaryLines]) (Network::newTieLine(): setBoundaryLine1/2(id))
-Ground                     an injection (VoltageLevel::newGround(), getGrounds())
-
-Area (Network::newArea(): setAreaType(), setInterchangeTarget(), addVoltageLevel(vl),
-│    addAreaBoundary(terminal or boundary, ac); powsybl's adder hands them to the area in no set
-│    order, the area's own methods in call order, which is the order XIIDM saves)
-├── getAreaType(), getVoltageLevels() (sorted by id), addVoltageLevel(vl) / removeVoltageLevel(vl)
-├── getAreaBoundaries(), getAreaBoundary(terminal or boundary) → optional, newAreaBoundary(),
-│   removeAreaBoundary(terminal or boundary)
-├── getInterchangeTarget() → optional (+ setter), getAcInterchange() / getDcInterchange() /
-│   getInterchange()
-└── remove()
-AreaBoundary               getArea(), getTerminal() / getBoundary() → optional, isAc(), getP() /
-                           getQ(), properties
-VoltageLevel: getAreas(), getArea(type) → optional, addArea(area) / removeArea(area);
-Network: getAreas() / getArea(id) / getAreaCount(), getAreaTypes() / getAreaTypeCount()
-OverloadManagementSystem   isEnabled() (+ setter), getSubstation(), getMonitoredElementId(),
-│                          getMonitoredSide(), remove() (Substation::newOverloadManagementSystem())
-├── getTrippings() (in order) / addTripping(tripping)
-└── Tripping: getType(), getKey(), getNameOrKey() / setName(), getCurrentLimit() / isOpenAction()
-    (+ setters), properties; as<SwitchTripping>() getSwitchToOperateId(), as<BranchTripping>()
-    getBranchToOperateId() / getSideToOperate(), as<ThreeWindingsTransformerTripping>() (+ setters)
-    (adder: newSwitchTripping() / newBranchTripping() / newThreeWindingsTransformerTripping()…add())
-VoltageAngleLimit          getId(), getLimitType(), getTerminalFrom() / getTerminalTo(),
-                           getLowLimit() / getHighLimit() → optional, properties, remove()
-                           (Network::newVoltageAngleLimit(): setId(), from(t), to(t), setLow/HighLimit())
-
-ShuntCompensator (+ the voltage regulation holder methods)
-├── getSectionCount() → int (fails when undefined)   findSectionCount() → optional<int>
-│   setSectionCount(int) / unsetSectionCount()       getMaximumSectionCount() → int
-├── getSolvedSectionCount() / findSolvedSectionCount() → optional<int>
-│   setSolvedSectionCount(int) / unsetSolvedSectionCount()
-├── getB() / getG() → double (at the section count), getB(n) / getG(n) (at n sections)
-├── getModelType() → ShuntCompensatorModelType, getModel() → ShuntCompensatorModel,
-│   getModel<M>() → M (ValidationException when the model is of the other type)
-└── applySolvedValues() / setSectionCountToSolvedSectionCount()
-ShuntCompensatorModel (properties)
-├── ShuntCompensatorLinearModel      getBPerSection() / getGPerSection() (+ setters),
-│                                    setMaximumSectionCount(int)
-└── ShuntCompensatorNonLinearModel   getAllSections(), from the first one: Section getB() / getG()
-                                     (+ setters), properties
-
-Identifiable (every object above)
-├── getId() / setId(id) (renames it), getNameOrId(), getOptionalName() / setName(name)
-└── getNetwork() / getParentNetwork() → Network (a view of it: it owns nothing)
-
-Substation        getCountry() / setCountry(), getTso() / setTso(), getGeographicalTags() /
-                  addGeographicalTag(tag), getVoltageLevels(), getTwoWindingsTransformers() /
-                  getThreeWindingsTransformers() (+ counts), getContainerType()
-VoltageLevel
-├── getSubstation() → optional, getNominalV() / getLow…/getHighVoltageLimit() (+ setters)
-├── getTopologyKind(), convertToTopology(kind), printTopology([out])
-├── getConnectables() / getConnectable(id), getGenerators(), getLoads(), getLines(),
-│   getTwoWindingsTransformers()… (+ counts), getBoundaryLines([BoundaryLineFilter])
-├── getNodeBreakerView()
-│   ├── getNodes(), getMaximumNodeIndex(), getTerminal(node) → optional, hasAttachedEquipment(node)
-│   ├── getFictitiousP0(node) / getFictitiousQ0(node) (+ setters)
-│   ├── getSwitches([node]), getSwitch(id), getNode1/2(switch id), getTerminal1/2(switch id),
-│   │   removeSwitch(id) (+ count)
-│   ├── getBusbarSections() / getBusbarSection(id) (+ count)
-│   └── getInternalConnections() (+ count), getNodesInternalConnectedTo(node),
-│       removeInternalConnections(node1, node2)
-├── getBusBreakerView()
-│   ├── getBuses() / getBus(id) (+ count), getBusesFromBusViewBusId(id), newBus(),
-│   │   removeBus(id) / removeAllBuses()
-│   └── getSwitches() / getSwitch(id) (+ count), getBus1/2(switch id), removeSwitch(id) /
-│       removeAllSwitches()
-└── getBusView(): getBuses(), getBus(id), getMergedBus(configured bus or busbar section id)
-Switch            isOpen() / isRetained() (+ setters), getKind(), getVoltageLevel()
-
-Load
-├── getP0() → double             setP0(double)
-├── getQ0() → double             setQ0(double)
-├── getLoadType() → LoadType     setLoadType(LoadType)
-├── getModel() → optional<LoadModel>: getType() → LoadModelType, properties; as<ZipLoadModel>()
-│   getC0p() … getC2q() (+ setters), as<ExponentialLoadModel>() getNp() / getNq() (+ setters)
-│   (LoadAdder: newZipModel() / newExponentialModel(), whose add() returns to the load adder)
-└── applySolvedValues() / setP0ToP() / setQ0ToQ()
-
-Terminal
-├── getConnectable() → Connectable, getVoltageLevel()
-├── getSide() → optional<ThreeSides>   (empty for an injection)
-├── getP() / getQ() → double (+ setters), getI() → double (A), unsetSolvedValues()
-├── isConnected() → bool, connect() / disconnect() → bool    (true when this changed it)
-├── getBusBreakerView(): getBus() / getConnectableBus() → optional<Bus>, setConnectableBus(id),
-│   moveConnectable(bus id, connected)
-├── getBusView(): getBus() / getConnectableBus() → optional<Bus>
-└── getNodeBreakerView(): getNode(), moveConnectable(node, voltage level id)
-    (a move gives the equipment a new terminal: get it again from the equipment)
-
-Bus (of a bus-breaker view or of a bus view)
-├── getV() / getAngle() → double (+ setters), unsetSolvedValues()
-├── getP() / getQ() → double (its equipment, load sign convention)
-├── getFictitiousP0() / getFictitiousQ0() → double (+ setters)
-├── getConnectedComponent() / getSynchronousComponent() → optional<Component> (empty when it
-│   is in none), isInMainConnectedComponent() / isInMainSynchronousComponent() → bool
-└── getConnectedTerminals() (+ count), getLines(), getGenerators(), getLoads()…,
-    getBoundaryLines([BoundaryLineFilter])
-Component (connected: AC and HVDC links; synchronous: AC only)
-└── getNum() (0: the main, biggest one), getSize(), getBuses() (of the bus view)
-    (Network::getBusView().getConnectedComponents() / getSynchronousComponents(), the main first)
-
-VariantManager (Network::getVariantManager()): variants are copies of the network's state
-├── getVariantIds() (sorted), getWorkingVariantId() / setWorkingVariant(id)
-├── cloneVariant(source id, target id or ids, mayOverwrite = false), removeVariant(id)
-│   (VariantManager::INITIAL_VARIANT_ID: the variant of a new network)
-└── allowVariantMultiThreadAccess(bool) / isVariantMultiThreadAccessAllowed(): a working variant
-    per thread (see §8)
-```
-
-### 4.2 Handle Model
-
-Every object holds the handle of its Java object:
-
-```cpp
-// include/iidm/ObjectHandle.h
-namespace iidm {
-
-// An opaque integer that identifies a Java object within a backend session. Each lookup of an
-// object returns a new handle: compare the objects (==), not the handles.
-using ObjectHandle = std::int64_t;
-constexpr ObjectHandle INVALID_HANDLE = 0;
-
-} // namespace iidm
-```
-
-The root of every class, `detail::ObjectRef`, holds it with the backend; the classes add methods
-only:
-
-```cpp
-namespace iidm {
-
-namespace detail {
-class ObjectRef {
-public:
-    bool isValid() const;                            // bound to an object
-    bool operator==(const ObjectRef& other) const;   // the same Java object
-protected:
-    HandleRef        handle_;   // releases the Java reference with the last wrapper (§7)
-    BackendProvider* backend_;  // non-owning, owned by Network
-};
-}
-
-class Generator : public Injection {
-public:
-    static constexpr int TYPE = prop::GENERATOR;     // for is<Generator>() / as<Generator>()
-
-    Generator() = default;
-    explicit Generator(ObjectHandle handle, BackendProvider* backend) : Injection(handle, backend) {}
-
-    double getTargetP() const;
-    Generator& setTargetP(double targetP);
-    // …
-};
-
-} // namespace iidm
-```
-
-Setters return the object for chaining (`gen.setTargetP(200).setMinP(0)`); setters of a base
-class return the base class (`setName`, `setFictitious`, `setProperty`).
-
-### 4.3 Network & NetworkFactory
-
-```cpp
-// include/iidm/Network.h
-namespace iidm {
-
-// An identifiable that owns its backend session. identifiable.getNetwork() returns a view of
-// it, which owns nothing (and may outlive nothing: the session is the owner's).
-class Network : public Identifiable, public detail::ContainerMethods<Network> {
-public:
-    ~Network();
-    Network(Network&&) noexcept;
-    Network& operator=(Network&&) noexcept;
-
-    // No copy: a Network owns its backend session
-    Network(const Network&) = delete;
-    Network& operator=(const Network&) = delete;
-
-    // Iteration helpers, and counts
-    std::vector<Identifiable>            getIdentifiables() const;
-    std::vector<Connectable>             getConnectables() const;
-    std::vector<Branch>                  getBranches() const;
-    std::vector<Substation>              getSubstations() const;
-    std::vector<Generator>               getGenerators() const;
-    int                                  getGeneratorCount() const;
-    // … and so on for each type, switches and busbar sections included
-    std::vector<Substation> getSubstations(country, tsoId, geographicalTags) const; // filtered
-
-    // Lookup by ID (or alias)
-    iidm::optional<Identifiable>           getIdentifiable(const std::string& id) const;
-    iidm::optional<Generator>              getGenerator(const std::string& id) const;
-    // … and so on for each type
-
-    // The buses and switches of all its voltage levels: getBusBreakerView().getBuses() /
-    // getSwitches() / getBus(id), getBusView().getBuses() / getBus(id) /
-    // getConnectedComponents() / getSynchronousComponents()
-    BusBreakerView getBusBreakerView() const;
-    BusView getBusView() const;
-
-    // Its variants (§4.1)
-    VariantManager getVariantManager() const;
-
-    // Subnetworks (views, like getNetwork()): getSubnetworks() / getSubnetwork(id),
-    // createSubnetwork(id, name, sourceFormat), detach() / isDetachable(), flatten();
-    // getBoundaryElements() / isBoundaryElement(identifiable). Lookups by id and saves apply to
-    // the network they are called on: a subnetwork finds and saves its own objects only.
-
-    // Validation: getValidationLevel(), setMinimumAcceptableValidationLevel(level),
-    // runValidationChecks(throwsException = true) → ValidationLevel
-    // getCountries() → std::set<Country>, getCountryCount(), getContainerType()
-
-    // Backend accessor (advanced usage only)
-    BackendProvider& getBackend();
-
-private:
-    friend class NetworkFactory;
-    explicit Network(std::unique_ptr<BackendProvider> backend);
-    std::unique_ptr<BackendProvider> owned_;
-};
-
-} // namespace iidm
-```
-
-```cpp
-// include/iidm/NetworkFactory.h
-namespace iidm {
-
-enum class BackendMode {
-    AUTO,    // probe for existing JVM first, fall back to GraalVM
-    GRAALVM, // always use GraalVM native image
-    JNI      // always use existing JVM (throws if no JVM found)
-};
-
-struct NetworkLoadOptions {
-    BackendMode mode = BackendMode::AUTO;
-    // Path to the GraalVM shared library. If empty, searched on LD_LIBRARY_PATH.
-    std::string graalvmLibPath;
-    // Java network ID to look up in embedded mode (optional; if empty, takes
-    // the first network registered in the JNI registry).
-    std::string jniNetworkId;
-};
-
-class NetworkFactory {
-public:
-    // Load a network from an XIIDM file (standalone or embedded).
-    static Network load(const std::string& filePath,
-                        const NetworkLoadOptions& options = {});
-
-    // Embedded mode only: wrap a network that is already in the JVM without
-    // loading from file. The Java side must have called
-    // IidmBridgeRegistry.register(network) before this point.
-    static Network wrap(const std::string& networkId,
-                        const NetworkLoadOptions& options = {});
-};
-
-} // namespace iidm
-```
-
-### 4.4 Value Types and Enumerations
-
-Enumerations are defined as `enum class` in `include/iidm/Enums.h` and
-mirror the Java equivalents:
-
-```cpp
-namespace iidm {
-
-enum class EnergySource { HYDRO, NUCLEAR, WIND, THERMAL, SOLAR, OTHER };
-enum class LoadType { UNDEFINED, AUXILIARY, FICTITIOUS };
-enum class TopologyKind { NODE_BREAKER, BUS_BREAKER };
-enum class Country { FR, DE, ES, IT, BE, NL, GB, /* … */ };
-enum class HvdcConverterStationMode { RECTIFIER, INVERTER };
-enum class RegulationMode { VOLTAGE, REACTIVE_POWER, VOLTAGE_PER_REACTIVE_POWER };
-enum class PhaseTapChangerRegulationMode { CURRENT_LIMITER, ACTIVE_POWER_CONTROL };
-enum class ReactiveLimitsKind { MIN_MAX, CURVE, SHAPE };
-enum class SwitchKind { BREAKER, DISCONNECTOR, LOAD_BREAK_SWITCH };
-
-} // namespace iidm
-```
-
-Optional doubles use `std::optional<double>` to represent undefined or NaN
-values rather than sentinel values, providing a cleaner API than the Java
-`Double.isNaN()` idiom.
-
----
-
-### 4.5 Creating and Removing Objects
-
-Objects are created with adders shaped like powsybl's, and removed with `remove()`:
-
-```cpp
-Network network = NetworkFactory::create("demo");          // or load an existing one
-Substation s = network.newSubstation().setId("S").setCountry(Country::FR).add();
-VoltageLevel vl = s.newVoltageLevel().setId("VL").setNominalV(400)
-                   .setTopologyKind(TopologyKind::BUS_BREAKER).add();
-vl.getBusBreakerView().newBus().setId("B").add();
-Generator g = vl.newGenerator().setId("G").setBus("B")
-                .setMinP(0).setMaxP(200).setTargetP(100).setLocalTargetV(400)
-                .newVoltageRegulation().withMode(RegulationMode::VOLTAGE).withRegulating(true).add()
-                .add();
-g.newExtension<ActivePowerControlAdder>().withDroop(4).withParticipate(true).add();
-Load load = vl.newLoad().setId("L").setBus("B").setP0(80).setQ0(10).add();
-
-load.remove();
-g.removeExtension<ActivePowerControl>();
-```
-
-- **Validation is powsybl's.** A missing or invalid field, a duplicate id or an unknown bus throws
-  `ValidationException` from `add()`, and nothing is created.
-- **Only current APIs.** The generator's voltage regulation follows powsybl 7.4: a nested
-  `newVoltageRegulation()` adder, local targets on the generator (`setLocalTargetV/Q`). Without a
-  terminal the regulation is local and its target value is NaN; `VoltageRegulation::setTerminal(terminal,
-  targetValue)` switches to remote regulation (both change together).
-- **Removal.** `remove()` removes the object from the network (a voltage level or substation with its
-  equipment). powsybl refuses some removals, e.g. a voltage level that branches still connect:
-  `ValidationException`. A removed object's wrapper keeps its handle: powsybl decides what using it
-  does (changes are rejected with `ValidationException`).
-- **Available:** every network object but those of the DC model, with their parts (load models,
-  shunt compensator models and sections, boundary line generations, transformer legs, tap changers
-  and their steps, reactive limits, operational limits groups and their limits, voltage regulations,
-  area boundaries, overload management system trippings), and every extension. A node-breaker
-  voltage level gets its busbar sections, switches and internal connections from its
-  `getNodeBreakerView()`, a bus-breaker one its buses and switches from its `getBusBreakerView()`.
-- **Copies,** as in powsybl: `network.newLine(line)` and `substation.newTwoWindingsTransformer(transformer)`
-  start from the values of another one (and give the new one its operational limits on `add()`);
-  `newRatioTapChanger(tapChanger)`, `newPhaseTapChanger(tapChanger)`, `newReactiveCapabilityCurve(curve)`
-  and an operational limits group's `newCurrentLimits(limits)`... copy the object given;
-  `LineAdder::fillLineAdder` and `TwoWindingsTransformerAdder::fillTwoWindingsTransformerAdder` set the
-  values of an object on an adder.
-
-Underneath, there is one backend primitive, `invoke(handle, code)` (§5.1): `invoke(parent, TYPE)`
-returns a Java adder, the adder's fields are set with the usual setters and the object's own
-property codes (`setDouble(adder, GEN_TARGET_P, 100)`), and `invoke(adder, ACT_ADD)` adds the
-object. The Java side (`Creation.java`) maps each field to the powsybl adder method.
-
-## 5. Backend Abstraction Layer
-
-### 5.1 BackendProvider Interface
-
-Every class of §4 goes through these primitives only, each taking the handle of an object and an
-`int` code:
-
-```cpp
-// include/iidm/BackendProvider.h
-namespace iidm {
-
-class BackendProvider {
-public:
-    virtual ~BackendProvider();
-
-    // ── Properties ───────────────────────────────────────────────────────
-    virtual double      getDouble(ObjectHandle h, int property) const = 0;
-    virtual int         getInt(ObjectHandle h, int property) const = 0;
-    virtual bool        getBool(ObjectHandle h, int property) const = 0;
-    virtual std::string getString(ObjectHandle h, int property) const = 0;
-    virtual void setDouble(ObjectHandle h, int property, double value) = 0;
-    virtual void setInt   (ObjectHandle h, int property, int value) = 0;
-    virtual void setBool  (ObjectHandle h, int property, bool value) = 0;
-    virtual void setString(ObjectHandle h, int property, const std::string& value) = 0;
-
-    // Properties that may have no value: empty optional (NaN for doubles)
-    virtual iidm::optional<double>      getOptDouble(ObjectHandle h, int property) const = 0;
-    virtual iidm::optional<int>         getOptInt(ObjectHandle h, int property) const;
-    virtual iidm::optional<std::string> getOptString(ObjectHandle h, int property) const;
-
-    // Lists, and values under a key (properties, aliases); an empty value removes the key
-    virtual std::vector<int>            getIntList(ObjectHandle h, int listCode) const = 0;
-    virtual std::vector<std::string>    getStringList(ObjectHandle h, int listCode) const;
-    virtual iidm::optional<std::string> getKeyedString(ObjectHandle h, int property, const std::string& key) const;
-    virtual void setKeyedString(ObjectHandle h, int property, const std::string& key,
-                                const iidm::optional<std::string>& value);
-
-    // A method that takes numeric arguments (getMinQ(p) of reactive limits); bools come as 1 / 0
-    virtual double evaluate(ObjectHandle h, int code, const std::vector<double>& args) const;
-
-    // ── Navigation ───────────────────────────────────────────────────────
-    virtual std::vector<ObjectHandle> getChildren(ObjectHandle h, int childType) const = 0;
-    virtual ObjectHandle getRelated(ObjectHandle h, int relation) const = 0;
-    virtual ObjectHandle getRelatedByIndex(ObjectHandle h, int relation, int index) const = 0;
-    virtual ObjectHandle getRelatedByString(ObjectHandle h, int relation, const std::string& key) const = 0;
-    virtual void setRelated(ObjectHandle h, int relation, ObjectHandle value);
-    virtual ObjectHandle findById(int objectType, const std::string& id) const = 0;
-    // Whether two handles stand for the same object
-    virtual bool isSameObject(ObjectHandle h, ObjectHandle other) const;
-
-    // ── Actions ──────────────────────────────────────────────────────────
-    // invoke(parent, TYPE) → adder; invoke(adder, ACT_ADD) → new object;
-    // invoke(object, ACT_REMOVE) removes it; ACT_CONNECT / ACT_DISCONNECT
-    virtual ObjectHandle invoke(ObjectHandle h, int code);
-
-    // ── Network and lifecycle ────────────────────────────────────────────
-    virtual ObjectHandle getNetworkHandle() const = 0;
-    virtual void loadNetwork(const std::string& filePath) = 0;
-    virtual void createNetwork(const std::string& id);
-    // Its network, one of its subnetworks or a network detached from it
-    virtual void saveNetwork(ObjectHandle network, const std::string& filePath) = 0;
-    virtual void close() = 0;
-    // … in-memory load and save, handle release
-};
-
-} // namespace iidm
-```
-
-Codes are defined **once**, in `include/iidm/PropertyCodes.def`. `PropertyCodes.h` expands it into
-`iidm::prop::NAME` constants, and the Java build generates `com.powsybl.iidmbridge.PropertyCodes`
-from the same file, so the C++ library, both backends and the Java side cannot disagree on a number:
-
-```cpp
-// include/iidm/PropertyCodes.def
-// Object types
-IIDM_CODE(SUBSTATION,                  1)
-IIDM_CODE(VOLTAGE_LEVEL,               2)
-IIDM_CODE(GENERATOR,                   3)
-// …
-IIDM_CODE(IDENTIFIABLE,                43)
-IIDM_CODE(CONNECTABLE,                 44)
-// Identifiable
-IIDM_CODE(ID,                          100)
-IIDM_CODE(NAME,                        101)
-// Generator
-IIDM_CODE(GEN_TARGET_P,                200)
-// … and so on
-```
-
-A code is named after the powsybl interface that declares the method (`CONVERTER_STATION_LOSS_FACTOR`
-for `HvdcConverterStation.getLossFactor`, whatever the station), and means the same in every
-primitive. A type code stands for its type: `getChildren(parent, TYPE)` lists the parent's objects
-of that type, `getRelatedByString(network, TYPE, id)` looks one up in a network (`findById(TYPE,
-id)` in the backend's own network), `getBool(object, TYPE)` tells whether the object is one,
-`invoke(parent, TYPE)` starts a new one. For a property that may have no value,
-`getString`/`getInt` give a value or fail (`getString(NAME)` is the name, or else the id) while
-`getOptString`/`getOptInt` give it as it is (`getOptString(NAME)` is empty without a name). A
-method with arguments keeps the code of its name: `getDouble(limits, RL_MIN_Q)` is
-`MinMaxReactiveLimits.getMinQ()`, `evaluate(limits, RL_MIN_Q, {p})` is `ReactiveLimits.getMinQ(p)`;
-the number of arguments chooses between overloads.
-
-### 5.2 GraalVM Native Image Backend
-
-#### Overview
-
-The GraalVM backend loads `libpowsybl-iidm-native.so` at runtime via
-`dlopen`, resolves function pointers, and calls into the native image. The
-native image is produced by compiling the Java side (see §6.1) with
-GraalVM's `native-image` tool.
-
-#### Loading the shared library
-
-```cpp
-// src/graalvm/GraalVMBackend.h
-namespace iidm {
-
-class GraalVMBackend : public BackendProvider {
-public:
-    explicit GraalVMBackend(const std::string& libraryPath = "");
-    ~GraalVMBackend() override;
-
-    // BackendProvider implementation …
-
-private:
-    void* libHandle_ = nullptr;    // dlopen handle
-
-    // GraalVM isolate (one per network)
-    graal_isolate_t*        isolate_ = nullptr;
-    // The calling thread's isolate thread, attached on its first call
-    graal_isolatethread_t*  thread() const;
-
-    // C function pointers resolved from the shared library
-    using FnLoadNetwork      = ObjectHandle(*)(graal_isolatethread_t*, const char*);
-    using FnGetDouble        = double(*)(graal_isolatethread_t*, ObjectHandle, int);
-    using FnSetDouble        = void(*)(graal_isolatethread_t*, ObjectHandle, int, double);
-    using FnGetString        = const char*(*)(graal_isolatethread_t*, ObjectHandle, int);
-    using FnGetChildren      = void(*)(graal_isolatethread_t*, ObjectHandle, int,
-                                       ObjectHandle*, int*);
-    // … other function pointer types
-
-    FnLoadNetwork  fnLoadNetwork_  = nullptr;
-    FnGetDouble    fnGetDouble_    = nullptr;
-    FnSetDouble    fnSetDouble_    = nullptr;
-    FnGetString    fnGetString_    = nullptr;
-    FnGetChildren  fnGetChildren_  = nullptr;
-    // …
-
-    void resolveSymbols();
-};
-
-} // namespace iidm
-```
-
-#### The GraalVM isolate
-
-A GraalVM native image process maintains **isolates** — heap-isolated
-execution contexts. Each thread that calls into an isolate must hold an
-`isolatethread_t` of it. The backend creates an isolate at construction time
-and tears it down when `close()` is called. A C++ thread is attached to it on
-its first call (`graal_attach_thread`) and makes all its calls with its own
-`isolatethread_t`, until it ends (see §8).
-
-```cpp
-// src/graalvm/GraalVMBackend.cpp (excerpt)
-
-void GraalVMBackend::init(const std::string& libPath) {
-    libHandle_ = dlopen(libPath.c_str(), RTLD_LAZY | RTLD_LOCAL);
-    if (!libHandle_) throw IidmException("Cannot load " + libPath + ": " + dlerror());
-
-    resolveSymbols();
-
-    // Create the GraalVM isolate
-    auto createIsolate = reinterpret_cast<int(*)(graal_create_isolate_params_t*,
-                                                  graal_isolate_t**,
-                                                  graal_isolatethread_t**)>(
-        dlsym(libHandle_, "graal_create_isolate"));
-    graal_isolatethread_t* thread = nullptr; // this thread, attached to the new isolate
-    if (createIsolate(nullptr, &isolate_, &thread) != 0)
-        throw IidmException("Failed to create GraalVM isolate");
-}
-
-double GraalVMBackend::getDouble(ObjectHandle h, int property) const {
-    return fnGetDouble_(thread(), h, property);
-}
-
-void GraalVMBackend::setDouble(ObjectHandle h, int property, double value) {
-    fnSetDouble_(thread(), h, property, value);
-}
-```
-
-#### Strings
-
-Strings cross the boundary as UTF-8 C strings, decoded and encoded in Java with
-`StandardCharsets.UTF_8` (a null pointer is "no value" for the optional and keyed getters).
-When the native image returns a string, it is allocated with `UnmanagedMemory`; the C++ backend
-copies it into a `std::string` immediately and releases it with `iidm_free`. A string list is one
-buffer of strings each followed by a 0 byte. **No raw pointers escape the backend layer.**
-
-The JNI backend converts the same way: UTF-8 to UTF-16 in C++ (Java's own decoder when the bytes
-are not well-formed UTF-8), and back as `String.getBytes(UTF_8)` does. JNI's `NewStringUTF` /
-`GetStringUTFChars` are not used: they take modified UTF-8, which differs outside the BMP.
-
-### 5.3 JNI Embedded Backend
-
-#### Overview
-
-In embedded mode Dynawo is started from a Java program. The JVM is already
-running and contains a loaded `com.powsybl.iidm.network.Network` object.
-The `JNIBackend` finds that JVM and obtains a reference to the
-network through a static registry class on the Java side (see §6.2).
-
-#### Attaching to the JVM
-
-```cpp
-// src/jni/JNIBackend.cpp (excerpt)
-
-void JNIBackend::findJVM() {
-    // Locate any existing JVMs
-    JavaVM* jvms[1];
-    jsize   count = 0;
-    jint rc = JNI_GetCreatedJavaVMs(jvms, 1, &count);
-    if (rc != JNI_OK || count == 0)
-        throw IidmException("No JVM found; cannot use JNI backend");
-
-    jvm_ = jvms[0];
-}
-
-// The calling thread's JNI environment: each operation starts with it (see §8)
-JNIEnv* JNIBackend::env() const {
-    JNIEnv* env = nullptr;
-    const jint status = jvm_->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_8);
-    if (status == JNI_OK) return env;
-    // Not attached yet: attached until the thread ends, as a daemon
-    if (status != JNI_EDETACHED || jvm_->AttachCurrentThreadAsDaemon(reinterpret_cast<void**>(&env), nullptr) != JNI_OK)
-        throw IidmException("Failed to attach the thread to the JVM");
-    // … detached by a thread_local object when the thread ends
-    return env;
-}
-```
-
-#### One dispatch table: `PropertyDispatcher`
-
-The JNI backend does not call IIDM methods itself. Each `BackendProvider` operation is a
-single static JNI call to the object API of `PropertyDispatcher` — the same Java dispatch
-table the GraalVM backend uses, so both backends behave identically:
-
-```cpp
-// src/jni/JNIBackend.cpp
-double JNIBackend::getDouble(ObjectHandle h, int property) const {
-    JNIEnv* env = this->env();
-    double result = env->CallStaticDoubleMethod(cache_.dispatcherClass, cache_.disp_getDouble,
-                                                toObject(h), static_cast<jint>(property));
-    checkJNIException(env);
-    return result;
-}
-```
-
-Only the registry calls (`IidmBridgeRegistry`: network lookup, load / save) and the
-dispatcher methods are resolved, once, at construction (`JNIMethodCache.h`). A simple
-property read costs about 150–250 ns, the same as the former hand-written JNI calls.
-
-#### Handle = global JNI reference
-
-In the JNI backend, an `ObjectHandle` is the integer value of a `jobject` **global
-reference**. Each handle returned to C++ (children, related objects, lookups) is a new
-global reference; it is deleted (`DeleteGlobalRef`) when the last C++ wrapper using it is
-destroyed — see §7.
-
-#### Exception bridging
-
-JNI does not propagate Java exceptions automatically. After every JNI call
-the backend checks `ExceptionOccurred()` and, if set, clears it and throws
-a C++ `IidmException` containing the Java exception's message.
-
-### 5.4 Extensions
-
-IIDM extensions are optional property bags that can be attached to network
-components (e.g. `ActivePowerControl` on any injection). The bridge exposes
-them through the same `BackendProvider` property-code mechanism as core
-properties, but the two backends handle the dispatch differently.
-
-#### C++ surface
-
-An extension is an object of its own, reached from its host by its class, as in powsybl (and
-iidm4cpp): `Identifiable` has `hasExtension<X>()`, `findExtension<X>()` (empty when absent),
-`getExtension<X>()` (`ExtensionNotFoundException` when absent), `newExtension<XAdder>()` and
-`removeExtension<X>()`. Its wrapper holds the extension's handle and uses the extension's codes:
-
-```cpp
-// include/iidm/ActivePowerControl.h
-class ActivePowerControl : public detail::ObjectRef {
-public:
-    static constexpr int TYPE = prop::ACTIVE_POWER_CONTROL;   // the extension, on any host
-    bool isParticipate() const { return getBool(prop::EXT_APC_PARTICIPATE); }
-    ActivePowerControl& setParticipate(bool participate) { return setBool(*this, prop::EXT_APC_PARTICIPATE, participate); }
-    double getDroop() const { return getDouble(prop::EXT_APC_DROOP); }
-    // …
-};
-
-// Any host: a generator, a battery…
-if (gen.hasExtension<ActivePowerControl>()) {
-    double droop = gen.getExtension<ActivePowerControl>().getDroop();
-}
-gen.newExtension<ActivePowerControlAdder>().withDroop(4).add();
-gen.removeExtension<ActivePowerControl>();
-```
-
-A host that powsybl does not allow for the extension never has it, and `newExtension` fails
-there at run time, as in powsybl (`PropertyNotFoundException`: powsybl's adder casts the host).
-
-Each extension has a block of codes in `PropertyCodes.def`. Its first code is the extension's
-**type code**, used for every operation on the host; the others are its properties:
-
-```cpp
-IIDM_CODE(ACTIVE_POWER_CONTROL, 3000) // getRelated(host, …): the extension (INVALID_HANDLE when absent)
-                                      // invoke(host, …): its adder; setRelated(host, …, INVALID_HANDLE): removes it
-IIDM_CODE(EXT_APC_DROOP,        3001) // on the extension object
-IIDM_CODE(EXT_APC_PARTICIPATE,  3002)
-```
-
-The extension type is the same whatever the host, so a generator's and a battery's
-ActivePowerControl use the same codes. What an extension holds is made of objects too: the
-quality of each quantity of an observability extension (`getRelated(extension, OBS_QUALITY_P)`,
-an `ObservabilityQuality`), the measurements of a `Measurements` extension (children of type
-`MEASUREMENT`, one of them by id with `getRelatedByString`, a new one with `invoke`), the areas
-of an `ObservabilityArea`.
-
-#### GraalVM backend — automatic
-
-The GraalVM entry points (`iidm_get_double`, `iidm_get_bool`, …) forward
-**every** property code to `PropertyDispatcher.java` without a hard-coded
-switch. An extension's type is one line of the table in `Extensions.java`, which serves
-the lookup on a host, the type check, the adder and the removal; each of its properties is
-one line of `PropertyTable.java`, with its getter, its setter and its adder field (a property
-that takes more than one call is a case of `PropertyDispatcher`, or of `Creation.java` for
-an adder field):
-
-```java
-// Extensions.java
-type(ACTIVE_POWER_CONTROL, ActivePowerControl.class, ActivePowerControlAdder.class),
-// PropertyTable.java
-doubles(EXT_APC_DROOP, (ActivePowerControl<?> x) -> x.getDroop(),
-    (ActivePowerControl<?> x, double v) -> x.setDroop(v),
-    (ActivePowerControlAdder<?> x, double v) -> x.withDroop(v));
-```
-
-No C++ changes are needed in the GraalVM backend.
-
-#### JNI backend — same dispatch table
-
-The JNI backend sends every property, child and relation code to the object-based
-overloads of `PropertyDispatcher` (`getDouble(Object, int)`, `getChildObjects(Object, int)`,
-`getRelatedObject(Object, int)`, …), so a new extension only needs its Java lines
-(`Extensions`, `PropertyTable`) and works on both backends. No JNI method signature has to
-be kept in sync with powsybl-core.
-
-#### Supported extensions
-
-Every extension below has an adder (`newX()`).
-
-| Extension | Hosts | Codes |
+| Option | Default | What |
 |---|---|---|
-| `ActivePowerControl` | all injections | `ACTIVE_POWER_CONTROL`, `EXT_APC_*` |
-| `CoordinatedReactiveControl` | Generator | `COORDINATED_REACTIVE_CONTROL`, `EXT_CRC_*` |
-| `HvdcAngleDroopActivePowerControl` | HvdcLine | `HVDC_ANGLE_DROOP_ACTIVE_POWER_CONTROL`, `EXT_HADAPC_*` |
-| `HvdcOperatorActivePowerRange` | HvdcLine | `HVDC_OPERATOR_ACTIVE_POWER_RANGE`, `EXT_HOAR_*` |
-| `SlackTerminal` | VoltageLevel | `SLACK_TERMINAL`, `EXT_ST_*`, `REL_TERMINAL` |
-| `Measurements` | all connectables | `MEASUREMENTS`; its `MEASUREMENT`s: `MEAS_*` |
-| `DiscreteMeasurements` | all identifiables | `DISCRETE_MEASUREMENTS`; its `DISCRETE_MEASUREMENT`s: `DMEAS_*` |
-| `InjectionObservability` | all injections incl. BusbarSection | `INJECTION_OBSERVABILITY`, `EXT_OBS_OBSERVABLE`, `OBS_QUALITY_*` |
-| `BranchObservability` | all branches | `BRANCH_OBSERVABILITY`, `EXT_OBS_OBSERVABLE`, `OBS_QUALITY_*` |
-| `TwoWindingsTransformerToBeEstimated` | 2WT | `TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED`, `EXT_TWO_WT_TBE_*` |
-| `ThreeWindingsTransformerToBeEstimated` | 3WT | `THREE_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED`, `EXT_THREE_WT_TBE_*` |
-| `ObservabilityArea` | VoltageLevel | `OBSERVABILITY_AREA`, `EXT_OBS_AREA_*`; its `AREA_CHARACTERISTICS`: `OBS_AREA_*` |
-| `GeneratorShortCircuit` | Generator | `GENERATOR_SHORT_CIRCUIT`, `EXT_SC_*` |
-| `BatteryShortCircuit` | Battery | `BATTERY_SHORT_CIRCUIT`, `EXT_SC_*` |
-| `IdentifiableShortCircuit` | all identifiables (voltage levels) | `IDENTIFIABLE_SHORT_CIRCUIT`, `EXT_ISC_*` |
-| `GeneratorEntsoeCategory` | Generator | `GENERATOR_ENTSOE_CATEGORY`, `EXT_GEC_CODE` |
-| `GeneratorStartup` | Generator | `GENERATOR_STARTUP`, `EXT_GS_*` |
-| `LoadDetail` | Load | `LOAD_DETAIL`, `EXT_LD_*` |
-| `StandbyAutomaton` | StaticVarCompensator | `STANDBY_AUTOMATON`, `EXT_SA_*` |
-| `ManualFrequencyRestorationReserve` | all injections | `MANUAL_FREQUENCY_RESTORATION_RESERVE`, `EXT_MFRR_PARTICIPATE` |
-| `OperatingStatus` | busbar sections, lines, tie lines, transformers, HVDC lines, boundary lines | `OPERATING_STATUS`, `EXT_OS_STATUS` |
-| `DynamicModelInfo` | all identifiables (not saved to XIIDM by powsybl) | `DYNAMIC_MODEL_INFO`, `EXT_DMI_MODEL_NAME` |
-| `GeneratorFortescue` | Generator | `GENERATOR_FORTESCUE`, `EXT_GF_*` |
-| `LineFortescue` | Line | `LINE_FORTESCUE`, `EXT_LINE_F_*` |
-| `LoadAsymmetrical` | Load | `LOAD_ASYMMETRICAL`, `EXT_LA_*` |
-| `TwoWindingsTransformerFortescue` | 2WT | `TWO_WINDINGS_TRANSFORMER_FORTESCUE`, `EXT_TWO_WTF_*` |
-| `ThreeWindingsTransformerFortescue` | 3WT | `THREE_WINDINGS_TRANSFORMER_FORTESCUE`; its `LEG_FORTESCUE`s: `EXT_LEG_F_*`; adder: `EXT_THREE_WTF_LEG` |
-| `TwoWindingsTransformerPhaseAngleClock` | 2WT | `TWO_WINDINGS_TRANSFORMER_PHASE_ANGLE_CLOCK`, `EXT_TWO_WT_PAC_CLOCK` |
-| `ThreeWindingsTransformerPhaseAngleClock` | 3WT | `THREE_WINDINGS_TRANSFORMER_PHASE_ANGLE_CLOCK`, `EXT_THREE_WT_PAC_CLOCK_*` |
-| `BusbarSectionPosition` | BusbarSection | `BUSBAR_SECTION_POSITION`, `EXT_BSP_*` |
-| `SubstationPosition` | Substation | `SUBSTATION_POSITION`; its `COORDINATE`: `COORD_*` (a `Coordinate` value) |
-| `LinePosition` | Line, BoundaryLine | `LINE_POSITION`; its `COORDINATE`s: `COORD_*` |
-| `ConnectablePosition` | all connectables | `CONNECTABLE_POSITION`; its `FEEDER`s by slot: `EXT_FEEDER_*`, `ACT_REMOVE_ORDER` |
-| `ReferencePriorities` | all connectables (and the powsybl static helpers) | `REFERENCE_PRIORITIES`; its `REFERENCE_PRIORITY`s: `EXT_RP_PRIORITY` |
-| `ReferenceTerminals` | Network (and the powsybl static helpers) | `REFERENCE_TERMINALS`, `ADD_REFERENCE_TERMINAL`, `ACT_RESET_REFERENCE_TERMINALS` |
-| `SecondaryVoltageControl` | Network | `SECONDARY_VOLTAGE_CONTROL`; its `CONTROL_ZONE`s, their `PILOT_POINT` and `CONTROL_UNIT`s: `EXT_SVC_*` |
-| `LineCouplings` | Network | `LINE_COUPLINGS`; its `MUTUAL_COUPLING`s: `EXT_MC_*` (segments: `LineSegment` values), `ADD_MUTUAL_COUPLING`, `FIND_MUTUAL_COUPLING`, `REMOVE_MUTUAL_COUPLING` |
+| `IIDM_BRIDGE_ENABLE_GRAALVM` | `ON` | The GraalVM backend (standalone mode) |
+| `IIDM_BRIDGE_ENABLE_JNI` | `ON` | The JNI backend (embedded mode) |
+| `IIDM_BRIDGE_BUILD_JAVA` | `ON` | Builds the jar with Maven |
+| `IIDM_BRIDGE_BUILD_NATIVE` | `ON` | Builds the native image from the jar with `native-image` |
+| `IIDM_BRIDGE_BUILD_TESTS` | `OFF` | The tests (GoogleTest 1.10 or later, downloaded if not installed) |
+| `IIDM_BRIDGE_BUILD_EXAMPLES` | `ON` | `examples/standalone` and `examples/embedded` |
+| `IIDM_BRIDGE_ENABLE_COVERAGE` | `OFF` | gcov instrumentation, and a `coverage` target (gcovr) |
+| `CMAKE_CXX_STANDARD` | `17` | `11` or `14` need Boost (`-DBOOST_ROOT=...` if CMake does not find it) |
 
-Removing the `LineCouplings` extension (`removeExtension<LineCouplings>()`) removes it, then throws
-`PropertyNotFoundException`: powsybl-core's `LineCouplingsImpl.setExtendable(null)`, called on
-removal, subscribes a listener to the null network (a `NullPointerException`). The bridge passes
-that on unchanged until powsybl fixes it.
+### Use it from another CMake project
 
-The `VoltagePerReactivePowerControl`, `RemoteReactivePowerControl` and battery `VoltageRegulation`
-extensions were removed from powsybl-core 7.4 (`extensions.removed`): their data is the core
-`VoltageRegulation` of the holder (mode `VOLTAGE_PER_REACTIVE_POWER` and its slope, a remote
-`REACTIVE_POWER` regulation, the battery's regulation), so they are not ported.
+`cmake --install build --prefix /opt/iidm-bridge` installs the headers, the library, the native
+image and a CMake package. In your `CMakeLists.txt`:
 
-The state estimation extensions are exercised end to end by
-`examples/state_estimation_test.xiidm` (see `examples/StateEstimationReport.h`).
-
-#### Checklist for adding a new extension
-
-| Step | File(s) |
-|---|---|
-| Codes: the type code, then one per property | `include/iidm/PropertyCodes.def` (one line each) |
-| C++ extension wrapper and adder | `include/iidm/MyExt.h` + `src/MyExt.cpp`, `include/iidm/MyExtAdder.h` (+ `CMakeLists.txt`, `iidm.h`) |
-| The type (extension and adder interfaces), then one line per property: getter, setter, adder field | `Extensions.java`, `PropertyTable.java` (`PropertyDispatcher.java` / `Creation.java` for what takes more than one call) — serve **both** backends |
-| C++ tests | The extension in `test/CompleteNetwork.h`, a line per property in `test/TestAccessors.cpp`; `test/TestMyExt.cpp` with `MockBackend` for methods with logic of their own |
-| Java dispatcher tests | `java/src/test/...` (covers the handle and object APIs) |
-
-### 5.5 Backend Selection Strategy
-
-```cpp
-// src/BackendSelector.cpp
-
-std::unique_ptr<BackendProvider> selectBackend(const NetworkLoadOptions& opts) {
-    // Explicit override via environment variable
-    const char* envMode = std::getenv("IIDM_BRIDGE_MODE");
-    BackendMode effectiveMode = opts.mode;
-    if (envMode) {
-        if (std::string(envMode) == "graalvm") effectiveMode = BackendMode::GRAALVM;
-        else if (std::string(envMode) == "jni")     effectiveMode = BackendMode::JNI;
-    }
-
-    if (effectiveMode == BackendMode::JNI) {
-        return std::make_unique<JNIBackend>(opts.jniNetworkId);
-    }
-    if (effectiveMode == BackendMode::GRAALVM) {
-        return std::make_unique<GraalVMBackend>(opts.graalvmLibPath);
-    }
-
-    // AUTO: probe for existing JVM
-    JavaVM* jvms[1]; jsize count = 0;
-    if (JNI_GetCreatedJavaVMs(jvms, 1, &count) == JNI_OK && count > 0) {
-        return std::make_unique<JNIBackend>(opts.jniNetworkId);
-    }
-    return std::make_unique<GraalVMBackend>(opts.graalvmLibPath);
-}
+```cmake
+find_package(Boost)   # needed if Boost was found when the library was built
+find_package(IidmBridge 1.0 REQUIRED)
+target_link_libraries(my_app PRIVATE IidmBridge::iidmbridge)
 ```
 
----
+and configure your project with `-DCMAKE_PREFIX_PATH=/opt/iidm-bridge`. Notes:
 
-## 6. Java-Side Design
+- The C++ standard must match: a library built in C++17 needs C++17 code, one built in C++11/14
+  takes any (a mismatch fails to compile).
+- With the JNI backend built in, the installed library needs `libjvm` at run time, even in
+  standalone mode: add `$JAVA_HOME/lib/server` to `LD_LIBRARY_PATH`.
+- The jar is not installed: take it from `java/target`.
 
-The Java side lives in the Maven/Gradle module `iidm-bridge-java`. It has
-two distinct roles depending on the mode.
+## Usage
 
-### 6.1 GraalVM Entry Points
+Load a network, read it, change it, use an extension and save it:
 
-GraalVM's `native-image` tool compiles any method annotated with
-`@CEntryPoint` into an exported C function. The Java module defines one
-entry point per BackendProvider operation.
+```cpp
+#include <iidm/iidm.h>
 
-```java
-// com/powsybl/iidmbridge/graalvm/IidmEntryPoints.java
+#include <iostream>
 
-public final class IidmEntryPoints {
+int main() {
+    try {
+        // Standalone mode: powsybl runs in this process, in the GraalVM native image
+        iidm::NetworkLoadOptions options;
+        options.mode = iidm::BackendMode::GRAALVM;
+        iidm::Network network = iidm::NetworkFactory::load("examples/IEEE14.xiidm", options);
+        std::cout << network.getId() << ": " << network.getGeneratorCount() << " generators, "
+                  << network.getLoadCount() << " loads\n";
 
-    @CEntryPoint(name = "iidm_load_network")
-    public static long loadNetwork(
-            IsolateThread thread,
-            CCharPointer filePath) {
-        String path = CTypeConversion.toJavaString(filePath);
-        Network network = NetworkSerDe.read(Path.of(path));
-        return NetworkRegistry.register(network);
-    }
-
-    @CEntryPoint(name = "iidm_get_double")
-    public static double getDouble(
-            IsolateThread thread,
-            long handle,
-            int property) {
-        return PropertyDispatcher.getDouble(handle, property);
-    }
-
-    @CEntryPoint(name = "iidm_set_double")
-    public static void setDouble(
-            IsolateThread thread,
-            long handle,
-            int property,
-            double value) {
-        PropertyDispatcher.setDouble(handle, property, value);
-    }
-
-    @CEntryPoint(name = "iidm_get_string")
-    public static CCharPointer getString(
-            IsolateThread thread,
-            long handle,
-            int property) {
-        String value = PropertyDispatcher.getString(handle, property);
-        return CTypeConversion.toCString(value).get();
-    }
-
-    @CEntryPoint(name = "iidm_free_string")
-    public static void freeString(IsolateThread thread, CCharPointer ptr) {
-        // Managed by GraalVM allocator; call into UnmanagedMemory
-        UnmanagedMemory.free(ptr);
-    }
-
-    @CEntryPoint(name = "iidm_get_children")
-    public static void getChildren(
-            IsolateThread thread,
-            long parentHandle,
-            int childType,
-            CLongPointer outHandles,
-            CIntPointer outCount) {
-        long[] handles = PropertyDispatcher.getChildren(parentHandle, childType);
-        outCount.write(handles.length);
-        for (int i = 0; i < handles.length; i++) {
-            outHandles.addressOf(i).write(handles[i]);
+        // Read: lists of objects, and objects by id (an empty optional when there is none)
+        for (const iidm::Generator& generator : network.getGenerators()) {
+            std::cout << "  " << generator.getId() << " targetP=" << generator.getTargetP()
+                      << " MW, P=" << generator.getTerminal().getP() << " MW\n";
         }
+        iidm::Load load = network.getLoad("_LOAD__10_EC").value();
+        std::cout << "  " << load.getId() << " P0=" << load.getP0() << " MW\n";
+
+        // Change: setters return the object, so they chain
+        load.setP0(10.5).setQ0(6.0);
+
+        // Extensions, by their class, as in powsybl
+        iidm::Generator gen3 = network.getGenerator("_GEN____3_SM").value();
+        iidm::ActivePowerControl control = gen3.getExtension<iidm::ActivePowerControl>();
+        std::cout << "  " << gen3.getId() << " droop=" << control.getDroop() << "\n";
+        control.setParticipate(true);
+
+        iidm::Generator gen1 = network.getGenerator("_GEN____1_SM").value();
+        gen1.newExtension<iidm::ActivePowerControlAdder>().withParticipate(true).withDroop(5.0).add();
+
+        network.save("IEEE14-modified.xiidm");
+    } catch (const iidm::IidmException& e) {  // the base of every exception of the library
+        std::cerr << "Error: " << e.what() << "\n";
+        return 1;
     }
+    return 0;
 }
 ```
 
-#### NetworkRegistry
+Build it as `my_app` with the CMake project above, and run it from the root of this repository
+(for `examples/IEEE14.xiidm`). The native image is `NetworkLoadOptions::graalvmLibPath`, else
+`IIDM_BRIDGE_GRAALVM_LIB`, else `libpowsybl-iidm-native.so` from the library path:
 
-In the GraalVM case, Java objects cannot be passed as pointers across the
-C boundary. Instead, a `NetworkRegistry` maps long integer handles to Java
-object references:
-
-```java
-// com/powsybl/iidmbridge/graalvm/NetworkRegistry.java
-
-public final class NetworkRegistry {
-    // handle → Java object (any IIDM object, not just Network)
-    private static final Map<Long, Object> registry = new ConcurrentHashMap<>();
-    private static final AtomicLong nextHandle = new AtomicLong(1);
-
-    public static long register(Object obj) {
-        long handle = nextHandle.getAndIncrement();
-        registry.put(handle, obj);
-        return handle;
-    }
-
-    public static Object lookup(long handle) {
-        Object obj = registry.get(handle);
-        if (obj == null) throw new IllegalArgumentException("Unknown handle: " + handle);
-        return obj;
-    }
-
-    public static void release(long handle) {
-        registry.remove(handle);
-    }
-}
+```text
+$ export LD_LIBRARY_PATH=$JAVA_HOME/lib/server   # libjvm, see the notes above
+$ IIDM_BRIDGE_GRAALVM_LIB=/opt/iidm-bridge/lib/libpowsybl-iidm-native.so path/to/my_app
+ieee14bus: 5 generators, 11 loads
+  _GEN____1_SM targetP=232.346 MW, P=-232.39 MW
+  _GEN____2_SM targetP=40 MW, P=-40 MW
+  ...
+  _LOAD__10_EC P0=9 MW
+  _GEN____3_SM droop=4
 ```
 
-#### PropertyTable and PropertyDispatcher
-
-A property that is one call on a powsybl object is one line of `PropertyTable`: its getter, its
-setter and its adder field, `null` where there is none. `PropertyDispatcher` looks a code up
-there first; its switches keep the properties that take more than one call (as `Creation` does
-for the adder fields):
-
-```java
-// com/powsybl/iidmbridge/PropertyTable.java
-doubles(GEN_TARGET_P, Generator::getTargetP, Generator::setTargetP, GeneratorAdder::setTargetP);
-doubles(LOAD_P0, Load::getP0, Load::setP0, LoadAdder::setP0);
-doubles(TERMINAL_P, Terminal::getP, Terminal::setP, null);
-enums(LOAD_TYPE, LoadType.class, Load::getLoadType, Load::setLoadType, LoadAdder::setLoadType);
-// …
-
-// com/powsybl/iidmbridge/PropertyDispatcher.java
-
-public final class PropertyDispatcher {
-
-    public static double getDouble(Object obj, int property) {
-        PropertyTable.DoubleProperty table = PropertyTable.doubleProperty(property);
-        if (table != null && table.get() != null) return table.get().applyAsDouble(obj);
-        throw new BridgeErrors.PropertyNotFoundException("Unknown double property: " + property);
-    }
-
-    public static long[] getChildren(long parentHandle, int childType) {
-        Object obj = NetworkRegistry.lookup(parentHandle);
-        Stream<?> children = switch (childType) {
-            case PropertyCodes.GENERATOR   -> ((Network) obj).getGeneratorStream();
-            case PropertyCodes.LOAD        -> ((Network) obj).getLoadStream();
-            case PropertyCodes.LINE        -> ((Network) obj).getLineStream();
-            case PropertyCodes.SUBSTATION  -> ((Network) obj).getSubstationStream();
-            case PropertyCodes.VOLTAGE_LEVEL -> ((Network) obj).getVoltageLevelStream();
-            // …
-            default -> throw new IllegalArgumentException("Unknown child type: " + childType);
-        };
-        return children
-            .mapToLong(NetworkRegistry::register)
-            .toArray();
-    }
-}
-```
-
-### 6.2 JNI Registry for Embedded Mode
-
-When Dynawo is launched from a Java orchestrator, the Java side registers
-the network before handing off control to the C++ code:
-
-```java
-// com/powsybl/iidmbridge/jni/IidmBridgeRegistry.java
-
-/**
- * Used in embedded mode to make a network available to the C++ JNI backend.
- * The Java program must call {@code register} before Dynawo's C++ main starts.
- */
-public final class IidmBridgeRegistry {
-
-    private static final Map<String, Network> networks = new ConcurrentHashMap<>();
-
-    /** Register a network under a given ID. */
-    public static void register(String id, Network network) {
-        networks.put(id, network);
-    }
-
-    /** Register under the default ID "default". */
-    public static void register(Network network) {
-        register("default", network);
-    }
-
-    /** Called from JNI to retrieve the network object. */
-    public static Network get(String id) {
-        Network n = networks.get(id);
-        if (n == null) throw new IllegalStateException("No network registered with id: " + id);
-        return n;
-    }
-
-    /** Called from JNI to list all registered network IDs. */
-    public static String[] listIds() {
-        return networks.keySet().toArray(new String[0]);
-    }
-}
-```
-
-**Typical Java orchestrator code:**
-
-```java
-// Java side before launching Dynawo
-Network network = NetworkSerDe.read(Path.of("case.xiidm"));
-IidmBridgeRegistry.register("case1", network);
-
-// Launch Dynawo via JNI or process API
-DynawoLauncher.run(simulationParameters);
-// At this point, Dynawo's C++ backend attaches to this JVM,
-// finds "case1" via IidmBridgeRegistry, and uses it directly.
-```
-
----
-
-## 7. Lifecycle and Memory Management
-
-### Object lifetime rules
-
-| Object | Owner | Lifetime |
-|---|---|---|
-| `Network` | Caller (move-only) | Until `Network` goes out of scope |
-| `BackendProvider` | `Network` (unique_ptr) | Destroyed with `Network` |
-| Component objects (e.g. `Generator`) | Caller (value type) | Usable as long as parent `Network` is alive |
-| Object handles (JNI global refs, GraalVM registry entries) | Component objects, via `HandleRef` | Released when the last wrapper using them is destroyed, or when the backend closes |
-| GraalVM isolate | `GraalVMBackend` | One per network; torn down when the network closes |
-| Thread attachment (isolate thread, JNI environment) | The backend | From the thread's first call until it ends (GraalVM: or until the network closes) |
-
-### Handle release
-
-Every handle returned by a backend holds a Java-side reference (a JNI global reference, or
-an entry of the GraalVM `NetworkRegistry`). Wrappers hold it through `HandleRef`, which
-counts the wrappers using a handle — across copies, and across sub-wrappers built from the
-same handle (the views read through their host) — and calls
-`BackendProvider::releaseHandle()` when the last one is destroyed. So a loop like
-
-```cpp
-for (int step = 0; step < 1000000; ++step)
-    p += gen.getTerminal().getP();   // a new terminal handle each time
-```
-
-keeps a constant memory footprint on both backends. When a backend closes it releases every
-handle still held; wrappers destroyed afterwards release nothing (`BackendProvider::
-liveHandleCount()` reports the handles currently held).
-
-### Invalidation
-
-Calling a method on a component object after the parent `Network` has been destroyed is
-**undefined behavior**; destroying it afterwards is safe. Objects never bound to a network
-(default-constructed, moved-from `Network`) throw `InvalidHandleException` (§9).
-
-### GraalVM isolate lifecycle
-
-Because a process can have only **one** GraalVM isolate for a given native
-image library, the `GraalVMBackend` uses a reference-counted singleton
-pattern for the isolate. Multiple `Network` objects sharing the same
-`libpowsybl-iidm-native.so` path share one isolate.
-
----
-
-## 8. Thread Safety
-
-A network can be used from any thread, and its objects passed between threads: an object found on
-one thread can be used and destroyed on another. Each call goes through the calling thread:
-
-| Backend | Thread model |
-|---|---|
-| **GraalVM** | Each call is made with the calling thread's `isolatethread_t`. A thread is attached to the isolate (`graal_attach_thread`) on its first call, and detached when it ends. Closing the network detaches the threads still attached without waiting for them (`graal_detach_all_threads_and_tear_down_isolate`): they must not use it any more. |
-| **JNI** | Each call is made with the calling thread's JNI environment (`GetEnv`). A thread that is not attached to the JVM is attached on its first call, as a daemon (so that it never holds the JVM's shutdown up), and detached when it ends. The threads attached by others (the one that created the JVM, Java threads calling C++) stay as they are. |
-
-The network itself follows powsybl's rules: it is not synchronized, so threads that use it at the
-same time need their own synchronization, unless each changes only the state of its own variant:
-after `VariantManager::allowVariantMultiThreadAccess(true)`, each thread has its own working
-variant, set by `setWorkingVariant` on that thread (a new thread has none).
-
-C++ component objects themselves are **not thread-safe** at the object
-level (i.e., calling `setTargetP` and `getTargetP` on the same `Generator`
-from two threads simultaneously requires external synchronization). This
-matches the contract of the Java IIDM objects themselves.
-
----
-
-## 9. Error Handling
-
-All errors are reported via C++ exceptions, with the **same exception type on both
-backends**. A Java-side failure never aborts the process: it surfaces as one of these
-exceptions and the backend stays usable.
-
-```cpp
-// include/iidm/IidmException.h
-namespace iidm {
-
-class IidmException : public std::runtime_error { /* … */ };            // base of all
-
-class BackendNotAvailableException : public IidmException { /* … */ };
-class InvalidHandleException       : public IidmException { /* … */ };  // handle 0 / unknown
-class PropertyNotFoundException    : public IidmException { /* … */ };  // code unknown or not
-                                                                         // applicable, optional part absent
-class ExtensionNotFoundException   : public PropertyNotFoundException { /* … */ };  // getExtension<X>()
-                                                                         // of an absent extension
-class ValidationException          : public IidmException { /* … */ };  // the model rejected the change
-class NetworkNotFoundException     : public IidmException { /* … */ };
-
-} // namespace iidm
-```
-
-```cpp
-try {
-    gen.getExtension<ActivePowerControl>().setMaxTargetP(500.0);   // outside [minP, maxP]
-} catch (const iidm::ValidationException& e) {
-    // e.what(): "maxTargetP value (500.0) is not between minP and maxP for component G"
-}
-```
-
-| Java failure | C++ exception |
-|---|---|
-| `BridgeErrors.InvalidHandleException` | `InvalidHandleException` |
-| `BridgeErrors.PropertyNotFoundException`, `ClassCastException`, `NullPointerException` | `PropertyNotFoundException` |
-| `PowsyblException` (incl. `ValidationException`), `IllegalArgumentException`, `UnsupportedOperationException` | `ValidationException` |
-| `BridgeErrors.NetworkNotFoundException` | `NetworkNotFoundException` |
-| anything else | `IidmException` (message prefixed with the Java class) |
-
-The classification lives in one place, `BridgeErrors.java`
-(`kindOf(Throwable)` / `message(Throwable)`), and is used by both backends:
-
-- **GraalVM** — an exception escaping a `@CEntryPoint` would abort the process, so every
-  entry point catches `Throwable`, stores it in a thread-local and returns its kind as a
-  status (0 = success; results go through out-pointers). On a non-zero status
-  `GraalVMBackend::check()` fetches the message with `iidm_take_last_error` and throws via
-  `detail::throwBridgeError` (`src/BridgeErrors.h`). Successful calls cost nothing extra.
-- **JNI** — `checkJNIException()` classifies the pending Java exception with the same
-  `BridgeErrors` methods and throws via `detail::throwBridgeError`. A null receiver
-  (handle 0) is rejected in C++ before any JNI call.
-
-Objects that are not bound to a network — default-constructed wrappers
-(`iidm::Generator g; g.getTargetP();`) or a moved-from `Network` — throw
-`InvalidHandleException` too: their backend is a shared null object
-(`detail::nullBackend()`) whose every operation throws, so no call dereferences a null
-pointer. `isValid()` and `operator==` never throw.
-
-`test/TestBackendErrors.cpp` runs the same failure scenarios against the real GraalVM
-library (`IIDM_BRIDGE_GRAALVM_LIB`) and against a JVM created in-process
-(`IIDM_BRIDGE_JAR`); `test/TestBackendConformance.cpp` checks that both backends throw the
-same exception type for every failing call (§13).
-
----
-
-## 10. Directory Layout
-
-```
-iidm-bridge-cpp/
-│
-├── CMakeLists.txt                # Top-level CMake
-├── README.md                     # This file
-│
-├── include/
-│   └── iidm/
-│       ├── iidm.h                # Convenience all-in-one header
-│       ├── Network.h
-│       ├── NetworkFactory.h
-│       ├── ObjectHandle.h
-│       ├── BackendProvider.h
-│       ├── PropertyCodes.def     # single definition of the property codes
-│       ├── PropertyCodes.h       # expands PropertyCodes.def into iidm::prop constants
-│       ├── IidmException.h
-│       ├── Enums.h
-│       ├── Terminal.h
-│       ├── Bus.h
-│       ├── Substation.h
-│       ├── VoltageLevel.h
-│       ├── Generator.h
-│       ├── Load.h
-│       ├── Line.h
-│       ├── TwoWindingsTransformer.h
-│       ├── ThreeWindingsTransformer.h
-│       ├── HvdcLine.h
-│       ├── BoundaryLine.h
-│       ├── ShuntCompensator.h
-│       ├── StaticVarCompensator.h
-│       ├── VscConverterStation.h
-│       └── LccConverterStation.h
-│
-├── src/
-│   ├── Network.cpp
-│   ├── NetworkFactory.cpp
-│   ├── BackendSelector.cpp
-│   ├── Generator.cpp
-│   ├── Load.cpp
-│   ├── Terminal.cpp
-│   ├── Bus.cpp
-│   ├── …
-│   ├── graalvm/
-│   │   ├── GraalVMBackend.h
-│   │   └── GraalVMBackend.cpp
-│   └── jni/
-│       ├── JNIBackend.h
-│       ├── JNIBackend.cpp
-│       ├── JNIMethodCache.h
-│       └── JNIExceptionBridge.h
-│
-├── java/                         # Maven module: iidm-bridge-java
-│   ├── pom.xml
-│   └── src/main/java/com/powsybl/iidmbridge/
-│       ├── PropertyDispatcher.java
-│       ├── PropertyTable.java
-│       ├── graalvm/
-│       │   ├── IidmEntryPoints.java
-│       │   └── NetworkRegistry.java
-│       └── jni/
-│           └── IidmBridgeRegistry.java
-│
-├── test/
-│   ├── CMakeLists.txt
-│   ├── MockBackend.h             # Fakes the backend for the unit tests
-│   ├── CompleteNetwork.h         # Every type of object, built through the C++ adders
-│   ├── TestAccessors.cpp         # Every one-line accessor, on the real backends
-│   ├── TestBackendConformance.cpp
-│   ├── TestGenerator.cpp         # One per component, with MockBackend
-│   ├── TestInjectionsNetwork.cpp # One per area, on the real backends
-│   └── data/                     # Test networks (*.xiidm)
-│
-├── cmake/
-│   ├── FindGraalVM.cmake
-│   ├── FindJNI.cmake             # or use CMake's built-in FindJNI
-│   └── IidmBridgeConfig.cmake.in
-│
-└── examples/
-    ├── standalone/
-    │   └── main.cpp              # Standalone mode example
-    └── embedded/
-        ├── JavaLauncher.java     # Starts JVM, registers network, calls Dynawo
-        └── DynawoEmbedded.cpp   # C++ side of embedded example
-```
-
----
-
-## 11. Build System (CMake)
-
-### Top-level CMakeLists.txt
-
-```cmake
-cmake_minimum_required(VERSION 3.20)
-project(iidm-bridge-cpp VERSION 1.0.0 LANGUAGES CXX)
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-option(IIDM_BRIDGE_ENABLE_GRAALVM "Build the GraalVM backend" ON)
-option(IIDM_BRIDGE_ENABLE_JNI     "Build the JNI backend" ON)
-option(IIDM_BRIDGE_BUILD_TESTS    "Build unit tests" ON)
-option(IIDM_BRIDGE_BUILD_EXAMPLES "Build examples" ON)
-
-# ── JNI (always needed for AUTO mode probe) ─────────────────────────────────
-find_package(JNI REQUIRED)
-
-# ── GraalVM ─────────────────────────────────────────────────────────────────
-if(IIDM_BRIDGE_ENABLE_GRAALVM)
-    list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-    find_package(GraalVM REQUIRED)    # sets GRAALVM_INCLUDE_DIRS
-endif()
-
-# ── Library sources ─────────────────────────────────────────────────────────
-set(IIDM_BRIDGE_SOURCES
-    src/Network.cpp
-    src/NetworkFactory.cpp
-    src/BackendSelector.cpp
-    src/Generator.cpp
-    src/Load.cpp
-    src/Terminal.cpp
-    src/Bus.cpp
-    src/Substation.cpp
-    src/VoltageLevel.cpp
-    src/Line.cpp
-    src/TwoWindingsTransformer.cpp
-    src/HvdcLine.cpp
-    # …
-)
-
-if(IIDM_BRIDGE_ENABLE_GRAALVM)
-    list(APPEND IIDM_BRIDGE_SOURCES
-        src/graalvm/GraalVMBackend.cpp)
-endif()
-
-if(IIDM_BRIDGE_ENABLE_JNI)
-    list(APPEND IIDM_BRIDGE_SOURCES
-        src/jni/JNIBackend.cpp)
-endif()
-
-add_library(iidmbridge SHARED ${IIDM_BRIDGE_SOURCES})
-
-target_include_directories(iidmbridge
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
-    PRIVATE
-        ${JNI_INCLUDE_DIRS}
-        $<$<BOOL:${IIDM_BRIDGE_ENABLE_GRAALVM}>:${GRAALVM_INCLUDE_DIRS}>
-)
-
-target_link_libraries(iidmbridge
-    PRIVATE
-        ${JNI_LIBRARIES}
-        ${CMAKE_DL_LIBS}    # for dlopen
-)
-
-target_compile_definitions(iidmbridge PRIVATE
-    $<$<BOOL:${IIDM_BRIDGE_ENABLE_GRAALVM}>:IIDM_BRIDGE_GRAALVM_ENABLED>
-    $<$<BOOL:${IIDM_BRIDGE_ENABLE_JNI}>:IIDM_BRIDGE_JNI_ENABLED>
-)
-
-# ── Installation & CMake config ──────────────────────────────────────────────
-include(GNUInstallDirs)
-install(TARGETS iidmbridge EXPORT IidmBridgeTargets
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
-install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-install(EXPORT IidmBridgeTargets
-    FILE IidmBridgeTargets.cmake
-    NAMESPACE IidmBridge::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/IidmBridge
-)
-
-# ── Tests ───────────────────────────────────────────────────────────────────
-if(IIDM_BRIDGE_BUILD_TESTS)
-    enable_testing()
-    find_package(GTest REQUIRED)
-    add_subdirectory(test)
-endif()
-```
-
-### Consuming from Dynawo
-
-```cmake
-# In Dynawo's CMakeLists.txt
-find_package(IidmBridge REQUIRED)
-
-target_link_libraries(dynawo_core
-    PRIVATE
-        IidmBridge::iidmbridge
-)
-```
-
----
-
-## 12. Integration with Dynawo
-
-### Replacing iidm4cpp
-
-The library provides the same conceptual objects that Dynawo already uses
-from `iidm4cpp`. Migration steps:
-
-1. Replace the `powsybl::iidm::Network` include with `iidm::Network` from
-   `<iidm/Network.h>`.
-2. Replace `powsybl::iidm::Generator` with `iidm::Generator`, etc.
-3. Replace direct field/member access (which iidm4cpp allowed) with the
-   getter/setter calls that were already the idiomatic usage.
-4. Replace the network loading call:
-   ```cpp
-   // Before (iidm4cpp)
-   powsybl::iidm::Network network = powsybl::iidm::NetworkSerDe::read(path);
-
-   // After (iidm-bridge-cpp)
-   iidm::Network network = iidm::NetworkFactory::load(path);
-   ```
-5. Remove the `iidm4cpp` CMake dependency; add `IidmBridge`.
-
-### Standalone mode (default)
-
-```
-dynawo --network case.xiidm --jobs jobs.xml
-         │
-         └── NetworkFactory::load("case.xiidm")
-               └── BackendSelector → GraalVMBackend
-                     └── dlopen("libpowsybl-iidm-native.so")
-                           └── iidm_load_network("case.xiidm")
-```
-
-The `libpowsybl-iidm-native.so` must be on `LD_LIBRARY_PATH` or its path
-provided via the `IIDM_BRIDGE_GRAALVM_LIB` environment variable.
+powsybl's own log goes to stderr. [`examples/standalone/main.cpp`](examples/standalone/main.cpp)
+reads much more of a network (transformers, tap changers, reactive limits, HVDC lines...).
 
 ### Embedded mode
 
+The Java program registers its network, then calls the C++ code through a native method:
+
 ```java
-// Java orchestrator
-Network network = NetworkSerDe.read(Paths.get("case.xiidm"));
-IidmBridgeRegistry.register("case1", network);
-
-DynawoRunner runner = new DynawoRunner();
-runner.run(simulationParams);   // triggers Dynawo C++ main
+Network network = Network.read(Path.of("IEEE14.xiidm"));
+IidmBridgeRegistry.register("case1", network);   // com.powsybl.iidmbridge.jni.IidmBridgeRegistry
+runSimulation("case1");                          // a native method of your C++ library
 ```
 
 ```cpp
-// C++ main (called from JNI by DynawoRunner)
-iidm::NetworkLoadOptions opts;
-opts.mode = iidm::BackendMode::JNI;
-opts.jniNetworkId = "case1";
-iidm::Network network = iidm::NetworkFactory::wrap("case1", opts);
-// From here on, all generator.getTargetP() calls go directly to the
-// Java Network object that is already in memory.
+// In the native method: the network of the JVM itself, no file and no copy
+iidm::Network network = iidm::NetworkFactory::wrap("case1");
+network.getGenerator("_GEN____1_SM")->setTargetP(200.0);   // seen by Java at once
 ```
 
----
+The JVM needs the jar on its class path. [`examples/embedded`](examples/embedded) is a complete
+example, run by the CI. With the default mode, `BackendMode::AUTO`, `NetworkFactory::load` uses
+JNI when the process already runs a JVM and GraalVM otherwise; `IIDM_BRIDGE_MODE=graalvm` or `jni`
+overrides the mode.
 
-## 13. Testing Strategy
+### Good to know
 
-### Unit tests (C++ / GoogleTest)
+- **Lifetime.** A `Network` owns its backend session and cannot be copied; the objects taken from
+  it are light handles to the Java objects, valid while it lives.
+- **Beyond reading.** `NetworkFactory::create(id)` makes an empty network; adders shaped like
+  powsybl's create objects (`network.newSubstation().setId("S")...add()`), `remove()` removes
+  them. Variants come from `network.getVariantManager()`; `NetworkFactory::loadFromBytes` and
+  `Network::saveToBytes` work in memory.
+- **Threads.** A network can be used from any thread, and its objects passed between threads. As
+  in powsybl it is not synchronized: threads that change it at the same time need a lock, or each
+  its own variant (`getVariantManager().allowVariantMultiThreadAccess(true)`).
 
-`test/TestFoo.cpp` tests the methods of a component that have logic of their own (several calls,
-conversions, validation, errors) against `MockBackend` (`test/MockBackend.h`), which fakes the
-backend: they need no external file. The other tests need the real backends and are skipped
-without them: `test/TestFooNetwork.cpp` runs a scenario on a test network (`test/data/*.xiidm`) on
-GraalVM and on JNI (see `test/RealBackends.h`). The `cpp` CI jobs run both kinds on every platform
-and C++ standard, the JNI tests with the jar of the `java` job.
+### Errors
 
-### Accessor table
+The library reports errors with exceptions, the same on both backends; a Java failure never
+aborts the process.
 
-`test/TestAccessors.cpp` checks every accessor that is one property code (the one-line getters and
-setters of the headers) on each real backend, one line per accessor:
+| Exception (`iidm::`) | Thrown when |
+|---|---|
+| `IidmException` | The base of the others; any other failure |
+| `BackendNotAvailableException` | The backend is not built in, the native image cannot be loaded, or there is no JVM |
+| `ValidationException` | powsybl rejects the call: invalid value, id already used, refused removal... |
+| `PropertyNotFoundException` | The method does not apply to this object (`as<T>()` of another type), an optional part is absent |
+| `ExtensionNotFoundException` | `getExtension<X>()` on an object without X (a `PropertyNotFoundException`) |
+| `InvalidHandleException` | The object belongs to no network (default-constructed, or a moved-from `Network`) |
+| `NetworkNotFoundException` | `NetworkFactory::wrap(id)`: no network registered under that id |
 
-```cpp
-WRITE(load, getP0, setP0, 80.0, 81.0);   // reads 80 in the network, sets 81 and reads it back
-READ(bbs, getV, NAN);                    // no load flow ran
+### Extensions
+
+The extensions of powsybl-core 7.4, each with its adder (`ActivePowerControlAdder`...):
+ActivePowerControl, BatteryShortCircuit, BranchObservability, BusbarSectionPosition,
+ConnectablePosition, CoordinatedReactiveControl, DiscreteMeasurements, DynamicModelInfo,
+GeneratorEntsoeCategory, GeneratorFortescue, GeneratorShortCircuit, GeneratorStartup,
+HvdcAngleDroopActivePowerControl, HvdcOperatorActivePowerRange, IdentifiableShortCircuit,
+InjectionObservability, LineCouplings, LineFortescue, LinePosition, LoadAsymmetrical, LoadDetail,
+ManualFrequencyRestorationReserve, Measurements, ObservabilityArea, OperatingStatus,
+ReferencePriorities, ReferenceTerminals, SecondaryVoltageControl, SlackTerminal, StandbyAutomaton,
+SubstationPosition, ThreeWindingsTransformerFortescue, ThreeWindingsTransformerPhaseAngleClock,
+ThreeWindingsTransformerToBeEstimated, TwoWindingsTransformerFortescue,
+TwoWindingsTransformerPhaseAngleClock and TwoWindingsTransformerToBeEstimated.
+VoltagePerReactivePowerControl, RemoteReactivePowerControl and the battery VoltageRegulation
+extension are not ported: powsybl-core 7.4 retired them (`extensions.removed`) for the core
+`VoltageRegulation` of the equipment.
+
+## Tests
+
+Configure with `-DIIDM_BRIDGE_BUILD_TESTS=ON`, build, then run the tests from the root of the
+repository (`ctest --test-dir` needs CMake 3.20; with an older one, run `ctest` in `build`):
+
+```bash
+IIDM_BRIDGE_GRAALVM_LIB=$PWD/build/graalvm-native/libpowsybl-iidm-native.so \
+IIDM_BRIDGE_JAR=$PWD/java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar \
+IIDM_IEEE14_NETWORK_PATH=$PWD/examples/IEEE14.xiidm \
+ctest --test-dir build --output-on-failure
 ```
 
-Its objects are those of the network that `test/CompleteNetwork.h` builds through the C++ adders,
-with every type of object and every extension. An accessor with the code of another property reads
-another value, fails as a code of another type of object, or writes what its getter does not read
-back.
+The unit tests need none of these variables. The tests on a real backend are skipped without its
+variable (an absolute path: the tests run in `test/`):
 
-### Integration tests
+| Variable | Runs |
+|---|---|
+| `IIDM_BRIDGE_GRAALVM_LIB` | The tests on the GraalVM backend, with this native image |
+| `IIDM_BRIDGE_JAR` | The tests on the JNI backend, in a JVM that the test process starts with this jar |
+| `IIDM_IEEE14_NETWORK_PATH` | With the native image, `TestIntegration` on this network (`examples/IEEE14.xiidm`) |
 
-A full integration test loads the IEEE-14 bus network, reads and modifies
-generator target P values, and verifies round-trips match the original Java
-results. This test is run with both backends.
+With both backends, `TestBackendConformance` also checks that they give the same results on every
+object of the test networks. The Java side has its own tests: `cd java && mvn verify`.
 
-### GraalVM / JNI conformance
+## Contributing
 
-`test/TestBackendConformance.cpp` makes sure the two backends cannot drift apart. It loads each
-test network (`examples/*.xiidm`, `test/data/*.xiidm`) into both backends in the same process
-and walks every object reachable from the network root in lockstep. For every object, every
-code of `PropertyCodes.def` and every accessor, both backends must return the same value, the
-same children / related objects (visited in turn) or the same C++ exception type. Keyed and
-indexed lookups and `findById` are tried with every id and node number met on the way, keyed
-strings with the object's property names and aliases (indexed lookups also with its int values,
-such as tap positions, and the sides), `evaluate` with a fixed set of argument lists, and every
-adder is started; an identifiable looked up again by id must be the same object
-(`isSameObject`). Every value read is then written back through its setter (same acceptance,
-same value read back), properties and aliases are removed and added back, terminals and
-connectables disconnected and connected, every other action (`ACT_*`) applied, and both networks
-must save to the same XIIDM; last, every identifiable is removed and the XIIDM compared again.
-One network is built through the C++ adders with every type of object (the DC model apart) and
-every extension, with properties, aliases and names out of ASCII (it found that JNI's modified
-UTF-8 corrupted characters outside the BMP); another holds a reactive capability shape, which
-powsybl does not save yet. New codes and new test data are picked up automatically. It runs
-when both `IIDM_BRIDGE_GRAALVM_LIB` and `IIDM_BRIDGE_JAR` are set (CI `graalvm` and `dynawo`
-jobs), in a few seconds per network (about 20 s for the one with every type of object).
-
-### Property codes
-
-There is nothing to keep in sync: `PropertyCodes.java` is generated by the Maven
-build (`generate-sources`, see `java/pom.xml`) from `include/iidm/PropertyCodes.def`,
-the same file `PropertyCodes.h` includes.
-
-### Dynawo regression tests
-
-Existing Dynawo test cases that previously used `iidm4cpp` are re-run with
-`iidm-bridge-cpp` in GraalVM mode. Pass/fail results are compared against
-the `iidm4cpp` baseline to validate the migration.
-
----
-
-## 14. Comparison with libiidm4cpp and pypowsybl
-
-| Aspect | libiidm4cpp | pypowsybl (cpp layer) | **iidm-bridge-cpp** |
-|---|---|---|---|
-| Language | C++ | C++ + Python | C++ |
-| Java delegation | None | Full (via GraalVM) | Full (GraalVM or JNI) |
-| API style | Full object model | Pandas DataFrames | Object model with getters/setters |
-| Embedded JVM support | No | No | Yes (JNI backend) |
-| Maintenance burden | High (full reimplementation) | Low | Low |
-| Network creation | Yes | Yes | Yes (powsybl adders, §4.5) |
-| Topology access | Yes | Via DataFrames | Yes (read-only) |
-| Extensions | Partially | Via DataFrames | Delegated to Java |
-| Use case | General C++ IIDM consumer | Data science / Python | Dynawo simulation core |
-
----
-
-## 15. Roadmap
-
-### Phase 1 — Minimal viable library (covers Dynawo's current usage)
-
-- [ ] `BackendProvider` interface and `PropertyCodes`
-- [ ] `Network`, `Substation`, `VoltageLevel`, `Bus`
-- [ ] `Generator`, `Load`, `Terminal`
-- [ ] `Line`, `TwoWindingsTransformer`
-- [ ] `GraalVMBackend` with `dlopen`
-- [ ] `JNIBackend` with method-ID caching
-- [ ] `BackendSelector` (AUTO mode)
-- [ ] CMake build + install
-- [ ] GoogleTest suite
-- [ ] Java module: `PropertyDispatcher`, `NetworkRegistry`, `IidmBridgeRegistry`
-- [ ] GraalVM `native-image` build script for `libpowsybl-iidm-native.so`
-
-### Phase 2 — Extended component coverage
-
-- [ ] `ThreeWindingsTransformer`
-- [ ] `HvdcLine`, `VscConverterStation`, `LccConverterStation`
-- [ ] `BoundaryLine`
-- [ ] `ShuntCompensator`, `StaticVarCompensator`
-- [ ] `Switch` (bus-breaker and node-breaker views)
-- [ ] `ConnectedComponent` and `SynchronousComponent`
-
-### Phase 3 — Production hardening
-
-- [ ] Multi-thread isolate management for GraalVM
-- [ ] JNI class/method ID refresh on hot-reload scenarios
-- [ ] XIIDM extension passthrough (ActivePowerControl, etc.) via
-      generic `getExtension<T>()` returning a property map
-- [ ] Performance benchmarks (GraalVM vs JNI round-trip latency)
-- [ ] CI pipeline (GitHub Actions): build + test on Linux/macOS,
-      GraalVM 21+ and JDK 17+
-
-### Phase 4 — Dynawo migration
-
-- [ ] Drop-in CMake shim providing the `powsybl::iidm::*` namespace
-      aliases pointing to `iidm::*` (to ease incremental migration)
-- [ ] Full Dynawo regression test suite passing with `iidm-bridge-cpp`
-- [ ] Remove `libiidm4cpp` from Dynawo's dependency list
+[AGENTS.md](AGENTS.md) describes the architecture, the conventions (property codes, wrappers,
+adders, extensions) and how to add a component or an extension, with the tests to write.

@@ -27,6 +27,8 @@ cmake -S . -B build -G Ninja \
       -DCMAKE_BUILD_TYPE=Release \
       -DIIDM_BRIDGE_ENABLE_JNI=ON \
       -DIIDM_BRIDGE_ENABLE_GRAALVM=OFF \
+      -DIIDM_BRIDGE_BUILD_JAVA=OFF \
+      -DIIDM_BRIDGE_BUILD_NATIVE=OFF \
       -DIIDM_BRIDGE_BUILD_TESTS=ON
 cmake --build build --parallel
 ```
@@ -191,7 +193,8 @@ cmake/          CMake helper modules (FindGraalVM.cmake, etc.)
 IIDM extensions (e.g. `ActivePowerControl`) are optional property bags
 attached to network components. Both backends dispatch them through
 `PropertyDispatcher.java` — **read this section in full before touching
-extension code**. The supported extensions are listed in README §5.4.
+extension code**. The supported extensions are the types of `Extensions.java` (the README lists
+them).
 
 #### Steps common to both backends
 
@@ -288,9 +291,23 @@ sub-wrapper built from the parent's handle shares the count automatically.
 Throw from Java with the `BridgeErrors` exception types (`PropertyNotFoundException`
 for unknown codes). An absent extension or optional object is null from
 `getRelatedObject` (INVALID_HANDLE in C++), and the C++ getter decides: `getExtension<Foo>()` throws
-`ExtensionNotFoundException`, an optional object comes back empty. Both backends turn Java
-exceptions into the matching C++ exception (README §9); never let a GraalVM `@CEntryPoint`
-throw.
+`ExtensionNotFoundException`, an optional object comes back empty. Both backends turn a Java
+exception into the same C++ exception: `BridgeErrors.kindOf` classifies it (first match below), and
+`detail::throwBridgeError` (`src/BridgeErrors.h`) throws the C++ exception of that kind.
+
+| Java exception | C++ exception |
+|---|---|
+| `BridgeErrors.InvalidHandleException` | `InvalidHandleException` |
+| `BridgeErrors.PropertyNotFoundException`, `ClassCastException`, `NullPointerException` | `PropertyNotFoundException` |
+| `BridgeErrors.NetworkNotFoundException` | `NetworkNotFoundException` |
+| `PowsyblException`, `IllegalArgumentException`, `IllegalStateException`, `UnsupportedOperationException` | `ValidationException` |
+| anything else | `IidmException` (the message starts with the Java class) |
+
+- **GraalVM**: an exception escaping a `@CEntryPoint` would abort the process, so never let one
+  throw: each catches `Throwable` and returns its kind as a status (0: success), and
+  `GraalVMBackend::check()` takes the message with `iidm_take_last_error`.
+- **JNI**: `checkJNIException()` (`src/jni/JNIExceptionBridge.h`) classifies the pending Java
+  exception with the same `BridgeErrors` methods.
 
 #### Checking the JNI path end to end
 
@@ -315,9 +332,12 @@ java -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar:build/java-classes
 | Option | Default | Meaning |
 |---|---|---|
 | `IIDM_BRIDGE_ENABLE_JNI` | `ON` | Build the JNI backend |
-| `IIDM_BRIDGE_ENABLE_GRAALVM` | `OFF` | Build the GraalVM backend |
+| `IIDM_BRIDGE_ENABLE_GRAALVM` | `ON` | Build the GraalVM backend |
+| `IIDM_BRIDGE_BUILD_JAVA` | `ON` | Build the fat jar with Maven |
+| `IIDM_BRIDGE_BUILD_NATIVE` | `ON` | Build the native image with `native-image` (even with the GraalVM backend off) |
 | `IIDM_BRIDGE_BUILD_TESTS` | `OFF` | Build GoogleTest suite |
-| `IIDM_BRIDGE_BUILD_EXAMPLES` | `OFF` | Build the example programs |
+| `IIDM_BRIDGE_BUILD_EXAMPLES` | `ON` | Build the example programs |
+| `IIDM_BRIDGE_ENABLE_COVERAGE` | `OFF` | gcov instrumentation and a `coverage` target |
 
 ### GraalVM backend build
 

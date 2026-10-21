@@ -59,7 +59,9 @@ public:
 
 // The LineCouplings extension of a network: the mutual couplings between its lines. An object of
 // its own, from Network::getExtension<LineCouplings>(). removeExtension<LineCouplings>() removes
-// it, then powsybl fails on a bug of its own: PropertyNotFoundException (see README).
+// it, then throws PropertyNotFoundException: on removal, powsybl's
+// LineCouplingsImpl.setExtendable(null) adds a listener to the null network (a
+// NullPointerException), passed on until powsybl fixes it.
 class LineCouplings : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::LINE_COUPLINGS;
