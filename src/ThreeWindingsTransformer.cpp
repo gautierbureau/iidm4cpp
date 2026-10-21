@@ -3,6 +3,7 @@
 #include <iidm/PropertyCodes.h>
 #include <iidm/Substation.h>
 #include "Extensions.h"
+#include "OverloadChecks.h"
 #include "Wrap.h"
 
 namespace iidm {
@@ -137,6 +138,94 @@ void ThreeWindingsTransformer::setRatioTapPositionToSolvedTapPosition() {
 
 void ThreeWindingsTransformer::setPhaseTapPositionToSolvedTapPosition() {
     backend_->invoke(handle_, prop::ACT_SET_PHASE_TAP_POSITION_TO_SOLVED_TAP_POSITION);
+}
+
+// ── Overloads ────────────────────────────────────────────────────────────────
+
+bool ThreeWindingsTransformer::isOverloaded() const {
+    return backend_->getBool(handle_, prop::OVERLOADED);
+}
+
+bool ThreeWindingsTransformer::isOverloaded(double limitReductionValue) const {
+    return backend_->evaluate(handle_, prop::OVERLOADED, {limitReductionValue}) != 0;
+}
+
+int ThreeWindingsTransformer::getOverloadDuration() const {
+    return backend_->getInt(handle_, prop::OVERLOAD_DURATION);
+}
+
+bool ThreeWindingsTransformer::checkPermanentLimit(ThreeSides side, LimitType type) const {
+    return detail::overPermanentLimit(backend_, handle_, static_cast<int>(side), iidm::optional<double>(), type);
+}
+
+bool ThreeWindingsTransformer::checkPermanentLimit(ThreeSides side, double limitReductionValue, LimitType type) const {
+    return detail::overPermanentLimit(backend_, handle_, static_cast<int>(side), iidm::optional<double>(limitReductionValue), type);
+}
+
+bool ThreeWindingsTransformer::checkPermanentLimit1(LimitType type) const {
+    return checkPermanentLimit(ThreeSides::ONE, type);
+}
+
+bool ThreeWindingsTransformer::checkPermanentLimit1(double limitReductionValue, LimitType type) const {
+    return checkPermanentLimit(ThreeSides::ONE, limitReductionValue, type);
+}
+
+bool ThreeWindingsTransformer::checkPermanentLimit2(LimitType type) const {
+    return checkPermanentLimit(ThreeSides::TWO, type);
+}
+
+bool ThreeWindingsTransformer::checkPermanentLimit2(double limitReductionValue, LimitType type) const {
+    return checkPermanentLimit(ThreeSides::TWO, limitReductionValue, type);
+}
+
+bool ThreeWindingsTransformer::checkPermanentLimit3(LimitType type) const {
+    return checkPermanentLimit(ThreeSides::THREE, type);
+}
+
+bool ThreeWindingsTransformer::checkPermanentLimit3(double limitReductionValue, LimitType type) const {
+    return checkPermanentLimit(ThreeSides::THREE, limitReductionValue, type);
+}
+
+iidm::optional<Overload> ThreeWindingsTransformer::checkTemporaryLimits(ThreeSides side, LimitType type) const {
+    return detail::overloadOf(backend_, handle_, static_cast<int>(side), iidm::optional<double>(), type);
+}
+
+iidm::optional<Overload> ThreeWindingsTransformer::checkTemporaryLimits(ThreeSides side, double limitReductionValue,
+                                                                        LimitType type) const {
+    return detail::overloadOf(backend_, handle_, static_cast<int>(side), iidm::optional<double>(limitReductionValue), type);
+}
+
+iidm::optional<Overload> ThreeWindingsTransformer::checkTemporaryLimits1(LimitType type) const {
+    return checkTemporaryLimits(ThreeSides::ONE, type);
+}
+
+iidm::optional<Overload> ThreeWindingsTransformer::checkTemporaryLimits1(double limitReductionValue, LimitType type) const {
+    return checkTemporaryLimits(ThreeSides::ONE, limitReductionValue, type);
+}
+
+iidm::optional<Overload> ThreeWindingsTransformer::checkTemporaryLimits2(LimitType type) const {
+    return checkTemporaryLimits(ThreeSides::TWO, type);
+}
+
+iidm::optional<Overload> ThreeWindingsTransformer::checkTemporaryLimits2(double limitReductionValue, LimitType type) const {
+    return checkTemporaryLimits(ThreeSides::TWO, limitReductionValue, type);
+}
+
+iidm::optional<Overload> ThreeWindingsTransformer::checkTemporaryLimits3(LimitType type) const {
+    return checkTemporaryLimits(ThreeSides::THREE, type);
+}
+
+iidm::optional<Overload> ThreeWindingsTransformer::checkTemporaryLimits3(double limitReductionValue, LimitType type) const {
+    return checkTemporaryLimits(ThreeSides::THREE, limitReductionValue, type);
+}
+
+std::vector<Overload> ThreeWindingsTransformer::checkAllTemporaryLimits(ThreeSides side, LimitType type) const {
+    return detail::allOverloadsOf(backend_, handle_, static_cast<int>(side), iidm::optional<double>(), type);
+}
+
+std::vector<Overload> ThreeWindingsTransformer::checkAllTemporaryLimits(ThreeSides side, double limitReductionValue,
+                                                                       LimitType type) const {
+    return detail::allOverloadsOf(backend_, handle_, static_cast<int>(side), iidm::optional<double>(limitReductionValue), type);
 }
 
 // ── Extensions ───────────────────────────────────────────────────────────────

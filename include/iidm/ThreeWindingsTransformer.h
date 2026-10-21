@@ -3,6 +3,7 @@
 #include <iidm/Connectable.h>
 #include <iidm/Enums.h>
 #include <iidm/FlowsLimitsHolder.h>
+#include <iidm/Overload.h>
 #include <iidm/TapChangerHolder.h>
 #include <iidm/Terminal.h>
 #include <iidm/ThreeWindingsTransformerToBeEstimated.h>
@@ -85,6 +86,33 @@ public:
     void applySolvedValues();
     void setRatioTapPositionToSolvedTapPosition();
     void setPhaseTapPositionToSolvedTapPosition();
+
+    // ── Overloads: a flow (current, active or apparent power) over the limits in force; with a
+    // limit reduction, over these limits multiplied by it ──────────────────────────────────────
+    // Whether the current is over the permanent limit, on any side
+    bool isOverloaded() const;
+    bool isOverloaded(double limitReductionValue) const;
+    // The shortest acceptable duration of the overloads of the current (seconds; INT_MAX without any)
+    int getOverloadDuration() const;
+    bool checkPermanentLimit(ThreeSides side, LimitType type) const;
+    bool checkPermanentLimit(ThreeSides side, double limitReductionValue, LimitType type) const;
+    bool checkPermanentLimit1(LimitType type) const;
+    bool checkPermanentLimit1(double limitReductionValue, LimitType type) const;
+    bool checkPermanentLimit2(LimitType type) const;
+    bool checkPermanentLimit2(double limitReductionValue, LimitType type) const;
+    bool checkPermanentLimit3(LimitType type) const;
+    bool checkPermanentLimit3(double limitReductionValue, LimitType type) const;
+    // The overload of a side (empty without one), the overloads of every selected group of a side
+    iidm::optional<Overload> checkTemporaryLimits(ThreeSides side, LimitType type) const;
+    iidm::optional<Overload> checkTemporaryLimits(ThreeSides side, double limitReductionValue, LimitType type) const;
+    iidm::optional<Overload> checkTemporaryLimits1(LimitType type) const;
+    iidm::optional<Overload> checkTemporaryLimits1(double limitReductionValue, LimitType type) const;
+    iidm::optional<Overload> checkTemporaryLimits2(LimitType type) const;
+    iidm::optional<Overload> checkTemporaryLimits2(double limitReductionValue, LimitType type) const;
+    iidm::optional<Overload> checkTemporaryLimits3(LimitType type) const;
+    iidm::optional<Overload> checkTemporaryLimits3(double limitReductionValue, LimitType type) const;
+    std::vector<Overload> checkAllTemporaryLimits(ThreeSides side, LimitType type) const;
+    std::vector<Overload> checkAllTemporaryLimits(ThreeSides side, double limitReductionValue, LimitType type) const;
 
     // ── Extensions ───────────────────────────────────────────────────────
     // An extension's getter throws ExtensionNotFoundException when it is absent

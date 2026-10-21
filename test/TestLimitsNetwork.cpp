@@ -14,7 +14,7 @@
 
 // Limits on the real backends (see RealBackends.h): the same scenario on GraalVM and on JNI, with
 // the network test/data/transformers_test.xiidm (T2: limits of each type on side 1, two selected
-// groups on side 2, low limits; T3 legs and the boundary line DL).
+// groups on side 2, low limits; T3 legs and the boundary line DL), and overloads.
 
 using namespace iidm;
 using iidm::test::envPath;
@@ -136,6 +136,71 @@ void checkWriting(BackendProvider& b) {
     EXPECT_DOUBLE_EQ(dl.getCurrentLimitsFromId("DEFAULT")->getPermanentLimit(), 1000.0);
 }
 
+// Flows over the limits: T2 (side 1: permanent 800 A, TL10 900 A for 600 s, TL1 1000 A for 60 s)
+// and T3 (leg 1: permanent 400 A, TL20 500 A for 1200 s) take a current from B1, at 400 kV
+void checkOverloads(BackendProvider& b) {
+    VoltageLevel vl1(b.findById(prop::VOLTAGE_LEVEL, "VL1"), &b);
+    vl1.getBusBreakerView().getBus("B1")->setV(400);
+    TwoWindingsTransformer t2(b.findById(prop::TWO_WINDINGS_TRANSFORMER, "T2"), &b);
+    t2.getTerminal1().setP(950 * std::sqrt(3.0) * 0.4).setQ(0); // 950 A
+    ThreeWindingsTransformer t3(b.findById(prop::THREE_WINDINGS_TRANSFORMER, "T3"), &b);
+    t3.getTerminal(ThreeSides::ONE).setP(450 * std::sqrt(3.0) * 0.4).setQ(0); // 450 A
+
+    // Permanent limits
+    EXPECT_TRUE(t2.isOverloaded());
+    EXPECT_FALSE(t2.isOverloaded(2.0)); // limits doubled
+    EXPECT_TRUE(t2.checkPermanentLimit1(LimitType::CURRENT));
+    EXPECT_TRUE(t2.checkPermanentLimit(TwoSides::ONE, LimitType::ACTIVE_POWER)); // 658 MW, over 300 MW
+    EXPECT_FALSE(t2.checkPermanentLimit1(2.0, LimitType::CURRENT));
+    EXPECT_FALSE(t2.checkPermanentLimit2(LimitType::CURRENT)); // no flow on side 2
+    EXPECT_EQ(t2.getOverloadDuration(), 60);
+
+    // Temporary limits: over TL10, under TL1
+    iidm::optional<Overload> overload = t2.checkTemporaryLimits1(LimitType::CURRENT);
+    ASSERT_TRUE(overload);
+    EXPECT_EQ(overload->getTemporaryLimit().getName(), "TL1");
+    EXPECT_EQ(overload->getTemporaryLimit().getAcceptableDuration(), 60);
+    EXPECT_DOUBLE_EQ(overload->getPreviousLimit(), 900.0);
+    EXPECT_EQ(overload->getPreviousLimitName(), "TL10");
+    EXPECT_EQ(overload->getOperationalLimitsGroupId(), "DEFAULT");
+    EXPECT_DOUBLE_EQ(overload->getLimitScalingCoefficient(), 1.0);
+    EXPECT_EQ(t2.checkTemporaryLimits(TwoSides::ONE, LimitType::CURRENT)->getPreviousLimitName(), "TL10");
+    EXPECT_FALSE(t2.checkTemporaryLimits2(LimitType::CURRENT));
+    // Limits halved: over every one of them
+    iidm::optional<Overload> unacceptable = t2.checkTemporaryLimits(TwoSides::ONE, 0.5, LimitType::CURRENT);
+    ASSERT_TRUE(unacceptable);
+    EXPECT_EQ(unacceptable->getTemporaryLimit().getName(), "Unacceptable");
+    EXPECT_EQ(unacceptable->getTemporaryLimit().getAcceptableDuration(), 0);
+    EXPECT_EQ(unacceptable->getPreviousLimitName(), "TL1");
+    EXPECT_DOUBLE_EQ(unacceptable->getLimitScalingCoefficient(), 0.5);
+    ASSERT_EQ(t2.checkAllTemporaryLimits(TwoSides::ONE, LimitType::CURRENT).size(), 1u);
+    EXPECT_TRUE(t2.checkAllTemporaryLimits(TwoSides::TWO, LimitType::CURRENT).empty());
+    EXPECT_TRUE(t2.checkAllTemporaryLimits(TwoSides::ONE, 2.0, LimitType::CURRENT).empty());
+
+    // The three windings transformer: over the permanent limit of leg 1, under TL20
+    EXPECT_TRUE(t3.isOverloaded());
+    EXPECT_TRUE(t3.checkPermanentLimit1(LimitType::CURRENT));
+    EXPECT_FALSE(t3.checkPermanentLimit3(LimitType::CURRENT)); // no selected group there
+    EXPECT_FALSE(t3.checkPermanentLimit(ThreeSides::ONE, 1.2, LimitType::CURRENT));
+    EXPECT_EQ(t3.getOverloadDuration(), 1200);
+    iidm::optional<Overload> legOverload = t3.checkTemporaryLimits1(LimitType::CURRENT);
+    ASSERT_TRUE(legOverload);
+    EXPECT_EQ(legOverload->getTemporaryLimit().getName(), "TL20");
+    EXPECT_DOUBLE_EQ(legOverload->getPreviousLimit(), 400.0);
+    EXPECT_EQ(legOverload->getPreviousLimitName(), "permanent");
+    EXPECT_EQ(legOverload->getOperationalLimitsGroupId(), "WINTER");
+    EXPECT_FALSE(t3.checkTemporaryLimits2(LimitType::CURRENT));
+    ASSERT_EQ(t3.checkAllTemporaryLimits(ThreeSides::ONE, 0.95, LimitType::CURRENT).size(), 1u);
+
+    // A check leaves no Java reference behind
+    const std::size_t baseline = b.liveHandleCount();
+    for (int i = 0; i < 100; ++i) {
+        EXPECT_TRUE(t2.checkTemporaryLimits1(LimitType::CURRENT));
+        EXPECT_EQ(t3.checkAllTemporaryLimits(ThreeSides::ONE, LimitType::CURRENT).size(), 1u);
+    }
+    EXPECT_EQ(b.liveHandleCount(), baseline);
+}
+
 // Reading limits through the branch sides leaves no Java reference behind
 void checkHandlesAreReleased(BackendProvider& b) {
     TwoWindingsTransformer t2(b.findById(prop::TWO_WINDINGS_TRANSFORMER, "T2"), &b);
@@ -155,6 +220,7 @@ void checkLimits(BackendProvider& b) {
     b.loadNetworkBytes(xiidm.data(), xiidm.size(), "network.xiidm");
     checkReading(b);
     checkHandlesAreReleased(b);
+    checkOverloads(b);
     checkWriting(b);
 }
 

@@ -7,6 +7,7 @@
 #include <iidm/Identifiable.h>
 #include <iidm/LoadingLimits.h>
 #include <iidm/OperationalLimitsGroup.h>
+#include <iidm/Overload.h>
 #include <iidm/Terminal.h>
 #include <iidm/stdcxx/optional.hpp>
 #include <string>
@@ -80,6 +81,29 @@ public:
     // Of a type (current, active power or apparent power)
     iidm::optional<LoadingLimits> getLimits(LimitType type, TwoSides side) const;
     std::vector<LoadingLimits> getAllSelectedLimits(LimitType type, TwoSides side) const;
+
+    // ── Overloads: a flow (current, active or apparent power) over the limits in force; with a
+    // limit reduction, over these limits multiplied by it ──────────────────────────────────────
+    // Whether the current is over the permanent limit, on either side
+    bool isOverloaded() const;
+    bool isOverloaded(double limitReductionValue) const;
+    // The shortest acceptable duration of the overloads of the current (seconds; INT_MAX without any)
+    int getOverloadDuration() const;
+    bool checkPermanentLimit(TwoSides side, LimitType type) const;
+    bool checkPermanentLimit(TwoSides side, double limitReductionValue, LimitType type) const;
+    bool checkPermanentLimit1(LimitType type) const;
+    bool checkPermanentLimit1(double limitReductionValue, LimitType type) const;
+    bool checkPermanentLimit2(LimitType type) const;
+    bool checkPermanentLimit2(double limitReductionValue, LimitType type) const;
+    // The overload of a side (empty without one), the overloads of every selected group of a side
+    iidm::optional<Overload> checkTemporaryLimits(TwoSides side, LimitType type) const;
+    iidm::optional<Overload> checkTemporaryLimits(TwoSides side, double limitReductionValue, LimitType type) const;
+    iidm::optional<Overload> checkTemporaryLimits1(LimitType type) const;
+    iidm::optional<Overload> checkTemporaryLimits1(double limitReductionValue, LimitType type) const;
+    iidm::optional<Overload> checkTemporaryLimits2(LimitType type) const;
+    iidm::optional<Overload> checkTemporaryLimits2(double limitReductionValue, LimitType type) const;
+    std::vector<Overload> checkAllTemporaryLimits(TwoSides side, LimitType type) const;
+    std::vector<Overload> checkAllTemporaryLimits(TwoSides side, double limitReductionValue, LimitType type) const;
 
     // ── Extensions ───────────────────────────────────────────────────────
     // An extension's getter throws ExtensionNotFoundException when it is absent

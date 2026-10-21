@@ -54,6 +54,7 @@ IIDM_CODE(BOUNDARY,                    56) // the far end of a boundary line
 IIDM_CODE(ZIP_LOAD_MODEL,              58)
 IIDM_CODE(EXPONENTIAL_LOAD_MODEL,      59)
 IIDM_CODE(NETWORK,                     60) // getRelated(identifiable, NETWORK): its network
+IIDM_CODE(OVERLOAD,                    61) // an overload found by an overload check (see Overloads)
 // Abstract types (Java interfaces)
 IIDM_CODE(IDENTIFIABLE,                43)
 IIDM_CODE(CONNECTABLE,                 44)
@@ -434,6 +435,27 @@ IIDM_CODE(DESELECT_OLG,                1984) // string, on a holder, set only: d
 IIDM_CODE(REMOVE_OLG,                  1985) // string, on a holder, set only: removeOperationalLimitsGroup
 IIDM_CODE(ALL_SELECTED_OLG_IDS,        1986) // string list, on a holder (sorted)
 IIDM_CODE(ALL_SELECTED_OLG_IDS_ORDERED, 1987) // string list, on a holder (in selection order)
+
+// ── Overloads (Branch, ThreeWindingsTransformer) ─────────────────────────────
+// Sides are TwoSides (branch) or ThreeSides ordinals, types LimitType ordinals; a limit reduction
+// multiplies the limits. evaluate(object, CHECK_PERMANENT_LIMIT, {side, type} or {side, limit
+// reduction, type}): checkPermanentLimit, 1 or 0. invoke(object, CHECK_TEMPORARY_LIMITS /
+// CHECK_ALL_TEMPORARY_LIMITS) starts a check of the temporary limits of a side: fields TERMINAL_SIDE,
+// LIMIT_REDUCTION (none: checkTemporaryLimits(side, type)) and LL_LIMIT_TYPE; invoke(check, ACT_ADD)
+// runs it, and returns the overload (INVALID_HANDLE without one), or the list of the overloads of the
+// selected groups (see ELEMENTS). On an overload, getRelated(overload, TEMPORARY_LIMIT) is its
+// temporary limit.
+IIDM_CODE(OVERLOADED,                  1990) // bool, read-only: isOverloaded(); evaluate(object, OVERLOADED,
+                                             // {limit reduction}): isOverloaded(limitReductionValue), 1 or 0
+IIDM_CODE(OVERLOAD_DURATION,           1991) // int, read-only: getOverloadDuration (seconds; INT_MAX without overload)
+IIDM_CODE(CHECK_PERMANENT_LIMIT,       1992)
+IIDM_CODE(CHECK_TEMPORARY_LIMITS,      1993)
+IIDM_CODE(CHECK_ALL_TEMPORARY_LIMITS,  1994)
+IIDM_CODE(LIMIT_REDUCTION,             1995) // double, a field of the checks of temporary limits
+IIDM_CODE(OVERLOAD_PREVIOUS_LIMIT,     1996) // double, on an overload: the limit the value is over
+IIDM_CODE(OVERLOAD_PREVIOUS_LIMIT_NAME, 1997) // string, on an overload: its name
+IIDM_CODE(OVERLOAD_OLG_ID,             1998) // string, on an overload: the id of the group of its limits
+IIDM_CODE(OVERLOAD_LIMIT_SCALING,      1999) // double, on an overload: getLimitScalingCoefficient
 
 // ── Relations (used in getRelated) ──────────────────────────────────────────
 IIDM_CODE(REL_TERMINAL1,               2000)
