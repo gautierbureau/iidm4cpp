@@ -86,6 +86,14 @@ VoltageLevelAdder Network::newVoltageLevel() {
     return VoltageLevelAdder(backend_->invoke(handle_, prop::VOLTAGE_LEVEL), backend_);
 }
 
+LineAdder Network::newLine() {
+    return LineAdder(backend_->invoke(handle_, prop::LINE), backend_);
+}
+
+HvdcLineAdder Network::newHvdcLine() {
+    return HvdcLineAdder(backend_->invoke(handle_, prop::HVDC_LINE), backend_);
+}
+
 TieLineAdder Network::newTieLine() {
     return TieLineAdder(backend_->invoke(handle_, prop::TIE_LINE), backend_);
 }

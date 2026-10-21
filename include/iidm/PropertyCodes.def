@@ -238,6 +238,17 @@ IIDM_CODE(LINE_G1,                     702)
 IIDM_CODE(LINE_B1,                     703)
 IIDM_CODE(LINE_G2,                     704)
 IIDM_CODE(LINE_B2,                     705)
+// Fields of a new branch: invoke(network, LINE) starts a line, invoke(substation,
+// TWO_WINDINGS_TRANSFORMER) a two windings transformer; where each side is connected: its voltage level,
+// then its node (node-breaker topology) or its bus and connectable bus (bus-breaker topology).
+IIDM_CODE(BRANCH_VOLTAGE_LEVEL1,       710) // string, adder field
+IIDM_CODE(BRANCH_VOLTAGE_LEVEL2,       711) // string, adder field
+IIDM_CODE(BRANCH_NODE1,                712) // int, adder field
+IIDM_CODE(BRANCH_NODE2,                713) // int, adder field
+IIDM_CODE(BRANCH_BUS1,                 714) // string, adder field
+IIDM_CODE(BRANCH_BUS2,                 715) // string, adder field
+IIDM_CODE(BRANCH_CONNECTABLE_BUS1,     716) // string, adder field
+IIDM_CODE(BRANCH_CONNECTABLE_BUS2,     717) // string, adder field
 
 // ── TwoWindingsTransformer ───────────────────────────────────────────────────
 // Its tap changers: getRelated(transformer, RATIO_TAP_CHANGER / PHASE_TAP_CHANGER); its substation
@@ -256,14 +267,18 @@ IIDM_CODE(TWO_WT_RATED_S,              806)
 // getRelatedByIndex(transformer, REL_TERMINAL, side) the terminal of a side. On a leg,
 // getRelated(leg, REL_TERMINAL) is its terminal, getRelated(leg, THREE_WINDINGS_TRANSFORMER) its
 // transformer, getRelated(leg, RATIO_TAP_CHANGER / PHASE_TAP_CHANGER) its tap changers; a leg is a
-// flows limits holder (see Limits).
+// flows limits holder (see Limits). invoke(substation, THREE_WINDINGS_TRANSFORMER) starts a new one
+// (field THREE_WT_RATED_U0), then invoke(adder, THREE_WINDINGS_TRANSFORMER_LEG) each leg: LEG_SIDE first,
+// then the LEG_* fields and where it is connected (TERMINAL_VOLTAGE_LEVEL_ID, then TERMINAL_NODE or
+// TERMINAL_BUS_BREAKER_BUS_ID and TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID); ACT_ADD returns to the
+// transformer's adder.
 IIDM_CODE(LEG_R,                       820) // double
 IIDM_CODE(LEG_X,                       821) // double
 IIDM_CODE(LEG_G,                       822) // double
 IIDM_CODE(LEG_B,                       823) // double
 IIDM_CODE(LEG_RATED_U,                 824) // double
 IIDM_CODE(LEG_RATED_S,                 825) // double, NaN = undefined (optional double)
-IIDM_CODE(LEG_SIDE,                    826) // int, read-only: ThreeSides ordinal
+IIDM_CODE(LEG_SIDE,                    826) // int, read-only: ThreeSides ordinal; the first field of a new leg
 IIDM_CODE(THREE_WT_RATED_U0,           880) // double: ratedU0 (star-point voltage, kV)
 
 // ── Tap changers (RatioTapChanger and PhaseTapChanger) ───────────────────────
@@ -305,12 +320,15 @@ IIDM_CODE(PTC_STEP_ALPHA,              1925) // double: phase tap changer steps 
 // ── HvdcLine ─────────────────────────────────────────────────────────────────
 // Its converter stations: getRelated(line, REL_CONVERTER_STATION1 / 2), getRelatedByIndex(line,
 // HVDC_CONVERTER_STATION, side); invoke(line, ACT_CONNECT / ACT_DISCONNECT) connects / disconnects
-// them (connectConverterStations).
+// them (connectConverterStations). invoke(network, HVDC_LINE) starts a new one: the HVDC_* fields and
+// the ids of its converter stations.
 IIDM_CODE(HVDC_R,                      900)
 IIDM_CODE(HVDC_NOMINAL_V,             901)
 IIDM_CODE(HVDC_ACTIVE_POWER_SETPOINT, 902)
 IIDM_CODE(HVDC_MAX_P,                  903)
 IIDM_CODE(HVDC_CONVERTERS_MODE,        904)
+IIDM_CODE(HVDC_CONVERTER_STATION_ID1,  905) // string, adder field
+IIDM_CODE(HVDC_CONVERTER_STATION_ID2,  906) // string, adder field
 
 // ── BoundaryLine (powsybl 7.4; DanglingLine before) ──────────────────────────
 // A line to the outside of the network. getRelated(line, BOUNDARY_LINE_GENERATION) is its

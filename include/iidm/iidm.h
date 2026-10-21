@@ -164,6 +164,10 @@
 #include <iidm/VscConverterStationAdder.h>
 #include <iidm/LccConverterStationAdder.h>
 #include <iidm/BoundaryLineAdder.h>
+#include <iidm/LineAdder.h>
+#include <iidm/TwoWindingsTransformerAdder.h>
+#include <iidm/ThreeWindingsTransformerAdder.h>
+#include <iidm/HvdcLineAdder.h>
 #include <iidm/LineCouplingsAdder.h>
 #include <iidm/VariantManager.h>
 #include <iidm/Network.h>

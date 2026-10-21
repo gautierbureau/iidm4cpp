@@ -73,6 +73,14 @@ int Substation::getOverloadManagementSystemCount() const {
     return detail::countOf(backend_, handle_, prop::OVERLOAD_MANAGEMENT_SYSTEM);
 }
 
+TwoWindingsTransformerAdder Substation::newTwoWindingsTransformer() {
+    return TwoWindingsTransformerAdder(backend_->invoke(handle_, prop::TWO_WINDINGS_TRANSFORMER), backend_);
+}
+
+ThreeWindingsTransformerAdder Substation::newThreeWindingsTransformer() {
+    return ThreeWindingsTransformerAdder(backend_->invoke(handle_, prop::THREE_WINDINGS_TRANSFORMER), backend_);
+}
+
 OverloadManagementSystemAdder Substation::newOverloadManagementSystem() {
     return OverloadManagementSystemAdder(backend_->invoke(handle_, prop::OVERLOAD_MANAGEMENT_SYSTEM), backend_);
 }

@@ -14,9 +14,11 @@
 #include <iidm/Ground.h>
 #include <iidm/HvdcConverterStation.h>
 #include <iidm/HvdcLine.h>
+#include <iidm/HvdcLineAdder.h>
 #include <iidm/Identifiable.h>
 #include <iidm/LccConverterStation.h>
 #include <iidm/Line.h>
+#include <iidm/LineAdder.h>
 #include <iidm/LineCouplings.h>
 #include <iidm/LineCouplingsAdder.h>
 #include <iidm/Load.h>
@@ -214,7 +216,10 @@ public:
     SubstationAdder   newSubstation();
     // A voltage level without substation
     VoltageLevelAdder newVoltageLevel();
+    // A line between two voltage levels
+    LineAdder         newLine();
     TieLineAdder      newTieLine();
+    HvdcLineAdder     newHvdcLine();
     AreaAdder         newArea();
     VoltageAngleLimitAdder newVoltageAngleLimit();
 

@@ -425,6 +425,31 @@ public final class Creation {
         }
     }
 
+    /** A leg of a new three windings transformer: LEG_SIDE selects newLeg1(), newLeg2() or newLeg3(), then its fields. */
+    static final class NewLeg {
+        private final ThreeWindingsTransformerAdder adder;
+        private ThreeWindingsTransformerAdder.LegAdder leg;
+
+        NewLeg(ThreeWindingsTransformerAdder adder) {
+            this.adder = adder;
+        }
+
+        void select(int side) {
+            leg = switch (enumValue(ThreeSides.class, side)) {
+                case ONE -> adder.newLeg1();
+                case TWO -> adder.newLeg2();
+                case THREE -> adder.newLeg3();
+            };
+        }
+
+        ThreeWindingsTransformerAdder.LegAdder leg() {
+            if (leg == null) {
+                throw new IllegalStateException("No side selected: LEG_SIDE first");
+            }
+            return leg;
+        }
+    }
+
     /** A plane of a new reactive capability shape: ReactiveCapabilityShapeAdder.addPlane, its values set one by one. */
     static final class NewPlane {
         private final ReactiveCapabilityShapeAdder adder;
@@ -534,6 +559,11 @@ public final class Creation {
             case BOUNDARY_LINE -> ((VoltageLevel) owner).newBoundaryLine();
             case BOUNDARY_LINE_GENERATION -> ((BoundaryLineAdder) owner).newGeneration();
             case TIE_LINE -> ((Network) owner).newTieLine();
+            case LINE -> ((Network) owner).newLine();
+            case HVDC_LINE -> ((Network) owner).newHvdcLine();
+            case TWO_WINDINGS_TRANSFORMER -> ((Substation) owner).newTwoWindingsTransformer();
+            case THREE_WINDINGS_TRANSFORMER -> ((Substation) owner).newThreeWindingsTransformer();
+            case THREE_WINDINGS_TRANSFORMER_LEG -> new NewLeg((ThreeWindingsTransformerAdder) owner);
             case AREA -> ((Network) owner).newArea();
             case AREA_BOUNDARY -> owner instanceof AreaAdder areaAdder ? new NewAreaBoundary(areaAdder) : ((Area) owner).newAreaBoundary();
             case VOLTAGE_ANGLE_LIMIT -> ((Network) owner).newVoltageAngleLimit();
@@ -720,6 +750,10 @@ public final class Creation {
                 replacer.replaceSteps();
                 yield null;
             }
+            case NewLeg leg -> {
+                leg.leg().add();
+                yield null;
+            }
             case ShuntCompensatorLinearModelAdder adder -> {
                 adder.add();
                 yield null;
@@ -808,6 +842,30 @@ public final class Creation {
             case LOCAL_TARGET_Q -> ((VoltageRegulationHolderAdder<?>) a).setLocalTargetQ(value);
             case LOAD_P0 -> ((LoadAdder) a).setP0(value);
             case LOAD_Q0 -> ((LoadAdder) a).setQ0(value);
+            case LINE_R -> ((LineAdder) a).setR(value);
+            case LINE_X -> ((LineAdder) a).setX(value);
+            case LINE_G1 -> ((LineAdder) a).setG1(value);
+            case LINE_B1 -> ((LineAdder) a).setB1(value);
+            case LINE_G2 -> ((LineAdder) a).setG2(value);
+            case LINE_B2 -> ((LineAdder) a).setB2(value);
+            case TWO_WT_R -> ((TwoWindingsTransformerAdder) a).setR(value);
+            case TWO_WT_X -> ((TwoWindingsTransformerAdder) a).setX(value);
+            case TWO_WT_G -> ((TwoWindingsTransformerAdder) a).setG(value);
+            case TWO_WT_B -> ((TwoWindingsTransformerAdder) a).setB(value);
+            case TWO_WT_RATED_U1 -> ((TwoWindingsTransformerAdder) a).setRatedU1(value);
+            case TWO_WT_RATED_U2 -> ((TwoWindingsTransformerAdder) a).setRatedU2(value);
+            case TWO_WT_RATED_S -> ((TwoWindingsTransformerAdder) a).setRatedS(value);
+            case THREE_WT_RATED_U0 -> ((ThreeWindingsTransformerAdder) a).setRatedU0(value);
+            case LEG_R -> ((NewLeg) a).leg().setR(value);
+            case LEG_X -> ((NewLeg) a).leg().setX(value);
+            case LEG_G -> ((NewLeg) a).leg().setG(value);
+            case LEG_B -> ((NewLeg) a).leg().setB(value);
+            case LEG_RATED_U -> ((NewLeg) a).leg().setRatedU(value);
+            case LEG_RATED_S -> ((NewLeg) a).leg().setRatedS(value);
+            case HVDC_R -> ((HvdcLineAdder) a).setR(value);
+            case HVDC_NOMINAL_V -> ((HvdcLineAdder) a).setNominalV(value);
+            case HVDC_ACTIVE_POWER_SETPOINT -> ((HvdcLineAdder) a).setActivePowerSetpoint(value);
+            case HVDC_MAX_P -> ((HvdcLineAdder) a).setMaxP(value);
             case BAT_TARGET_P -> ((BatteryAdder) a).setTargetP(value);
             case BAT_MIN_P -> ((BatteryAdder) a).setMinP(value);
             case BAT_MAX_P -> ((BatteryAdder) a).setMaxP(value);
@@ -962,6 +1020,7 @@ public final class Creation {
                 switch (a) {
                     case ConnectableMove move -> move.node = value;
                     case NodeFictitiousInjection change -> change.node = value;
+                    case NewLeg leg -> leg.leg().setNode(value);
                     default -> ((InjectionAdder<?, ?>) a).setNode(value);
                 }
             }
@@ -1003,6 +1062,10 @@ public final class Creation {
             case GEN_ENERGY_SOURCE -> ((GeneratorAdder) a).setEnergySource(enumValue(EnergySource.class, value));
             case LOAD_TYPE -> ((LoadAdder) a).setLoadType(enumValue(LoadType.class, value));
             case SHUNT_SECTION_COUNT -> ((ShuntCompensatorAdder) a).setSectionCount(value);
+            case BRANCH_NODE1 -> ((BranchAdder<?, ?>) a).setNode1(value);
+            case BRANCH_NODE2 -> ((BranchAdder<?, ?>) a).setNode2(value);
+            case LEG_SIDE -> ((NewLeg) a).select(value);
+            case HVDC_CONVERTERS_MODE -> ((HvdcLineAdder) a).setConvertersMode(enumValue(HvdcLine.ConvertersMode.class, value));
             case SHUNT_SOLVED_SECTION_COUNT -> ((ShuntCompensatorAdder) a).setSolvedSectionCount(value);
             case SHUNT_MAX_SECTION_COUNT -> ((ShuntCompensatorLinearModelAdder) a).setMaximumSectionCount(value);
             case VR_MODE -> ((VoltageRegulationAdderOrBuilder<?>) a).withMode(value < 0 ? null : enumValue(RegulationMode.class, value));
@@ -1132,15 +1195,35 @@ public final class Creation {
             case NETWORK_SOURCE_FORMAT -> ((NewSubnetwork) a).sourceFormat = value;
             case COUNTRY -> ((SubstationAdder) a).setCountry(Country.valueOf(value));
             case SUBSTATION_TSO -> ((SubstationAdder) a).setTso(value);
-            case TERMINAL_BUS_BREAKER_BUS_ID -> ((InjectionAdder<?, ?>) a).setBus(value);
-            case TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID -> {
-                if (a instanceof ConnectableMove move) {
-                    move.busId = value;
+            case TERMINAL_BUS_BREAKER_BUS_ID -> {
+                if (a instanceof NewLeg leg) {
+                    leg.leg().setBus(value);
                 } else {
-                    ((InjectionAdder<?, ?>) a).setConnectableBus(value);
+                    ((InjectionAdder<?, ?>) a).setBus(value);
                 }
             }
-            case TERMINAL_VOLTAGE_LEVEL_ID -> ((ConnectableMove) a).voltageLevelId = value;
+            case TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID -> {
+                switch (a) {
+                    case ConnectableMove move -> move.busId = value;
+                    case NewLeg leg -> leg.leg().setConnectableBus(value);
+                    default -> ((InjectionAdder<?, ?>) a).setConnectableBus(value);
+                }
+            }
+            case TERMINAL_VOLTAGE_LEVEL_ID -> {
+                if (a instanceof NewLeg leg) {
+                    leg.leg().setVoltageLevel(value);
+                } else {
+                    ((ConnectableMove) a).voltageLevelId = value;
+                }
+            }
+            case BRANCH_VOLTAGE_LEVEL1 -> ((BranchAdder<?, ?>) a).setVoltageLevel1(value);
+            case BRANCH_VOLTAGE_LEVEL2 -> ((BranchAdder<?, ?>) a).setVoltageLevel2(value);
+            case BRANCH_BUS1 -> ((BranchAdder<?, ?>) a).setBus1(value);
+            case BRANCH_BUS2 -> ((BranchAdder<?, ?>) a).setBus2(value);
+            case BRANCH_CONNECTABLE_BUS1 -> ((BranchAdder<?, ?>) a).setConnectableBus1(value);
+            case BRANCH_CONNECTABLE_BUS2 -> ((BranchAdder<?, ?>) a).setConnectableBus2(value);
+            case HVDC_CONVERTER_STATION_ID1 -> ((HvdcLineAdder) a).setConverterStationId1(value);
+            case HVDC_CONVERTER_STATION_ID2 -> ((HvdcLineAdder) a).setConverterStationId2(value);
             case BOUNDARY_LINE1_ID -> ((TieLineAdder) a).setBoundaryLine1(value);
             case BL_PAIRING_KEY -> ((BoundaryLineAdder) a).setPairingKey(value);
             case AREA_TYPE -> ((AreaAdder) a).setAreaType(value);
