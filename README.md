@@ -1039,15 +1039,18 @@ of an `ObservabilityArea`.
 The GraalVM entry points (`iidm_get_double`, `iidm_get_bool`, …) forward
 **every** property code to `PropertyDispatcher.java` without a hard-coded
 switch. An extension's type is one line of the table in `Extensions.java`, which serves
-the lookup on a host, the type check, the adder and the removal; its properties are cases
-in `PropertyDispatcher` (and in `Creation.java` for the fields of its adder):
+the lookup on a host, the type check, the adder and the removal; each of its properties is
+one line of `PropertyTable.java`, with its getter, its setter and its adder field (a property
+that takes more than one call is a case of `PropertyDispatcher`, or of `Creation.java` for
+an adder field):
 
 ```java
 // Extensions.java
 type(ACTIVE_POWER_CONTROL, ActivePowerControl.class, ActivePowerControlAdder.class),
-// PropertyDispatcher.java
-case EXT_APC_DROOP        -> activePowerControl(obj).getDroop();         // getDouble
-case EXT_APC_PARTICIPATE  -> activePowerControl(obj).isParticipate();    // getBool
+// PropertyTable.java
+doubles(EXT_APC_DROOP, (ActivePowerControl<?> x) -> x.getDroop(),
+    (ActivePowerControl<?> x, double v) -> x.setDroop(v),
+    (ActivePowerControlAdder<?> x, double v) -> x.withDroop(v));
 ```
 
 No C++ changes are needed in the GraalVM backend.
@@ -1056,9 +1059,9 @@ No C++ changes are needed in the GraalVM backend.
 
 The JNI backend sends every property, child and relation code to the object-based
 overloads of `PropertyDispatcher` (`getDouble(Object, int)`, `getChildObjects(Object, int)`,
-`getRelatedObject(Object, int)`, …), so a new extension only needs `PropertyDispatcher`
-cases and works on both backends. No JNI method signature has to be kept in sync with
-powsybl-core.
+`getRelatedObject(Object, int)`, …), so a new extension only needs its Java lines
+(`Extensions`, `PropertyTable`) and works on both backends. No JNI method signature has to
+be kept in sync with powsybl-core.
 
 #### Supported extensions
 
@@ -1124,7 +1127,7 @@ The state estimation extensions are exercised end to end by
 | Codes: the type code, then one per property | `include/iidm/PropertyCodes.def` (one line each) |
 | C++ extension wrapper and adder | `include/iidm/MyExt.h` + `src/MyExt.cpp`, `include/iidm/MyExtAdder.h` (+ `CMakeLists.txt`, `iidm.h`) |
 | Host accessors: `hasMyExt`, `getMyExt`, `newMyExt`, `removeMyExt`, on the class of the host type | e.g. `Injection.h` / `Injection.cpp` |
-| The type (extension and adder interfaces), then property cases and adder field cases | `Extensions.java`, `PropertyDispatcher.java`, `Creation.java` — serve **both** backends |
+| The type (extension and adder interfaces), then one line per property: getter, setter, adder field | `Extensions.java`, `PropertyTable.java` (`PropertyDispatcher.java` / `Creation.java` for what takes more than one call) — serve **both** backends |
 | C++ unit tests | `test/TestMyExt.cpp` with `MockBackend` |
 | Java dispatcher tests | `java/src/test/...` (covers the handle and object APIs) |
 
@@ -1265,45 +1268,29 @@ public final class NetworkRegistry {
 }
 ```
 
-#### PropertyDispatcher
+#### PropertyTable and PropertyDispatcher
+
+A property that is one call on a powsybl object is one line of `PropertyTable`: its getter, its
+setter and its adder field, `null` where there is none. `PropertyDispatcher` looks a code up
+there first; its switches keep the properties that take more than one call (as `Creation` does
+for the adder fields):
 
 ```java
+// com/powsybl/iidmbridge/PropertyTable.java
+doubles(GEN_TARGET_P, Generator::getTargetP, Generator::setTargetP, GeneratorAdder::setTargetP);
+doubles(LOAD_P0, Load::getP0, Load::setP0, LoadAdder::setP0);
+doubles(TERMINAL_P, Terminal::getP, Terminal::setP, null);
+enums(LOAD_TYPE, LoadType.class, Load::getLoadType, Load::setLoadType, LoadAdder::setLoadType);
+// …
+
 // com/powsybl/iidmbridge/PropertyDispatcher.java
 
 public final class PropertyDispatcher {
 
-    public static double getDouble(long handle, int property) {
-        Object obj = NetworkRegistry.lookup(handle);
-        return switch (property) {
-            case PropertyCodes.GEN_TARGET_P -> ((Generator) obj).getTargetP();
-            case PropertyCodes.LOCAL_TARGET_Q -> ((VoltageRegulationHolder<?>) obj).getLocalTargetQ();
-            case PropertyCodes.GEN_MIN_P    -> ((Generator) obj).getMinP();
-            case PropertyCodes.GEN_MAX_P    -> ((Generator) obj).getMaxP();
-            case PropertyCodes.LOAD_P0      -> ((Load) obj).getP0();
-            case PropertyCodes.LOAD_Q0      -> ((Load) obj).getQ0();
-            case PropertyCodes.TERMINAL_P   -> ((Terminal) obj).getP();
-            case PropertyCodes.TERMINAL_Q   -> ((Terminal) obj).getQ();
-            case PropertyCodes.BUS_V        -> ((Bus) obj).getV();
-            case PropertyCodes.BUS_ANGLE    -> ((Bus) obj).getAngle();
-            // …
-            default -> throw new IllegalArgumentException("Unknown property: " + property);
-        };
-    }
-
-    public static void setDouble(long handle, int property, double value) {
-        Object obj = NetworkRegistry.lookup(handle);
-        switch (property) {
-            case PropertyCodes.GEN_TARGET_P -> ((Generator) obj).setTargetP(value);
-            case PropertyCodes.LOCAL_TARGET_Q -> ((VoltageRegulationHolder<?>) obj).setLocalTargetQ(value);
-            case PropertyCodes.LOAD_P0      -> ((Load) obj).setP0(value);
-            case PropertyCodes.LOAD_Q0      -> ((Load) obj).setQ0(value);
-            case PropertyCodes.TERMINAL_P   -> ((Terminal) obj).setP(value);
-            case PropertyCodes.TERMINAL_Q   -> ((Terminal) obj).setQ(value);
-            case PropertyCodes.BUS_V        -> ((Bus) obj).setV(value);
-            case PropertyCodes.BUS_ANGLE    -> ((Bus) obj).setAngle(value);
-            // …
-            default -> throw new IllegalArgumentException("Unknown property: " + property);
-        }
+    public static double getDouble(Object obj, int property) {
+        PropertyTable.DoubleProperty table = PropertyTable.doubleProperty(property);
+        if (table != null && table.get() != null) return table.get().applyAsDouble(obj);
+        throw new BridgeErrors.PropertyNotFoundException("Unknown double property: " + property);
     }
 
     public static long[] getChildren(long parentHandle, int childType) {
@@ -1567,6 +1554,7 @@ iidm-bridge-cpp/
 │   ├── pom.xml
 │   └── src/main/java/com/powsybl/iidmbridge/
 │       ├── PropertyDispatcher.java
+│       ├── PropertyTable.java
 │       ├── graalvm/
 │       │   ├── IidmEntryPoints.java
 │       │   └── NetworkRegistry.java
