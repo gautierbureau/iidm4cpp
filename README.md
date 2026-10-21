@@ -257,7 +257,12 @@ Generator
 ├── getTargetP() / getMinP() / getMaxP() / getRatedS() → double   (+ setters)
 ├── getEnergySource() → EnergySource                               (+ setter)
 ├── isCondenser() → bool
+├── applySolvedValues() / setTargetPToP()
 └── + the voltage regulation holder and reactive limits holder methods (below)
+
+Battery     getTargetP() / getMinP() / getMaxP() (+ setters), applySolvedValues() / setTargetPToP(),
+            + the voltage regulation holder and reactive limits holder methods
+LccConverterStation   getPowerFactor() (+ setter), + the HvdcConverterStation methods
 
 Reactive limits holders: Generator, Battery, VscConverterStation, BoundaryLine::Generation
 ├── getReactiveLimits() → ReactiveLimits
@@ -378,7 +383,11 @@ ShuntCompensatorModel (properties)
 Load
 ├── getP0() → double             setP0(double)
 ├── getQ0() → double             setQ0(double)
-└── getLoadType() → LoadType
+├── getLoadType() → LoadType     setLoadType(LoadType)
+├── getModel() → optional<LoadModel>: getType() → LoadModelType, properties; as<ZipLoadModel>()
+│   getC0p() … getC2q() (+ setters), as<ExponentialLoadModel>() getNp() / getNq() (+ setters)
+│   (LoadAdder: newZipModel() / newExponentialModel(), whose add() returns to the load adder)
+└── applySolvedValues() / setP0ToP() / setQ0ToQ()
 
 Terminal
 ├── getConnectable() → Connectable

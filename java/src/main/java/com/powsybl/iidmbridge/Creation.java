@@ -137,6 +137,8 @@ public final class Creation {
             case TC_STEPS_REPLACER -> PropertyDispatcher.tapChanger(owner).stepsReplacer();
             case RATIO_TAP_CHANGER_STEP -> ((RatioTapChangerStepsReplacer) owner).beginStep();
             case PHASE_TAP_CHANGER_STEP -> ((PhaseTapChangerStepsReplacer) owner).beginStep();
+            case ZIP_LOAD_MODEL -> ((LoadAdder) owner).newZipModel();
+            case EXPONENTIAL_LOAD_MODEL -> ((LoadAdder) owner).newExponentialModel();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown type to create: " + type);
         };
         return new PendingAdd(adder, parent);
@@ -176,6 +178,14 @@ public final class Creation {
             }
             case TapChangerStepsReplacer<?, ?> replacer -> {
                 replacer.replaceSteps();
+                yield null;
+            }
+            case ZipLoadModelAdder adder -> {
+                adder.add();
+                yield null;
+            }
+            case ExponentialLoadModelAdder adder -> {
+                adder.add();
                 yield null;
             }
             case NewGroup group -> group.holder.newOperationalLimitsGroup(Objects.requireNonNull(group.id, "group id"));
@@ -287,6 +297,14 @@ public final class Creation {
             case STEP_G -> ((TapChangerStepAdder<?, ?>) a).setG(value);
             case STEP_B -> ((TapChangerStepAdder<?, ?>) a).setB(value);
             case PTC_STEP_ALPHA -> ((PhaseTapChangerStepAdder<?, ?>) a).setAlpha(value);
+            case ZIP_C0P -> ((ZipLoadModelAdder) a).setC0p(value);
+            case ZIP_C1P -> ((ZipLoadModelAdder) a).setC1p(value);
+            case ZIP_C2P -> ((ZipLoadModelAdder) a).setC2p(value);
+            case ZIP_C0Q -> ((ZipLoadModelAdder) a).setC0q(value);
+            case ZIP_C1Q -> ((ZipLoadModelAdder) a).setC1q(value);
+            case ZIP_C2Q -> ((ZipLoadModelAdder) a).setC2q(value);
+            case EXP_NP -> ((ExponentialLoadModelAdder) a).setNp(value);
+            case EXP_NQ -> ((ExponentialLoadModelAdder) a).setNq(value);
             default -> throw unknownField("double", property);
         }
     }

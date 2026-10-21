@@ -128,3 +128,14 @@ TEST_F(BatteryTest, NewAndRemoveActivePowerControl) {
     bat.removeActivePowerControl();
     EXPECT_EQ((backend.related[{BAT_HANDLE, prop::ACTIVE_POWER_CONTROL}]), INVALID_HANDLE);
 }
+
+TEST_F(BatteryTest, SetMinMaxPAndSolvedValues) {
+    Battery bat(BAT_HANDLE, &backend);
+    EXPECT_EQ(&bat.setMinP(-20.0).setMaxP(30.0), &bat);
+    EXPECT_DOUBLE_EQ(bat.getMinP(), -20.0);
+    EXPECT_DOUBLE_EQ(bat.getMaxP(), 30.0);
+    bat.applySolvedValues();
+    bat.setTargetPToP();
+    EXPECT_EQ(backend.invocations[0], std::make_pair(ObjectHandle(BAT_HANDLE), prop::ACT_APPLY_SOLVED_VALUES));
+    EXPECT_EQ(backend.invocations[1], std::make_pair(ObjectHandle(BAT_HANDLE), prop::ACT_SET_TARGET_P_TO_P));
+}

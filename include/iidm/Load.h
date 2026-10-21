@@ -2,6 +2,8 @@
 
 #include <iidm/Enums.h>
 #include <iidm/Injection.h>
+#include <iidm/LoadModel.h>
+#include <iidm/stdcxx/optional.hpp>
 
 namespace iidm {
 
@@ -19,6 +21,16 @@ public:
     Load& setQ0(double q0);
 
     LoadType getLoadType() const;
+    Load& setLoadType(LoadType loadType);
+
+    // How its power depends on the voltage: empty when it has no model
+    iidm::optional<LoadModel> getModel() const;
+
+    // ── Solved values ────────────────────────────────────────────────────
+    // P0 and Q0 from the solved flows: both, then each
+    void applySolvedValues();
+    void setP0ToP();
+    void setQ0ToQ();
 };
 
 } // namespace iidm

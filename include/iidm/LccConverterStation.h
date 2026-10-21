@@ -12,6 +12,7 @@ public:
     explicit LccConverterStation(ObjectHandle handle, BackendProvider* backend) : HvdcConverterStation(handle, backend) {}
 
     double getPowerFactor() const;
+    LccConverterStation& setPowerFactor(double powerFactor);
 };
 
 } // namespace iidm

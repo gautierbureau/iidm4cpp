@@ -75,4 +75,14 @@ void Generator::removeCoordinatedReactiveControl() {
     detail::removeExtension<CoordinatedReactiveControl>(backend_, handle_);
 }
 
+// ── Solved values ────────────────────────────────────────────────────────────
+
+void Generator::applySolvedValues() {
+    backend_->invoke(handle_, prop::ACT_APPLY_SOLVED_VALUES);
+}
+
+void Generator::setTargetPToP() {
+    backend_->invoke(handle_, prop::ACT_SET_TARGET_P_TO_P);
+}
+
 } // namespace iidm

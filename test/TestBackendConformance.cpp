@@ -812,6 +812,10 @@ TEST(BackendConformanceTest, BoundaryLines) {
     checkConformance("data/boundary_lines_test.xiidm");
 }
 
+TEST(BackendConformanceTest, Injections) {
+    checkConformance("data/injections_test.xiidm");
+}
+
 TEST(BackendConformanceTest, CreatedFromScratch) {
     checkConformance("created from scratch", buildNetwork);
 }

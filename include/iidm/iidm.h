@@ -52,6 +52,7 @@
 #include <iidm/HvdcLine.h>
 #include <iidm/BoundaryLine.h>
 #include <iidm/ShuntCompensator.h>
+#include <iidm/LoadModel.h>
 #include <iidm/ShuntCompensatorModel.h>
 #include <iidm/ShuntCompensatorLinearModel.h>
 #include <iidm/ShuntCompensatorNonLinearModel.h>

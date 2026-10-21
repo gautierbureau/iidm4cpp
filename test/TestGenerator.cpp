@@ -133,3 +133,12 @@ TEST_F(GeneratorTest, GetRegulatingTerminal) {
     EXPECT_TRUE(t.isValid());
     EXPECT_DOUBLE_EQ(t.getP(), 75.0);
 }
+
+TEST_F(GeneratorTest, SolvedValues) {
+    Generator gen(GEN_HANDLE, &backend);
+    gen.applySolvedValues();
+    gen.setTargetPToP();
+    ASSERT_EQ(backend.invocations.size(), 2u);
+    EXPECT_EQ(backend.invocations[0], std::make_pair(ObjectHandle(GEN_HANDLE), prop::ACT_APPLY_SOLVED_VALUES));
+    EXPECT_EQ(backend.invocations[1], std::make_pair(ObjectHandle(GEN_HANDLE), prop::ACT_SET_TARGET_P_TO_P));
+}
