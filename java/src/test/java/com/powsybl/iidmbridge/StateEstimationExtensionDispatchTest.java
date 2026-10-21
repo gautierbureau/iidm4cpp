@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * its own, reached from its host with its type code. The handle-based API (GraalVM backend) and the
  * object-based API (JNI backend).
  */
-class StateEstimationDispatchTest {
+class StateEstimationExtensionDispatchTest {
 
     private Network network;
 
@@ -479,7 +479,7 @@ class StateEstimationDispatchTest {
         // Sorted by connectable id, so the same on every run (powsybl gives them as a HashSet)
         long observable = PropertyDispatcher.getRelatedByString(ext, REL_OBS_AREA_BY_BBV_BUS, "B1");
         assertEquals(java.util.List.of("G1", "LINE1", "T2"), Arrays.stream(PropertyDispatcher.getChildren(observable, OBS_AREA_TERMINALS))
-            .mapToObj(StateEstimationDispatchTest::connectableId).toList());
+            .mapToObj(StateEstimationExtensionDispatchTest::connectableId).toList());
 
         assertEquals(0L, PropertyDispatcher.getRelated(reg(network.getVoltageLevel("VL2")), OBSERVABILITY_AREA));
     }
@@ -494,7 +494,7 @@ class StateEstimationDispatchTest {
         assertArrayEquals(new int[] {0, 1, 2}, PropertyDispatcher.getIntList(area, OBS_AREA_NODES));
         long[] terminals = PropertyDispatcher.getChildren(area, OBS_AREA_TERMINALS);
         assertEquals(Set.of("BBS1", "L4", "LINE1"), Arrays.stream(terminals)
-            .mapToObj(StateEstimationDispatchTest::connectableId)
+            .mapToObj(StateEstimationExtensionDispatchTest::connectableId)
             .collect(java.util.stream.Collectors.toSet()));
 
         PropertyDispatcher.setRelated(reg(network.getVoltageLevel("VL4")), OBSERVABILITY_AREA, 0L);

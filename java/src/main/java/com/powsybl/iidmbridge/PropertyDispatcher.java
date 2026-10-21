@@ -478,13 +478,19 @@ public final class PropertyDispatcher {
             // State estimation extensions
             case OBS_QUALITY_REDUNDANT -> ((ObservabilityQuality<?>) obj).isRedundant().map(r -> r ? 1 : 0).orElse(-1);
             case MEAS_TYPE          -> ((Measurement) obj).getType().ordinal();
-            case MEAS_SIDE          -> StateEstimationDispatch.measurementSide((Measurement) obj);
+            case MEAS_SIDE -> {
+                ThreeSides side = ((Measurement) obj).getSide();
+                yield side == null ? -1 : side.ordinal();
+            }
             case DMEAS_TYPE         -> ((DiscreteMeasurement) obj).getType().ordinal();
-            case DMEAS_TAP_CHANGER  -> StateEstimationDispatch.discreteMeasurementTapChanger((DiscreteMeasurement) obj);
+            case DMEAS_TAP_CHANGER -> {
+                DiscreteMeasurement.TapChanger tapChanger = ((DiscreteMeasurement) obj).getTapChanger();
+                yield tapChanger == null ? -1 : tapChanger.ordinal();
+            }
             case DMEAS_VALUE_TYPE   -> ((DiscreteMeasurement) obj).getValueType().ordinal();
             case DMEAS_VALUE_INT    -> ((DiscreteMeasurement) obj).getValueAsInt();
-            case OBS_AREA_NUMBER    -> ((StateEstimationDispatch.AreaRef) obj).area().getAreaNumber();
-            case OBS_AREA_STATUS    -> ((StateEstimationDispatch.AreaRef) obj).area().getStatus().ordinal();
+            case OBS_AREA_NUMBER    -> ((ObservabilityAreaRef) obj).area().getAreaNumber();
+            case OBS_AREA_STATUS    -> ((ObservabilityAreaRef) obj).area().getStatus().ordinal();
             case EXT_GEC_CODE -> ((GeneratorEntsoeCategory) obj).getCode();
             case EXT_OS_STATUS -> ((OperatingStatus<?>) obj).getStatus().ordinal();
             case EXT_LA_CONNECTION_TYPE -> ((LoadAsymmetrical) obj).getConnectionType().ordinal();
@@ -645,7 +651,7 @@ public final class PropertyDispatcher {
             case FLOWS_LIMITS_HOLDER        -> obj instanceof FlowsLimitsHolder || obj instanceof LimitsDispatch.BranchSide;
             case MEASUREMENT                -> obj instanceof Measurement;
             case DISCRETE_MEASUREMENT       -> obj instanceof DiscreteMeasurement;
-            case AREA_CHARACTERISTICS       -> obj instanceof StateEstimationDispatch.AreaRef;
+            case AREA_CHARACTERISTICS       -> obj instanceof ObservabilityAreaRef;
             case PLANE_LESS_OR_EQUAL        -> ((ReactiveCapabilityShapePlane) obj).isLessOrEqual();
             case PLANE_GREATER_OR_EQUAL     -> ((ReactiveCapabilityShapePlane) obj).isGreaterOrEqual();
             case FICTITIOUS                 -> ((Identifiable<?>) obj).isFictitious();
@@ -1283,9 +1289,9 @@ public final class PropertyDispatcher {
             case ELEMENTS -> ((Collection<?>) obj).stream();
             case MEASUREMENT          -> ((Measurements<?>) obj).getMeasurements().stream();
             case DISCRETE_MEASUREMENT -> ((DiscreteMeasurements<?>) obj).getDiscreteMeasurements().stream();
-            case AREA_CHARACTERISTICS -> StateEstimationDispatch.observabilityAreas((ObservabilityArea) obj);
-            case OBS_AREA_TERMINALS   -> StateEstimationDispatch.observabilityAreaTerminals(obj);
-            case OBS_AREA_BUSES       -> StateEstimationDispatch.observabilityAreaBuses(obj);
+            case AREA_CHARACTERISTICS -> observabilityAreas((ObservabilityArea) obj);
+            case OBS_AREA_TERMINALS   -> observabilityAreaTerminals(obj);
+            case OBS_AREA_BUSES       -> observabilityAreaBuses(obj);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown child type: " + childType);
         };
     }
@@ -1617,7 +1623,7 @@ public final class PropertyDispatcher {
             case ELEMENTS -> ((Collection<?>) obj).stream().mapToInt(element -> (Integer) element).toArray();
             case REGULATING_MODES -> modes(((VoltageRegulationHolder<?>) obj)::isRegulatingWithMode);
             case WITH_MODES       -> modes(((VoltageRegulationHolder<?>) obj)::isWithMode);
-            case OBS_AREA_NODES -> StateEstimationDispatch.observabilityAreaNodes(obj);
+            case OBS_AREA_NODES -> observabilityAreaNodes(obj);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown int list code: " + listCode);
         };
     }
@@ -1660,7 +1666,7 @@ public final class PropertyDispatcher {
             case CONTROL_ZONE -> ((SecondaryVoltageControl) obj).getControlZone(key).orElse(null);
             case CONTROL_UNIT -> ((ControlZone) obj).getControlUnit(key).orElse(null);
             case REL_OBS_AREA_BY_BUS, REL_OBS_AREA_BY_BBV_BUS
-                -> StateEstimationDispatch.observabilityAreaByBus((ObservabilityArea) obj, relation, key);
+                -> observabilityAreaByBus((ObservabilityArea) obj, relation, key);
             case OPERATIONAL_LIMITS_GROUP -> LimitsDispatch.holder(obj).getOperationalLimitsGroup(key).orElse(null);
             case CURRENT_LIMITS, ACTIVE_POWER_LIMITS, APPARENT_POWER_LIMITS
                 -> LimitsDispatch.holder(obj).getLimitsFromId(LimitsDispatch.limitType(relation), key).orElse(null);
@@ -1696,7 +1702,7 @@ public final class PropertyDispatcher {
             };
             case RATIO_TAP_CHANGER_STEP -> ((RatioTapChanger) obj).getStep(index);
             case PHASE_TAP_CHANGER_STEP -> ((PhaseTapChanger) obj).getStep(index);
-            case REL_OBS_AREA_BY_NODE -> StateEstimationDispatch.observabilityAreaByNode((ObservabilityArea) obj, index);
+            case REL_OBS_AREA_BY_NODE -> observabilityAreaByNode((ObservabilityArea) obj, index);
             case FLOWS_LIMITS_HOLDER -> LimitsDispatch.branchSide(obj, index);
             case LOADING_LIMITS -> LimitsDispatch.limits(obj, Creation.enumValue(LimitType.class, index));
             case TEMPORARY_LIMIT -> ((LoadingLimits) obj).getTemporaryLimit(index);
@@ -1779,5 +1785,82 @@ public final class PropertyDispatcher {
     /** The ordinals of the regulation modes that satisfy a test. */
     private static int[] modes(java.util.function.Predicate<RegulationMode> test) {
         return Arrays.stream(RegulationMode.values()).filter(test).mapToInt(Enum::ordinal).toArray();
+    }
+
+    /**
+     * An area of an observability area extension, with the voltage level it belongs to: the voltage
+     * level is needed to resolve the area's nodes and bus-breaker bus ids into objects.
+     */
+    record ObservabilityAreaRef(VoltageLevel voltageLevel, ObservabilityArea.AreaCharacteristics area) {
+    }
+
+    private static Stream<?> observabilityAreas(ObservabilityArea ext) {
+        VoltageLevel vl = ext.getExtendable();
+        return ext.getObservabilityAreas().stream()
+            // powsybl returns them in no particular order
+            .sorted(Comparator.comparingInt(ObservabilityArea.AreaCharacteristics::getAreaNumber))
+            .map(area -> new ObservabilityAreaRef(vl, area));
+    }
+
+    private static Object observabilityAreaByNode(ObservabilityArea ext, int node) {
+        return observabilityArea(ext.getExtendable(), ext.getNodeBreakerView().getObservabilityArea(node));
+    }
+
+    private static Object observabilityAreaByBus(ObservabilityArea ext, int relation, String busId) {
+        ObservabilityArea.BusView view = relation == REL_OBS_AREA_BY_BBV_BUS ? ext.getBusBreakerView() : ext.getBusView();
+        return observabilityArea(ext.getExtendable(), view.getObservabilityArea(busId, false));
+    }
+
+    private static Object observabilityArea(VoltageLevel vl, ObservabilityArea.AreaCharacteristics area) {
+        return area == null ? null : new ObservabilityAreaRef(vl, area);
+    }
+
+    // The node-breaker data of an area of a bus-breaker voltage level (and vice versa) throws when
+    // used, so the topology kind of the voltage level decides which data is read.
+
+    private static boolean isNodeBreaker(ObservabilityAreaRef ref) {
+        return ref.voltageLevel().getTopologyKind() == TopologyKind.NODE_BREAKER;
+    }
+
+    /** Sorted node numbers of a node-breaker area, empty for a bus-breaker area. */
+    private static int[] observabilityAreaNodes(Object obj) {
+        ObservabilityAreaRef ref = (ObservabilityAreaRef) obj;
+        if (!isNodeBreaker(ref)) {
+            return new int[0];
+        }
+        return ref.area().getNodeBreakerData().getNodes().stream().mapToInt(Integer::intValue).sorted().toArray();
+    }
+
+    private static Stream<?> observabilityAreaTerminals(Object obj) {
+        ObservabilityAreaRef ref = (ObservabilityAreaRef) obj;
+        if (isNodeBreaker(ref)) {
+            // Resolved from the voltage level rather than AreaCharacteristics.getTerminals(): in
+            // powsybl-core 7.4 the latter reads the node of every terminal of every connectable of
+            // the voltage level, and throws when a branch has its other side in a bus-breaker
+            // voltage level.
+            VoltageLevel.NodeBreakerView view = ref.voltageLevel().getNodeBreakerView();
+            return ref.area().getNodeBreakerData().getNodes().stream().sorted()
+                .map(view::getTerminal).filter(Objects::nonNull);
+        }
+        // getTerminals() is a HashSet: sorted, or the order would change from run to run
+        return ref.area().getTerminals().stream()
+            .filter(t -> t.getVoltageLevel() == ref.voltageLevel())
+            .sorted(TERMINAL_ORDER);
+    }
+
+    /** By connectable id, then by rank among the connectable's terminals (side). */
+    private static final Comparator<Terminal> TERMINAL_ORDER = Comparator
+        .comparing((Terminal t) -> t.getConnectable().getId())
+        .thenComparingInt(t -> t.getConnectable().getTerminals().indexOf(t));
+
+    /** Bus-breaker view buses of a bus-breaker area, sorted by id; empty for a node-breaker area. */
+    private static Stream<?> observabilityAreaBuses(Object obj) {
+        ObservabilityAreaRef ref = (ObservabilityAreaRef) obj;
+        if (isNodeBreaker(ref)) {
+            return Stream.empty();
+        }
+        VoltageLevel.BusBreakerView view = ref.voltageLevel().getBusBreakerView();
+        return ref.area().getBusBreakerData().getBusIds().stream().sorted()
+            .map(view::getBus).filter(Objects::nonNull);
     }
 }
