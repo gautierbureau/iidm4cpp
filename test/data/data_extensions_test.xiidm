@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iidm:network xmlns:iidm="http://www.powsybl.org/schema/iidm/1_18" xmlns:sa="http://www.itesla_project.eu/schema/iidm/ext/standby_automaton/1_0" xmlns:bsc="http://www.itesla_project.eu/schema/iidm/ext/battery_short_circuit/1_0" xmlns:ld="http://www.itesla_project.eu/schema/iidm/ext/load_detail/1_0" xmlns:isc="http://www.powsybl.org/schema/iidm/ext/identifiable_short_circuit/1_0" xmlns:gsc="http://www.itesla_project.eu/schema/iidm/ext/generator_short_circuit/1_0" xmlns:gec="http://www.powsybl.org/schema/iidm/ext/generator_entsoe_category/1_1" xmlns:gs="http://www.powsybl.org/schema/iidm/ext/generator_startup/1_1" xmlns:mfrr="http://www.powsybl.org/schema/iidm/ext/manual_frequency_restoration_reserve/1_0" xmlns:os="http://www.powsybl.org/schema/iidm/ext/operating_status/1_0" id="data_extensions_test" caseDate="2026-01-31T12:00:00.000Z" forecastDistance="0" sourceFormat="test" minimumValidationLevel="STEADY_STATE_HYPOTHESIS">
+    <iidm:substation id="S" country="FR">
+        <iidm:voltageLevel id="VL1" nominalV="400.0" topologyKind="BUS_BREAKER">
+            <iidm:busBreakerTopology>
+                <iidm:bus id="B1"/>
+            </iidm:busBreakerTopology>
+            <iidm:generator id="G1" energySource="OTHER" minP="0.0" maxP="500.0" targetP="200.0" localTargetQ="0.0" bus="B1" connectableBus="B1">
+                <iidm:minMaxReactiveLimits minQ="-1.7976931348623157E308" maxQ="1.7976931348623157E308"/>
+            </iidm:generator>
+            <iidm:battery id="BAT" targetP="0.0" localTargetQ="0.0" minP="-10.0" maxP="10.0" bus="B1" connectableBus="B1">
+                <iidm:minMaxReactiveLimits minQ="-1.7976931348623157E308" maxQ="1.7976931348623157E308"/>
+            </iidm:battery>
+        </iidm:voltageLevel>
+        <iidm:voltageLevel id="VL2" nominalV="400.0" topologyKind="BUS_BREAKER">
+            <iidm:busBreakerTopology>
+                <iidm:bus id="B2"/>
+            </iidm:busBreakerTopology>
+            <iidm:generator id="G2" energySource="OTHER" minP="0.0" maxP="100.0" targetP="50.0" localTargetQ="0.0" bus="B2" connectableBus="B2">
+                <iidm:minMaxReactiveLimits minQ="-1.7976931348623157E308" maxQ="1.7976931348623157E308"/>
+            </iidm:generator>
+            <iidm:load id="LD" loadType="UNDEFINED" p0="80.0" q0="10.0" bus="B2" connectableBus="B2"/>
+            <iidm:staticVarCompensator id="SVC" bMin="-0.01" bMax="0.01" bus="B2" connectableBus="B2"/>
+        </iidm:voltageLevel>
+    </iidm:substation>
+    <iidm:line id="L12" r="1.0" x="10.0" voltageLevelId1="VL1" bus1="B1" connectableBus1="B1" voltageLevelId2="VL2" bus2="B2" connectableBus2="B2"/>
+    <iidm:extension id="SVC">
+        <sa:standbyAutomaton b0="0.001" standby="true" lowVoltageSetPoint="390.0" highVoltageSetPoint="410.0" lowVoltageThreshold="380.0" highVoltageThreshold="420.0"/>
+    </iidm:extension>
+    <iidm:extension id="BAT">
+        <bsc:batteryShortCircuit directSubtransX="0.4" directTransX="0.5"/>
+    </iidm:extension>
+    <iidm:extension id="LD">
+        <ld:detail fixedActivePower="30.0" fixedReactivePower="4.0" variableActivePower="50.0" variableReactivePower="6.0"/>
+    </iidm:extension>
+    <iidm:extension id="VL1">
+        <isc:identifiableShortCircuit ipMax="5000.0" ipMin="1000.0"/>
+    </iidm:extension>
+    <iidm:extension id="G1">
+        <gsc:generatorShortCircuit directSubtransX="0.2" directTransX="0.3" stepUpTransformerX="0.1"/>
+        <gec:entsoeCategory>4</gec:entsoeCategory>
+        <gs:startup plannedActivePowerSetpoint="180.0" startupCost="1000.0" marginalCost="30.0" plannedOutageRate="0.1" forcedOutageRate="0.05"/>
+        <mfrr:manualFrequencyRestorationReserve participate="true"/>
+    </iidm:extension>
+    <iidm:extension id="L12">
+        <os:operatingStatus>PLANNED_OUTAGE</os:operatingStatus>
+    </iidm:extension>
+</iidm:network>

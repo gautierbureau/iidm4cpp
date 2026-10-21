@@ -3,6 +3,12 @@
 #include <iidm/CoordinatedReactiveControl.h>
 #include <iidm/CoordinatedReactiveControlAdder.h>
 #include <iidm/Enums.h>
+#include <iidm/GeneratorEntsoeCategory.h>
+#include <iidm/GeneratorEntsoeCategoryAdder.h>
+#include <iidm/GeneratorShortCircuit.h>
+#include <iidm/GeneratorShortCircuitAdder.h>
+#include <iidm/GeneratorStartup.h>
+#include <iidm/GeneratorStartupAdder.h>
 #include <iidm/Injection.h>
 #include <iidm/ReactiveLimitsHolder.h>
 #include <iidm/Terminal.h>
@@ -48,6 +54,21 @@ public:
     CoordinatedReactiveControl getCoordinatedReactiveControl() const;
     CoordinatedReactiveControlAdder newCoordinatedReactiveControl();
     void removeCoordinatedReactiveControl();
+
+    bool hasGeneratorShortCircuit() const;
+    GeneratorShortCircuit getGeneratorShortCircuit() const;
+    GeneratorShortCircuitAdder newGeneratorShortCircuit();
+    void removeGeneratorShortCircuit();
+
+    bool hasGeneratorEntsoeCategory() const;
+    GeneratorEntsoeCategory getGeneratorEntsoeCategory() const;
+    GeneratorEntsoeCategoryAdder newGeneratorEntsoeCategory();
+    void removeGeneratorEntsoeCategory();
+
+    bool hasGeneratorStartup() const;
+    GeneratorStartup getGeneratorStartup() const;
+    GeneratorStartupAdder newGeneratorStartup();
+    void removeGeneratorStartup();
 };
 
 } // namespace iidm

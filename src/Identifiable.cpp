@@ -94,4 +94,52 @@ void Identifiable::removeDiscreteMeasurements() {
     detail::removeExtension<DiscreteMeasurements>(backend_, handle_);
 }
 
+bool Identifiable::hasIdentifiableShortCircuit() const {
+    return detail::hasExtension<IdentifiableShortCircuit>(backend_, handle_);
+}
+
+IdentifiableShortCircuit Identifiable::getIdentifiableShortCircuit() const {
+    return detail::getExtension<IdentifiableShortCircuit>(backend_, handle_, "IdentifiableShortCircuit");
+}
+
+IdentifiableShortCircuitAdder Identifiable::newIdentifiableShortCircuit() {
+    return detail::newExtension<IdentifiableShortCircuit, IdentifiableShortCircuitAdder>(backend_, handle_);
+}
+
+void Identifiable::removeIdentifiableShortCircuit() {
+    detail::removeExtension<IdentifiableShortCircuit>(backend_, handle_);
+}
+
+bool Identifiable::hasOperatingStatus() const {
+    return detail::hasExtension<OperatingStatus>(backend_, handle_);
+}
+
+OperatingStatus Identifiable::getOperatingStatus() const {
+    return detail::getExtension<OperatingStatus>(backend_, handle_, "OperatingStatus");
+}
+
+OperatingStatusAdder Identifiable::newOperatingStatus() {
+    return detail::newExtension<OperatingStatus, OperatingStatusAdder>(backend_, handle_);
+}
+
+void Identifiable::removeOperatingStatus() {
+    detail::removeExtension<OperatingStatus>(backend_, handle_);
+}
+
+bool Identifiable::hasDynamicModelInfo() const {
+    return detail::hasExtension<DynamicModelInfo>(backend_, handle_);
+}
+
+DynamicModelInfo Identifiable::getDynamicModelInfo() const {
+    return detail::getExtension<DynamicModelInfo>(backend_, handle_, "DynamicModelInfo");
+}
+
+DynamicModelInfoAdder Identifiable::newDynamicModelInfo() {
+    return detail::newExtension<DynamicModelInfo, DynamicModelInfoAdder>(backend_, handle_);
+}
+
+void Identifiable::removeDynamicModelInfo() {
+    detail::removeExtension<DynamicModelInfo>(backend_, handle_);
+}
+
 } // namespace iidm

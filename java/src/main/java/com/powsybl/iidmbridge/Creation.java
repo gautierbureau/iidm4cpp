@@ -1,6 +1,5 @@
 package com.powsybl.iidmbridge;
 
-import com.powsybl.commons.extensions.Extendable;
 import com.powsybl.commons.extensions.ExtensionAdder;
 import com.powsybl.iidm.network.*;
 import com.powsybl.iidm.network.extensions.*;
@@ -305,17 +304,6 @@ public final class Creation {
             case VOLTAGE_REGULATION -> owner instanceof VoltageRegulationHolderAdder<?> holderAdder
                 ? holderAdder.newVoltageRegulation()
                 : ((VoltageRegulationHolder<?>) owner).newVoltageRegulation();
-            case ACTIVE_POWER_CONTROL -> newExtension(owner, ActivePowerControlAdder.class);
-            case COORDINATED_REACTIVE_CONTROL -> newExtension(owner, CoordinatedReactiveControlAdder.class);
-            case HVDC_ANGLE_DROOP_ACTIVE_POWER_CONTROL -> newExtension(owner, HvdcAngleDroopActivePowerControlAdder.class);
-            case HVDC_OPERATOR_ACTIVE_POWER_RANGE -> newExtension(owner, HvdcOperatorActivePowerRangeAdder.class);
-            case SLACK_TERMINAL -> newExtension(owner, SlackTerminalAdder.class);
-            case TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED -> newExtension(owner, TwoWindingsTransformerToBeEstimatedAdder.class);
-            case THREE_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED -> newExtension(owner, ThreeWindingsTransformerToBeEstimatedAdder.class);
-            case INJECTION_OBSERVABILITY -> newExtension(owner, InjectionObservabilityAdder.class);
-            case BRANCH_OBSERVABILITY -> newExtension(owner, BranchObservabilityAdder.class);
-            case MEASUREMENTS -> newExtension(owner, MeasurementsAdder.class);
-            case DISCRETE_MEASUREMENTS -> newExtension(owner, DiscreteMeasurementsAdder.class);
             case MEASUREMENT -> ((Measurements<?>) owner).newMeasurement();
             case DISCRETE_MEASUREMENT -> ((DiscreteMeasurements<?>) owner).newDiscreteMeasurement();
             case REL_TERMINAL -> new TerminalChange((VoltageRegulation) owner);
@@ -336,7 +324,13 @@ public final class Creation {
             case VL_NBV_REMOVE_INTERNAL_CONNECTIONS -> new InternalConnectionsRemoval(((VoltageLevel) owner).getNodeBreakerView());
             case CHECK_TEMPORARY_LIMITS -> new TemporaryLimitsCheck(PropertyDispatcher.overloadChecked(owner), false);
             case CHECK_ALL_TEMPORARY_LIMITS -> new TemporaryLimitsCheck(PropertyDispatcher.overloadChecked(owner), true);
-            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown type to create: " + type);
+            default -> {
+                // An extension type code: a new extension of that type
+                if (!Extensions.isType(type)) {
+                    throw new BridgeErrors.PropertyNotFoundException("Unknown type to create: " + type);
+                }
+                yield Extensions.newAdder(owner, type);
+            }
         };
         return new PendingAdd(adder, parent);
     }
@@ -448,23 +442,16 @@ public final class Creation {
         }
         switch (code) {
             case VOLTAGE_REGULATION -> ((VoltageRegulationHolder<?>) host).removeVoltageRegulation();
-            case ACTIVE_POWER_CONTROL -> removeExtension(host, ActivePowerControl.class);
-            case COORDINATED_REACTIVE_CONTROL -> removeExtension(host, CoordinatedReactiveControl.class);
-            case HVDC_ANGLE_DROOP_ACTIVE_POWER_CONTROL -> removeExtension(host, HvdcAngleDroopActivePowerControl.class);
-            case HVDC_OPERATOR_ACTIVE_POWER_RANGE -> removeExtension(host, HvdcOperatorActivePowerRange.class);
-            case SLACK_TERMINAL -> removeExtension(host, SlackTerminal.class);
-            case TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED -> removeExtension(host, TwoWindingsTransformerToBeEstimated.class);
-            case THREE_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED -> removeExtension(host, ThreeWindingsTransformerToBeEstimated.class);
-            case INJECTION_OBSERVABILITY -> removeExtension(host, InjectionObservability.class);
-            case BRANCH_OBSERVABILITY -> removeExtension(host, BranchObservability.class);
-            case MEASUREMENTS -> removeExtension(host, Measurements.class);
-            case DISCRETE_MEASUREMENTS -> removeExtension(host, DiscreteMeasurements.class);
-            case OBSERVABILITY_AREA -> removeExtension(host, ObservabilityArea.class);
             case REL_SELECTED_OLG -> LimitsDispatch.holder(host).cancelSelectedOperationalLimitsGroup();
             case CURRENT_LIMITS -> ((OperationalLimitsGroup) host).removeCurrentLimits();
             case ACTIVE_POWER_LIMITS -> ((OperationalLimitsGroup) host).removeActivePowerLimits();
             case APPARENT_POWER_LIMITS -> ((OperationalLimitsGroup) host).removeApparentPowerLimits();
-            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown code to clear: " + code);
+            default -> {
+                if (!Extensions.isType(code)) {
+                    throw new BridgeErrors.PropertyNotFoundException("Unknown code to clear: " + code);
+                }
+                Extensions.remove(host, code);
+            }
         }
     }
 
@@ -539,6 +526,25 @@ public final class Creation {
             case VAL_LOW_LIMIT -> ((VoltageAngleLimitAdder) a).setLowLimit(value);
             case VAL_HIGH_LIMIT -> ((VoltageAngleLimitAdder) a).setHighLimit(value);
             case TRIPPING_CURRENT_LIMIT -> ((OverloadManagementSystemAdder.TrippingAdder<?>) a).setCurrentLimit(value);
+            case EXT_SC_DIRECT_SUBTRANS_X -> ((ShortCircuitExtensionAdder<?, ?, ?>) a).withDirectSubtransX(value);
+            case EXT_SC_DIRECT_TRANS_X -> ((ShortCircuitExtensionAdder<?, ?, ?>) a).withDirectTransX(value);
+            case EXT_SC_STEP_UP_TRANSFORMER_X -> ((ShortCircuitExtensionAdder<?, ?, ?>) a).withStepUpTransformerX(value);
+            case EXT_ISC_IP_MIN -> ((IdentifiableShortCircuitAdder<?>) a).withIpMin(value);
+            case EXT_ISC_IP_MAX -> ((IdentifiableShortCircuitAdder<?>) a).withIpMax(value);
+            case EXT_GS_PLANNED_ACTIVE_POWER_SETPOINT -> ((GeneratorStartupAdder) a).withPlannedActivePowerSetpoint(value);
+            case EXT_GS_STARTUP_COST -> ((GeneratorStartupAdder) a).withStartupCost(value);
+            case EXT_GS_MARGINAL_COST -> ((GeneratorStartupAdder) a).withMarginalCost(value);
+            case EXT_GS_PLANNED_OUTAGE_RATE -> ((GeneratorStartupAdder) a).withPlannedOutageRate(value);
+            case EXT_GS_FORCED_OUTAGE_RATE -> ((GeneratorStartupAdder) a).withForcedOutageRate(value);
+            case EXT_LD_FIXED_ACTIVE_POWER -> ((LoadDetailAdder) a).withFixedActivePower(value);
+            case EXT_LD_FIXED_REACTIVE_POWER -> ((LoadDetailAdder) a).withFixedReactivePower(value);
+            case EXT_LD_VARIABLE_ACTIVE_POWER -> ((LoadDetailAdder) a).withVariableActivePower(value);
+            case EXT_LD_VARIABLE_REACTIVE_POWER -> ((LoadDetailAdder) a).withVariableReactivePower(value);
+            case EXT_SA_B0 -> ((StandbyAutomatonAdder) a).withB0(value);
+            case EXT_SA_LOW_VOLTAGE_SETPOINT -> ((StandbyAutomatonAdder) a).withLowVoltageSetpoint(value);
+            case EXT_SA_HIGH_VOLTAGE_SETPOINT -> ((StandbyAutomatonAdder) a).withHighVoltageSetpoint(value);
+            case EXT_SA_LOW_VOLTAGE_THRESHOLD -> ((StandbyAutomatonAdder) a).withLowVoltageThreshold(value);
+            case EXT_SA_HIGH_VOLTAGE_THRESHOLD -> ((StandbyAutomatonAdder) a).withHighVoltageThreshold(value);
             default -> throw unknownField("double", property);
         }
     }
@@ -591,6 +597,8 @@ public final class Creation {
                     ((LoadingLimitsAdder.TemporaryLimitAdder<?>) a).setAcceptableDuration(value);
                 }
             }
+            case EXT_GEC_CODE -> ((GeneratorEntsoeCategoryAdder) a).withCode(value);
+            case EXT_OS_STATUS -> ((OperatingStatusAdder<?>) a).withStatus(enumValue(OperatingStatus.Status.class, value));
             default -> throw unknownField("int", property);
         }
     }
@@ -642,6 +650,8 @@ public final class Creation {
             case DMEAS_VALID -> ((DiscreteMeasurementAdder) a).setValid(value);
             case DMEAS_VALUE_BOOL -> ((DiscreteMeasurementAdder) a).setValue(value);
             case TL_FICTITIOUS -> ((LoadingLimitsAdder.TemporaryLimitAdder<?>) a).setFictitious(value);
+            case EXT_SA_STANDBY -> ((StandbyAutomatonAdder) a).withStandbyStatus(value);
+            case EXT_MFRR_PARTICIPATE -> ((ManualFrequencyRestorationReserveAdder<?>) a).withParticipate(value);
             default -> throw unknownField("bool", property);
         }
     }
@@ -703,6 +713,7 @@ public final class Creation {
             }
             case LL_PERMANENT_LIMIT_NAME -> ((LoadingLimitsAdder<?, ?>) a).setPermanentLimitName(value);
             case TL_NAME -> ((LoadingLimitsAdder.TemporaryLimitAdder<?>) a).setName(value);
+            case EXT_DMI_MODEL_NAME -> ((DynamicModelInfoAdder<?>) a).setModelName(value);
             default -> throw unknownField("string", property);
         }
     }
@@ -766,15 +777,5 @@ public final class Creation {
 
     private static BridgeErrors.PropertyNotFoundException unknownField(String type, int property) {
         return new BridgeErrors.PropertyNotFoundException("Unknown " + type + " field for an adder: " + property);
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private static Object newExtension(Object host, Class type) {
-        return ((Extendable) host).newExtension(type);
-    }
-
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private static void removeExtension(Object host, Class type) {
-        ((Extendable) host).removeExtension(type);
     }
 }

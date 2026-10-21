@@ -18,6 +18,8 @@ set(TEST_SOURCES
     TestVariantsNetwork.cpp
     TestSubnetworks.cpp
     TestSubnetworksNetwork.cpp
+    TestDataExtensions.cpp
+    TestDataExtensionsNetwork.cpp
     TestShuntsNetwork.cpp
     TestLinesNetwork.cpp
     TestBoundaryLinesNetwork.cpp

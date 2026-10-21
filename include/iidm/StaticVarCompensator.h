@@ -1,6 +1,8 @@
 #pragma once
 
 #include <iidm/Injection.h>
+#include <iidm/StandbyAutomaton.h>
+#include <iidm/StandbyAutomatonAdder.h>
 #include <iidm/VoltageRegulationHolder.h>
 
 namespace iidm {
@@ -19,6 +21,13 @@ public:
 
     double getBmax() const;
     StaticVarCompensator& setBmax(double bMax);
+
+    // ── Extensions ───────────────────────────────────────────────────────
+    // An extension's getter throws ExtensionNotFoundException when it is absent
+    bool hasStandbyAutomaton() const;
+    StandbyAutomaton getStandbyAutomaton() const;
+    StandbyAutomatonAdder newStandbyAutomaton();
+    void removeStandbyAutomaton();
 };
 
 } // namespace iidm
