@@ -46,4 +46,9 @@ public:
     bool isVariantMultiThreadAccessAllowed() const;
 };
 
+#ifdef __cpp_inline_variables
+// In the header rather than the library: a Windows DLL does not export data
+inline const char* const VariantManager::INITIAL_VARIANT_ID = "InitialState";
+#endif
+
 } // namespace iidm

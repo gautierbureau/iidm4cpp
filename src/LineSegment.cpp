@@ -5,7 +5,10 @@
 
 namespace iidm {
 
+#ifndef __cpp_inline_variables
+// From C++17 on, the header defines it
 const LineSegment LineSegment::FULL_LINE(0, 1);
+#endif
 
 namespace detail {
 

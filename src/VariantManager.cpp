@@ -5,7 +5,10 @@
 
 namespace iidm {
 
+#ifndef __cpp_inline_variables
+// From C++17 on, the header defines it
 const char* const VariantManager::INITIAL_VARIANT_ID = "InitialState";
+#endif
 
 std::vector<std::string> VariantManager::getVariantIds() const {
     return backend_->getStringList(handle_, prop::VARIANT_IDS);

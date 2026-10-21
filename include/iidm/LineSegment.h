@@ -13,14 +13,19 @@ struct LineSegment {
     double end;
 
     // The full line
-    LineSegment() : start(0), end(1) {}
-    LineSegment(double start, double end) : start(start), end(end) {}
+    constexpr LineSegment() : start(0), end(1) {}
+    constexpr LineSegment(double start, double end) : start(start), end(end) {}
 
     static const LineSegment FULL_LINE;
 
     bool operator==(const LineSegment& other) const { return start == other.start && end == other.end; }
     bool operator!=(const LineSegment& other) const { return !(*this == other); }
 };
+
+#ifdef __cpp_inline_variables
+// In the header rather than the library: a Windows DLL does not export data
+inline const LineSegment LineSegment::FULL_LINE(0, 1);
+#endif
 
 namespace detail {
 
