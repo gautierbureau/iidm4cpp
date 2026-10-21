@@ -301,3 +301,36 @@ TEST_F(AddersTest, Branches) {
     EXPECT_EQ((b.strings[{a, prop::HVDC_CONVERTER_STATION_ID2}]), "VSC2");
     EXPECT_DOUBLE_EQ((b.doubles[{a, prop::HVDC_ACTIVE_POWER_SETPOINT}]), 100);
 }
+
+TEST_F(AddersTest, Topology) {
+    VoltageLevel vl(VL, &backend);
+    vl.getNodeBreakerView().newBusbarSection().setId("BBS").setNode(0).add();
+    EXPECT_EQ(backend.invocations[0], call(VL, prop::BUSBAR_SECTION));
+    EXPECT_EQ((backend.ints[{backend.lastAdder, prop::TERMINAL_NODE}]), 0);
+
+    vl.getNodeBreakerView().newBreaker().setId("BR").setNode1(0).setNode2(1).setOpen(true).setRetained(true).add();
+    ObjectHandle a = backend.lastAdder;
+    EXPECT_EQ(backend.invocations[2], call(VL, prop::REL_NBV_SWITCH));
+    EXPECT_EQ((backend.ints[{a, prop::SW_KIND}]), static_cast<int>(SwitchKind::BREAKER));
+    EXPECT_EQ((backend.ints[{a, prop::SW_NODE2}]), 1);
+    EXPECT_TRUE((backend.bools[{a, prop::SW_OPEN}]));
+    EXPECT_TRUE((backend.bools[{a, prop::SW_RETAINED}]));
+    vl.getNodeBreakerView().newDisconnector().setId("DIS").add();
+    EXPECT_EQ((backend.ints[{backend.lastAdder, prop::SW_KIND}]), static_cast<int>(SwitchKind::DISCONNECTOR));
+    vl.getNodeBreakerView().newSwitch().setKind(SwitchKind::LOAD_BREAK_SWITCH).add();
+    EXPECT_EQ((backend.ints[{backend.lastAdder, prop::SW_KIND}]), static_cast<int>(SwitchKind::LOAD_BREAK_SWITCH));
+
+    vl.getNodeBreakerView().newInternalConnection().setNode1(1).setNode2(2).add();
+    a = backend.lastAdder;
+    EXPECT_EQ(backend.invocations[backend.invocations.size() - 2], call(VL, prop::INTERNAL_CONNECTION));
+    EXPECT_EQ((backend.ints[{a, prop::IC_NODE1}]), 1);
+    EXPECT_EQ((backend.ints[{a, prop::IC_NODE2}]), 2);
+    EXPECT_EQ(backend.invocations.back(), call(a, prop::ACT_ADD));
+
+    vl.getBusBreakerView().newSwitch().setId("CPL").setBus1("B1").setBus2("B2").setOpen(false).add();
+    a = backend.lastAdder;
+    EXPECT_EQ(backend.invocations[backend.invocations.size() - 2], call(VL, prop::REL_BBV_SWITCH));
+    EXPECT_EQ((backend.strings[{a, prop::SW_BUS1}]), "B1");
+    EXPECT_EQ((backend.strings[{a, prop::SW_BUS2}]), "B2");
+    EXPECT_FALSE((backend.bools[{a, prop::SW_OPEN}]));
+}

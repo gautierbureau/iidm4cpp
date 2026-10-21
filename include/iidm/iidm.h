@@ -168,6 +168,8 @@
 #include <iidm/TwoWindingsTransformerAdder.h>
 #include <iidm/ThreeWindingsTransformerAdder.h>
 #include <iidm/HvdcLineAdder.h>
+#include <iidm/BusbarSectionAdder.h>
+#include <iidm/SwitchAdder.h>
 #include <iidm/LineCouplingsAdder.h>
 #include <iidm/VariantManager.h>
 #include <iidm/Network.h>
