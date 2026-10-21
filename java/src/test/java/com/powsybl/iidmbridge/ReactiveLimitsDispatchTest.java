@@ -132,6 +132,77 @@ class ReactiveLimitsDispatchTest {
         assertEquals(BridgeErrors.PROPERTY_NOT_FOUND, kindOfFailure(() -> PropertyDispatcher.evaluate(reg(gen), RL_MIN_Q, new double[] {0})));
     }
 
+    @Test void newLimits() {
+        // Min-max limits replace the generator's curve
+        long g = reg(gen);
+        long minMax = PropertyDispatcher.invoke(g, MIN_MAX_REACTIVE_LIMITS);
+        PropertyDispatcher.setDouble(minMax, RL_MIN_Q, -40);
+        PropertyDispatcher.setDouble(minMax, RL_MAX_Q, 45);
+        long added = PropertyDispatcher.invoke(minMax, ACT_ADD);
+        assertSame(gen.getReactiveLimits(), obj(added));
+        assertEquals(45, gen.getReactiveLimits(MinMaxReactiveLimits.class).getMaxQ());
+
+        // A curve, its points one by one, with properties
+        long curve = PropertyDispatcher.invoke(reg(bat), REACTIVE_CAPABILITY_CURVE);
+        PropertyDispatcher.setKeyedString(curve, PROPERTY, "source", "datasheet");
+        for (double p : new double[] {-50, 50}) {
+            long point = PropertyDispatcher.invoke(curve, REACTIVE_CURVE_POINT);
+            PropertyDispatcher.setDouble(point, POINT_P, p);
+            PropertyDispatcher.setDouble(point, POINT_MIN_Q, -10);
+            PropertyDispatcher.setDouble(point, POINT_MAX_Q, p < 0 ? 20 : 60);
+            PropertyDispatcher.setKeyedString(point, PROPERTY, "p", Double.toString(p));
+            assertEquals(0L, PropertyDispatcher.invoke(point, ACT_ADD)); // nested
+        }
+        PropertyDispatcher.invoke(curve, ACT_ADD);
+        ReactiveCapabilityCurve c = bat.getReactiveLimits(ReactiveCapabilityCurve.class);
+        assertEquals(60, c.getMaxQ(50));
+        assertEquals("datasheet", c.getProperty("source"));
+        assertEquals("-50.0", c.getPoints().iterator().next().getProperty("p"));
+        // One point only: rejected
+        long onePoint = PropertyDispatcher.invoke(reg(bat), REACTIVE_CAPABILITY_CURVE);
+        long point = PropertyDispatcher.invoke(onePoint, REACTIVE_CURVE_POINT);
+        PropertyDispatcher.setDouble(point, POINT_P, 0);
+        PropertyDispatcher.setDouble(point, POINT_MIN_Q, -1);
+        PropertyDispatcher.setDouble(point, POINT_MAX_Q, 1);
+        PropertyDispatcher.invoke(point, ACT_ADD);
+        assertEquals(BridgeErrors.VALIDATION, kindOfFailure(() -> PropertyDispatcher.invoke(onePoint, ACT_ADD)));
+
+        // A shape, its planes one by one
+        long shape = PropertyDispatcher.invoke(reg(gen), REACTIVE_CAPABILITY_SHAPE);
+        addPlane(shape, 0, 0, 1, true, -50);
+        addPlane(shape, 0, 0, 1, false, 60);
+        PropertyDispatcher.invoke(shape, ACT_ADD);
+        ReactiveCapabilityShape created = gen.getReactiveLimits(ReactiveCapabilityShape.class);
+        assertEquals(2, created.getPlanes().size());
+        assertEquals(60, created.getMaxQ(0, 400), 1e-9);
+        // Without a plane: rejected
+        long empty = PropertyDispatcher.invoke(reg(gen), REACTIVE_CAPABILITY_SHAPE);
+        assertEquals(BridgeErrors.VALIDATION, kindOfFailure(() -> PropertyDispatcher.invoke(empty, ACT_ADD)));
+        // Not a reactive limits holder
+        assertEquals(BridgeErrors.PROPERTY_NOT_FOUND, kindOfFailure(() -> PropertyDispatcher.invoke(reg(gen.getNetwork()), MIN_MAX_REACTIVE_LIMITS)));
+    }
+
+    @Test void planeInequality() {
+        ReactiveCapabilityShapePlane plane = vsc.getReactiveLimits(ReactiveCapabilityShape.class).getPlanes().iterator().next();
+        long p = reg(plane);
+        PropertyDispatcher.setDouble(p, PLANE_LESS_OR_EQUAL, 120);
+        assertTrue(plane.isLessOrEqual());
+        assertEquals(120, plane.getGamma());
+        PropertyDispatcher.setDouble(p, PLANE_GREATER_OR_EQUAL, -120);
+        assertTrue(plane.isGreaterOrEqual());
+        assertEquals(-120, plane.getGamma());
+    }
+
+    private static void addPlane(long shapeAdder, double alpha, double beta, double delta, boolean greaterOrEqual, double gamma) {
+        long plane = PropertyDispatcher.invoke(shapeAdder, REACTIVE_CAPABILITY_SHAPE_PLANE);
+        PropertyDispatcher.setDouble(plane, PLANE_ALPHA, alpha);
+        PropertyDispatcher.setDouble(plane, PLANE_BETA, beta);
+        PropertyDispatcher.setDouble(plane, PLANE_DELTA, delta);
+        PropertyDispatcher.setBool(plane, PLANE_GREATER_OR_EQUAL, greaterOrEqual ? 1 : 0);
+        PropertyDispatcher.setDouble(plane, PLANE_GAMMA, gamma);
+        assertEquals(0L, PropertyDispatcher.invoke(plane, ACT_ADD)); // nested
+    }
+
     @Test void properties() {
         long limits = PropertyDispatcher.getRelated(reg(bat), REACTIVE_LIMITS);
         PropertyDispatcher.setKeyedString(limits, PROPERTY, "source", "datasheet");

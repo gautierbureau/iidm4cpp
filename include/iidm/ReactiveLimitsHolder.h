@@ -1,9 +1,12 @@
 #pragma once
 
 #include <iidm/MinMaxReactiveLimits.h>
+#include <iidm/MinMaxReactiveLimitsAdder.h>
 #include <iidm/ObjectRef.h>
 #include <iidm/ReactiveCapabilityCurve.h>
+#include <iidm/ReactiveCapabilityCurveAdder.h>
 #include <iidm/ReactiveCapabilityShape.h>
+#include <iidm/ReactiveCapabilityShapeAdder.h>
 #include <iidm/ReactiveLimits.h>
 
 namespace iidm {
@@ -20,6 +23,10 @@ public:
     template <class L> L getReactiveLimits() const {
         return L(backend()->getRelated(handle(), L::TYPE), backend());
     }
+    // New reactive limits, which replace the current ones on add()
+    MinMaxReactiveLimitsAdder newMinMaxReactiveLimits();
+    ReactiveCapabilityCurveAdder newReactiveCapabilityCurve();
+    ReactiveCapabilityShapeAdder newReactiveCapabilityShape();
 
 protected:
     ReactiveLimitsHolderMethods() = default;

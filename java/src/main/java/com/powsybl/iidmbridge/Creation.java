@@ -425,6 +425,24 @@ public final class Creation {
         }
     }
 
+    /** A plane of a new reactive capability shape: ReactiveCapabilityShapeAdder.addPlane, its values set one by one. */
+    static final class NewPlane {
+        private final ReactiveCapabilityShapeAdder adder;
+        private double alpha = Double.NaN;
+        private double beta = Double.NaN;
+        private double delta = Double.NaN;
+        private boolean greaterOrEqual;
+        private double gamma = Double.NaN;
+
+        NewPlane(ReactiveCapabilityShapeAdder adder) {
+            this.adder = adder;
+        }
+
+        void apply() {
+            adder.addPlane(alpha, beta, delta, greaterOrEqual, gamma);
+        }
+    }
+
     /** The pilot point of a new control zone: its busbar sections or buses, added one by one. */
     static final class NewPilotPoint {
         private final PilotPointAdder adder;
@@ -546,8 +564,19 @@ public final class Creation {
             case TEMPORARY_LIMIT -> ((LoadingLimitsAdder<?, ?>) owner).beginTemporaryLimit();
             case LL_TEMPORARY_LIMIT_VALUE -> new TemporaryLimitValueChange((LoadingLimits) owner);
             case TC_STEPS_REPLACER -> PropertyDispatcher.tapChanger(owner).stepsReplacer();
-            case RATIO_TAP_CHANGER_STEP -> ((RatioTapChangerStepsReplacer) owner).beginStep();
-            case PHASE_TAP_CHANGER_STEP -> ((PhaseTapChangerStepsReplacer) owner).beginStep();
+            case RATIO_TAP_CHANGER -> ((RatioTapChangerHolder) owner).newRatioTapChanger();
+            case PHASE_TAP_CHANGER -> ((PhaseTapChangerHolder) owner).newPhaseTapChanger();
+            case RATIO_TAP_CHANGER_STEP -> owner instanceof RatioTapChangerAdder ratioAdder
+                ? ratioAdder.beginStep()
+                : ((RatioTapChangerStepsReplacer) owner).beginStep();
+            case PHASE_TAP_CHANGER_STEP -> owner instanceof PhaseTapChangerAdder phaseAdder
+                ? phaseAdder.beginStep()
+                : ((PhaseTapChangerStepsReplacer) owner).beginStep();
+            case MIN_MAX_REACTIVE_LIMITS -> ((ReactiveLimitsHolder) owner).newMinMaxReactiveLimits();
+            case REACTIVE_CAPABILITY_CURVE -> ((ReactiveLimitsHolder) owner).newReactiveCapabilityCurve();
+            case REACTIVE_CURVE_POINT -> ((ReactiveCapabilityCurveAdder) owner).beginPoint();
+            case REACTIVE_CAPABILITY_SHAPE -> ((ReactiveLimitsHolder) owner).newReactiveCapabilityShape();
+            case REACTIVE_CAPABILITY_SHAPE_PLANE -> new NewPlane((ReactiveCapabilityShapeAdder) owner);
             case ZIP_LOAD_MODEL -> ((LoadAdder) owner).newZipModel();
             case EXPONENTIAL_LOAD_MODEL -> ((LoadAdder) owner).newExponentialModel();
             case MOVE_CONNECTABLE -> new ConnectableMove((Terminal) owner);
@@ -658,6 +687,19 @@ public final class Creation {
             }
             case NewAreaBoundary boundary -> {
                 boundary.apply();
+                yield null;
+            }
+            case RatioTapChangerAdder adder -> adder.add();
+            case PhaseTapChangerAdder adder -> adder.add();
+            case MinMaxReactiveLimitsAdder adder -> adder.add();
+            case ReactiveCapabilityCurveAdder adder -> adder.add();
+            case ReactiveCapabilityCurveAdder.PointAdder point -> {
+                point.endPoint();
+                yield null;
+            }
+            case ReactiveCapabilityShapeAdder adder -> adder.add();
+            case NewPlane plane -> {
+                plane.apply();
                 yield null;
             }
             case TapChangerStepAdder<?, ?> step -> {
@@ -781,6 +823,17 @@ public final class Creation {
             case STEP_G -> ((TapChangerStepAdder<?, ?>) a).setG(value);
             case STEP_B -> ((TapChangerStepAdder<?, ?>) a).setB(value);
             case PTC_STEP_ALPHA -> ((PhaseTapChangerStepAdder<?, ?>) a).setAlpha(value);
+            case PTC_REGULATION_VALUE -> ((PhaseTapChangerAdder) a).setRegulationValue(value);
+            case PTC_TARGET_DEADBAND -> ((PhaseTapChangerAdder) a).setTargetDeadband(value);
+            case RL_MIN_Q -> ((MinMaxReactiveLimitsAdder) a).setMinQ(value);
+            case RL_MAX_Q -> ((MinMaxReactiveLimitsAdder) a).setMaxQ(value);
+            case POINT_P -> ((ReactiveCapabilityCurveAdder.PointAdder) a).setP(value);
+            case POINT_MIN_Q -> ((ReactiveCapabilityCurveAdder.PointAdder) a).setMinQ(value);
+            case POINT_MAX_Q -> ((ReactiveCapabilityCurveAdder.PointAdder) a).setMaxQ(value);
+            case PLANE_ALPHA -> ((NewPlane) a).alpha = value;
+            case PLANE_BETA -> ((NewPlane) a).beta = value;
+            case PLANE_DELTA -> ((NewPlane) a).delta = value;
+            case PLANE_GAMMA -> ((NewPlane) a).gamma = value;
             case ZIP_C0P -> ((ZipLoadModelAdder) a).setC0p(value);
             case ZIP_C1P -> ((ZipLoadModelAdder) a).setC1p(value);
             case ZIP_C2P -> ((ZipLoadModelAdder) a).setC2p(value);
@@ -892,6 +945,11 @@ public final class Creation {
                 }
             }
             case LL_LIMIT_TYPE -> ((TemporaryLimitsCheck) a).type = value;
+            case TC_LOW_TAP_POSITION -> ((TapChangerAdder<?, ?, ?, ?, ?, ?>) a).setLowTapPosition(value);
+            case TC_TAP_POSITION -> ((TapChangerAdder<?, ?, ?, ?, ?, ?>) a).setTapPosition(value);
+            case TC_SOLVED_TAP_POSITION -> ((TapChangerAdder<?, ?, ?, ?, ?, ?>) a).setSolvedTapPosition(value);
+            case PTC_REGULATION_MODE -> ((PhaseTapChangerAdder) a)
+                .setRegulationMode(enumValue(PhaseTapChanger.RegulationMode.class, value));
             case IC_NODE2 -> ((InternalConnectionsRemoval) a).node2 = value;
             case VL_TOPOLOGY_KIND -> ((VoltageLevelAdder) a).setTopologyKind(enumValue(TopologyKind.class, value));
             case GEN_ENERGY_SOURCE -> ((GeneratorAdder) a).setEnergySource(enumValue(EnergySource.class, value));
@@ -967,6 +1025,9 @@ public final class Creation {
                 }
             }
             case GEN_CONDENSER -> ((GeneratorAdder) a).setCondenser(value);
+            case TC_LOAD_TAP_CHANGING_CAPABILITIES -> ((TapChangerAdder<?, ?, ?, ?, ?, ?>) a).setLoadTapChangingCapabilities(value);
+            case REGULATING -> ((PhaseTapChangerAdder) a).setRegulating(value);
+            case PLANE_GREATER_OR_EQUAL -> ((NewPlane) a).greaterOrEqual = value;
             case VR_REGULATING -> ((VoltageRegulationAdderOrBuilder<?>) a).withRegulating(value);
             case EXT_APC_PARTICIPATE -> ((ActivePowerControlAdder<?>) a).withParticipate(value);
             case EXT_HADAPC_ENABLED -> ((HvdcAngleDroopActivePowerControlAdder) a).withEnabled(value);
@@ -1104,6 +1165,7 @@ public final class Creation {
                 }
             }
             case REL_TERMINAL_FROM -> ((VoltageAngleLimitAdder) a).from((Terminal) value);
+            case REL_REGULATION_TERMINAL -> ((PhaseTapChangerAdder) a).setRegulationTerminal((Terminal) value);
             case REL_TERMINAL_TO -> ((VoltageAngleLimitAdder) a).to((Terminal) value);
             case ADD_VOLTAGE_LEVEL -> ((AreaAdder) a).addVoltageLevel((VoltageLevel) value);
             case IDENTIFIABLE -> ((BoundaryElementCheck) a).identifiable = (Identifiable<?>) value;

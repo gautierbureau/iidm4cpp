@@ -2,6 +2,7 @@
 #include <iidm/iidm.h>
 #include "RealBackends.h"
 #include <string>
+#include <vector>
 
 #ifdef IIDM_BRIDGE_GRAALVM_ENABLED
 #  include "graalvm/GraalVMBackend.h"
@@ -76,6 +77,48 @@ void checkHandlesAreReleased(BackendProvider& b) {
     EXPECT_NE(sum, 0.0);
 }
 
+// New limits, which replace the current ones
+void checkNewLimits(BackendProvider& b) {
+    Generator g(b.findById(prop::GENERATOR, "G_MINMAX"), &b);
+    ReactiveCapabilityCurve curve = g.newReactiveCapabilityCurve().setProperty("source", "c++")
+        .beginPoint().setP(0).setMinQ(-20).setMaxQ(20).endPoint()
+        .beginPoint().setP(100).setMinQ(-10).setMaxQ(40).setProperty("note", "full").endPoint()
+        .add();
+    EXPECT_EQ(g.getReactiveLimits().getKind(), ReactiveLimitsKind::CURVE);
+    EXPECT_EQ(curve, g.getReactiveLimits());
+    EXPECT_DOUBLE_EQ(curve.getMaxQ(50.0), 30.0);
+    EXPECT_EQ(*curve.getProperty("source"), "c++");
+    EXPECT_EQ(*curve.getPoints()[1].getProperty("note"), "full");
+    // One point only: rejected, the curve kept
+    EXPECT_THROW(g.newReactiveCapabilityCurve().beginPoint().setP(0).setMinQ(-1).setMaxQ(1).endPoint().add(),
+                 ValidationException);
+    EXPECT_EQ(g.getReactiveLimits().getKind(), ReactiveLimitsKind::CURVE);
+    MinMaxReactiveLimits minMax = g.newMinMaxReactiveLimits().setMinQ(-15).setMaxQ(25).add();
+    EXPECT_DOUBLE_EQ(g.getReactiveLimits<MinMaxReactiveLimits>().getMaxQ(), 25.0);
+    EXPECT_EQ(minMax, g.getReactiveLimits());
+    EXPECT_THROW(g.newMinMaxReactiveLimits().setMinQ(10).setMaxQ(-10).add(), ValidationException);
+
+    VscConverterStation vsc(b.findById(prop::VSC_CONVERTER_STATION, "VSC"), &b);
+    ReactiveCapabilityShape shape = vsc.newReactiveCapabilityShape().setProperty("source", "c++")
+        .addPlane(0, 0, 1, true, -100)
+        .addPlane(0, 0, 1, false, 100)
+        .add();
+    EXPECT_EQ(vsc.getReactiveLimits().getKind(), ReactiveLimitsKind::SHAPE);
+    std::vector<ReactiveCapabilityShapePlane> planes = shape.getPlanes();
+    ASSERT_EQ(planes.size(), 2u);
+    EXPECT_TRUE(planes[0].isGreaterOrEqual());
+    EXPECT_DOUBLE_EQ(planes[1].getGamma(), 100.0);
+    EXPECT_DOUBLE_EQ(shape.getMaxQ(0, 400), 100.0);
+    EXPECT_EQ(*shape.getProperty("source"), "c++");
+    EXPECT_THROW(vsc.newReactiveCapabilityShape().add(), ValidationException);
+    // A plane's inequality changed in place
+    planes[1].greaterOrEqual(-90);
+    EXPECT_TRUE(shape.getPlanes()[1].isGreaterOrEqual());
+    EXPECT_DOUBLE_EQ(shape.getPlanes()[1].getGamma(), -90.0);
+    planes[1].lessOrEqual(90);
+    EXPECT_TRUE(shape.getPlanes()[1].isLessOrEqual());
+}
+
 void checkReactiveLimits(BackendProvider& b) {
     std::string xiidm = iidm::test::readFile("data/reactive_limits_test.xiidm");
     ASSERT_FALSE(xiidm.empty()) << "data/reactive_limits_test.xiidm not found";
@@ -83,6 +126,7 @@ void checkReactiveLimits(BackendProvider& b) {
     checkCurve(b);
     checkMinMax(b);
     checkHandlesAreReleased(b);
+    checkNewLimits(b);
 }
 
 } // namespace

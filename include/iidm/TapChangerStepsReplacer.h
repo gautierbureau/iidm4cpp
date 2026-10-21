@@ -8,7 +8,7 @@ namespace iidm {
 namespace detail {
 
 // What every new tap changer step sets (powsybl TapChangerStepAdder); endStep() returns to the
-// parent: a steps replacer
+// parent: a steps replacer, or the adder of a new tap changer
 template <class Self, class Parent>
 class TapChangerStepAdderBase : public AdderBase<Self> {
 public:

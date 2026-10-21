@@ -95,6 +95,16 @@ bool ReactiveCapabilityShapePlane::isGreaterOrEqual() const {
     return backend_->getBool(handle_, prop::PLANE_GREATER_OR_EQUAL);
 }
 
+ReactiveCapabilityShapePlane& ReactiveCapabilityShapePlane::lessOrEqual(double gamma) {
+    backend_->setDouble(handle_, prop::PLANE_LESS_OR_EQUAL, gamma);
+    return *this;
+}
+
+ReactiveCapabilityShapePlane& ReactiveCapabilityShapePlane::greaterOrEqual(double gamma) {
+    backend_->setDouble(handle_, prop::PLANE_GREATER_OR_EQUAL, gamma);
+    return *this;
+}
+
 double ReactiveCapabilityShape::getMinQ(double p, double v) const {
     return backend_->evaluate(handle_, prop::RL_MIN_Q, {p, v});
 }
