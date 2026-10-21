@@ -3,6 +3,7 @@
 #include <iidm/PropertyCodes.h>
 #include <iidm/ThreeWindingsTransformer.h>
 #include <iidm/TwoWindingsTransformer.h>
+#include "Extensions.h"
 #include "Wrap.h"
 
 namespace iidm {
@@ -74,6 +75,22 @@ int Substation::getOverloadManagementSystemCount() const {
 
 OverloadManagementSystemAdder Substation::newOverloadManagementSystem() {
     return OverloadManagementSystemAdder(backend_->invoke(handle_, prop::OVERLOAD_MANAGEMENT_SYSTEM), backend_);
+}
+
+bool Substation::hasSubstationPosition() const {
+    return detail::hasExtension<SubstationPosition>(backend_, handle_);
+}
+
+SubstationPosition Substation::getSubstationPosition() const {
+    return detail::getExtension<SubstationPosition>(backend_, handle_, "SubstationPosition");
+}
+
+SubstationPositionAdder Substation::newSubstationPosition() {
+    return detail::newExtension<SubstationPosition, SubstationPositionAdder>(backend_, handle_);
+}
+
+void Substation::removeSubstationPosition() {
+    detail::removeExtension<SubstationPosition>(backend_, handle_);
 }
 
 } // namespace iidm

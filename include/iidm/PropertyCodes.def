@@ -68,6 +68,8 @@ IIDM_CODE(THREE_WINDINGS_TRANSFORMER_TRIPPING, 71)
 IIDM_CODE(COMPONENT,                   72) // a connected or synchronous component of the bus view
 IIDM_CODE(VARIANT_MANAGER,             73) // getRelated(network, VARIANT_MANAGER): its variant manager
 IIDM_CODE(LEG_FORTESCUE,               74) // a leg of a ThreeWindingsTransformerFortescue extension
+IIDM_CODE(COORDINATE,                  75) // a coordinate of a position extension (a value)
+IIDM_CODE(FEEDER,                      76) // a feeder of a ConnectablePosition extension
 // Abstract types (Java interfaces)
 IIDM_CODE(IDENTIFIABLE,                43)
 IIDM_CODE(CONNECTABLE,                 44)
@@ -666,6 +668,7 @@ IIDM_CODE(ACT_REMOVE_UPDATING_BOUNDARY_LINES, 5020) // invoke(tie line): remove(
                                              // the flows at the boundary as P0 and Q0
 IIDM_CODE(ACT_DETACH,                  5021) // invoke(subnetwork): detach, returns the new network
 IIDM_CODE(ACT_FLATTEN,                 5022) // invoke(network): flatten, its subnetworks merged into it
+IIDM_CODE(ACT_REMOVE_ORDER,            5023) // invoke(feeder of a ConnectablePosition): removeOrder
 
 // TwoWindingsTransformerToBeEstimated (on a two windings transformer)
 IIDM_CODE(TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED, 3700)
@@ -848,6 +851,32 @@ IIDM_CODE(EXT_TWO_WT_PAC_CLOCK,           6801) // int, 0 to 11
 IIDM_CODE(THREE_WINDINGS_TRANSFORMER_PHASE_ANGLE_CLOCK, 6900)
 IIDM_CODE(EXT_THREE_WT_PAC_CLOCK_LEG2,    6901) // int, 0 to 11
 IIDM_CODE(EXT_THREE_WT_PAC_CLOCK_LEG3,    6902) // int, 0 to 11
+
+// Coordinates of the position extensions: COORDINATE objects, values (read-only)
+IIDM_CODE(COORD_LATITUDE,                 7000) // double, degrees (also a field of a new coordinate)
+IIDM_CODE(COORD_LONGITUDE,                7001) // double, degrees (also a field of a new coordinate)
+
+// BusbarSectionPosition (on a busbar section)
+IIDM_CODE(BUSBAR_SECTION_POSITION,        7100)
+IIDM_CODE(EXT_BSP_BUSBAR_INDEX,           7101) // int
+IIDM_CODE(EXT_BSP_SECTION_INDEX,          7102) // int
+
+// SubstationPosition (on a substation): getRelated(extension, COORDINATE) its coordinate. Its adder:
+// invoke(adder, COORDINATE) starts its coordinate (fields COORD_LATITUDE and COORD_LONGITUDE, then ACT_ADD).
+IIDM_CODE(SUBSTATION_POSITION,            7200)
+
+// LinePosition (on a line or a boundary line): getChildren(extension, COORDINATE) its coordinates, in
+// order. Its adder: invoke(adder, COORDINATE) starts each coordinate, in order (as for SubstationPosition).
+IIDM_CODE(LINE_POSITION,                  7300)
+
+// ConnectablePosition (on any connectable): getRelatedByIndex(extension, FEEDER, slot) its feeders, slot 0
+// an injection's, 1 to 3 the sides' (INVALID_HANDLE when absent). Its adder: invoke(adder, FEEDER) starts
+// each feeder: fields EXT_FEEDER_SLOT, EXT_FEEDER_NAME, EXT_FEEDER_ORDER, EXT_FEEDER_DIRECTION, then ACT_ADD.
+IIDM_CODE(CONNECTABLE_POSITION,           7400)
+IIDM_CODE(EXT_FEEDER_SLOT,                7401) // int, a field of a new feeder: its slot (0 when unset)
+IIDM_CODE(EXT_FEEDER_NAME,                7402) // optional string
+IIDM_CODE(EXT_FEEDER_ORDER,               7403) // optional int; unset: ACT_REMOVE_ORDER
+IIDM_CODE(EXT_FEEDER_DIRECTION,           7404) // int: ConnectablePosition::Direction ordinal
 
 // ── Child types: state estimation extensions ─────────────────────────────────
 IIDM_CODE(MEASUREMENT,                    38) // a measurement of a Measurements extension

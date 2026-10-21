@@ -53,4 +53,20 @@ void Connectable::removeMeasurements() {
     detail::removeExtension<Measurements>(backend_, handle_);
 }
 
+bool Connectable::hasConnectablePosition() const {
+    return detail::hasExtension<ConnectablePosition>(backend_, handle_);
+}
+
+ConnectablePosition Connectable::getConnectablePosition() const {
+    return detail::getExtension<ConnectablePosition>(backend_, handle_, "ConnectablePosition");
+}
+
+ConnectablePositionAdder Connectable::newConnectablePosition() {
+    return detail::newExtension<ConnectablePosition, ConnectablePositionAdder>(backend_, handle_);
+}
+
+void Connectable::removeConnectablePosition() {
+    detail::removeExtension<ConnectablePosition>(backend_, handle_);
+}
+
 } // namespace iidm

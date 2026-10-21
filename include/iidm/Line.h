@@ -4,6 +4,8 @@
 #include <iidm/Connectable.h>
 #include <iidm/LineFortescue.h>
 #include <iidm/LineFortescueAdder.h>
+#include <iidm/LinePosition.h>
+#include <iidm/LinePositionAdder.h>
 
 namespace iidm {
 
@@ -33,6 +35,11 @@ public:
     LineFortescue getLineFortescue() const;
     LineFortescueAdder newLineFortescue();
     void removeLineFortescue();
+
+    bool hasLinePosition() const;
+    LinePosition getLinePosition() const;
+    LinePositionAdder newLinePosition();
+    void removeLinePosition();
 };
 
 } // namespace iidm

@@ -1084,6 +1084,10 @@ Every extension below has an adder (`newX()`), except `ObservabilityArea` for no
 | `ThreeWindingsTransformerFortescue` | 3WT | `THREE_WINDINGS_TRANSFORMER_FORTESCUE`; its `LEG_FORTESCUE`s: `EXT_LEG_F_*`; adder: `EXT_THREE_WTF_LEG` |
 | `TwoWindingsTransformerPhaseAngleClock` | 2WT | `TWO_WINDINGS_TRANSFORMER_PHASE_ANGLE_CLOCK`, `EXT_TWO_WT_PAC_CLOCK` |
 | `ThreeWindingsTransformerPhaseAngleClock` | 3WT | `THREE_WINDINGS_TRANSFORMER_PHASE_ANGLE_CLOCK`, `EXT_THREE_WT_PAC_CLOCK_*` |
+| `BusbarSectionPosition` | BusbarSection | `BUSBAR_SECTION_POSITION`, `EXT_BSP_*` |
+| `SubstationPosition` | Substation | `SUBSTATION_POSITION`; its `COORDINATE`: `COORD_*` (a `Coordinate` value) |
+| `LinePosition` | Line, BoundaryLine | `LINE_POSITION`; its `COORDINATE`s: `COORD_*` |
+| `ConnectablePosition` | all connectables | `CONNECTABLE_POSITION`; its `FEEDER`s by slot: `EXT_FEEDER_*`, `ACT_REMOVE_ORDER` |
 
 The `VoltagePerReactivePowerControl`, `RemoteReactivePowerControl` and battery `VoltageRegulation`
 extensions were removed from powsybl-core 7.4 (`extensions.removed`): their data is the core
