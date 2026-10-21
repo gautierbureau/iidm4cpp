@@ -387,7 +387,8 @@ TieLine (+ the Branch methods)
 Ground                     an injection (VoltageLevel::newGround(), getGrounds())
 
 Area (Network::newArea(): setAreaType(), setInterchangeTarget(), addVoltageLevel(vl),
-│    addAreaBoundary(terminal or boundary, ac))
+│    addAreaBoundary(terminal or boundary, ac); powsybl's adder hands them to the area in no set
+│    order, the area's own methods in call order, which is the order XIIDM saves)
 ├── getAreaType(), getVoltageLevels() (sorted by id), addVoltageLevel(vl) / removeVoltageLevel(vl)
 ├── getAreaBoundaries(), getAreaBoundary(terminal or boundary) → optional, newAreaBoundary(),
 │   removeAreaBoundary(terminal or boundary)
@@ -1799,14 +1800,18 @@ code of `PropertyCodes.def` and every accessor, both backends must return the sa
 same children / related objects (visited in turn) or the same C++ exception type. Keyed and
 indexed lookups and `findById` are tried with every id and node number met on the way, keyed
 strings with the object's property names and aliases (indexed lookups also with its int values,
-such as tap positions, and the sides), `evaluate` with a fixed set of argument lists; an
-identifiable looked up again by id must be the same object (`isSameObject`). Every value read is then written back through its
-setter (same acceptance, same value read back), properties and aliases are removed and added
-back, terminals and connectables disconnected and connected, and both networks must save to the
-same XIIDM. One network is built through the C++ adders, with properties, aliases and names out
-of ASCII (it found that JNI's modified UTF-8 corrupted characters outside the BMP). New codes and
-new test data are picked up automatically. It runs when both `IIDM_BRIDGE_GRAALVM_LIB` and
-`IIDM_BRIDGE_JAR` are set (CI `graalvm` and `dynawo` jobs), in 2 to 4 s per network.
+such as tap positions, and the sides), `evaluate` with a fixed set of argument lists, and every
+adder is started; an identifiable looked up again by id must be the same object
+(`isSameObject`). Every value read is then written back through its setter (same acceptance,
+same value read back), properties and aliases are removed and added back, terminals and
+connectables disconnected and connected, every other action (`ACT_*`) applied, and both networks
+must save to the same XIIDM; last, every identifiable is removed and the XIIDM compared again.
+One network is built through the C++ adders with every type of object (the DC model apart) and
+every extension, with properties, aliases and names out of ASCII (it found that JNI's modified
+UTF-8 corrupted characters outside the BMP); another holds a reactive capability shape, which
+powsybl does not save yet. New codes and new test data are picked up automatically. It runs
+when both `IIDM_BRIDGE_GRAALVM_LIB` and `IIDM_BRIDGE_JAR` are set (CI `graalvm` and `dynawo`
+jobs), in a few seconds per network (about 20 s for the one with every type of object).
 
 ### Property codes
 
