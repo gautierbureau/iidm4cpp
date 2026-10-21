@@ -1,11 +1,25 @@
 #include <iidm/Identifiable.h>
 #include <iidm/BackendProvider.h>
+#include <iidm/Network.h>
 #include "Extensions.h"
 
 namespace iidm {
 
 std::string Identifiable::getId() const {
     return backend_->getString(handle_, prop::ID);
+}
+
+Identifiable& Identifiable::setId(const std::string& id) {
+    backend_->setString(handle_, prop::ID, id);
+    return *this;
+}
+
+Network Identifiable::getNetwork() const {
+    return Network(backend_->getRelated(handle_, prop::NETWORK), backend_);
+}
+
+Network Identifiable::getParentNetwork() const {
+    return Network(backend_->getRelated(handle_, prop::REL_PARENT_NETWORK), backend_);
 }
 
 std::string Identifiable::getNameOrId() const {

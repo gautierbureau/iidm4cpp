@@ -14,6 +14,7 @@
 namespace iidm {
 
 class BackendProvider;
+class Network;
 
 // A network object with an id (powsybl Identifiable): the base of every network object.
 // Any of them converts to Identifiable; is<T>() and as<T>() go the other way.
@@ -25,6 +26,8 @@ public:
     explicit Identifiable(ObjectHandle handle, BackendProvider* backend) : ObjectRef(handle, backend) {}
 
     std::string getId() const;
+    // Renames it (ValidationException when the id is taken)
+    Identifiable& setId(const std::string& id);
     // The name, or else the id
     std::string getNameOrId() const;
     // Empty when it has no name
@@ -35,6 +38,11 @@ public:
     Identifiable& setFictitious(bool fictitious);
 
     IdentifiableType getType() const;
+
+    // Its network; the smallest network that holds it (a subnetwork, or else its network). Views
+    // of the network: they do not own it (include <iidm/Network.h> to use them).
+    Network getNetwork() const;
+    Network getParentNetwork() const;
 
     // ── Aliases (other ids it can be found with) ─────────────────────────
     // Sorted

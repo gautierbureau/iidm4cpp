@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iidm/Container.h>
 #include <iidm/Enums.h>
 #include <iidm/Identifiable.h>
 #include <iidm/VoltageLevel.h>
@@ -10,7 +11,10 @@
 
 namespace iidm {
 
-class Substation : public Identifiable {
+class TwoWindingsTransformer;
+class ThreeWindingsTransformer;
+
+class Substation : public Identifiable, public detail::ContainerMethods<Substation> {
 public:
     static constexpr int TYPE = prop::SUBSTATION;
 
@@ -18,12 +22,21 @@ public:
     explicit Substation(ObjectHandle handle, BackendProvider* backend) : Identifiable(handle, backend) {}
 
     iidm::optional<Country> getCountry() const;
+    Substation& setCountry(Country country);
 
     // Empty when undefined
     iidm::optional<std::string> getTso() const;
     Substation& setTso(const std::string& tso);
 
+    // Sorted
+    std::vector<std::string> getGeographicalTags() const;
+    Substation& addGeographicalTag(const std::string& tag);
+
     std::vector<VoltageLevel> getVoltageLevels() const;
+    std::vector<TwoWindingsTransformer> getTwoWindingsTransformers() const;
+    int getTwoWindingsTransformerCount() const;
+    std::vector<ThreeWindingsTransformer> getThreeWindingsTransformers() const;
+    int getThreeWindingsTransformerCount() const;
     VoltageLevelAdder newVoltageLevel();
 
     // Removes the substation, its voltage levels and everything connected to them

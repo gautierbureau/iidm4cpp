@@ -5,6 +5,8 @@
 
 namespace iidm {
 
+class VoltageLevel;
+
 class Switch : public Identifiable {
 public:
     static constexpr int TYPE = prop::SWITCH;
@@ -22,6 +24,8 @@ public:
 
     int getNode1() const;
     int getNode2() const;
+
+    VoltageLevel getVoltageLevel() const;
 };
 
 } // namespace iidm

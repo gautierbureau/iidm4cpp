@@ -380,6 +380,22 @@ ShuntCompensatorModel (properties)
 └── ShuntCompensatorNonLinearModel   getAllSections(), from the first one: Section getB() / getG()
                                      (+ setters), properties
 
+Identifiable (every object above)
+├── getId() / setId(id) (renames it), getNameOrId(), getOptionalName() / setName(name)
+└── getNetwork() / getParentNetwork() → Network (a view of it: it owns nothing)
+
+Substation        getCountry() / setCountry(), getTso() / setTso(), getGeographicalTags() /
+                  addGeographicalTag(tag), getVoltageLevels(), getTwoWindingsTransformers() /
+                  getThreeWindingsTransformers() (+ counts), getContainerType()
+VoltageLevel
+├── getSubstation() → optional, getNominalV() / getLow…/getHighVoltageLimit() (+ setters)
+├── getTopologyKind(), convertToTopology(kind), printTopology([out])
+├── getConnectables() / getConnectable(id), getGenerators(), getLoads(), getLines(),
+│   getTwoWindingsTransformers()… (+ counts)
+└── getNodeBreakerView() / getBusBreakerView() / getBusView() (getBuses(), getBus(id),
+    getMergedBus(configured bus or busbar section id))
+Switch            isOpen() / isRetained() (+ setters), getKind(), getVoltageLevel()
+
 Load
 ├── getP0() → double             setP0(double)
 ├── getQ0() → double             setQ0(double)
@@ -460,8 +476,9 @@ class return the base class (`setName`, `setFictitious`, `setProperty`).
 // include/iidm/Network.h
 namespace iidm {
 
-// An identifiable that owns its backend session
-class Network : public Identifiable {
+// An identifiable that owns its backend session. identifiable.getNetwork() returns a view of
+// it, which owns nothing (and may outlive nothing: the session is the owner's).
+class Network : public Identifiable, public detail::ContainerMethods<Network> {
 public:
     ~Network();
     Network(Network&&) noexcept;
@@ -471,18 +488,29 @@ public:
     Network(const Network&) = delete;
     Network& operator=(const Network&) = delete;
 
-    // Iteration helpers
+    // Iteration helpers, and counts
     std::vector<Identifiable>            getIdentifiables() const;
     std::vector<Connectable>             getConnectables() const;
     std::vector<Branch>                  getBranches() const;
     std::vector<Substation>              getSubstations() const;
     std::vector<Generator>               getGenerators() const;
-    // … and so on for each type
+    int                                  getGeneratorCount() const;
+    // … and so on for each type, switches and busbar sections included
+    std::vector<Substation> getSubstations(country, tsoId, geographicalTags) const; // filtered
 
     // Lookup by ID (or alias)
     iidm::optional<Identifiable>           getIdentifiable(const std::string& id) const;
     iidm::optional<Generator>              getGenerator(const std::string& id) const;
     // … and so on for each type
+
+    // The buses and switches of all its voltage levels: getBusBreakerView().getBuses() /
+    // getSwitches() / getBus(id), getBusView().getBuses() / getBus(id)
+    BusBreakerView getBusBreakerView() const;
+    BusView getBusView() const;
+
+    // Validation: getValidationLevel(), setMinimumAcceptableValidationLevel(level),
+    // runValidationChecks(throwsException = true) → ValidationLevel
+    // getCountries() → std::set<Country>, getCountryCount(), getContainerType()
 
     // Backend accessor (advanced usage only)
     BackendProvider& getBackend();

@@ -47,6 +47,11 @@ enum class LimitType { ACTIVE_POWER, APPARENT_POWER, CURRENT, VOLTAGE, VOLTAGE_A
 enum class DetectionKind { HIGH, LOW };
 // Model of a shunt compensator's sections (powsybl ShuntCompensatorModelType)
 enum class ShuntCompensatorModelType { LINEAR, NON_LINEAR };
+// What a container is (powsybl ContainerType)
+enum class ContainerType { NETWORK, SUBSTATION, VOLTAGE_LEVEL };
+// How far a network's values are validated: the equipment only, or the steady state hypothesis
+// values too (powsybl ValidationLevel)
+enum class ValidationLevel { EQUIPMENT, STEADY_STATE_HYPOTHESIS };
 // Model of the voltage dependence of a load (powsybl LoadModelType)
 enum class LoadModelType { EXPONENTIAL, ZIP };
 
