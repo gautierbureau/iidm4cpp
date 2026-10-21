@@ -700,12 +700,13 @@ g.removeActivePowerControl();
   `ValidationException`. A removed object's wrapper keeps its handle: powsybl decides what using it
   does (changes are rejected with `ValidationException`).
 - **Available so far:** subnetworks, substations, voltage levels (with or without substation),
-  bus-breaker buses, generators, loads and their load models, grounds, tie lines, areas and their
-  boundaries, voltage angle limits, overload management systems and their trippings, operational
-  limits groups and their limits, voltage regulations, tap changers and their steps (or a new set of
-  steps), reactive limits (min-max, curve, shape), and every extension. Not yet: batteries, shunt
-  compensators, static var compensators, converter stations, boundary lines, lines, transformers, HVDC
-  lines, busbar sections, switches and internal connections.
+  bus-breaker buses, generators, loads and their load models, batteries, shunt compensators and their
+  models, static var compensators, VSC and LCC converter stations, boundary lines and their
+  generation, grounds, tie lines, areas and their boundaries, voltage angle limits, overload
+  management systems and their trippings, operational limits groups and their limits, voltage
+  regulations, tap changers and their steps (or a new set of steps), reactive limits (min-max, curve,
+  shape), and every extension. Not yet: lines, transformers, HVDC lines, busbar sections, switches and
+  internal connections.
 
 Underneath, there is one backend primitive, `invoke(handle, code)` (§5.1): `invoke(parent, TYPE)`
 returns a Java adder, the adder's fields are set with the usual setters and the object's own

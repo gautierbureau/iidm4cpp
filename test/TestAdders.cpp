@@ -174,3 +174,76 @@ TEST_F(AddersTest, NotBoundToANetwork) {
     EXPECT_THROW(Generator().remove(), InvalidHandleException);
     EXPECT_THROW(Generator().newActivePowerControl(), InvalidHandleException);
 }
+
+TEST_F(AddersTest, Injections) {
+    VoltageLevel vl(VL, &backend);
+    vl.newBattery().setId("BAT").setBus("B").setMinP(-50).setMaxP(50).setTargetP(10).setLocalTargetQ(0)
+        .setEquivalent(true).add();
+    ObjectHandle a = backend.lastAdder;
+    EXPECT_EQ(backend.invocations.front(), call(VL, prop::BATTERY));
+    EXPECT_DOUBLE_EQ((backend.doubles[{a, prop::BAT_TARGET_P}]), 10);
+    EXPECT_DOUBLE_EQ((backend.doubles[{a, prop::BAT_MIN_P}]), -50);
+    EXPECT_TRUE((backend.bools[{a, prop::EQUIVALENT}]));
+
+    vl.newStaticVarCompensator().setId("SVC").setBmin(-1e-3).setBmax(1e-3).setLocalTargetV(400).add();
+    a = backend.lastAdder;
+    EXPECT_EQ(backend.invocations[backend.invocations.size() - 2], call(VL, prop::STATIC_VAR_COMPENSATOR));
+    EXPECT_DOUBLE_EQ((backend.doubles[{a, prop::SVC_B_MAX}]), 1e-3);
+    EXPECT_DOUBLE_EQ((backend.doubles[{a, prop::LOCAL_TARGET_V}]), 400);
+
+    vl.newVscConverterStation().setId("VSC").setLossFactor(1.1).setLocalTargetQ(0).add();
+    EXPECT_DOUBLE_EQ((backend.doubles[{backend.lastAdder, prop::CONVERTER_STATION_LOSS_FACTOR}]), 1.1);
+    vl.newLccConverterStation().setId("LCC").setLossFactor(1.2).setPowerFactor(0.8).add();
+    EXPECT_DOUBLE_EQ((backend.doubles[{backend.lastAdder, prop::LCC_POWER_FACTOR}]), 0.8);
+    EXPECT_EQ(backend.invocations[backend.invocations.size() - 2], call(VL, prop::LCC_CONVERTER_STATION));
+}
+
+TEST_F(AddersTest, ShuntCompensatorModels) {
+    VoltageLevel vl(VL, &backend);
+    backend.invocations.clear();
+    vl.newShuntCompensator().setId("SC").setSectionCount(1).setSolvedSectionCount(0)
+        .newLinearModel().setBPerSection(1e-5).setGPerSection(0).setMaximumSectionCount(2).add()
+        .add();
+    const ObjectHandle shunt = backend.lastAdder - 1; // the shunt, then its model
+    EXPECT_EQ(backend.invocations[0], call(VL, prop::SHUNT_COMPENSATOR));
+    EXPECT_EQ((backend.ints[{shunt, prop::SHUNT_SECTION_COUNT}]), 1);
+    EXPECT_EQ((backend.ints[{shunt, prop::SHUNT_SOLVED_SECTION_COUNT}]), 0);
+    EXPECT_EQ(backend.invocations[1], call(shunt, prop::SHUNT_COMPENSATOR_LINEAR_MODEL));
+    EXPECT_DOUBLE_EQ((backend.doubles[{shunt + 1, prop::SHUNT_B_PER_SECTION}]), 1e-5);
+    EXPECT_EQ((backend.ints[{shunt + 1, prop::SHUNT_MAX_SECTION_COUNT}]), 2);
+    EXPECT_EQ(backend.invocations[2], call(shunt + 1, prop::ACT_ADD));
+    EXPECT_EQ(backend.invocations[3], call(shunt, prop::ACT_ADD));
+
+    backend.invocations.clear();
+    vl.newShuntCompensator().setId("SC2").setSectionCount(2)
+        .newNonLinearModel()
+            .beginSection().setB(1e-5).setG(0).endSection()
+            .beginSection().setB(3e-5).setG(1e-6).endSection()
+            .add()
+        .add();
+    const ObjectHandle shunt2 = backend.lastAdder - 3; // the shunt, its model, two sections
+    EXPECT_EQ(backend.invocations[1], call(shunt2, prop::SHUNT_COMPENSATOR_NON_LINEAR_MODEL));
+    EXPECT_EQ(backend.invocations[2], call(shunt2 + 1, prop::SHUNT_SECTION));
+    EXPECT_EQ(backend.invocations[3], call(shunt2 + 2, prop::ACT_ADD));
+    EXPECT_DOUBLE_EQ((backend.doubles[{shunt2 + 3, prop::SHUNT_SECTION_G}]), 1e-6);
+    EXPECT_EQ(backend.invocations[6], call(shunt2 + 1, prop::ACT_ADD));
+    EXPECT_EQ(backend.invocations[7], call(shunt2, prop::ACT_ADD));
+}
+
+TEST_F(AddersTest, BoundaryLineGeneration) {
+    VoltageLevel vl(VL, &backend);
+    backend.invocations.clear();
+    vl.newBoundaryLine().setId("BL").setP0(10).setQ0(5).setR(1).setX(10).setG(0).setB(1e-6).setPairingKey("XNODE")
+        .newGeneration().setMinP(0).setMaxP(100).setTargetP(50).setTargetQ(10).setTargetV(400)
+            .setVoltageRegulationOn(true).add()
+        .add();
+    const ObjectHandle line = backend.lastAdder - 1;
+    EXPECT_EQ(backend.invocations[0], call(VL, prop::BOUNDARY_LINE));
+    EXPECT_DOUBLE_EQ((backend.doubles[{line, prop::BL_B}]), 1e-6);
+    EXPECT_EQ((backend.strings[{line, prop::BL_PAIRING_KEY}]), "XNODE");
+    EXPECT_EQ(backend.invocations[1], call(line, prop::BOUNDARY_LINE_GENERATION));
+    EXPECT_DOUBLE_EQ((backend.doubles[{line + 1, prop::GENERATION_TARGET_V}]), 400);
+    EXPECT_TRUE((backend.bools[{line + 1, prop::GENERATION_VOLTAGE_REGULATION_ON}]));
+    EXPECT_EQ(backend.invocations[2], call(line + 1, prop::ACT_ADD));
+    EXPECT_EQ(backend.invocations[3], call(line, prop::ACT_ADD));
+}
