@@ -342,8 +342,8 @@ ctest --test-dir build --output-on-failure
 ```
 
 With either set, `TestAccessors` checks every one-line accessor on that backend: the value it reads
-in the network of `test/CompleteNetwork.h`, and the value its setter writes, read back (the
-`cpp` job builds no jar, so only the `graalvm`, `integration` and `dynawo` jobs run it).
+in the network of `test/CompleteNetwork.h`, and the value its setter writes, read back. In CI, the
+`cpp` jobs run the JNI tests with the jar of the `java` job, on every platform and C++ standard.
 With both `IIDM_BRIDGE_GRAALVM_LIB` and `IIDM_BRIDGE_JAR` set, `TestBackendConformance`
 walks every object of the test networks on both backends in lockstep and fails on any
 difference (value, children, related objects, exception type, setter behaviour, saved XIIDM).
@@ -354,7 +354,7 @@ A backend change is not done until it passes.
 | Job | What it does |
 |---|---|
 | `java` | Maven build + test with JDK 21 |
-| `cpp` | CMake Release build matrix (Ubuntu, macOS, Windows; C++11/14/17), JNI backend, unit tests |
+| `cpp` | CMake Release build matrix (Ubuntu, macOS, Windows; C++11/14/17), JNI backend, unit tests, and the tests on the real JNI backend with the jar of `java` |
 | `graalvm` | Builds GraalVM native image (`libpowsybl-iidm-native.so`) and runs unit tests; Linux leg uploads artifacts |
 | `integration` | Downloads native artifacts, runs examples and integration tests against IEEE-14 network |
 | `dynawo` | Self-contained full build (installs GraalVM CE 21 + Maven via dnf, builds JAR + native image + C++ library) and runs unit and end-to-end tests inside `dynawo/dynawo-ci:latest` |

@@ -1763,9 +1763,10 @@ iidm::Network network = iidm::NetworkFactory::wrap("case1", opts);
 
 `test/TestFoo.cpp` tests the methods of a component that have logic of their own (several calls,
 conversions, validation, errors) against `MockBackend` (`test/MockBackend.h`), which fakes the
-backend: they need no external file and run on every platform of the `cpp` job. The other tests
-need the real backends and are skipped without them: `test/TestFooNetwork.cpp` runs a scenario on
-a test network (`test/data/*.xiidm`) on GraalVM and on JNI (see `test/RealBackends.h`).
+backend: they need no external file. The other tests need the real backends and are skipped
+without them: `test/TestFooNetwork.cpp` runs a scenario on a test network (`test/data/*.xiidm`) on
+GraalVM and on JNI (see `test/RealBackends.h`). The `cpp` CI jobs run both kinds on every platform
+and C++ standard, the JNI tests with the jar of the `java` job.
 
 ### Accessor table
 
