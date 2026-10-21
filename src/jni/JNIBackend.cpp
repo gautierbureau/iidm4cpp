@@ -1,6 +1,7 @@
 #include "JNIBackend.h"
 #include "JNIExceptionBridge.h"
 #include "JNIStrings.h"
+#include "../PropertyCodesCheck.h"
 #include <iidm/IidmException.h>
 #include <cmath>
 #include <cstring>
@@ -42,6 +43,7 @@ JNIBackend::JNIBackend(const std::string& networkId)
     findJVM();
     JNIEnv* env = this->env();
     cacheMethodIds(env);
+    checkPropertyCodes(env);
     bindRegisteredNetwork(env);
 }
 
@@ -70,6 +72,19 @@ JNIEnv* JNIBackend::env() const {
     }
     if (!threadEnded) jvmAttachment.jvm = jvm_;
     return env;
+}
+
+void JNIBackend::checkPropertyCodes(JNIEnv* env) {
+    // Classes older than the check have no codesHash
+    jmethodID codesHash = env->GetStaticMethodID(cache_.dispatcherClass, "codesHash", "()J");
+    jlong javaHash = 0;
+    if (codesHash) {
+        javaHash = env->CallStaticLongMethod(cache_.dispatcherClass, codesHash);
+        checkJNIException(env);
+    } else {
+        env->ExceptionClear();
+    }
+    detail::checkPropertyCodes(static_cast<std::uint64_t>(javaHash), "The Java bridge on the class path of the JVM");
 }
 
 void JNIBackend::cacheClass(JNIEnv* env, jclass& out, const char* name) {

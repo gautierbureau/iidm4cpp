@@ -1,5 +1,6 @@
 #include "GraalVMBackend.h"
 #include "../BridgeErrors.h"
+#include "../PropertyCodesCheck.h"
 #include <iidm/IidmException.h>
 #include <algorithm>
 #include <cstdlib>
@@ -155,6 +156,17 @@ void GraalVMBackend::init(const std::string& libPath) {
         isolates.detachThread[isolateId_] = fnDetachThread_;
     }
     rememberThread(isolateId_, thread);
+
+    // An image older than the check has no iidm_codes_hash
+    using FnCodesHash = std::int64_t(*)(graal_isolatethread_t*);
+    auto codesHash = reinterpret_cast<FnCodesHash>(IIDM_DLSYM(libHandle_, "iidm_codes_hash"));
+    try {
+        detail::checkPropertyCodes(codesHash ? static_cast<std::uint64_t>(codesHash(thread)) : 0,
+                                   "The GraalVM native library " + libPath);
+    } catch (...) {
+        close();
+        throw;
+    }
 }
 
 graal_isolatethread_t* GraalVMBackend::thread() const {

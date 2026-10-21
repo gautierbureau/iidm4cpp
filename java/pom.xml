@@ -96,13 +96,32 @@ public final class PropertyCodes {
 
 </header>
                                     <path path="${property.codes.def}"/>
-                                    <footer filtering="no">}
-</footer>
                                     <filterchain>
                                         <tokenfilter>
                                             <replaceregex pattern="^(\s*)IIDM_CODE\((\w+),\s*(-?\d+)\)(.*)$"
                                                           replace="    public static final int \2 = \3;\4"/>
                                             <replaceregex pattern="^(\s*)(//.*)$" replace="    \2"/>
+                                        </tokenfilter>
+                                    </filterchain>
+                                </concat>
+                                <!-- Then every code as "NAME=value", in the order of the file, for
+                                     PropertyDispatcher.codesHash() -->
+                                <concat destfile="${property.codes.java}" append="yes" encoding="UTF-8" outputencoding="UTF-8" fixlastline="yes">
+                                    <header filtering="no">
+    // Every code as NAME=value, in the order of PropertyCodes.def (PropertyDispatcher.codesHash)
+    static final String[] CODES = {
+</header>
+                                    <path path="${property.codes.def}"/>
+                                    <footer filtering="no">    };
+}
+</footer>
+                                    <filterchain>
+                                        <linecontainsregexp>
+                                            <regexp pattern="^\s*IIDM_CODE\("/>
+                                        </linecontainsregexp>
+                                        <tokenfilter>
+                                            <replaceregex pattern="^\s*IIDM_CODE\((\w+),\s*(-?\d+)\).*$"
+                                                          replace="        &quot;\1=&quot; + \1,"/>
                                         </tokenfilter>
                                     </filterchain>
                                 </concat>

@@ -71,6 +71,8 @@ private:
     // The JNI environment of the calling thread, attached to the JVM on its first call
     JNIEnv* env() const;
     void cacheMethodIds(JNIEnv* env);
+    // BackendNotAvailableException unless the Java side has the property codes of this library
+    void checkPropertyCodes(JNIEnv* env);
     void cacheClass(JNIEnv* env, jclass& out, const char* name);
     void bindRegisteredNetwork(JNIEnv* env);
     // After a network was (re)registered under networkId_: drops the old reference, binds the new one.

@@ -194,7 +194,7 @@ aborts the process.
 | Exception (`iidm::`) | Thrown when |
 |---|---|
 | `IidmException` | The base of the others; any other failure |
-| `BackendNotAvailableException` | The backend is not built in, the native image cannot be loaded, or there is no JVM |
+| `BackendNotAvailableException` | The backend is not built in, the native image cannot be loaded, there is no JVM, or the jar or native image was built from other property codes than the library |
 | `ValidationException` | powsybl rejects the call: invalid value, id already used, refused removal... |
 | `PropertyNotFoundException` | The method does not apply to this object (`as<T>()` of another type), an optional part is absent |
 | `ExtensionNotFoundException` | `getExtension<X>()` on an object without X (a `PropertyNotFoundException`) |

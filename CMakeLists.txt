@@ -69,6 +69,7 @@ set(IIDM_BRIDGE_SOURCES
     src/BridgeErrors.cpp
     src/NullBackend.cpp
     src/BackendProvider.cpp
+    src/PropertyCodesCheck.cpp
     src/HandleRef.cpp
     src/Network.cpp
     src/ObjectRef.cpp
