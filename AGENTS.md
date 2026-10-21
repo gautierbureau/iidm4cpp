@@ -218,8 +218,9 @@ An extension is an object of its own, as in powsybl: `ActivePowerControl` is the
    a test network (`examples/*.xiidm`): `TestBackendConformance` then compares every new code,
    and the adder, on both backends without any change to the test.
 
-Larger extensions can keep their Java logic in a helper class called from the
-dispatcher cases (e.g. `StateEstimationDispatch.java`). The objects an extension holds are
+An extension's Java code stays in `PropertyDispatcher`, like every other: its cases, plus a helper
+at the end of the class when a case needs more than an expression (e.g. the observability areas,
+paired with their voltage level to resolve their nodes and buses). The objects an extension holds are
 objects too: a `Measurement` of a `Measurements` extension has the type code `MEASUREMENT`,
 used for `getChildren` (all of them), `getRelatedByString` (one by id) and `invoke` (the adder of
 a new one); the quality of P of an observability extension is the relation `OBS_QUALITY_P`.
