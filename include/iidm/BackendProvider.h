@@ -27,7 +27,7 @@ public:
     // last wrapper using a handle is destroyed. Default: nothing to release.
     virtual void releaseHandle(ObjectHandle /*h*/) {}
     // Tracker shared by the HandleRefs of this backend.
-    const std::shared_ptr<detail::HandleTracker>& handleTracker() const { return tracker_; }
+    std::shared_ptr<detail::HandleTracker> handleTracker() const;
     // Number of handles currently held by wrappers (diagnostics, tests).
     std::size_t liveHandleCount() const;
 
@@ -145,6 +145,10 @@ protected:
 
 private:
     std::shared_ptr<detail::HandleTracker> tracker_;
+    // Once its network is destroyed, the backend is the tracker's, which it no longer owns
+    std::weak_ptr<detail::HandleTracker> keptBy_;
+
+    friend class detail::HandleTracker;
 };
 
 } // namespace iidm

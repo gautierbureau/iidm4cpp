@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iidm/ObjectHandle.h>
+#include <memory>
 #include <mutex>
 #include <unordered_map>
 
@@ -16,6 +17,12 @@ namespace detail {
 class HandleTracker {
 public:
     explicit HandleTracker(BackendProvider* owner) : owner_(owner) {}
+    ~HandleTracker();
+
+    // The backend of a destroyed network, closed: it stays as long as a wrapper holds the tracker
+    // (wrappers with an invalid handle included), answering them with InvalidHandleException
+    // instead of being freed under them, and goes with the last of them.
+    static void keep(std::unique_ptr<BackendProvider> closed);
 
     void retain(ObjectHandle h);
     void release(ObjectHandle h) noexcept;
@@ -30,6 +37,7 @@ private:
     mutable std::mutex                       mutex_;
     std::unordered_map<ObjectHandle, long>   counts_;
     BackendProvider*                         owner_;
+    std::unique_ptr<BackendProvider>         kept_;
 };
 
 } } // namespace iidm::detail

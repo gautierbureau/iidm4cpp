@@ -179,7 +179,7 @@ graal_isolatethread_t* GraalVMBackend::thread() const {
 }
 
 graal_isolatethread_t* GraalVMBackend::attachThread() const {
-    if (!isolate_) throw IidmException("The GraalVM backend is closed");
+    if (!isolate_) throw InvalidHandleException("The network of this object is closed");
     graal_isolatethread_t* thread = nullptr;
     if (fnAttachThread_(isolate_, &thread) != 0) {
         throw IidmException("Failed to attach the thread to the GraalVM isolate");
