@@ -69,8 +69,7 @@ endif()
 target_link_libraries(iidmbridge_tests
     PRIVATE
         iidmbridge
-        GTest::GTest
-        GTest::Main
+        ${IIDM_BRIDGE_GTEST_LIBRARIES}
 )
 
 # ── Coverage ──────────────────────────────────────────────────────────────────

@@ -263,6 +263,11 @@ A backend change is not done until it passes.
 | `dynawo` | Self-contained full build (installs GraalVM CE 21 + Maven via dnf, builds JAR + native image + C++ library) and runs unit and end-to-end tests inside `dynawo/dynawo-ci:latest` |
 | `cpp-matrix` | Tests various backend combinations (JNI-only, no backends) on Linux |
 
+The `dynawo` image is Fedora 29: GCC 8.3, CMake 3.14 (no `ctest --test-dir`), Maven 3.5.4,
+GoogleTest 1.8.1 (no `GTEST_SKIP`, so the build fetches a newer one) and Unix Makefiles. Build
+changes (CMake, Maven plugins) must work there too: the job's steps can be replayed in
+`docker run -it dynawo/dynawo-ci:latest`.
+
 ---
 
 ## Level 4 — Architecture deep-dive (read when working on backends or memory model)
