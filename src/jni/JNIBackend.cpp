@@ -1,6 +1,7 @@
 #include "JNIBackend.h"
 #include "JNIExceptionBridge.h"
 #include "JNIStrings.h"
+#include "JavaVMs.h"
 #include "../PropertyCodesCheck.h"
 #include <iidm/IidmException.h>
 #include <cmath>
@@ -24,12 +25,8 @@ struct JvmAttachment {
     JavaVM* jvm = nullptr;
     ~JvmAttachment() {
         threadEnded = true;
-        JavaVM* created = nullptr;
-        jsize count = 0;
         // Not after the JVM is destroyed
-        if (jvm && JNI_GetCreatedJavaVMs(&created, 1, &count) == JNI_OK && count == 1 && created == jvm) {
-            jvm->DetachCurrentThread();
-        }
+        if (jvm && detail::createdJavaVM() == jvm) jvm->DetachCurrentThread();
     }
 };
 thread_local JvmAttachment jvmAttachment;
@@ -52,13 +49,8 @@ JNIBackend::~JNIBackend() {
 }
 
 void JNIBackend::findJVM() {
-    JavaVM* jvms[1];
-    jsize   count = 0;
-    jint rc = JNI_GetCreatedJavaVMs(jvms, 1, &count);
-    if (rc != JNI_OK || count == 0) {
-        throw BackendNotAvailableException("No JVM found; cannot use JNI backend");
-    }
-    jvm_ = jvms[0];
+    jvm_ = detail::createdJavaVM();
+    if (!jvm_) throw BackendNotAvailableException("No JVM found; cannot use JNI backend");
 }
 
 JNIEnv* JNIBackend::env() const {

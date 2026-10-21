@@ -105,8 +105,8 @@ jobs:
           sudo apt-get install -y libboost-dev
 
       # Windows: jvm.dll lives in JAVA_HOME/bin/server which actions/setup-java
-      # does not add to PATH.  iidmbridge.dll (built with JNI=ON) lists jvm.dll
-      # as a dependency, so it must be findable when the test exe runs.
+      # does not add to PATH.  The test exe (built with JNI=ON) starts a JVM and
+      # lists jvm.dll as a dependency, so it must be findable when it runs.
       - name: Add JVM server dir to PATH (Windows)
         if: runner.os == 'Windows'
         shell: bash
