@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iidm:network xmlns:iidm="http://www.powsybl.org/schema/iidm/1_18" xmlns:refpri="http://www.powsybl.org/schema/iidm/ext/reference_priorities/1_0" xmlns:reft="http://www.powsybl.org/schema/iidm/ext/reference_terminals/1_0" xmlns:oa="http://www.powsybl.org/schema/iidm/ext/observability_area/1_0" id="references_test" caseDate="2026-01-31T12:00:00.000Z" forecastDistance="0" sourceFormat="test" minimumValidationLevel="STEADY_STATE_HYPOTHESIS">
+    <iidm:substation id="S" country="FR">
+        <iidm:voltageLevel id="VL1" nominalV="400.0" topologyKind="BUS_BREAKER">
+            <iidm:busBreakerTopology>
+                <iidm:bus id="B1a"/>
+                <iidm:bus id="B1b"/>
+                <iidm:switch id="CB1" kind="BREAKER" retained="true" open="false" bus1="B1a" bus2="B1b"/>
+            </iidm:busBreakerTopology>
+            <iidm:generator id="G1" energySource="OTHER" minP="0.0" maxP="500.0" targetP="200.0" localTargetQ="0.0" bus="B1a" connectableBus="B1a">
+                <iidm:minMaxReactiveLimits minQ="-1.7976931348623157E308" maxQ="1.7976931348623157E308"/>
+            </iidm:generator>
+        </iidm:voltageLevel>
+        <iidm:voltageLevel id="VL2" nominalV="400.0" topologyKind="BUS_BREAKER">
+            <iidm:busBreakerTopology>
+                <iidm:bus id="B2"/>
+            </iidm:busBreakerTopology>
+            <iidm:generator id="G2" energySource="OTHER" minP="0.0" maxP="100.0" targetP="50.0" localTargetQ="0.0" bus="B2" connectableBus="B2">
+                <iidm:minMaxReactiveLimits minQ="-1.7976931348623157E308" maxQ="1.7976931348623157E308"/>
+            </iidm:generator>
+        </iidm:voltageLevel>
+        <iidm:voltageLevel id="VL3" nominalV="225.0" topologyKind="NODE_BREAKER">
+            <iidm:nodeBreakerTopology>
+                <iidm:busbarSection id="BBS3" node="0"/>
+                <iidm:switch id="BR3" kind="BREAKER" open="false" node1="0" node2="1"/>
+                <iidm:switch id="BR3b" kind="BREAKER" open="true" node1="0" node2="2"/>
+            </iidm:nodeBreakerTopology>
+            <iidm:load id="LD" loadType="UNDEFINED" p0="80.0" q0="10.0" node="1"/>
+            <iidm:load id="LD2" loadType="UNDEFINED" p0="5.0" q0="1.0" node="2"/>
+        </iidm:voltageLevel>
+    </iidm:substation>
+    <iidm:line id="L12" r="1.0" x="10.0" voltageLevelId1="VL1" bus1="B1b" connectableBus1="B1b" voltageLevelId2="VL2" bus2="B2" connectableBus2="B2"/>
+    <iidm:extension id="G1">
+        <refpri:referencePriorities>
+            <refpri:referencePriority priority="2" id="G1"/>
+        </refpri:referencePriorities>
+    </iidm:extension>
+    <iidm:extension id="G2">
+        <refpri:referencePriorities>
+            <refpri:referencePriority priority="1" id="G2"/>
+        </refpri:referencePriorities>
+    </iidm:extension>
+    <iidm:extension id="L12">
+        <refpri:referencePriorities>
+            <refpri:referencePriority priority="3" id="L12" side="TWO"/>
+        </refpri:referencePriorities>
+    </iidm:extension>
+    <iidm:extension id="references_test">
+        <reft:referenceTerminals>
+            <reft:referenceTerminal id="G1"/>
+        </reft:referenceTerminals>
+    </iidm:extension>
+    <iidm:extension id="LD">
+        <refpri:referencePriorities>
+            <refpri:referencePriority priority="0" id="LD"/>
+        </refpri:referencePriorities>
+    </iidm:extension>
+    <iidm:extension id="VL1">
+        <oa:observabilityArea consistentWithTopology="true">
+            <oa:bus areaNumber="1" status="OBSERVABLE" ids="B1a,B1b"/>
+        </oa:observabilityArea>
+    </iidm:extension>
+    <iidm:extension id="VL3">
+        <oa:observabilityArea consistentWithTopology="false">
+            <oa:bus areaNumber="1" status="BORDER" nodes="0,1"/>
+            <oa:bus areaNumber="2" status="NON_OBSERVABLE" nodes="2"/>
+        </oa:observabilityArea>
+    </iidm:extension>
+</iidm:network>

@@ -2,6 +2,7 @@
 #include <iidm/BackendProvider.h>
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
+#include "Extensions.h"
 #include "BoundaryLineFilter.h"
 #include "Wrap.h"
 
@@ -564,6 +565,22 @@ std::vector<Component> Network::BusView::getConnectedComponents() const {
 
 std::vector<Component> Network::BusView::getSynchronousComponents() const {
     return detail::wrapAll<Component>(backend_->getChildren(handle_, prop::REL_SYNCHRONOUS_COMPONENT), backend_);
+}
+
+bool Network::hasReferenceTerminals() const {
+    return detail::hasExtension<ReferenceTerminals>(backend_, handle_);
+}
+
+ReferenceTerminals Network::getReferenceTerminals() const {
+    return detail::getExtension<ReferenceTerminals>(backend_, handle_, "ReferenceTerminals");
+}
+
+ReferenceTerminalsAdder Network::newReferenceTerminals() {
+    return detail::newExtension<ReferenceTerminals, ReferenceTerminalsAdder>(backend_, handle_);
+}
+
+void Network::removeReferenceTerminals() {
+    detail::removeExtension<ReferenceTerminals>(backend_, handle_);
 }
 
 } // namespace iidm

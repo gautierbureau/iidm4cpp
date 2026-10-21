@@ -24,6 +24,8 @@ set(TEST_SOURCES
     TestAsymmetricalExtensionsNetwork.cpp
     TestPositionExtensions.cpp
     TestPositionExtensionsNetwork.cpp
+    TestReferenceExtensions.cpp
+    TestReferenceExtensionsNetwork.cpp
     TestShuntsNetwork.cpp
     TestLinesNetwork.cpp
     TestBoundaryLinesNetwork.cpp

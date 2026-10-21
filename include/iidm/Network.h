@@ -1,37 +1,39 @@
 #pragma once
 
-#include <iidm/BackendProvider.h>
-#include <iidm/Branch.h>
-#include <iidm/Connectable.h>
-#include <iidm/Container.h>
-#include <iidm/HvdcConverterStation.h>
-#include <iidm/Identifiable.h>
-#include <iidm/Substation.h>
-#include <iidm/SubstationAdder.h>
-#include <iidm/VoltageLevel.h>
-#include <iidm/VoltageLevelAdder.h>
-#include <iidm/Battery.h>
-#include <iidm/Generator.h>
-#include <iidm/Load.h>
-#include <iidm/Line.h>
-#include <iidm/TwoWindingsTransformer.h>
-#include <iidm/ThreeWindingsTransformer.h>
-#include <iidm/HvdcLine.h>
 #include <iidm/Area.h>
 #include <iidm/AreaAdder.h>
+#include <iidm/BackendProvider.h>
+#include <iidm/Battery.h>
 #include <iidm/BoundaryLine.h>
+#include <iidm/Branch.h>
+#include <iidm/BusbarSection.h>
+#include <iidm/Component.h>
+#include <iidm/Connectable.h>
+#include <iidm/Container.h>
+#include <iidm/Generator.h>
 #include <iidm/Ground.h>
-#include <iidm/TieLine.h>
-#include <iidm/TieLineAdder.h>
+#include <iidm/HvdcConverterStation.h>
+#include <iidm/HvdcLine.h>
+#include <iidm/Identifiable.h>
+#include <iidm/LccConverterStation.h>
+#include <iidm/Line.h>
+#include <iidm/Load.h>
+#include <iidm/ReferenceTerminals.h>
+#include <iidm/ReferenceTerminalsAdder.h>
 #include <iidm/ShuntCompensator.h>
 #include <iidm/StaticVarCompensator.h>
-#include <iidm/VscConverterStation.h>
-#include <iidm/LccConverterStation.h>
-#include <iidm/BusbarSection.h>
+#include <iidm/Substation.h>
+#include <iidm/SubstationAdder.h>
 #include <iidm/Switch.h>
-#include <iidm/Component.h>
+#include <iidm/ThreeWindingsTransformer.h>
+#include <iidm/TieLine.h>
+#include <iidm/TieLineAdder.h>
+#include <iidm/TwoWindingsTransformer.h>
 #include <iidm/VariantManager.h>
 #include <iidm/VoltageAngleLimit.h>
+#include <iidm/VoltageLevel.h>
+#include <iidm/VoltageLevelAdder.h>
+#include <iidm/VscConverterStation.h>
 #include <iosfwd>
 #include <memory>
 #include <set>
@@ -239,6 +241,13 @@ public:
     // network, its unpaired boundary lines
     std::vector<Identifiable> getBoundaryElements() const;
     bool isBoundaryElement(const Identifiable& identifiable) const;
+
+    // ── Extensions ───────────────────────────────────────────────────────
+    // An extension's getter throws ExtensionNotFoundException when it is absent
+    bool hasReferenceTerminals() const;
+    ReferenceTerminals getReferenceTerminals() const;
+    ReferenceTerminalsAdder newReferenceTerminals();
+    void removeReferenceTerminals();
 
     // Backend accessor (advanced usage only)
     BackendProvider& getBackend();
