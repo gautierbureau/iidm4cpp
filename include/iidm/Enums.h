@@ -72,6 +72,12 @@ enum class DiscreteMeasurementTapChanger {
 enum class DiscreteMeasurementValueType { BOOLEAN, INT, STRING };
 enum class ObservabilityStatus { OBSERVABLE, NON_OBSERVABLE, BORDER };
 
+// ── Asymmetrical (Fortescue) extensions (same order as the powsybl-core enums) ─
+// How a transformer winding is connected (powsybl WindingConnectionType)
+enum class WindingConnectionType { Y, Y_GROUNDED, DELTA };
+// How a load is connected (powsybl LoadConnectionType)
+enum class LoadConnectionType { Y, DELTA };
+
 std::string             getCountryName(Country country);
 iidm::optional<Country> countryFromName(const std::string& name);
 std::ostream&           operator<<(std::ostream& os, Country c);

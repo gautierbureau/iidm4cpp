@@ -246,4 +246,36 @@ void ThreeWindingsTransformer::removeThreeWindingsTransformerToBeEstimated() {
     detail::removeExtension<ThreeWindingsTransformerToBeEstimated>(backend_, handle_);
 }
 
+bool ThreeWindingsTransformer::hasThreeWindingsTransformerPhaseAngleClock() const {
+    return detail::hasExtension<ThreeWindingsTransformerPhaseAngleClock>(backend_, handle_);
+}
+
+ThreeWindingsTransformerPhaseAngleClock ThreeWindingsTransformer::getThreeWindingsTransformerPhaseAngleClock() const {
+    return detail::getExtension<ThreeWindingsTransformerPhaseAngleClock>(backend_, handle_, "ThreeWindingsTransformerPhaseAngleClock");
+}
+
+ThreeWindingsTransformerPhaseAngleClockAdder ThreeWindingsTransformer::newThreeWindingsTransformerPhaseAngleClock() {
+    return detail::newExtension<ThreeWindingsTransformerPhaseAngleClock, ThreeWindingsTransformerPhaseAngleClockAdder>(backend_, handle_);
+}
+
+void ThreeWindingsTransformer::removeThreeWindingsTransformerPhaseAngleClock() {
+    detail::removeExtension<ThreeWindingsTransformerPhaseAngleClock>(backend_, handle_);
+}
+
+bool ThreeWindingsTransformer::hasThreeWindingsTransformerFortescue() const {
+    return detail::hasExtension<ThreeWindingsTransformerFortescue>(backend_, handle_);
+}
+
+ThreeWindingsTransformerFortescue ThreeWindingsTransformer::getThreeWindingsTransformerFortescue() const {
+    return detail::getExtension<ThreeWindingsTransformerFortescue>(backend_, handle_, "ThreeWindingsTransformerFortescue");
+}
+
+ThreeWindingsTransformerFortescueAdder ThreeWindingsTransformer::newThreeWindingsTransformerFortescue() {
+    return detail::newExtension<ThreeWindingsTransformerFortescue, ThreeWindingsTransformerFortescueAdder>(backend_, handle_);
+}
+
+void ThreeWindingsTransformer::removeThreeWindingsTransformerFortescue() {
+    detail::removeExtension<ThreeWindingsTransformerFortescue>(backend_, handle_);
+}
+
 } // namespace iidm

@@ -203,6 +203,35 @@ public final class PropertyDispatcher {
             case EXT_SA_HIGH_VOLTAGE_SETPOINT -> ((StandbyAutomaton) obj).getHighVoltageSetpoint();
             case EXT_SA_LOW_VOLTAGE_THRESHOLD -> ((StandbyAutomaton) obj).getLowVoltageThreshold();
             case EXT_SA_HIGH_VOLTAGE_THRESHOLD -> ((StandbyAutomaton) obj).getHighVoltageThreshold();
+            case EXT_GF_RZ -> ((GeneratorFortescue) obj).getRz();
+            case EXT_GF_XZ -> ((GeneratorFortescue) obj).getXz();
+            case EXT_GF_RN -> ((GeneratorFortescue) obj).getRn();
+            case EXT_GF_XN -> ((GeneratorFortescue) obj).getXn();
+            case EXT_GF_GROUNDING_R -> ((GeneratorFortescue) obj).getGroundingR();
+            case EXT_GF_GROUNDING_X -> ((GeneratorFortescue) obj).getGroundingX();
+            case EXT_LINE_F_RZ -> ((LineFortescue) obj).getRz();
+            case EXT_LINE_F_XZ -> ((LineFortescue) obj).getXz();
+            case EXT_LINE_F_G1Z -> ((LineFortescue) obj).getG1z();
+            case EXT_LINE_F_B1Z -> ((LineFortescue) obj).getB1z();
+            case EXT_LINE_F_G2Z -> ((LineFortescue) obj).getG2z();
+            case EXT_LINE_F_B2Z -> ((LineFortescue) obj).getB2z();
+            case EXT_LA_DELTA_PA -> ((LoadAsymmetrical) obj).getDeltaPa();
+            case EXT_LA_DELTA_QA -> ((LoadAsymmetrical) obj).getDeltaQa();
+            case EXT_LA_DELTA_PB -> ((LoadAsymmetrical) obj).getDeltaPb();
+            case EXT_LA_DELTA_QB -> ((LoadAsymmetrical) obj).getDeltaQb();
+            case EXT_LA_DELTA_PC -> ((LoadAsymmetrical) obj).getDeltaPc();
+            case EXT_LA_DELTA_QC -> ((LoadAsymmetrical) obj).getDeltaQc();
+            case EXT_TWO_WTF_RZ -> ((TwoWindingsTransformerFortescue) obj).getRz();
+            case EXT_TWO_WTF_XZ -> ((TwoWindingsTransformerFortescue) obj).getXz();
+            case EXT_TWO_WTF_XM -> ((TwoWindingsTransformerFortescue) obj).getXm();
+            case EXT_TWO_WTF_GROUNDING_R1 -> ((TwoWindingsTransformerFortescue) obj).getGroundingR1();
+            case EXT_TWO_WTF_GROUNDING_X1 -> ((TwoWindingsTransformerFortescue) obj).getGroundingX1();
+            case EXT_TWO_WTF_GROUNDING_R2 -> ((TwoWindingsTransformerFortescue) obj).getGroundingR2();
+            case EXT_TWO_WTF_GROUNDING_X2 -> ((TwoWindingsTransformerFortescue) obj).getGroundingX2();
+            case EXT_LEG_F_RZ -> ((LegFortescue) obj).getRz();
+            case EXT_LEG_F_XZ -> ((LegFortescue) obj).getXz();
+            case EXT_LEG_F_GROUNDING_R -> ((LegFortescue) obj).getGroundingR();
+            case EXT_LEG_F_GROUNDING_X -> ((LegFortescue) obj).getGroundingX();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown double property: " + property);
         };
     }
@@ -343,6 +372,35 @@ public final class PropertyDispatcher {
             case EXT_SA_HIGH_VOLTAGE_SETPOINT -> ((StandbyAutomaton) obj).setHighVoltageSetpoint(value);
             case EXT_SA_LOW_VOLTAGE_THRESHOLD -> ((StandbyAutomaton) obj).setLowVoltageThreshold(value);
             case EXT_SA_HIGH_VOLTAGE_THRESHOLD -> ((StandbyAutomaton) obj).setHighVoltageThreshold(value);
+            case EXT_GF_RZ -> ((GeneratorFortescue) obj).setRz(value);
+            case EXT_GF_XZ -> ((GeneratorFortescue) obj).setXz(value);
+            case EXT_GF_RN -> ((GeneratorFortescue) obj).setRn(value);
+            case EXT_GF_XN -> ((GeneratorFortescue) obj).setXn(value);
+            case EXT_GF_GROUNDING_R -> ((GeneratorFortescue) obj).setGroundingR(value);
+            case EXT_GF_GROUNDING_X -> ((GeneratorFortescue) obj).setGroundingX(value);
+            case EXT_LINE_F_RZ -> ((LineFortescue) obj).setRz(value);
+            case EXT_LINE_F_XZ -> ((LineFortescue) obj).setXz(value);
+            case EXT_LINE_F_G1Z -> ((LineFortescue) obj).setG1z(value);
+            case EXT_LINE_F_B1Z -> ((LineFortescue) obj).setB1z(value);
+            case EXT_LINE_F_G2Z -> ((LineFortescue) obj).setG2z(value);
+            case EXT_LINE_F_B2Z -> ((LineFortescue) obj).setB2z(value);
+            case EXT_LA_DELTA_PA -> ((LoadAsymmetrical) obj).setDeltaPa(value);
+            case EXT_LA_DELTA_QA -> ((LoadAsymmetrical) obj).setDeltaQa(value);
+            case EXT_LA_DELTA_PB -> ((LoadAsymmetrical) obj).setDeltaPb(value);
+            case EXT_LA_DELTA_QB -> ((LoadAsymmetrical) obj).setDeltaQb(value);
+            case EXT_LA_DELTA_PC -> ((LoadAsymmetrical) obj).setDeltaPc(value);
+            case EXT_LA_DELTA_QC -> ((LoadAsymmetrical) obj).setDeltaQc(value);
+            case EXT_TWO_WTF_RZ -> ((TwoWindingsTransformerFortescue) obj).setRz(value);
+            case EXT_TWO_WTF_XZ -> ((TwoWindingsTransformerFortescue) obj).setXz(value);
+            case EXT_TWO_WTF_XM -> ((TwoWindingsTransformerFortescue) obj).setXm(value);
+            case EXT_TWO_WTF_GROUNDING_R1 -> ((TwoWindingsTransformerFortescue) obj).setGroundingR1(value);
+            case EXT_TWO_WTF_GROUNDING_X1 -> ((TwoWindingsTransformerFortescue) obj).setGroundingX1(value);
+            case EXT_TWO_WTF_GROUNDING_R2 -> ((TwoWindingsTransformerFortescue) obj).setGroundingR2(value);
+            case EXT_TWO_WTF_GROUNDING_X2 -> ((TwoWindingsTransformerFortescue) obj).setGroundingX2(value);
+            case EXT_LEG_F_RZ -> ((LegFortescue) obj).setRz(value);
+            case EXT_LEG_F_XZ -> ((LegFortescue) obj).setXz(value);
+            case EXT_LEG_F_GROUNDING_R -> ((LegFortescue) obj).setGroundingR(value);
+            case EXT_LEG_F_GROUNDING_X -> ((LegFortescue) obj).setGroundingX(value);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown double property for set: " + property);
         }
     }
@@ -417,6 +475,13 @@ public final class PropertyDispatcher {
             case OBS_AREA_STATUS    -> ((StateEstimationDispatch.AreaRef) obj).area().getStatus().ordinal();
             case EXT_GEC_CODE -> ((GeneratorEntsoeCategory) obj).getCode();
             case EXT_OS_STATUS -> ((OperatingStatus<?>) obj).getStatus().ordinal();
+            case EXT_LA_CONNECTION_TYPE -> ((LoadAsymmetrical) obj).getConnectionType().ordinal();
+            case EXT_TWO_WTF_CONNECTION_TYPE1 -> ((TwoWindingsTransformerFortescue) obj).getConnectionType1().ordinal();
+            case EXT_TWO_WTF_CONNECTION_TYPE2 -> ((TwoWindingsTransformerFortescue) obj).getConnectionType2().ordinal();
+            case EXT_LEG_F_CONNECTION_TYPE -> ((LegFortescue) obj).getConnectionType().ordinal();
+            case EXT_TWO_WT_PAC_CLOCK -> ((TwoWindingsTransformerPhaseAngleClock) obj).getPhaseAngleClock();
+            case EXT_THREE_WT_PAC_CLOCK_LEG2 -> ((ThreeWindingsTransformerPhaseAngleClock) obj).getPhaseAngleClockLeg2();
+            case EXT_THREE_WT_PAC_CLOCK_LEG3 -> ((ThreeWindingsTransformerPhaseAngleClock) obj).getPhaseAngleClockLeg3();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown int property: " + property);
         };
     }
@@ -462,6 +527,15 @@ public final class PropertyDispatcher {
             case DMEAS_VALUE_INT -> ((DiscreteMeasurement) obj).setValue(value);
             case EXT_GEC_CODE -> ((GeneratorEntsoeCategory) obj).setCode(value);
             case EXT_OS_STATUS -> ((OperatingStatus<?>) obj).setStatus(Creation.enumValue(OperatingStatus.Status.class, value));
+            case EXT_LA_CONNECTION_TYPE -> ((LoadAsymmetrical) obj).setConnectionType(Creation.enumValue(LoadConnectionType.class, value));
+            case EXT_TWO_WTF_CONNECTION_TYPE1 -> ((TwoWindingsTransformerFortescue) obj)
+                .setConnectionType1(Creation.enumValue(WindingConnectionType.class, value));
+            case EXT_TWO_WTF_CONNECTION_TYPE2 -> ((TwoWindingsTransformerFortescue) obj)
+                .setConnectionType2(Creation.enumValue(WindingConnectionType.class, value));
+            case EXT_LEG_F_CONNECTION_TYPE -> ((LegFortescue) obj).setConnectionType(Creation.enumValue(WindingConnectionType.class, value));
+            case EXT_TWO_WT_PAC_CLOCK -> ((TwoWindingsTransformerPhaseAngleClock) obj).setPhaseAngleClock(value);
+            case EXT_THREE_WT_PAC_CLOCK_LEG2 -> ((ThreeWindingsTransformerPhaseAngleClock) obj).setPhaseAngleClockLeg2(value);
+            case EXT_THREE_WT_PAC_CLOCK_LEG3 -> ((ThreeWindingsTransformerPhaseAngleClock) obj).setPhaseAngleClockLeg3(value);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown int property for set: " + property);
         }
     }
@@ -589,6 +663,13 @@ public final class PropertyDispatcher {
             case EXT_OBS_AREA_CONSISTENT -> ((ObservabilityArea) obj).isConsistentWithTopology();
             case EXT_SA_STANDBY             -> ((StandbyAutomaton) obj).isStandby();
             case EXT_MFRR_PARTICIPATE       -> ((ManualFrequencyRestorationReserve<?>) obj).isParticipate();
+            case LEG_FORTESCUE              -> obj instanceof LegFortescue;
+            case EXT_GF_GROUNDED            -> ((GeneratorFortescue) obj).isGrounded();
+            case EXT_LINE_F_OPEN_PHASE_A    -> ((LineFortescue) obj).isOpenPhaseA();
+            case EXT_LINE_F_OPEN_PHASE_B    -> ((LineFortescue) obj).isOpenPhaseB();
+            case EXT_LINE_F_OPEN_PHASE_C    -> ((LineFortescue) obj).isOpenPhaseC();
+            case EXT_TWO_WTF_FREE_FLUXES    -> ((TwoWindingsTransformerFortescue) obj).isFreeFluxes();
+            case EXT_LEG_F_FREE_FLUXES      -> ((LegFortescue) obj).isFreeFluxes();
             default -> {
                 // An extension type code: whether the object is one
                 if (Extensions.isType(property)) yield Extensions.isInstance(obj, property);
@@ -636,6 +717,12 @@ public final class PropertyDispatcher {
             case DMEAS_VALID      -> ((DiscreteMeasurement) obj).setValid(bval);
             case EXT_SA_STANDBY -> ((StandbyAutomaton) obj).setStandby(bval);
             case EXT_MFRR_PARTICIPATE -> ((ManualFrequencyRestorationReserve<?>) obj).setParticipate(bval);
+            case EXT_GF_GROUNDED -> ((GeneratorFortescue) obj).setGrounded(bval);
+            case EXT_LINE_F_OPEN_PHASE_A -> ((LineFortescue) obj).setOpenPhaseA(bval);
+            case EXT_LINE_F_OPEN_PHASE_B -> ((LineFortescue) obj).setOpenPhaseB(bval);
+            case EXT_LINE_F_OPEN_PHASE_C -> ((LineFortescue) obj).setOpenPhaseC(bval);
+            case EXT_TWO_WTF_FREE_FLUXES -> ((TwoWindingsTransformerFortescue) obj).setFreeFluxes(bval);
+            case EXT_LEG_F_FREE_FLUXES -> ((LegFortescue) obj).setFreeFluxes(bval);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown bool property for set: " + property);
         }
     }
@@ -1504,6 +1591,11 @@ public final class PropertyDispatcher {
             case INTERNAL_CONNECTION -> ((VoltageLevel) obj).getNodeBreakerView().getNodesInternalConnectedTo(index);
             case REL_TERMINAL -> ((ThreeWindingsTransformer) obj).getTerminal(Creation.enumValue(ThreeSides.class, index));
             case THREE_WINDINGS_TRANSFORMER_LEG -> ((ThreeWindingsTransformer) obj).getLeg(Creation.enumValue(ThreeSides.class, index));
+            case LEG_FORTESCUE -> switch (Creation.enumValue(ThreeSides.class, index)) {
+                case ONE -> ((ThreeWindingsTransformerFortescue) obj).getLeg1();
+                case TWO -> ((ThreeWindingsTransformerFortescue) obj).getLeg2();
+                case THREE -> ((ThreeWindingsTransformerFortescue) obj).getLeg3();
+            };
             case RATIO_TAP_CHANGER_STEP -> ((RatioTapChanger) obj).getStep(index);
             case PHASE_TAP_CHANGER_STEP -> ((PhaseTapChanger) obj).getStep(index);
             case REL_OBS_AREA_BY_NODE -> StateEstimationDispatch.observabilityAreaByNode((ObservabilityArea) obj, index);

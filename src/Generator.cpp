@@ -133,4 +133,20 @@ void Generator::removeGeneratorStartup() {
     detail::removeExtension<GeneratorStartup>(backend_, handle_);
 }
 
+bool Generator::hasGeneratorFortescue() const {
+    return detail::hasExtension<GeneratorFortescue>(backend_, handle_);
+}
+
+GeneratorFortescue Generator::getGeneratorFortescue() const {
+    return detail::getExtension<GeneratorFortescue>(backend_, handle_, "GeneratorFortescue");
+}
+
+GeneratorFortescueAdder Generator::newGeneratorFortescue() {
+    return detail::newExtension<GeneratorFortescue, GeneratorFortescueAdder>(backend_, handle_);
+}
+
+void Generator::removeGeneratorFortescue() {
+    detail::removeExtension<GeneratorFortescue>(backend_, handle_);
+}
+
 } // namespace iidm

@@ -142,6 +142,14 @@ set(IIDM_BRIDGE_SOURCES
     src/ManualFrequencyRestorationReserve.cpp
     src/OperatingStatus.cpp
     src/DynamicModelInfo.cpp
+    src/GeneratorFortescue.cpp
+    src/LineFortescue.cpp
+    src/LoadAsymmetrical.cpp
+    src/TwoWindingsTransformerFortescue.cpp
+    src/LegFortescue.cpp
+    src/ThreeWindingsTransformerFortescue.cpp
+    src/TwoWindingsTransformerPhaseAngleClock.cpp
+    src/ThreeWindingsTransformerPhaseAngleClock.cpp
 )
 
 if(IIDM_BRIDGE_ENABLE_GRAALVM)

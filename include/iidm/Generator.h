@@ -5,6 +5,8 @@
 #include <iidm/Enums.h>
 #include <iidm/GeneratorEntsoeCategory.h>
 #include <iidm/GeneratorEntsoeCategoryAdder.h>
+#include <iidm/GeneratorFortescue.h>
+#include <iidm/GeneratorFortescueAdder.h>
 #include <iidm/GeneratorShortCircuit.h>
 #include <iidm/GeneratorShortCircuitAdder.h>
 #include <iidm/GeneratorStartup.h>
@@ -69,6 +71,11 @@ public:
     GeneratorStartup getGeneratorStartup() const;
     GeneratorStartupAdder newGeneratorStartup();
     void removeGeneratorStartup();
+
+    bool hasGeneratorFortescue() const;
+    GeneratorFortescue getGeneratorFortescue() const;
+    GeneratorFortescueAdder newGeneratorFortescue();
+    void removeGeneratorFortescue();
 };
 
 } // namespace iidm

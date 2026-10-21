@@ -44,7 +44,18 @@ final class Extensions {
         type(MANUAL_FREQUENCY_RESTORATION_RESERVE, ManualFrequencyRestorationReserve.class,
             ManualFrequencyRestorationReserveAdder.class),
         type(OPERATING_STATUS, OperatingStatus.class, OperatingStatusAdder.class),
-        type(DYNAMIC_MODEL_INFO, DynamicModelInfo.class, DynamicModelInfoAdder.class));
+        type(DYNAMIC_MODEL_INFO, DynamicModelInfo.class, DynamicModelInfoAdder.class),
+        type(GENERATOR_FORTESCUE, GeneratorFortescue.class, GeneratorFortescueAdder.class),
+        type(LINE_FORTESCUE, LineFortescue.class, LineFortescueAdder.class),
+        type(LOAD_ASYMMETRICAL, LoadAsymmetrical.class, LoadAsymmetricalAdder.class),
+        type(TWO_WINDINGS_TRANSFORMER_FORTESCUE, TwoWindingsTransformerFortescue.class,
+            TwoWindingsTransformerFortescueAdder.class),
+        type(THREE_WINDINGS_TRANSFORMER_FORTESCUE, ThreeWindingsTransformerFortescue.class,
+            ThreeWindingsTransformerFortescueAdder.class),
+        type(TWO_WINDINGS_TRANSFORMER_PHASE_ANGLE_CLOCK, TwoWindingsTransformerPhaseAngleClock.class,
+            TwoWindingsTransformerPhaseAngleClockAdder.class),
+        type(THREE_WINDINGS_TRANSFORMER_PHASE_ANGLE_CLOCK, ThreeWindingsTransformerPhaseAngleClock.class,
+            ThreeWindingsTransformerPhaseAngleClockAdder.class));
 
     private Extensions() {
     }

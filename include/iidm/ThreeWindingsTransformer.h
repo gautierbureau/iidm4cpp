@@ -6,6 +6,10 @@
 #include <iidm/Overload.h>
 #include <iidm/TapChangerHolder.h>
 #include <iidm/Terminal.h>
+#include <iidm/ThreeWindingsTransformerFortescue.h>
+#include <iidm/ThreeWindingsTransformerFortescueAdder.h>
+#include <iidm/ThreeWindingsTransformerPhaseAngleClock.h>
+#include <iidm/ThreeWindingsTransformerPhaseAngleClockAdder.h>
 #include <iidm/ThreeWindingsTransformerToBeEstimated.h>
 #include <iidm/ThreeWindingsTransformerToBeEstimatedAdder.h>
 #include <iidm/stdcxx/optional.hpp>
@@ -120,6 +124,16 @@ public:
     ThreeWindingsTransformerToBeEstimated getThreeWindingsTransformerToBeEstimated() const;
     ThreeWindingsTransformerToBeEstimatedAdder newThreeWindingsTransformerToBeEstimated();
     void removeThreeWindingsTransformerToBeEstimated();
+
+    bool hasThreeWindingsTransformerPhaseAngleClock() const;
+    ThreeWindingsTransformerPhaseAngleClock getThreeWindingsTransformerPhaseAngleClock() const;
+    ThreeWindingsTransformerPhaseAngleClockAdder newThreeWindingsTransformerPhaseAngleClock();
+    void removeThreeWindingsTransformerPhaseAngleClock();
+
+    bool hasThreeWindingsTransformerFortescue() const;
+    ThreeWindingsTransformerFortescue getThreeWindingsTransformerFortescue() const;
+    ThreeWindingsTransformerFortescueAdder newThreeWindingsTransformerFortescue();
+    void removeThreeWindingsTransformerFortescue();
 };
 
 } // namespace iidm

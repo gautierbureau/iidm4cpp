@@ -840,6 +840,10 @@ TEST(BackendConformanceTest, DataExtensions) {
     checkConformance("data/data_extensions_test.xiidm");
 }
 
+TEST(BackendConformanceTest, AsymmetricalExtensions) {
+    checkConformance("data/asymmetrical_test.xiidm");
+}
+
 TEST(BackendConformanceTest, CreatedFromScratch) {
     checkConformance("created from scratch", buildNetwork);
 }

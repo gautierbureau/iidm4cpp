@@ -3,6 +3,7 @@
 #include <iidm/IidmException.h>
 #include <iidm/OperationalLimitsGroup.h>
 #include <iidm/PropertyCodes.h>
+#include "Extensions.h"
 
 namespace iidm {
 
@@ -58,6 +59,22 @@ double Line::getB2() const {
 Line& Line::setB2(double b2) {
     backend_->setDouble(handle_, prop::LINE_B2, b2);
     return *this;
+}
+
+bool Line::hasLineFortescue() const {
+    return detail::hasExtension<LineFortescue>(backend_, handle_);
+}
+
+LineFortescue Line::getLineFortescue() const {
+    return detail::getExtension<LineFortescue>(backend_, handle_, "LineFortescue");
+}
+
+LineFortescueAdder Line::newLineFortescue() {
+    return detail::newExtension<LineFortescue, LineFortescueAdder>(backend_, handle_);
+}
+
+void Line::removeLineFortescue() {
+    detail::removeExtension<LineFortescue>(backend_, handle_);
 }
 
 } // namespace iidm

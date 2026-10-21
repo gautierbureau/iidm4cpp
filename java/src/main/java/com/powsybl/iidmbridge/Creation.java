@@ -276,6 +276,31 @@ public final class Creation {
         }
     }
 
+    /** A new ThreeWindingsTransformerFortescue: EXT_THREE_WTF_LEG selects the leg the leg fields set. */
+    static final class FortescueLegs {
+        private final ThreeWindingsTransformerFortescueAdder adder;
+        private ThreeWindingsTransformerFortescueAdder.LegFortescueAdder leg;
+
+        FortescueLegs(ThreeWindingsTransformerFortescueAdder adder) {
+            this.adder = adder;
+        }
+
+        void select(int side) {
+            leg = switch (enumValue(ThreeSides.class, side)) {
+                case ONE -> adder.leg1();
+                case TWO -> adder.leg2();
+                case THREE -> adder.leg3();
+            };
+        }
+
+        ThreeWindingsTransformerFortescueAdder.LegFortescueAdder leg() {
+            if (leg == null) {
+                throw new IllegalStateException("No leg selected: leg1(), leg2() or leg3() first");
+            }
+            return leg;
+        }
+    }
+
     /** A new, empty network. */
     public static Network createNetwork(String id) {
         return Network.create(id, SOURCE_FORMAT);
@@ -298,6 +323,8 @@ public final class Creation {
             case VARIANT_CLONE -> new VariantClone((VariantManager) owner);
             case NETWORK -> new NewSubnetwork((Network) owner);
             case BOUNDARY_ELEMENT -> new BoundaryElementCheck((Network) owner);
+            case THREE_WINDINGS_TRANSFORMER_FORTESCUE ->
+                new FortescueLegs((ThreeWindingsTransformerFortescueAdder) Extensions.newAdder(owner, type));
             case SWITCH_TRIPPING -> ((OverloadManagementSystemAdder) owner).newSwitchTripping();
             case BRANCH_TRIPPING -> ((OverloadManagementSystemAdder) owner).newBranchTripping();
             case THREE_WINDINGS_TRANSFORMER_TRIPPING -> ((OverloadManagementSystemAdder) owner).newThreeWindingsTransformerTripping();
@@ -377,6 +404,7 @@ public final class Creation {
             }
             case TemporaryLimitsCheck check -> check.run();
             case NewSubnetwork subnetwork -> subnetwork.create();
+            case FortescueLegs legs -> legs.adder.add();
             case BoundaryElementCheck check -> check.run();
             case VariantClone clone -> {
                 clone.apply();
@@ -545,6 +573,35 @@ public final class Creation {
             case EXT_SA_HIGH_VOLTAGE_SETPOINT -> ((StandbyAutomatonAdder) a).withHighVoltageSetpoint(value);
             case EXT_SA_LOW_VOLTAGE_THRESHOLD -> ((StandbyAutomatonAdder) a).withLowVoltageThreshold(value);
             case EXT_SA_HIGH_VOLTAGE_THRESHOLD -> ((StandbyAutomatonAdder) a).withHighVoltageThreshold(value);
+            case EXT_GF_RZ -> ((GeneratorFortescueAdder) a).withRz(value);
+            case EXT_GF_XZ -> ((GeneratorFortescueAdder) a).withXz(value);
+            case EXT_GF_RN -> ((GeneratorFortescueAdder) a).withRn(value);
+            case EXT_GF_XN -> ((GeneratorFortescueAdder) a).withXn(value);
+            case EXT_GF_GROUNDING_R -> ((GeneratorFortescueAdder) a).withGroundingR(value);
+            case EXT_GF_GROUNDING_X -> ((GeneratorFortescueAdder) a).withGroundingX(value);
+            case EXT_LINE_F_RZ -> ((LineFortescueAdder) a).withRz(value);
+            case EXT_LINE_F_XZ -> ((LineFortescueAdder) a).withXz(value);
+            case EXT_LINE_F_G1Z -> ((LineFortescueAdder) a).withG1z(value);
+            case EXT_LINE_F_B1Z -> ((LineFortescueAdder) a).withB1z(value);
+            case EXT_LINE_F_G2Z -> ((LineFortescueAdder) a).withG2z(value);
+            case EXT_LINE_F_B2Z -> ((LineFortescueAdder) a).withB2z(value);
+            case EXT_LA_DELTA_PA -> ((LoadAsymmetricalAdder) a).withDeltaPa(value);
+            case EXT_LA_DELTA_QA -> ((LoadAsymmetricalAdder) a).withDeltaQa(value);
+            case EXT_LA_DELTA_PB -> ((LoadAsymmetricalAdder) a).withDeltaPb(value);
+            case EXT_LA_DELTA_QB -> ((LoadAsymmetricalAdder) a).withDeltaQb(value);
+            case EXT_LA_DELTA_PC -> ((LoadAsymmetricalAdder) a).withDeltaPc(value);
+            case EXT_LA_DELTA_QC -> ((LoadAsymmetricalAdder) a).withDeltaQc(value);
+            case EXT_TWO_WTF_RZ -> ((TwoWindingsTransformerFortescueAdder) a).withRz(value);
+            case EXT_TWO_WTF_XZ -> ((TwoWindingsTransformerFortescueAdder) a).withXz(value);
+            case EXT_TWO_WTF_XM -> ((TwoWindingsTransformerFortescueAdder) a).withXm(value);
+            case EXT_TWO_WTF_GROUNDING_R1 -> ((TwoWindingsTransformerFortescueAdder) a).withGroundingR1(value);
+            case EXT_TWO_WTF_GROUNDING_X1 -> ((TwoWindingsTransformerFortescueAdder) a).withGroundingX1(value);
+            case EXT_TWO_WTF_GROUNDING_R2 -> ((TwoWindingsTransformerFortescueAdder) a).withGroundingR2(value);
+            case EXT_TWO_WTF_GROUNDING_X2 -> ((TwoWindingsTransformerFortescueAdder) a).withGroundingX2(value);
+            case EXT_LEG_F_RZ -> ((FortescueLegs) a).leg().withRz(value);
+            case EXT_LEG_F_XZ -> ((FortescueLegs) a).leg().withXz(value);
+            case EXT_LEG_F_GROUNDING_R -> ((FortescueLegs) a).leg().withGroundingR(value);
+            case EXT_LEG_F_GROUNDING_X -> ((FortescueLegs) a).leg().withGroundingX(value);
             default -> throw unknownField("double", property);
         }
     }
@@ -599,6 +656,16 @@ public final class Creation {
             }
             case EXT_GEC_CODE -> ((GeneratorEntsoeCategoryAdder) a).withCode(value);
             case EXT_OS_STATUS -> ((OperatingStatusAdder<?>) a).withStatus(enumValue(OperatingStatus.Status.class, value));
+            case EXT_LA_CONNECTION_TYPE -> ((LoadAsymmetricalAdder) a).withConnectionType(enumValue(LoadConnectionType.class, value));
+            case EXT_TWO_WTF_CONNECTION_TYPE1 -> ((TwoWindingsTransformerFortescueAdder) a)
+                .withConnectionType1(enumValue(WindingConnectionType.class, value));
+            case EXT_TWO_WTF_CONNECTION_TYPE2 -> ((TwoWindingsTransformerFortescueAdder) a)
+                .withConnectionType2(enumValue(WindingConnectionType.class, value));
+            case EXT_THREE_WTF_LEG -> ((FortescueLegs) a).select(value);
+            case EXT_LEG_F_CONNECTION_TYPE -> ((FortescueLegs) a).leg().withConnectionType(enumValue(WindingConnectionType.class, value));
+            case EXT_TWO_WT_PAC_CLOCK -> ((TwoWindingsTransformerPhaseAngleClockAdder) a).withPhaseAngleClock(value);
+            case EXT_THREE_WT_PAC_CLOCK_LEG2 -> ((ThreeWindingsTransformerPhaseAngleClockAdder) a).withPhaseAngleClockLeg2(value);
+            case EXT_THREE_WT_PAC_CLOCK_LEG3 -> ((ThreeWindingsTransformerPhaseAngleClockAdder) a).withPhaseAngleClockLeg3(value);
             default -> throw unknownField("int", property);
         }
     }
@@ -652,6 +719,12 @@ public final class Creation {
             case TL_FICTITIOUS -> ((LoadingLimitsAdder.TemporaryLimitAdder<?>) a).setFictitious(value);
             case EXT_SA_STANDBY -> ((StandbyAutomatonAdder) a).withStandbyStatus(value);
             case EXT_MFRR_PARTICIPATE -> ((ManualFrequencyRestorationReserveAdder<?>) a).withParticipate(value);
+            case EXT_GF_GROUNDED -> ((GeneratorFortescueAdder) a).withGrounded(value);
+            case EXT_LINE_F_OPEN_PHASE_A -> ((LineFortescueAdder) a).withOpenPhaseA(value);
+            case EXT_LINE_F_OPEN_PHASE_B -> ((LineFortescueAdder) a).withOpenPhaseB(value);
+            case EXT_LINE_F_OPEN_PHASE_C -> ((LineFortescueAdder) a).withOpenPhaseC(value);
+            case EXT_TWO_WTF_FREE_FLUXES -> ((TwoWindingsTransformerFortescueAdder) a).withFreeFluxes(value);
+            case EXT_LEG_F_FREE_FLUXES -> ((FortescueLegs) a).leg().withFreeFluxes(value);
             default -> throw unknownField("bool", property);
         }
     }

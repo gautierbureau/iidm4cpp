@@ -106,4 +106,36 @@ void TwoWindingsTransformer::removeTwoWindingsTransformerToBeEstimated() {
     detail::removeExtension<TwoWindingsTransformerToBeEstimated>(backend_, handle_);
 }
 
+bool TwoWindingsTransformer::hasTwoWindingsTransformerFortescue() const {
+    return detail::hasExtension<TwoWindingsTransformerFortescue>(backend_, handle_);
+}
+
+TwoWindingsTransformerFortescue TwoWindingsTransformer::getTwoWindingsTransformerFortescue() const {
+    return detail::getExtension<TwoWindingsTransformerFortescue>(backend_, handle_, "TwoWindingsTransformerFortescue");
+}
+
+TwoWindingsTransformerFortescueAdder TwoWindingsTransformer::newTwoWindingsTransformerFortescue() {
+    return detail::newExtension<TwoWindingsTransformerFortescue, TwoWindingsTransformerFortescueAdder>(backend_, handle_);
+}
+
+void TwoWindingsTransformer::removeTwoWindingsTransformerFortescue() {
+    detail::removeExtension<TwoWindingsTransformerFortescue>(backend_, handle_);
+}
+
+bool TwoWindingsTransformer::hasTwoWindingsTransformerPhaseAngleClock() const {
+    return detail::hasExtension<TwoWindingsTransformerPhaseAngleClock>(backend_, handle_);
+}
+
+TwoWindingsTransformerPhaseAngleClock TwoWindingsTransformer::getTwoWindingsTransformerPhaseAngleClock() const {
+    return detail::getExtension<TwoWindingsTransformerPhaseAngleClock>(backend_, handle_, "TwoWindingsTransformerPhaseAngleClock");
+}
+
+TwoWindingsTransformerPhaseAngleClockAdder TwoWindingsTransformer::newTwoWindingsTransformerPhaseAngleClock() {
+    return detail::newExtension<TwoWindingsTransformerPhaseAngleClock, TwoWindingsTransformerPhaseAngleClockAdder>(backend_, handle_);
+}
+
+void TwoWindingsTransformer::removeTwoWindingsTransformerPhaseAngleClock() {
+    detail::removeExtension<TwoWindingsTransformerPhaseAngleClock>(backend_, handle_);
+}
+
 } // namespace iidm

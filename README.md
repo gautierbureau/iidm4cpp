@@ -1077,6 +1077,13 @@ Every extension below has an adder (`newX()`), except `ObservabilityArea` for no
 | `ManualFrequencyRestorationReserve` | all injections | `MANUAL_FREQUENCY_RESTORATION_RESERVE`, `EXT_MFRR_PARTICIPATE` |
 | `OperatingStatus` | busbar sections, lines, tie lines, transformers, HVDC lines, boundary lines | `OPERATING_STATUS`, `EXT_OS_STATUS` |
 | `DynamicModelInfo` | all identifiables (not saved to XIIDM by powsybl) | `DYNAMIC_MODEL_INFO`, `EXT_DMI_MODEL_NAME` |
+| `GeneratorFortescue` | Generator | `GENERATOR_FORTESCUE`, `EXT_GF_*` |
+| `LineFortescue` | Line | `LINE_FORTESCUE`, `EXT_LINE_F_*` |
+| `LoadAsymmetrical` | Load | `LOAD_ASYMMETRICAL`, `EXT_LA_*` |
+| `TwoWindingsTransformerFortescue` | 2WT | `TWO_WINDINGS_TRANSFORMER_FORTESCUE`, `EXT_TWO_WTF_*` |
+| `ThreeWindingsTransformerFortescue` | 3WT | `THREE_WINDINGS_TRANSFORMER_FORTESCUE`; its `LEG_FORTESCUE`s: `EXT_LEG_F_*`; adder: `EXT_THREE_WTF_LEG` |
+| `TwoWindingsTransformerPhaseAngleClock` | 2WT | `TWO_WINDINGS_TRANSFORMER_PHASE_ANGLE_CLOCK`, `EXT_TWO_WT_PAC_CLOCK` |
+| `ThreeWindingsTransformerPhaseAngleClock` | 3WT | `THREE_WINDINGS_TRANSFORMER_PHASE_ANGLE_CLOCK`, `EXT_THREE_WT_PAC_CLOCK_*` |
 
 The `VoltagePerReactivePowerControl`, `RemoteReactivePowerControl` and battery `VoltageRegulation`
 extensions were removed from powsybl-core 7.4 (`extensions.removed`): their data is the core
