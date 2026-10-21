@@ -135,6 +135,8 @@ TEST(IdentifiableTest, Identity) {
     // Different handles: the backend tells (the mock compares handles)
     EXPECT_NE(Generator(G, &b), Generator(L, &b));
     // Objects that are not valid are all equal, and differ from valid ones
+    EXPECT_TRUE(Generator(G, &b).isValid());
+    EXPECT_FALSE(Generator().isValid());
     EXPECT_EQ(Generator(), Load());
     EXPECT_EQ(Terminal(INVALID_HANDLE, &b), Terminal());
     EXPECT_NE(Generator(), Generator(G, &b));

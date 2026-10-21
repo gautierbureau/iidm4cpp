@@ -32,42 +32,6 @@ protected:
     }
 };
 
-TEST_F(TwoWindingsTransformerTest, GetId) {
-    TwoWindingsTransformer twt(TWT_H, &backend);
-    EXPECT_EQ(twt.getId(), "TWT1");
-}
-
-TEST_F(TwoWindingsTransformerTest, GetElectricalParameters) {
-    TwoWindingsTransformer twt(TWT_H, &backend);
-    EXPECT_DOUBLE_EQ(twt.getR(), 1.5);
-    EXPECT_DOUBLE_EQ(twt.getX(), 10.0);
-    EXPECT_DOUBLE_EQ(twt.getG(), 0.001);
-    EXPECT_DOUBLE_EQ(twt.getB(), 0.002);
-    EXPECT_DOUBLE_EQ(twt.getRatedU1(), 400.0);
-    EXPECT_DOUBLE_EQ(twt.getRatedU2(), 225.0);
-    ASSERT_TRUE(twt.getRatedS().has_value());
-    EXPECT_DOUBLE_EQ(*twt.getRatedS(), 300.0);
-}
-
-TEST_F(TwoWindingsTransformerTest, GetRatedSAbsent) {
-    // NaN → nullopt
-    TwoWindingsTransformer twt(TWT_H, &backend);
-    backend.doubles.erase({TWT_H, prop::TWO_WT_RATED_S});
-    EXPECT_FALSE(twt.getRatedS().has_value());
-}
-
-TEST_F(TwoWindingsTransformerTest, Setters) {
-    TwoWindingsTransformer twt(TWT_H, &backend);
-    EXPECT_EQ(&twt.setR(2.0).setX(20.0).setG(1e-6).setB(1e-5).setRatedU1(410.0).setRatedU2(230.0).setRatedS(350.0), &twt);
-    EXPECT_DOUBLE_EQ((backend.doubles[{TWT_H, prop::TWO_WT_R}]), 2.0);
-    EXPECT_DOUBLE_EQ((backend.doubles[{TWT_H, prop::TWO_WT_X}]), 20.0);
-    EXPECT_DOUBLE_EQ((backend.doubles[{TWT_H, prop::TWO_WT_G}]), 1e-6);
-    EXPECT_DOUBLE_EQ((backend.doubles[{TWT_H, prop::TWO_WT_B}]), 1e-5);
-    EXPECT_DOUBLE_EQ((backend.doubles[{TWT_H, prop::TWO_WT_RATED_U1}]), 410.0);
-    EXPECT_DOUBLE_EQ((backend.doubles[{TWT_H, prop::TWO_WT_RATED_U2}]), 230.0);
-    EXPECT_DOUBLE_EQ(*twt.getRatedS(), 350.0);
-}
-
 TEST_F(TwoWindingsTransformerTest, Substation) {
     static constexpr ObjectHandle SUB_H = 40;
     TwoWindingsTransformer twt(TWT_H, &backend);
@@ -118,14 +82,3 @@ TEST_F(TwoWindingsTransformerTest, GetCurrentLimits) {
     EXPECT_DOUBLE_EQ(twt.getCurrentLimits2()->getPermanentLimit(), 600.0);
 }
 
-TEST_F(TwoWindingsTransformerTest, GetName) {
-    TwoWindingsTransformer twt(TWT_H, &backend);
-    EXPECT_EQ(twt.getNameOrId(), "Two Windings T1");
-}
-
-TEST_F(TwoWindingsTransformerTest, IsValid) {
-    TwoWindingsTransformer valid(TWT_H, &backend);
-    TwoWindingsTransformer invalid;
-    EXPECT_TRUE(valid.isValid());
-    EXPECT_FALSE(invalid.isValid());
-}

@@ -33,56 +33,11 @@ TEST_F(ActivePowerControlTest, HasActivePowerControlAbsent) {
     EXPECT_FALSE(gen.hasExtension<ActivePowerControl>());
 }
 
-TEST_F(ActivePowerControlTest, GetDroop) {
-    Generator gen(GEN_HANDLE, &backend);
-    EXPECT_DOUBLE_EQ(gen.getExtension<ActivePowerControl>().getDroop(), 4.0);
-}
-
-TEST_F(ActivePowerControlTest, SetDroop) {
-    Generator gen(GEN_HANDLE, &backend);
-    gen.getExtension<ActivePowerControl>().setDroop(6.0);
-    EXPECT_DOUBLE_EQ((backend.doubles[{APC_HANDLE, prop::EXT_APC_DROOP}]), 6.0);
-}
-
-TEST_F(ActivePowerControlTest, IsParticipate) {
-    Generator gen(GEN_HANDLE, &backend);
-    EXPECT_TRUE(gen.getExtension<ActivePowerControl>().isParticipate());
-}
-
-TEST_F(ActivePowerControlTest, SetParticipate) {
-    Generator gen(GEN_HANDLE, &backend);
-    gen.getExtension<ActivePowerControl>().setParticipate(false);
-    EXPECT_FALSE((backend.bools[{APC_HANDLE, prop::EXT_APC_PARTICIPATE}]));
-}
-
 TEST_F(ActivePowerControlTest, MethodChaining) {
     Generator gen(GEN_HANDLE, &backend);
     gen.getExtension<ActivePowerControl>().setDroop(8.0).setParticipate(false);
     EXPECT_DOUBLE_EQ((backend.doubles[{APC_HANDLE, prop::EXT_APC_DROOP}]), 8.0);
     EXPECT_FALSE((backend.bools[{APC_HANDLE, prop::EXT_APC_PARTICIPATE}]));
-}
-
-TEST_F(ActivePowerControlTest, IsValid) {
-    ActivePowerControl valid(APC_HANDLE, &backend);
-    ActivePowerControl invalid;
-    EXPECT_TRUE(valid.isValid());
-    EXPECT_FALSE(invalid.isValid());
-}
-
-TEST_F(ActivePowerControlTest, Equality) {
-    ActivePowerControl apc1(APC_HANDLE, &backend);
-    ActivePowerControl apc2(APC_HANDLE, &backend);
-    ActivePowerControl apc3(99, &backend);
-    EXPECT_EQ(apc1, apc2);
-    EXPECT_NE(apc1, apc3);
-}
-
-TEST_F(ActivePowerControlTest, ParticipationFactor) {
-    backend.doubles[{APC_HANDLE, prop::EXT_APC_PARTICIPATION_FACTOR}] = 0.25;
-    auto apc = Generator(GEN_HANDLE, &backend).getExtension<ActivePowerControl>();
-    EXPECT_DOUBLE_EQ(apc.getParticipationFactor(), 0.25);
-    apc.setParticipationFactor(0.5);
-    EXPECT_DOUBLE_EQ((backend.doubles[{APC_HANDLE, prop::EXT_APC_PARTICIPATION_FACTOR}]), 0.5);
 }
 
 TEST_F(ActivePowerControlTest, TargetPLimits) {

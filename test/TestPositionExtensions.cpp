@@ -66,15 +66,6 @@ TEST_F(PositionExtensionsTest, Coordinates) {
     EXPECT_EQ(backend.invocations[5], std::make_pair(ObjectHandle(ADDER_HANDLE), prop::ACT_ADD));
 }
 
-TEST_F(PositionExtensionsTest, BusbarSection) {
-    attach(prop::BUSBAR_SECTION_POSITION);
-    backend.ints[{EXT_HANDLE, prop::EXT_BSP_BUSBAR_INDEX}] = 1;
-    BusbarSectionPosition position = BusbarSection(HOST_HANDLE, &backend).getExtension<BusbarSectionPosition>();
-    EXPECT_EQ(position.getBusbarIndex(), 1);
-    position.setSectionIndex(3);
-    EXPECT_EQ((backend.ints[{EXT_HANDLE, prop::EXT_BSP_SECTION_INDEX}]), 3);
-}
-
 TEST_F(PositionExtensionsTest, Feeders) {
     attach(prop::CONNECTABLE_POSITION);
     backend.relatedByIndex[std::make_tuple(ObjectHandle(EXT_HANDLE), prop::FEEDER, 2)] = FEEDER_HANDLE;

@@ -21,54 +21,6 @@ protected:
     }
 };
 
-TEST_F(LoadTest, GetId) {
-    Load load(LOAD_HANDLE, &backend);
-    EXPECT_EQ(load.getId(), "LOAD1");
-}
-
-TEST_F(LoadTest, GetP0Q0) {
-    Load load(LOAD_HANDLE, &backend);
-    EXPECT_DOUBLE_EQ(load.getP0(), 100.0);
-    EXPECT_DOUBLE_EQ(load.getQ0(), 20.0);
-}
-
-TEST_F(LoadTest, SetP0Q0) {
-    Load load(LOAD_HANDLE, &backend);
-    load.setP0(120.0).setQ0(25.0);
-    EXPECT_DOUBLE_EQ((backend.doubles[{LOAD_HANDLE, prop::LOAD_P0}]), 120.0);
-    EXPECT_DOUBLE_EQ((backend.doubles[{LOAD_HANDLE, prop::LOAD_Q0}]), 25.0);
-}
-
-TEST_F(LoadTest, GetLoadType) {
-    Load load(LOAD_HANDLE, &backend);
-    EXPECT_EQ(load.getLoadType(), LoadType::UNDEFINED);
-}
-
-TEST_F(LoadTest, IsValid) {
-    Load valid(LOAD_HANDLE, &backend);
-    Load invalid;
-    EXPECT_TRUE(valid.isValid());
-    EXPECT_FALSE(invalid.isValid());
-}
-
-TEST_F(LoadTest, IsFictitiousTrue) {
-    backend.bools[{LOAD_HANDLE, prop::FICTITIOUS}] = true;
-    Load load(LOAD_HANDLE, &backend);
-    EXPECT_TRUE(load.isFictitious());
-}
-
-TEST_F(LoadTest, IsFictitiousFalseDefault) {
-    // No entry → getBool returns false
-    Load load(LOAD_HANDLE, &backend);
-    EXPECT_FALSE(load.isFictitious());
-}
-
-TEST_F(LoadTest, SetLoadType) {
-    Load load(LOAD_HANDLE, &backend);
-    EXPECT_EQ(&load.setLoadType(LoadType::FICTITIOUS), &load);
-    EXPECT_EQ(load.getLoadType(), LoadType::FICTITIOUS);
-}
-
 TEST_F(LoadTest, Models) {
     static constexpr ObjectHandle MODEL_H = 20;
     Load load(LOAD_HANDLE, &backend);

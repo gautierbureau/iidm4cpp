@@ -23,24 +23,6 @@ protected:
     }
 };
 
-TEST_F(TerminalTest, GetPQ) {
-    Terminal term(TERM_HANDLE, &backend);
-    EXPECT_DOUBLE_EQ(term.getP(), 55.0);
-    EXPECT_DOUBLE_EQ(term.getQ(), 10.0);
-}
-
-TEST_F(TerminalTest, SetPQ) {
-    Terminal term(TERM_HANDLE, &backend);
-    term.setP(60.0).setQ(12.0);
-    EXPECT_DOUBLE_EQ((backend.doubles[{TERM_HANDLE, prop::TERMINAL_P}]), 60.0);
-    EXPECT_DOUBLE_EQ((backend.doubles[{TERM_HANDLE, prop::TERMINAL_Q}]), 12.0);
-}
-
-TEST_F(TerminalTest, IsConnected) {
-    Terminal term(TERM_HANDLE, &backend);
-    EXPECT_TRUE(term.isConnected());
-}
-
 TEST_F(TerminalTest, ConnectAndDisconnect) {
     Terminal term(TERM_HANDLE, &backend);
     EXPECT_TRUE(term.disconnect());

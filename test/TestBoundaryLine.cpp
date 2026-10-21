@@ -25,11 +25,6 @@ protected:
     }
 };
 
-TEST_F(BoundaryLineTest, GetId) {
-    BoundaryLine dl(BL_HANDLE, &backend);
-    EXPECT_EQ(dl.getId(), "DL1");
-}
-
 // ── getCurrentLimits ──────────────────────────────────────────────────────────
 
 TEST_F(BoundaryLineTest, GetCurrentLimitsAbsent) {
@@ -61,69 +56,12 @@ TEST_F(BoundaryLineTest, OperationalLimitsGroups) {
     EXPECT_EQ(*selected, groups[0]);
 }
 
-TEST_F(BoundaryLineTest, GetName) {
-    BoundaryLine dl(BL_HANDLE, &backend);
-    EXPECT_EQ(dl.getNameOrId(), "Boundary Line 1");
-}
-
-TEST_F(BoundaryLineTest, GetP0Q0) {
-    BoundaryLine dl(BL_HANDLE, &backend);
-    EXPECT_DOUBLE_EQ(dl.getP0(), 50.0);
-    EXPECT_DOUBLE_EQ(dl.getQ0(), 10.0);
-}
-
-TEST_F(BoundaryLineTest, SetP0Q0) {
-    BoundaryLine dl(BL_HANDLE, &backend);
-    dl.setP0(55.0).setQ0(15.0);
-    EXPECT_DOUBLE_EQ((backend.doubles[{BL_HANDLE, prop::BL_P0}]), 55.0);
-    EXPECT_DOUBLE_EQ((backend.doubles[{BL_HANDLE, prop::BL_Q0}]), 15.0);
-}
-
-TEST_F(BoundaryLineTest, GetRXGB) {
-    backend.doubles[{BL_HANDLE, prop::BL_X}] = 2.0;
-    backend.doubles[{BL_HANDLE, prop::BL_G}] = 0.001;
-    backend.doubles[{BL_HANDLE, prop::BL_B}] = 0.002;
-    BoundaryLine dl(BL_HANDLE, &backend);
-    EXPECT_DOUBLE_EQ(dl.getR(), 1.0);
-    EXPECT_DOUBLE_EQ(dl.getX(), 2.0);
-    EXPECT_DOUBLE_EQ(dl.getG(), 0.001);
-    EXPECT_DOUBLE_EQ(dl.getB(), 0.002);
-}
-
 TEST_F(BoundaryLineTest, GetTerminal) {
     static constexpr ObjectHandle TERM_H = 50;
     backend.related[{BL_HANDLE, prop::REL_TERMINAL}] = TERM_H;
     backend.doubles[{TERM_H, prop::TERMINAL_P}]      = 50.0;
     BoundaryLine dl(BL_HANDLE, &backend);
     EXPECT_TRUE(dl.getTerminal().isValid());
-}
-
-TEST_F(BoundaryLineTest, IsValid) {
-    BoundaryLine valid(BL_HANDLE, &backend);
-    BoundaryLine invalid;
-    EXPECT_TRUE(valid.isValid());
-    EXPECT_FALSE(invalid.isValid());
-}
-
-TEST_F(BoundaryLineTest, SetRXGB) {
-    BoundaryLine dl(BL_HANDLE, &backend);
-    EXPECT_EQ(&dl.setR(1.5).setX(15.0).setG(1e-6).setB(2e-5), &dl);
-    EXPECT_DOUBLE_EQ(dl.getR(), 1.5);
-    EXPECT_DOUBLE_EQ(dl.getX(), 15.0);
-    EXPECT_DOUBLE_EQ(dl.getG(), 1e-6);
-    EXPECT_DOUBLE_EQ(dl.getB(), 2e-5);
-}
-
-TEST_F(BoundaryLineTest, Pairing) {
-    BoundaryLine dl(BL_HANDLE, &backend);
-    EXPECT_FALSE(dl.isPaired());
-    EXPECT_FALSE(dl.getPairingKey());
-    backend.bools[{BL_HANDLE, prop::BL_PAIRED}] = true;
-    backend.optStrings[{BL_HANDLE, prop::BL_PAIRING_KEY}] = "XNODE";
-    EXPECT_TRUE(dl.isPaired());
-    EXPECT_EQ(dl.getPairingKey(), iidm::optional<std::string>("XNODE"));
-    EXPECT_EQ(&dl.setPairingKey("XNODE2"), &dl);
-    EXPECT_EQ((backend.strings[{BL_HANDLE, prop::BL_PAIRING_KEY}]), "XNODE2");
 }
 
 TEST_F(BoundaryLineTest, Generation) {

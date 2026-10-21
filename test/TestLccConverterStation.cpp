@@ -25,19 +25,6 @@ protected:
     }
 };
 
-TEST_F(LccConverterStationTest, GetId) {
-    LccConverterStation lcc(LCC_H, &backend);
-    EXPECT_EQ(lcc.getId(), "LCC1");
-}
-
-TEST_F(LccConverterStationTest, GetLossAndPowerFactor) {
-    LccConverterStation lcc(LCC_H, &backend);
-    // The underlying powsybl-iidm-api stores loss/power factor as float, so the
-    // value carries float precision even though the C++ API exposes double.
-    EXPECT_FLOAT_EQ(static_cast<float>(lcc.getLossFactor()),  0.02f);
-    EXPECT_FLOAT_EQ(static_cast<float>(lcc.getPowerFactor()), 0.95f);
-}
-
 TEST_F(LccConverterStationTest, GetTerminal) {
     backend.doubles[{TERM_H, prop::TERMINAL_P}] = 100.0;
     LccConverterStation lcc(LCC_H, &backend);
@@ -50,15 +37,3 @@ TEST_F(LccConverterStationTest, GetHvdcLine) {
     EXPECT_TRUE(static_cast<bool>(lcc.getHvdcLine()));
 }
 
-TEST_F(LccConverterStationTest, IsValid) {
-    LccConverterStation valid(LCC_H, &backend);
-    LccConverterStation invalid;
-    EXPECT_TRUE(valid.isValid());
-    EXPECT_FALSE(invalid.isValid());
-}
-
-TEST_F(LccConverterStationTest, SetPowerFactor) {
-    LccConverterStation lcc(LCC_H, &backend);
-    EXPECT_EQ(&lcc.setPowerFactor(0.95), &lcc);
-    EXPECT_DOUBLE_EQ(lcc.getPowerFactor(), 0.95);
-}

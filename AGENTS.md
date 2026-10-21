@@ -37,8 +37,9 @@ cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
 
-Unit tests use `MockBackend` and need no external files.
-Integration tests require environment variables — see Level 3.
+Unit tests use `MockBackend` and need no external files. The accessor table
+(`TestAccessors`), the conformance and the integration tests need the real backends, through
+environment variables — see Level 3 (they are skipped without them).
 
 ### Java module
 
@@ -136,7 +137,8 @@ selects the format (default `"network.xiidm"`).
 include/iidm/   Public headers (one per component + iidm.h convenience header)
 src/            Implementations; backend-specific code in graalvm/ and jni/
 java/           Maven module for the Java bridge
-test/           GoogleTest unit tests; MockBackend.h fakes the backend
+test/           GoogleTest tests; MockBackend.h fakes the backend, CompleteNetwork.h builds a network
+                with every type of object on a real one (for TestAccessors and TestBackendConformance)
 examples/       Standalone (GraalVM) and embedded (JNI) usage examples
 cmake/          CMake helper modules (FindGraalVM.cmake, etc.)
 ```
@@ -157,7 +159,11 @@ cmake/          CMake helper modules (FindGraalVM.cmake, etc.)
    In `PropertyDispatcher.java`: the cases of the properties that take more than one call (and in
    `Creation.java`, of such adder fields), its type code in `getBool` (instanceof), `childStream`
    and `findObjectById`.
-6. Add unit tests in `test/TestMyComponent.cpp` using `MockBackend`.
+6. Tests: each one-line accessor is a line of the table of `test/TestAccessors.cpp`, on an object of
+   the network that `test/CompleteNetwork.h` builds (add one of the component there):
+   `WRITE(load, getP0, setP0, 80.0, 81.0);` reads the value of the network, sets another and reads it
+   back, on both backends. Only the methods with logic of their own (several calls, conversions,
+   validation) get a test in `test/TestMyComponent.cpp` with `MockBackend`.
 
 ### Primitives for values that may be absent, lists and keys
 
@@ -224,10 +230,12 @@ An extension is an object of its own, as in powsybl: `ActivePowerControl` is the
        (FooAdder<?> x, double v) -> x.withSomeD(v));
    ```
 
-5. **Unit tests** — `test/TestFoo.cpp` using `MockBackend`, plus a Java test of the dispatcher
-   and creation cases (see `ExtensionDispatchTest`, `CreationDispatchTest`). Put the extension in
-   a test network (`examples/*.xiidm`): `TestBackendConformance` then compares every new code,
-   and the adder, on both backends without any change to the test.
+5. **Tests** — add the extension to an object of `test/CompleteNetwork.h` (`addEverything`) and a
+   line per property to the table of `test/TestAccessors.cpp`; `test/TestFoo.cpp` with
+   `MockBackend` only for its methods with logic of their own; a Java test of the dispatcher and
+   creation cases (see `ExtensionDispatchTest`, `CreationDispatchTest`). `TestBackendConformance`
+   then compares every new code, and the adder, on both backends without any change to the test
+   (as it does for the extensions of the test networks, `examples/*.xiidm`).
 
 An extension's Java code stays in `PropertyTable` and `PropertyDispatcher`, like every other: its
 table lines, the cases of what takes more than one call, plus a helper at the end of
@@ -333,6 +341,9 @@ export IIDM_BRIDGE_JAR=/path/to/java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.
 ctest --test-dir build --output-on-failure
 ```
 
+With either set, `TestAccessors` checks every one-line accessor on that backend: the value it reads
+in the network of `test/CompleteNetwork.h`, and the value its setter writes, read back (the
+`cpp` job builds no jar, so only the `graalvm`, `integration` and `dynawo` jobs run it).
 With both `IIDM_BRIDGE_GRAALVM_LIB` and `IIDM_BRIDGE_JAR` set, `TestBackendConformance`
 walks every object of the test networks on both backends in lockstep and fails on any
 difference (value, children, related objects, exception type, setter behaviour, saved XIIDM).

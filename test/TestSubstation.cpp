@@ -20,16 +20,6 @@ protected:
     }
 };
 
-TEST_F(SubstationTest, GetId) {
-    Substation sub(SUB_H, &backend);
-    EXPECT_EQ(sub.getId(), "SUB1");
-}
-
-TEST_F(SubstationTest, GetName) {
-    Substation sub(SUB_H, &backend);
-    EXPECT_EQ(sub.getNameOrId(), "Substation 1");
-}
-
 TEST_F(SubstationTest, GetCountryPresent) {
     Substation sub(SUB_H, &backend);
     auto c = sub.getCountry();
@@ -42,13 +32,6 @@ TEST_F(SubstationTest, GetCountryAbsent) {
     b.strings[{SUB_H, prop::ID}] = "SUB2";
     Substation sub(SUB_H, &b);
     EXPECT_FALSE(sub.getCountry().has_value());
-}
-
-TEST_F(SubstationTest, IsValid) {
-    Substation valid(SUB_H, &backend);
-    Substation invalid;
-    EXPECT_TRUE(valid.isValid());
-    EXPECT_FALSE(invalid.isValid());
 }
 
 TEST_F(SubstationTest, GetVoltageLevels) {
@@ -67,10 +50,3 @@ TEST_F(SubstationTest, GetVoltageLevelsEmpty) {
     EXPECT_TRUE(sub.getVoltageLevels().empty());
 }
 
-TEST_F(SubstationTest, Equality) {
-    Substation a(SUB_H, &backend);
-    Substation b(SUB_H, &backend);
-    Substation c(42,    &backend);
-    EXPECT_EQ(a, b);
-    EXPECT_NE(a, c);
-}

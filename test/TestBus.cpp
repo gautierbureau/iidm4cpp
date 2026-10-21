@@ -20,36 +20,6 @@ protected:
     }
 };
 
-TEST_F(BusTest, GetId) {
-    Bus bus(BUS_HANDLE, &backend);
-    EXPECT_EQ(bus.getId(), "BUS1");
-}
-
-TEST_F(BusTest, GetVAngle) {
-    Bus bus(BUS_HANDLE, &backend);
-    EXPECT_DOUBLE_EQ(bus.getV(), 1.03);
-    EXPECT_DOUBLE_EQ(bus.getAngle(), -0.12);
-}
-
-TEST_F(BusTest, SetVAngle) {
-    Bus bus(BUS_HANDLE, &backend);
-    bus.setV(1.05).setAngle(0.0);
-    EXPECT_DOUBLE_EQ((backend.doubles[{BUS_HANDLE, prop::BUS_V}]), 1.05);
-    EXPECT_DOUBLE_EQ((backend.doubles[{BUS_HANDLE, prop::BUS_ANGLE}]), 0.0);
-}
-
-TEST_F(BusTest, IsValid) {
-    Bus valid(BUS_HANDLE, &backend);
-    Bus invalid;
-    EXPECT_TRUE(valid.isValid());
-    EXPECT_FALSE(invalid.isValid());
-}
-
-TEST_F(BusTest, GetName) {
-    Bus bus(BUS_HANDLE, &backend);
-    EXPECT_EQ(bus.getNameOrId(), "Bus 1");
-}
-
 TEST_F(BusTest, GetVoltageLevel) {
     static constexpr ObjectHandle VL_H = 50;
     backend.related[{BUS_HANDLE, prop::REL_VOLTAGE_LEVEL}] = VL_H;
@@ -61,14 +31,3 @@ TEST_F(BusTest, GetVoltageLevel) {
     EXPECT_EQ(vl.getId(), "VL1");
 }
 
-TEST_F(BusTest, Equality) {
-    Bus a(BUS_HANDLE, &backend);
-    Bus b(BUS_HANDLE, &backend);
-    static constexpr ObjectHandle OTHER_H = 99;
-    backend.strings[{OTHER_H, prop::ID}] = "BUS2";
-    Bus c(OTHER_H, &backend);
-    EXPECT_TRUE(a == b);
-    EXPECT_FALSE(a != b);
-    EXPECT_FALSE(a == c);
-    EXPECT_TRUE(a != c);
-}

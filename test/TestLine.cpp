@@ -29,36 +29,6 @@ protected:
     }
 };
 
-TEST_F(LineTest, GetId) {
-    Line line(LINE_HANDLE, &backend);
-    EXPECT_EQ(line.getId(), "LINE1");
-}
-
-TEST_F(LineTest, GetRX) {
-    Line line(LINE_HANDLE, &backend);
-    EXPECT_DOUBLE_EQ(line.getR(), 0.01);
-    EXPECT_DOUBLE_EQ(line.getX(), 0.1);
-}
-
-TEST_F(LineTest, GetG1B1G2B2) {
-    Line line(LINE_HANDLE, &backend);
-    EXPECT_DOUBLE_EQ(line.getG1(), 0.0);
-    EXPECT_DOUBLE_EQ(line.getB1(), 1e-4);
-    EXPECT_DOUBLE_EQ(line.getG2(), 0.0);
-    EXPECT_DOUBLE_EQ(line.getB2(), 1e-4);
-}
-
-TEST_F(LineTest, Setters) {
-    Line line(LINE_HANDLE, &backend);
-    EXPECT_EQ(&line.setR(0.02).setX(0.2).setG1(1e-6).setB1(2e-4).setG2(2e-6).setB2(3e-4), &line);
-    EXPECT_DOUBLE_EQ((backend.doubles[{LINE_HANDLE, prop::LINE_R}]), 0.02);
-    EXPECT_DOUBLE_EQ((backend.doubles[{LINE_HANDLE, prop::LINE_X}]), 0.2);
-    EXPECT_DOUBLE_EQ((backend.doubles[{LINE_HANDLE, prop::LINE_G1}]), 1e-6);
-    EXPECT_DOUBLE_EQ((backend.doubles[{LINE_HANDLE, prop::LINE_B1}]), 2e-4);
-    EXPECT_DOUBLE_EQ((backend.doubles[{LINE_HANDLE, prop::LINE_G2}]), 2e-6);
-    EXPECT_DOUBLE_EQ((backend.doubles[{LINE_HANDLE, prop::LINE_B2}]), 3e-4);
-}
-
 TEST_F(LineTest, GetTerminals) {
     Line line(LINE_HANDLE, &backend);
     Terminal t1 = line.getTerminal1();

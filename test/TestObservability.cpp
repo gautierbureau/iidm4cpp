@@ -43,22 +43,6 @@ protected:
     }
 };
 
-TEST_F(ObservabilityTest, InjectionHosts) {
-    EXPECT_TRUE(Generator(GEN_H, &backend).hasExtension<InjectionObservability>());
-    EXPECT_FALSE(Load(GEN_H + 100, &backend).hasExtension<InjectionObservability>());
-    EXPECT_THROW(Load(GEN_H + 100, &backend).getExtension<InjectionObservability>(), ExtensionNotFoundException);
-    backend.related[{GEN_H + 101, prop::INJECTION_OBSERVABILITY}] = INJ_OBS_H;
-    EXPECT_TRUE(BusbarSection(GEN_H + 101, &backend).hasExtension<InjectionObservability>());
-}
-
-TEST_F(ObservabilityTest, InjectionObservable) {
-    auto obs = Generator(GEN_H, &backend).getExtension<InjectionObservability>();
-    EXPECT_EQ(obs, InjectionObservability(INJ_OBS_H, &backend));
-    EXPECT_TRUE(obs.isObservable());
-    obs.setObservable(false);
-    EXPECT_FALSE((backend.bools[{INJ_OBS_H, prop::EXT_OBS_OBSERVABLE}]));
-}
-
 TEST_F(ObservabilityTest, InjectionQualities) {
     auto obs = Generator(GEN_H, &backend).getExtension<InjectionObservability>();
     auto p = obs.getQualityP();
@@ -130,12 +114,6 @@ TEST_F(ObservabilityTest, InjectionNewAndRemove) {
 
     load.removeExtension<InjectionObservability>();
     EXPECT_EQ((b.related[{GEN_H, prop::INJECTION_OBSERVABILITY}]), INVALID_HANDLE);
-}
-
-TEST_F(ObservabilityTest, BranchHosts) {
-    EXPECT_TRUE(Line(LINE_H, &backend).hasExtension<BranchObservability>());
-    EXPECT_FALSE(TwoWindingsTransformer(LINE_H + 100, &backend).hasExtension<BranchObservability>());
-    EXPECT_THROW(TwoWindingsTransformer(LINE_H + 100, &backend).getExtension<BranchObservability>(), ExtensionNotFoundException);
 }
 
 TEST_F(ObservabilityTest, BranchQualities) {
