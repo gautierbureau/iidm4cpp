@@ -13,7 +13,7 @@
 
 // Boundary lines on the real backends (see RealBackends.h): the same scenario on GraalVM and on
 // JNI, with the network test/data/boundary_lines_test.xiidm: BL_GEN (a generation, a pairing
-// key, limits), BL_PLAIN (neither), BL_HALF1 and BL_HALF2 (paired in the tie line TIE).
+// key, limits), BL_PLAIN (neither), BL_HALF1 and BL_HALF2 (paired in the tie line TIE); grounds.
 
 using namespace iidm;
 using iidm::test::envPath;
@@ -107,13 +107,76 @@ void checkHandlesAreReleased(BackendProvider& b) {
     EXPECT_NE(sum, 0.0);
 }
 
-void checkBoundaryLines(BackendProvider& b) {
+// The tie line TIE (r and x: those of its boundary lines, added), then a ground
+void checkTieLinesAndGrounds(BackendProvider& b) {
+    Network network = boundaryLine(b, "BL_HALF1").getNetwork();
+    ASSERT_EQ(network.getTieLineCount(), 1);
+    TieLine tie = *network.getTieLine("TIE");
+    EXPECT_EQ(network.getTieLines()[0], tie);
+    EXPECT_EQ(tie.getPairingKey(), iidm::optional<std::string>("XNODE_TIE"));
+    EXPECT_EQ(tie.getBoundaryLine1().getId(), "BL_HALF1");
+    EXPECT_EQ(tie.getBoundaryLine(TwoSides::TWO).getId(), "BL_HALF2");
+    EXPECT_EQ(tie.getBoundaryLine("VL2")->getId(), "BL_HALF2");
+    EXPECT_FALSE(tie.getBoundaryLine("NONE"));
+    EXPECT_EQ(*boundaryLine(b, "BL_HALF1").getTieLine(), tie);
+    EXPECT_FALSE(boundaryLine(b, "BL_PLAIN").getTieLine());
+    EXPECT_NEAR(tie.getR(), 2.0, 1e-9);
+    EXPECT_NEAR(tie.getX(), 20.0, 1e-9);
+
+    // A branch: the terminals of its boundary lines
+    EXPECT_EQ(tie.getTerminal1(), boundaryLine(b, "BL_HALF1").getTerminal());
+    Branch branch = tie;
+    EXPECT_EQ(*network.getBranch("TIE"), branch);
+    EXPECT_TRUE(branch.is<TieLine>());
+    EXPECT_EQ(tie.getType(), IdentifiableType::TIE_LINE);
+    EXPECT_FALSE(tie.isOverloaded()); // no limits
+
+    EXPECT_TRUE(tie.disconnectBoundaryLines());
+    EXPECT_FALSE(boundaryLine(b, "BL_HALF2").getTerminal().isConnected());
+    EXPECT_TRUE(tie.connectBoundaryLines());
+    EXPECT_FALSE(tie.connectBoundaryLines()); // already
+
+    // Removed, the flows at the boundary becoming the boundary lines' P0; then paired again
+    BoundaryLine half1 = boundaryLine(b, "BL_HALF1");
+    const double boundaryP = half1.getBoundary().getP();
+    ASSERT_FALSE(std::isnan(boundaryP));
+    tie.remove(true);
+    EXPECT_FALSE(half1.isPaired());
+    EXPECT_FALSE(network.getTieLine("TIE"));
+    EXPECT_DOUBLE_EQ(half1.getP0(), -boundaryP);
+    TieLine paired = network.newTieLine().setId("TIE2").setBoundaryLine1("BL_HALF1").setBoundaryLine2("BL_HALF2").add();
+    EXPECT_EQ(*half1.getTieLine(), paired);
+    EXPECT_THROW(network.newTieLine().setId("TIE3").setBoundaryLine1("BL_HALF1").setBoundaryLine2("BL_GEN").add(),
+                 ValidationException); // already paired
+    paired.remove();
+    EXPECT_EQ(network.getTieLineCount(), 0);
+
+    // A ground
+    VoltageLevel vl1(b.findById(prop::VOLTAGE_LEVEL, "VL1"), &b);
+    Ground ground = vl1.newGround().setId("GROUND").setBus("B1").add();
+    EXPECT_EQ(vl1.getGroundCount(), 1);
+    EXPECT_EQ(vl1.getGrounds()[0], ground);
+    EXPECT_EQ(*network.getGround("GROUND"), ground);
+    EXPECT_EQ(network.getGrounds().size(), 1u);
+    EXPECT_EQ(ground.getType(), IdentifiableType::GROUND);
+    EXPECT_TRUE(ground.getTerminal().isConnected());
+    ground.remove();
+    EXPECT_EQ(network.getGroundCount(), 0);
+}
+
+void load(BackendProvider& b) {
     std::string xiidm = iidm::test::readFile("data/boundary_lines_test.xiidm");
     ASSERT_FALSE(xiidm.empty()) << "data/boundary_lines_test.xiidm not found";
     b.loadNetworkBytes(xiidm.data(), xiidm.size(), "network.xiidm");
+}
+
+void checkBoundaryLines(BackendProvider& b) {
+    load(b);
     checkReading(b);
     checkHandlesAreReleased(b);
     checkWriting(b);
+    load(b);
+    checkTieLinesAndGrounds(b);
 }
 
 } // namespace

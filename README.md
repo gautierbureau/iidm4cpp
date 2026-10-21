@@ -188,11 +188,12 @@ Identifiable              getId(), getNameOrId(), getOptionalName(), setName(), 
 │                         getType(), properties, aliases, is<T>() / as<T>()
 ├── Network               the root (owns the backend session, §4.3)
 ├── Substation, VoltageLevel, Bus, Switch, HvdcLine
+├── TieLine               + the Branch methods (two boundary lines paired)
 └── Connectable           getTerminals(), connect() / disconnect(), isEquivalent(),
     │                     unsetSolvedValues(), remove()
     ├── Injection         getTerminal()
     │   ├── Generator, Load, Battery, ShuntCompensator, StaticVarCompensator,
-    │   │   BoundaryLine, BusbarSection
+    │   │   BoundaryLine, BusbarSection, Ground
     │   └── HvdcConverterStation    getHvdcType(), getLossFactor(), getHvdcLine(),
     │       │                       getOtherConverterStation()
     │       └── VscConverterStation, LccConverterStation
@@ -200,7 +201,7 @@ Identifiable              getId(), getNameOrId(), getOptionalName(), setName(), 
     │                                    getTerminal(side or voltage level id), limits and
     │                                    operational limits groups of each side
     └── ThreeWindingsTransformer   getLegs(), getLeg(side), getTerminal(side or voltage level id)
-Branch                    any Line or TwoWindingsTransformer: both convert to a Branch
+Branch                    any Line, TwoWindingsTransformer or TieLine: each converts to a Branch
 
 Objects that are not identifiables: ThreeWindingsTransformer::Leg, RatioTapChanger,
 PhaseTapChanger and their steps, ReactiveLimits and their points or planes, Terminal,
@@ -373,7 +374,15 @@ BoundaryLine (powsybl 7.4; DanglingLine before) (+ the flows limits holder metho
 │   getTargetQ() / getTargetV() → double, isVoltageRegulationOn() (+ setters), reactive limits
 ├── getBoundary() → Boundary, the far end: getV() / getAngle() / getP() / getQ() / getI(),
 │   getBoundaryLine(), getNetworkSideVoltageLevel()
+├── getTieLine() → optional<TieLine>
 └── applySolvedValues() / setGenerationTargetPToP() / …TargetQToQ() / …TargetVToV()
+TieLine (+ the Branch methods)
+├── getPairingKey() → optional<string>, getR() / getX() / getG1() / getB1() / getG2() / getB2()
+├── getBoundaryLine1() / getBoundaryLine2() / getBoundaryLine(side) / getBoundaryLine(voltage
+│   level id) → optional
+├── connectBoundaryLines() / disconnectBoundaryLines() → bool
+└── remove([updateBoundaryLines]) (Network::newTieLine(): setBoundaryLine1/2(id))
+Ground                     an injection (VoltageLevel::newGround(), getGrounds())
 
 ShuntCompensator (+ the voltage regulation holder methods)
 ├── getSectionCount() → int (fails when undefined)   findSectionCount() → optional<int>

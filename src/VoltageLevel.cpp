@@ -302,6 +302,10 @@ std::vector<ThreeWindingsTransformer> VoltageLevel::getThreeWindingsTransformers
     return detail::wrapAll<ThreeWindingsTransformer>(backend_->getChildren(handle_, prop::THREE_WINDINGS_TRANSFORMER), backend_);
 }
 
+std::vector<Ground> VoltageLevel::getGrounds() const {
+    return detail::wrapAll<Ground>(backend_->getChildren(handle_, prop::GROUND), backend_);
+}
+
 std::vector<Switch> VoltageLevel::getSwitches() const {
     auto handles = backend_->getChildren(handle_, prop::SWITCH);
     std::vector<Switch> result;
@@ -433,6 +437,10 @@ int VoltageLevel::getSwitchCount() const {
     return detail::countOf(backend_, handle_, prop::SWITCH);
 }
 
+int VoltageLevel::getGroundCount() const {
+    return detail::countOf(backend_, handle_, prop::GROUND);
+}
+
 VoltageLevel::BusView VoltageLevel::getBusView() const {
     return BusView(handle_, backend_);
 }
@@ -447,6 +455,10 @@ GeneratorAdder VoltageLevel::newGenerator() {
 
 LoadAdder VoltageLevel::newLoad() {
     return LoadAdder(backend_->invoke(handle_, prop::LOAD), backend_);
+}
+
+GroundAdder VoltageLevel::newGround() {
+    return GroundAdder(backend_->invoke(handle_, prop::GROUND), backend_);
 }
 
 void VoltageLevel::remove() {

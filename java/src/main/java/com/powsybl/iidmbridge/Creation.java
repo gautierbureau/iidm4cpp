@@ -223,6 +223,8 @@ public final class Creation {
             case BUS -> ((VoltageLevel) owner).getBusBreakerView().newBus();
             case GENERATOR -> ((VoltageLevel) owner).newGenerator();
             case LOAD -> ((VoltageLevel) owner).newLoad();
+            case GROUND -> ((VoltageLevel) owner).newGround();
+            case TIE_LINE -> ((Network) owner).newTieLine();
             case VOLTAGE_REGULATION -> owner instanceof VoltageRegulationHolderAdder<?> holderAdder
                 ? holderAdder.newVoltageRegulation()
                 : ((VoltageRegulationHolder<?>) owner).newVoltageRegulation();
@@ -339,6 +341,7 @@ public final class Creation {
             case Substation substation -> substation.remove();
             case HvdcLine hvdcLine -> hvdcLine.remove();
             case Bus bus -> bus.getVoltageLevel().getBusBreakerView().removeBus(bus.getId());
+            case TieLine tieLine -> tieLine.remove();
             default -> throw new BridgeErrors.PropertyNotFoundException("Cannot remove " + obj);
         }
     }
@@ -542,6 +545,8 @@ public final class Creation {
                 }
             }
             case TERMINAL_VOLTAGE_LEVEL_ID -> ((ConnectableMove) a).voltageLevelId = value;
+            case BOUNDARY_LINE1_ID -> ((TieLineAdder) a).setBoundaryLine1(value);
+            case BOUNDARY_LINE2_ID -> ((TieLineAdder) a).setBoundaryLine2(value);
             case MEAS_ID -> ((MeasurementAdder) a).setId(value);
             case DMEAS_ID -> ((DiscreteMeasurementAdder) a).setId(value);
             case DMEAS_VALUE_STRING -> ((DiscreteMeasurementAdder) a).setValue(value);

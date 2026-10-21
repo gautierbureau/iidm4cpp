@@ -77,12 +77,12 @@ public final class PropertyDispatcher {
             case VL_NOMINAL_V  -> ((VoltageLevel) obj).getNominalV();
             case VL_LOW_VOLTAGE_LIMIT  -> ((VoltageLevel) obj).getLowVoltageLimit();
             case VL_HIGH_VOLTAGE_LIMIT -> ((VoltageLevel) obj).getHighVoltageLimit();
-            case LINE_R  -> ((Line) obj).getR();
-            case LINE_X  -> ((Line) obj).getX();
-            case LINE_G1 -> ((Line) obj).getG1();
-            case LINE_B1 -> ((Line) obj).getB1();
-            case LINE_G2 -> ((Line) obj).getG2();
-            case LINE_B2 -> ((Line) obj).getB2();
+            case LINE_R  -> ((LineCharacteristics) obj).getR();
+            case LINE_X  -> ((LineCharacteristics) obj).getX();
+            case LINE_G1 -> ((LineCharacteristics) obj).getG1();
+            case LINE_B1 -> ((LineCharacteristics) obj).getB1();
+            case LINE_G2 -> ((LineCharacteristics) obj).getG2();
+            case LINE_B2 -> ((LineCharacteristics) obj).getB2();
             case TWO_WT_R        -> ((TwoWindingsTransformer) obj).getR();
             case TWO_WT_X        -> ((TwoWindingsTransformer) obj).getX();
             case TWO_WT_G        -> ((TwoWindingsTransformer) obj).getG();
@@ -427,6 +427,8 @@ public final class PropertyDispatcher {
             case BOUNDARY_LINE              -> obj instanceof BoundaryLine;
             case BOUNDARY_LINE_GENERATION   -> obj instanceof BoundaryLine.Generation;
             case BOUNDARY                   -> obj instanceof Boundary;
+            case TIE_LINE                   -> obj instanceof TieLine;
+            case GROUND                     -> obj instanceof Ground;
             case BL_PAIRED                  -> ((BoundaryLine) obj).isPaired();
             case GENERATION_VOLTAGE_REGULATION_ON -> ((BoundaryLine.Generation) obj).isVoltageRegulationOn();
             case SHUNT_COMPENSATOR          -> obj instanceof ShuntCompensator;
@@ -591,7 +593,7 @@ public final class PropertyDispatcher {
             case OVERLOAD_PREVIOUS_LIMIT_NAME -> ((Overload) obj).getPreviousLimitName();
             case OVERLOAD_OLG_ID -> ((Overload) obj).getOperationalLimitsGroupId();
             case LL_PERMANENT_LIMIT_NAME -> ((LoadingLimits) obj).getPermanentLimitName();
-            case BL_PAIRING_KEY -> ((BoundaryLine) obj).getPairingKey();
+            case BL_PAIRING_KEY -> pairingKey(obj);
             case SELECTED_OLG_ID -> LimitsDispatch.holder(obj).getSelectedOperationalLimitsGroupId().orElse(null);
             case COUNTRY -> ((Substation) obj).getCountry().map(Country::name).orElse("");
             case MEAS_ID            -> ((Measurement) obj).getId();
@@ -675,7 +677,7 @@ public final class PropertyDispatcher {
             case MEAS_ID        -> ((Measurement) obj).getId();
             case DMEAS_ID       -> ((DiscreteMeasurement) obj).getId();
             case SELECTED_OLG_ID -> LimitsDispatch.holder(obj).getSelectedOperationalLimitsGroupId().orElse(null);
-            case BL_PAIRING_KEY -> ((BoundaryLine) obj).getPairingKey();
+            case BL_PAIRING_KEY -> pairingKey(obj);
             default -> getString(obj, property);
         };
     }
@@ -961,6 +963,11 @@ public final class PropertyDispatcher {
                 default -> ((Network) obj).getThreeWindingsTransformerStream();
             };
             case HVDC_LINE           -> ((Network) obj).getHvdcLineStream();
+            case TIE_LINE            -> ((Network) obj).getTieLineStream();
+            case GROUND -> {
+                if (obj instanceof VoltageLevel vl) yield vl.getGroundStream();
+                yield ((Network) obj).getGroundStream();
+            }
             case SWITCH -> {
                 if (obj instanceof Network network) yield network.getSwitchStream();
                 yield StreamSupport.stream(((VoltageLevel) obj).getSwitches().spliterator(), false);
@@ -1041,6 +1048,7 @@ public final class PropertyDispatcher {
             case LOAD_MODEL -> ((Load) obj).getModel().orElse(null);
             case BOUNDARY -> ((BoundaryLine) obj).getBoundary();
             case BOUNDARY_LINE -> ((Boundary) obj).getBoundaryLine();
+            case TIE_LINE -> ((BoundaryLine) obj).getTieLine().orElse(null);
             case REL_HVDC_LINE -> ((HvdcConverterStation<?>) obj).getHvdcLine();
             case NETWORK -> ((Identifiable<?>) obj).getNetwork();
             case REL_PARENT_NETWORK -> ((Identifiable<?>) obj).getParentNetwork();
@@ -1215,6 +1223,10 @@ public final class PropertyDispatcher {
                 ((VoltageLevel) obj).getBusBreakerView().removeAllSwitches();
                 yield null;
             }
+            case ACT_REMOVE_UPDATING_BOUNDARY_LINES -> {
+                ((TieLine) obj).remove(true);
+                yield null;
+            }
             case ACT_CLEAN_IF_EMPTY -> {
                 switch (obj) {
                     case Measurements<?> measurements -> measurements.cleanIfEmpty();
@@ -1256,6 +1268,7 @@ public final class PropertyDispatcher {
         return switch (obj) {
             case Terminal terminal -> terminal.connect();
             case HvdcLine line -> line.connectConverterStations();
+            case TieLine line -> line.connectBoundaryLines();
             default -> ((Connectable<?>) obj).connect();
         };
     }
@@ -1264,6 +1277,7 @@ public final class PropertyDispatcher {
         return switch (obj) {
             case Terminal terminal -> terminal.disconnect();
             case HvdcLine line -> line.disconnectConverterStations();
+            case TieLine line -> line.disconnectBoundaryLines();
             default -> ((Connectable<?>) obj).disconnect();
         };
     }
@@ -1310,6 +1324,7 @@ public final class PropertyDispatcher {
             case REL_BBV_BUSES_OF_BV_BUS -> ((VoltageLevel) obj).getBusBreakerView().getBusesFromBusViewBusId(key).stream()
                 .sorted(Comparator.comparing(Bus::getId)).toList();
             case BUSBAR_SECTION -> ((VoltageLevel) obj).getNodeBreakerView().getBusbarSection(key);
+            case BOUNDARY_LINE -> ((TieLine) obj).getBoundaryLine(key);
             case REL_BBV_SWITCH -> ((VoltageLevel) obj).getBusBreakerView().getSwitch(key);
             case REL_NBV_SWITCH -> ((VoltageLevel) obj).getNodeBreakerView().getSwitch(key);
             case CONNECTABLE -> ((VoltageLevel) obj).getConnectable(key, Connectable.class);
@@ -1336,6 +1351,7 @@ public final class PropertyDispatcher {
         return switch (relation) {
             case REL_NBV_TERMINAL_AT_NODE -> ((VoltageLevel) obj).getNodeBreakerView().getTerminal(index);
             case REL_NBV_SWITCH -> ((VoltageLevel) obj).getNodeBreakerView().getSwitches(index);
+            case BOUNDARY_LINE -> ((TieLine) obj).getBoundaryLine(Creation.enumValue(TwoSides.class, index));
             case INTERNAL_CONNECTION -> ((VoltageLevel) obj).getNodeBreakerView().getNodesInternalConnectedTo(index);
             case REL_TERMINAL -> ((ThreeWindingsTransformer) obj).getTerminal(Creation.enumValue(ThreeSides.class, index));
             case THREE_WINDINGS_TRANSFORMER_LEG -> ((ThreeWindingsTransformer) obj).getLeg(Creation.enumValue(ThreeSides.class, index));
@@ -1365,6 +1381,8 @@ public final class PropertyDispatcher {
             case TWO_WINDINGS_TRANSFORMER   -> network.getTwoWindingsTransformer(id);
             case THREE_WINDINGS_TRANSFORMER -> network.getThreeWindingsTransformer(id);
             case HVDC_LINE                  -> network.getHvdcLine(id);
+            case TIE_LINE                   -> network.getTieLine(id);
+            case GROUND                     -> network.getGround(id);
             case BOUNDARY_LINE              -> network.getBoundaryLine(id);
             case SHUNT_COMPENSATOR          -> network.getShuntCompensator(id);
             case STATIC_VAR_COMPENSATOR     -> network.getStaticVarCompensator(id);
@@ -1391,6 +1409,11 @@ public final class PropertyDispatcher {
     private static Object extension(Object extendable, Class type) {
         // Raw: the extension classes are generic in their extendable, which Class<X> cannot express
         return ((Extendable) extendable).getExtension(type);
+    }
+
+    /** The pairing key of a boundary line or of a tie line (null when it has none). */
+    private static String pairingKey(Object obj) {
+        return obj instanceof TieLine tieLine ? tieLine.getPairingKey() : ((BoundaryLine) obj).getPairingKey();
     }
 
     // ── Overloads ─────────────────────────────────────────────────────────

@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <iidm/BoundaryLine.h>
+#include <iidm/TieLine.h>
 #include <iidm/LoadingLimits.h>
 #include <iidm/MinMaxReactiveLimits.h>
 #include <iidm/VoltageLevel.h>
@@ -191,4 +192,30 @@ TEST_F(BoundaryLineTest, SolvedValues) {
     EXPECT_EQ(backend.invocations[1], std::make_pair(ObjectHandle(BL_HANDLE), prop::ACT_SET_TARGET_P_TO_P));
     EXPECT_EQ(backend.invocations[2], std::make_pair(ObjectHandle(BL_HANDLE), prop::ACT_SET_TARGET_Q_TO_Q));
     EXPECT_EQ(backend.invocations[3], std::make_pair(ObjectHandle(BL_HANDLE), prop::ACT_SET_TARGET_V_TO_V));
+}
+
+TEST_F(BoundaryLineTest, TieLine) {
+    static constexpr ObjectHandle TIE = 30, OTHER = 31;
+    backend.related[{BL_HANDLE, prop::TIE_LINE}] = TIE;
+    backend.relatedByIndex[{TIE, prop::BOUNDARY_LINE, 1}] = OTHER;
+    backend.strings[{OTHER, prop::ID}] = "DL2";
+    backend.relatedByString[std::make_tuple(ObjectHandle(TIE), prop::BOUNDARY_LINE, std::string("VL1"))] = BL_HANDLE;
+    backend.optStrings[{TIE, prop::BL_PAIRING_KEY}] = "XNODE";
+    backend.doubles[{TIE, prop::LINE_X}] = 20.0;
+    BoundaryLine dl(BL_HANDLE, &backend);
+    iidm::optional<TieLine> tie = dl.getTieLine();
+    ASSERT_TRUE(tie);
+    EXPECT_EQ(tie->getPairingKey(), iidm::optional<std::string>("XNODE"));
+    EXPECT_DOUBLE_EQ(tie->getX(), 20.0);
+    EXPECT_EQ(tie->getBoundaryLine2().getId(), "DL2");
+    EXPECT_EQ(tie->getBoundaryLine("VL1")->getId(), "DL1");
+    EXPECT_FALSE(tie->getBoundaryLine("VL9"));
+
+    tie->remove(true);
+    EXPECT_EQ(backend.invocations.back(), std::make_pair(TIE, prop::ACT_REMOVE_UPDATING_BOUNDARY_LINES));
+    tie->remove();
+    EXPECT_EQ(backend.invocations.back(), std::make_pair(TIE, prop::ACT_REMOVE));
+    EXPECT_TRUE(tie->disconnectBoundaryLines());
+    EXPECT_EQ(backend.invocations.back(), std::make_pair(TIE, prop::ACT_DISCONNECT));
+    EXPECT_FALSE(BoundaryLine(CL_HANDLE, &backend).getTieLine());
 }

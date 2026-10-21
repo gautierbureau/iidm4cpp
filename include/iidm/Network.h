@@ -18,6 +18,9 @@
 #include <iidm/ThreeWindingsTransformer.h>
 #include <iidm/HvdcLine.h>
 #include <iidm/BoundaryLine.h>
+#include <iidm/Ground.h>
+#include <iidm/TieLine.h>
+#include <iidm/TieLineAdder.h>
 #include <iidm/ShuntCompensator.h>
 #include <iidm/StaticVarCompensator.h>
 #include <iidm/VscConverterStation.h>
@@ -120,6 +123,8 @@ public:
     std::vector<ShuntCompensator>        getShuntCompensators() const;
     std::vector<StaticVarCompensator>    getStaticVarCompensators() const;
     std::vector<BoundaryLine>            getBoundaryLines(BoundaryLineFilter filter = BoundaryLineFilter::ALL) const;
+    std::vector<TieLine>                 getTieLines() const;
+    std::vector<Ground>                  getGrounds() const;
     std::vector<VscConverterStation>     getVscConverterStations() const;
     std::vector<LccConverterStation>     getLccConverterStations() const;
     std::vector<Switch>                  getSwitches() const;
@@ -147,6 +152,8 @@ public:
     int getShuntCompensatorCount() const;
     int getStaticVarCompensatorCount() const;
     int getBoundaryLineCount() const;
+    int getTieLineCount() const;
+    int getGroundCount() const;
     int getVscConverterStationCount() const;
     int getLccConverterStationCount() const;
     int getSwitchCount() const;
@@ -167,6 +174,8 @@ public:
     iidm::optional<ThreeWindingsTransformer> getThreeWindingsTransformer(const std::string& id) const;
     iidm::optional<HvdcLine>               getHvdcLine(const std::string& id) const;
     iidm::optional<BoundaryLine>           getBoundaryLine(const std::string& id) const;
+    iidm::optional<TieLine>                getTieLine(const std::string& id) const;
+    iidm::optional<Ground>                 getGround(const std::string& id) const;
     iidm::optional<ShuntCompensator>       getShuntCompensator(const std::string& id) const;
     iidm::optional<StaticVarCompensator>   getStaticVarCompensator(const std::string& id) const;
     iidm::optional<VscConverterStation>    getVscConverterStation(const std::string& id) const;
@@ -178,6 +187,7 @@ public:
     SubstationAdder   newSubstation();
     // A voltage level without substation
     VoltageLevelAdder newVoltageLevel();
+    TieLineAdder      newTieLine();
 
     // Backend accessor (advanced usage only)
     BackendProvider& getBackend();

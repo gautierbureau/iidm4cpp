@@ -106,6 +106,7 @@ set(IIDM_BRIDGE_SOURCES
     src/VoltageRegulationHolder.cpp
     src/Load.cpp
     src/Terminal.cpp
+    src/TieLine.cpp
     src/Bus.cpp
     src/Substation.cpp
     src/VoltageLevel.cpp

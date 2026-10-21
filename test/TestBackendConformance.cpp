@@ -777,6 +777,7 @@ void buildNetwork(BackendProvider& b) {
             .withTargetValue(-10).withRegulating(true).add()
         .add();
     vl2.newGenerator().setId("G3").setBus("B2").setMinP(0).setMaxP(10).setTargetP(1).setLocalTargetQ(0).add();
+    vl1.newGround().setId("GROUND").setBus("B1b").add();
 }
 
 } // namespace

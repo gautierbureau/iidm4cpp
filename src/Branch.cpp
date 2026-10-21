@@ -1,6 +1,7 @@
 #include <iidm/Branch.h>
 #include <iidm/BackendProvider.h>
 #include <iidm/Line.h>
+#include <iidm/TieLine.h>
 #include <iidm/TwoWindingsTransformer.h>
 #include "Extensions.h"
 #include "OverloadChecks.h"
@@ -361,5 +362,6 @@ void BranchMethods<Self>::removeBranchObservability() {
 template class BranchMethods<Branch>;
 template class BranchMethods<Line>;
 template class BranchMethods<TwoWindingsTransformer>;
+template class BranchMethods<TieLine>;
 
 } } // namespace iidm::detail

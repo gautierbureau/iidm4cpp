@@ -52,6 +52,10 @@
 #include <iidm/ThreeWindingsTransformer.h>
 #include <iidm/HvdcLine.h>
 #include <iidm/BoundaryLine.h>
+#include <iidm/TieLine.h>
+#include <iidm/TieLineAdder.h>
+#include <iidm/Ground.h>
+#include <iidm/GroundAdder.h>
 #include <iidm/ShuntCompensator.h>
 #include <iidm/LoadModel.h>
 #include <iidm/Container.h>
