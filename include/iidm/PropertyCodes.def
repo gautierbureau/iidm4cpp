@@ -67,6 +67,7 @@ IIDM_CODE(BRANCH_TRIPPING,             70)
 IIDM_CODE(THREE_WINDINGS_TRANSFORMER_TRIPPING, 71)
 IIDM_CODE(COMPONENT,                   72) // a connected or synchronous component of the bus view
 IIDM_CODE(VARIANT_MANAGER,             73) // getRelated(network, VARIANT_MANAGER): its variant manager
+IIDM_CODE(LEG_FORTESCUE,               74) // a leg of a ThreeWindingsTransformerFortescue extension
 // Abstract types (Java interfaces)
 IIDM_CODE(IDENTIFIABLE,                43)
 IIDM_CODE(CONNECTABLE,                 44)
@@ -781,6 +782,72 @@ IIDM_CODE(EXT_OS_STATUS,                  6101) // int: OperatingStatus::Status 
 // DynamicModelInfo (on any identifiable)
 IIDM_CODE(DYNAMIC_MODEL_INFO,             6200)
 IIDM_CODE(EXT_DMI_MODEL_NAME,             6201) // string: the name of its dynamic model
+
+// GeneratorFortescue (on a generator): its sequence impedances (Ω) and grounding
+IIDM_CODE(GENERATOR_FORTESCUE,            6300)
+IIDM_CODE(EXT_GF_GROUNDED,                6301) // bool
+IIDM_CODE(EXT_GF_RZ,                      6302) // double: zero-sequence resistance
+IIDM_CODE(EXT_GF_XZ,                      6303) // double: zero-sequence reactance
+IIDM_CODE(EXT_GF_RN,                      6304) // double: negative-sequence resistance
+IIDM_CODE(EXT_GF_XN,                      6305) // double: negative-sequence reactance
+IIDM_CODE(EXT_GF_GROUNDING_R,             6306) // double: resistance to ground, when grounded
+IIDM_CODE(EXT_GF_GROUNDING_X,             6307) // double: reactance to ground, when grounded
+
+// LineFortescue (on a line)
+IIDM_CODE(LINE_FORTESCUE,                 6400)
+IIDM_CODE(EXT_LINE_F_RZ,                  6401) // double: zero-sequence resistance (Ω)
+IIDM_CODE(EXT_LINE_F_XZ,                  6402) // double: zero-sequence reactance (Ω)
+IIDM_CODE(EXT_LINE_F_G1Z,                 6403) // double: zero-sequence shunt conductance of side 1 (S)
+IIDM_CODE(EXT_LINE_F_B1Z,                 6404) // double: zero-sequence shunt susceptance of side 1 (S)
+IIDM_CODE(EXT_LINE_F_G2Z,                 6405) // double: zero-sequence shunt conductance of side 2 (S)
+IIDM_CODE(EXT_LINE_F_B2Z,                 6406) // double: zero-sequence shunt susceptance of side 2 (S)
+IIDM_CODE(EXT_LINE_F_OPEN_PHASE_A,        6407) // bool
+IIDM_CODE(EXT_LINE_F_OPEN_PHASE_B,        6408) // bool
+IIDM_CODE(EXT_LINE_F_OPEN_PHASE_C,        6409) // bool
+
+// LoadAsymmetrical (on a load): the unbalanced parts of each phase, on top of P0 and Q0
+IIDM_CODE(LOAD_ASYMMETRICAL,              6500)
+IIDM_CODE(EXT_LA_CONNECTION_TYPE,         6501) // int: LoadConnectionType ordinal
+IIDM_CODE(EXT_LA_DELTA_PA,                6502) // double (MW)
+IIDM_CODE(EXT_LA_DELTA_QA,                6503) // double (MVar)
+IIDM_CODE(EXT_LA_DELTA_PB,                6504) // double (MW)
+IIDM_CODE(EXT_LA_DELTA_QB,                6505) // double (MVar)
+IIDM_CODE(EXT_LA_DELTA_PC,                6506) // double (MW)
+IIDM_CODE(EXT_LA_DELTA_QC,                6507) // double (MVar)
+
+// TwoWindingsTransformerFortescue (on a two windings transformer)
+IIDM_CODE(TWO_WINDINGS_TRANSFORMER_FORTESCUE, 6600)
+IIDM_CODE(EXT_TWO_WTF_RZ,                 6601) // double: zero-sequence resistance (Ω)
+IIDM_CODE(EXT_TWO_WTF_XZ,                 6602) // double: zero-sequence reactance (Ω)
+IIDM_CODE(EXT_TWO_WTF_FREE_FLUXES,        6603) // bool: the magnetizing impedance is infinite
+IIDM_CODE(EXT_TWO_WTF_XM,                 6604) // double: magnetizing reactance (Ω), when not infinite
+IIDM_CODE(EXT_TWO_WTF_CONNECTION_TYPE1,   6605) // int: WindingConnectionType ordinal, side 1
+IIDM_CODE(EXT_TWO_WTF_CONNECTION_TYPE2,   6606) // int: WindingConnectionType ordinal, side 2
+IIDM_CODE(EXT_TWO_WTF_GROUNDING_R1,       6607) // double: resistance to ground of side 1 (Ω)
+IIDM_CODE(EXT_TWO_WTF_GROUNDING_X1,       6608) // double: reactance to ground of side 1 (Ω)
+IIDM_CODE(EXT_TWO_WTF_GROUNDING_R2,       6609) // double
+IIDM_CODE(EXT_TWO_WTF_GROUNDING_X2,       6610) // double
+
+// ThreeWindingsTransformerFortescue (on a three windings transformer): its legs are
+// getRelatedByIndex(extension, LEG_FORTESCUE, ThreeSides ordinal). Its adder: EXT_THREE_WTF_LEG selects
+// the leg (ThreeSides ordinal) that the EXT_LEG_F_* fields set next.
+IIDM_CODE(THREE_WINDINGS_TRANSFORMER_FORTESCUE, 6700)
+IIDM_CODE(EXT_THREE_WTF_LEG,              6701) // int, a field of the adder
+IIDM_CODE(EXT_LEG_F_RZ,                   6702) // double, on a leg: zero-sequence resistance (Ω)
+IIDM_CODE(EXT_LEG_F_XZ,                   6703) // double: zero-sequence reactance (Ω)
+IIDM_CODE(EXT_LEG_F_FREE_FLUXES,          6704) // bool: the magnetizing impedance is infinite
+IIDM_CODE(EXT_LEG_F_CONNECTION_TYPE,      6705) // int: WindingConnectionType ordinal
+IIDM_CODE(EXT_LEG_F_GROUNDING_R,          6706) // double: resistance to ground (Ω)
+IIDM_CODE(EXT_LEG_F_GROUNDING_X,          6707) // double: reactance to ground (Ω)
+
+// TwoWindingsTransformerPhaseAngleClock (on a two windings transformer)
+IIDM_CODE(TWO_WINDINGS_TRANSFORMER_PHASE_ANGLE_CLOCK, 6800)
+IIDM_CODE(EXT_TWO_WT_PAC_CLOCK,           6801) // int, 0 to 11
+
+// ThreeWindingsTransformerPhaseAngleClock (on a three windings transformer)
+IIDM_CODE(THREE_WINDINGS_TRANSFORMER_PHASE_ANGLE_CLOCK, 6900)
+IIDM_CODE(EXT_THREE_WT_PAC_CLOCK_LEG2,    6901) // int, 0 to 11
+IIDM_CODE(EXT_THREE_WT_PAC_CLOCK_LEG3,    6902) // int, 0 to 11
 
 // ── Child types: state estimation extensions ─────────────────────────────────
 IIDM_CODE(MEASUREMENT,                    38) // a measurement of a Measurements extension

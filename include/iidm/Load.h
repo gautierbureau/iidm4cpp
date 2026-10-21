@@ -2,6 +2,8 @@
 
 #include <iidm/Enums.h>
 #include <iidm/Injection.h>
+#include <iidm/LoadAsymmetrical.h>
+#include <iidm/LoadAsymmetricalAdder.h>
 #include <iidm/LoadDetail.h>
 #include <iidm/LoadDetailAdder.h>
 #include <iidm/LoadModel.h>
@@ -40,6 +42,11 @@ public:
     LoadDetail getLoadDetail() const;
     LoadDetailAdder newLoadDetail();
     void removeLoadDetail();
+
+    bool hasLoadAsymmetrical() const;
+    LoadAsymmetrical getLoadAsymmetrical() const;
+    LoadAsymmetricalAdder newLoadAsymmetrical();
+    void removeLoadAsymmetrical();
 };
 
 } // namespace iidm

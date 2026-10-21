@@ -66,4 +66,20 @@ void Load::removeLoadDetail() {
     detail::removeExtension<LoadDetail>(backend_, handle_);
 }
 
+bool Load::hasLoadAsymmetrical() const {
+    return detail::hasExtension<LoadAsymmetrical>(backend_, handle_);
+}
+
+LoadAsymmetrical Load::getLoadAsymmetrical() const {
+    return detail::getExtension<LoadAsymmetrical>(backend_, handle_, "LoadAsymmetrical");
+}
+
+LoadAsymmetricalAdder Load::newLoadAsymmetrical() {
+    return detail::newExtension<LoadAsymmetrical, LoadAsymmetricalAdder>(backend_, handle_);
+}
+
+void Load::removeLoadAsymmetrical() {
+    detail::removeExtension<LoadAsymmetrical>(backend_, handle_);
+}
+
 } // namespace iidm

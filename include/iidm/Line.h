@@ -2,6 +2,8 @@
 
 #include <iidm/Branch.h>
 #include <iidm/Connectable.h>
+#include <iidm/LineFortescue.h>
+#include <iidm/LineFortescueAdder.h>
 
 namespace iidm {
 
@@ -24,6 +26,13 @@ public:
     Line& setG2(double g2);
     double getB2() const;
     Line& setB2(double b2);
+
+    // ── Extensions ───────────────────────────────────────────────────────
+    // An extension's getter throws ExtensionNotFoundException when it is absent
+    bool hasLineFortescue() const;
+    LineFortescue getLineFortescue() const;
+    LineFortescueAdder newLineFortescue();
+    void removeLineFortescue();
 };
 
 } // namespace iidm
