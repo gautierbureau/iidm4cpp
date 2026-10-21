@@ -1,6 +1,7 @@
 #include <iidm/BoundaryLine.h>
 #include <iidm/BackendProvider.h>
 #include <iidm/PropertyCodes.h>
+#include <iidm/TieLine.h>
 #include <iidm/VoltageLevel.h>
 #include "BoundaryLineFilter.h"
 #include "Wrap.h"
@@ -65,6 +66,10 @@ BoundaryLine& BoundaryLine::setB(double b) {
 
 bool BoundaryLine::isPaired() const {
     return backend_->getBool(handle_, prop::BL_PAIRED);
+}
+
+iidm::optional<TieLine> BoundaryLine::getTieLine() const {
+    return detail::wrapOptional<TieLine>(backend_->getRelated(handle_, prop::TIE_LINE), backend_);
 }
 
 iidm::optional<std::string> BoundaryLine::getPairingKey() const {

@@ -9,6 +9,7 @@
 namespace iidm {
 
 class Boundary;
+class TieLine;
 class VoltageLevel;
 
 // A line from the network to its outside (powsybl 7.4 BoundaryLine; DanglingLine before), which
@@ -56,8 +57,9 @@ public:
     double getB() const;
     BoundaryLine& setB(double b);
 
-    // In a tie line
+    // In a tie line; that tie line (empty when unpaired; include <iidm/TieLine.h> to use it)
     bool isPaired() const;
+    iidm::optional<TieLine> getTieLine() const;
     // Empty when it has none
     iidm::optional<std::string> getPairingKey() const;
     BoundaryLine& setPairingKey(const std::string& pairingKey);

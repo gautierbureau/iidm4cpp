@@ -7,6 +7,7 @@
 #include <iidm/Bus.h>
 #include <iidm/BusAdder.h>
 #include <iidm/GeneratorAdder.h>
+#include <iidm/GroundAdder.h>
 #include <iidm/LoadAdder.h>
 #include <iidm/SlackTerminal.h>
 #include <iidm/SlackTerminalAdder.h>
@@ -34,6 +35,7 @@ class Line;
 class TwoWindingsTransformer;
 class ThreeWindingsTransformer;
 class Substation;
+class Ground;
 
 class VoltageLevel : public Identifiable, public detail::ContainerMethods<VoltageLevel> {
 public:
@@ -166,6 +168,7 @@ public:
     std::vector<Line>                 getLines() const;
     std::vector<TwoWindingsTransformer> getTwoWindingsTransformers() const;
     std::vector<ThreeWindingsTransformer> getThreeWindingsTransformers() const;
+    std::vector<Ground>               getGrounds() const;
 
     // ── Counts ───────────────────────────────────────────────────────────────
     int getGeneratorCount() const;
@@ -180,6 +183,7 @@ public:
     int getTwoWindingsTransformerCount() const;
     int getThreeWindingsTransformerCount() const;
     int getSwitchCount() const;
+    int getGroundCount() const;
 
     NodeBreakerView getNodeBreakerView() const;
     BusBreakerView  getBusBreakerView()  const;
@@ -188,6 +192,7 @@ public:
     // ── Creation and removal ─────────────────────────────────────────────────
     GeneratorAdder newGenerator();
     LoadAdder      newLoad();
+    GroundAdder    newGround();
     // Removes the voltage level and its equipment; refused (ValidationException) while
     // branches connect it to other voltage levels
     void remove();

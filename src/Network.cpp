@@ -85,6 +85,10 @@ VoltageLevelAdder Network::newVoltageLevel() {
     return VoltageLevelAdder(backend_->invoke(handle_, prop::VOLTAGE_LEVEL), backend_);
 }
 
+TieLineAdder Network::newTieLine() {
+    return TieLineAdder(backend_->invoke(handle_, prop::TIE_LINE), backend_);
+}
+
 // ── Iteration helpers ────────────────────────────────────────────────────────
 
 namespace {
@@ -165,6 +169,14 @@ std::vector<BoundaryLine> Network::getBoundaryLines(BoundaryLineFilter filter) c
     return detail::filterBoundaryLines(all<BoundaryLine>(backend_, handle_), filter);
 }
 
+std::vector<TieLine> Network::getTieLines() const {
+    return all<TieLine>(backend_, handle_);
+}
+
+std::vector<Ground> Network::getGrounds() const {
+    return all<Ground>(backend_, handle_);
+}
+
 std::vector<VscConverterStation> Network::getVscConverterStations() const {
     return all<VscConverterStation>(backend_, handle_);
 }
@@ -229,6 +241,14 @@ iidm::optional<HvdcLine> Network::getHvdcLine(const std::string& id) const {
 
 iidm::optional<BoundaryLine> Network::getBoundaryLine(const std::string& id) const {
     return find<BoundaryLine>(backend_, id);
+}
+
+iidm::optional<TieLine> Network::getTieLine(const std::string& id) const {
+    return find<TieLine>(backend_, id);
+}
+
+iidm::optional<Ground> Network::getGround(const std::string& id) const {
+    return find<Ground>(backend_, id);
 }
 
 iidm::optional<ShuntCompensator> Network::getShuntCompensator(const std::string& id) const {
@@ -381,6 +401,14 @@ int Network::getStaticVarCompensatorCount() const {
 
 int Network::getBoundaryLineCount() const {
     return detail::countOf(backend_, handle_, prop::BOUNDARY_LINE);
+}
+
+int Network::getTieLineCount() const {
+    return detail::countOf(backend_, handle_, prop::TIE_LINE);
+}
+
+int Network::getGroundCount() const {
+    return detail::countOf(backend_, handle_, prop::GROUND);
 }
 
 int Network::getVscConverterStationCount() const {
