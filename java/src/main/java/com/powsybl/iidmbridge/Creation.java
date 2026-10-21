@@ -301,6 +301,69 @@ public final class Creation {
         }
     }
 
+    /** A new SubstationPosition or LinePosition: its coordinates, added one by one (COORDINATE). */
+    static final class NewPosition {
+        private final Object adder;
+        private final java.util.List<Coordinate> coordinates = new java.util.ArrayList<>();
+
+        NewPosition(Object adder) {
+            this.adder = adder;
+        }
+
+        Object add() {
+            if (adder instanceof LinePositionAdder<?> line) {
+                return line.withCoordinates(coordinates).add();
+            }
+            SubstationPositionAdder substation = (SubstationPositionAdder) adder;
+            if (!coordinates.isEmpty()) {
+                substation.withCoordinate(coordinates.get(coordinates.size() - 1));
+            }
+            return substation.add();
+        }
+    }
+
+    /** A coordinate of a new position. */
+    static final class NewCoordinate {
+        private final NewPosition position;
+        private double latitude = Double.NaN;
+        private double longitude = Double.NaN;
+
+        NewCoordinate(NewPosition position) {
+            this.position = position;
+        }
+
+        void apply() {
+            position.coordinates.add(new Coordinate(latitude, longitude));
+        }
+    }
+
+    /** A feeder of a new ConnectablePosition: newFeeder() (slot 0) or newFeeder1() to newFeeder3(). */
+    static final class NewFeeder {
+        private final ConnectablePositionAdder<?> adder;
+        private int slot;
+        private String name;
+        private Integer order;
+        private ConnectablePosition.Direction direction;
+
+        NewFeeder(ConnectablePositionAdder<?> adder) {
+            this.adder = adder;
+        }
+
+        void apply() {
+            ConnectablePositionAdder.FeederAdder<?> feeder = switch (slot) {
+                case 0 -> adder.newFeeder();
+                case 1 -> adder.newFeeder1();
+                case 2 -> adder.newFeeder2();
+                case 3 -> adder.newFeeder3();
+                default -> throw new IllegalArgumentException("Invalid feeder slot: " + slot);
+            };
+            if (name != null) feeder.withName(name);
+            if (order != null) feeder.withOrder(order);
+            if (direction != null) feeder.withDirection(direction);
+            feeder.add();
+        }
+    }
+
     /** A new, empty network. */
     public static Network createNetwork(String id) {
         return Network.create(id, SOURCE_FORMAT);
@@ -325,6 +388,9 @@ public final class Creation {
             case BOUNDARY_ELEMENT -> new BoundaryElementCheck((Network) owner);
             case THREE_WINDINGS_TRANSFORMER_FORTESCUE ->
                 new FortescueLegs((ThreeWindingsTransformerFortescueAdder) Extensions.newAdder(owner, type));
+            case SUBSTATION_POSITION, LINE_POSITION -> new NewPosition(Extensions.newAdder(owner, type));
+            case COORDINATE -> new NewCoordinate((NewPosition) owner);
+            case FEEDER -> new NewFeeder((ConnectablePositionAdder<?>) owner);
             case SWITCH_TRIPPING -> ((OverloadManagementSystemAdder) owner).newSwitchTripping();
             case BRANCH_TRIPPING -> ((OverloadManagementSystemAdder) owner).newBranchTripping();
             case THREE_WINDINGS_TRANSFORMER_TRIPPING -> ((OverloadManagementSystemAdder) owner).newThreeWindingsTransformerTripping();
@@ -405,6 +471,15 @@ public final class Creation {
             case TemporaryLimitsCheck check -> check.run();
             case NewSubnetwork subnetwork -> subnetwork.create();
             case FortescueLegs legs -> legs.adder.add();
+            case NewPosition position -> position.add();
+            case NewCoordinate coordinate -> {
+                coordinate.apply();
+                yield null;
+            }
+            case NewFeeder feeder -> {
+                feeder.apply();
+                yield null;
+            }
             case BoundaryElementCheck check -> check.run();
             case VariantClone clone -> {
                 clone.apply();
@@ -602,6 +677,8 @@ public final class Creation {
             case EXT_LEG_F_XZ -> ((FortescueLegs) a).leg().withXz(value);
             case EXT_LEG_F_GROUNDING_R -> ((FortescueLegs) a).leg().withGroundingR(value);
             case EXT_LEG_F_GROUNDING_X -> ((FortescueLegs) a).leg().withGroundingX(value);
+            case COORD_LATITUDE -> ((NewCoordinate) a).latitude = value;
+            case COORD_LONGITUDE -> ((NewCoordinate) a).longitude = value;
             default -> throw unknownField("double", property);
         }
     }
@@ -666,6 +743,11 @@ public final class Creation {
             case EXT_TWO_WT_PAC_CLOCK -> ((TwoWindingsTransformerPhaseAngleClockAdder) a).withPhaseAngleClock(value);
             case EXT_THREE_WT_PAC_CLOCK_LEG2 -> ((ThreeWindingsTransformerPhaseAngleClockAdder) a).withPhaseAngleClockLeg2(value);
             case EXT_THREE_WT_PAC_CLOCK_LEG3 -> ((ThreeWindingsTransformerPhaseAngleClockAdder) a).withPhaseAngleClockLeg3(value);
+            case EXT_BSP_BUSBAR_INDEX -> ((BusbarSectionPositionAdder) a).withBusbarIndex(value);
+            case EXT_BSP_SECTION_INDEX -> ((BusbarSectionPositionAdder) a).withSectionIndex(value);
+            case EXT_FEEDER_SLOT -> ((NewFeeder) a).slot = value;
+            case EXT_FEEDER_ORDER -> ((NewFeeder) a).order = value;
+            case EXT_FEEDER_DIRECTION -> ((NewFeeder) a).direction = enumValue(ConnectablePosition.Direction.class, value);
             default -> throw unknownField("int", property);
         }
     }
@@ -787,6 +869,7 @@ public final class Creation {
             case LL_PERMANENT_LIMIT_NAME -> ((LoadingLimitsAdder<?, ?>) a).setPermanentLimitName(value);
             case TL_NAME -> ((LoadingLimitsAdder.TemporaryLimitAdder<?>) a).setName(value);
             case EXT_DMI_MODEL_NAME -> ((DynamicModelInfoAdder<?>) a).setModelName(value);
+            case EXT_FEEDER_NAME -> ((NewFeeder) a).name = value;
             default -> throw unknownField("string", property);
         }
     }

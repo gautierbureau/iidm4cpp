@@ -2,6 +2,8 @@
 
 #include <iidm/FlowsLimitsHolder.h>
 #include <iidm/Injection.h>
+#include <iidm/LinePosition.h>
+#include <iidm/LinePositionAdder.h>
 #include <iidm/ReactiveLimitsHolder.h>
 #include <iidm/stdcxx/optional.hpp>
 #include <string>
@@ -74,6 +76,13 @@ public:
     void setGenerationTargetPToP();
     void setGenerationTargetQToQ();
     void setGenerationTargetVToV();
+
+    // ── Extensions ───────────────────────────────────────────────────────
+    // An extension's getter throws ExtensionNotFoundException when it is absent
+    bool hasLinePosition() const;
+    LinePosition getLinePosition() const;
+    LinePositionAdder newLinePosition();
+    void removeLinePosition();
 };
 
 // The far end of a boundary line (powsybl Boundary): the voltage and the flows there, computed

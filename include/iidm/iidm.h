@@ -50,6 +50,11 @@
 #include <iidm/ThreeWindingsTransformerFortescue.h>
 #include <iidm/TwoWindingsTransformerPhaseAngleClock.h>
 #include <iidm/ThreeWindingsTransformerPhaseAngleClock.h>
+#include <iidm/Coordinate.h>
+#include <iidm/BusbarSectionPosition.h>
+#include <iidm/SubstationPosition.h>
+#include <iidm/LinePosition.h>
+#include <iidm/ConnectablePosition.h>
 #include <iidm/Generator.h>
 #include <iidm/Load.h>
 #include <iidm/Line.h>
@@ -134,6 +139,10 @@
 #include <iidm/ThreeWindingsTransformerFortescueAdder.h>
 #include <iidm/TwoWindingsTransformerPhaseAngleClockAdder.h>
 #include <iidm/ThreeWindingsTransformerPhaseAngleClockAdder.h>
+#include <iidm/BusbarSectionPositionAdder.h>
+#include <iidm/SubstationPositionAdder.h>
+#include <iidm/LinePositionAdder.h>
+#include <iidm/ConnectablePositionAdder.h>
 #include <iidm/VariantManager.h>
 #include <iidm/Network.h>
 #include <iidm/NetworkFactory.h>

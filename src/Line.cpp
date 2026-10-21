@@ -77,4 +77,20 @@ void Line::removeLineFortescue() {
     detail::removeExtension<LineFortescue>(backend_, handle_);
 }
 
+bool Line::hasLinePosition() const {
+    return detail::hasExtension<LinePosition>(backend_, handle_);
+}
+
+LinePosition Line::getLinePosition() const {
+    return detail::getExtension<LinePosition>(backend_, handle_, "LinePosition");
+}
+
+LinePositionAdder Line::newLinePosition() {
+    return detail::newExtension<LinePosition, LinePositionAdder>(backend_, handle_);
+}
+
+void Line::removeLinePosition() {
+    detail::removeExtension<LinePosition>(backend_, handle_);
+}
+
 } // namespace iidm

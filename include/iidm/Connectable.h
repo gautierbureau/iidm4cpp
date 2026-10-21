@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iidm/ConnectablePosition.h>
+#include <iidm/ConnectablePositionAdder.h>
 #include <iidm/Identifiable.h>
 #include <iidm/Measurement.h>
 #include <iidm/MeasurementsAdder.h>
@@ -41,6 +43,11 @@ public:
     Measurements getMeasurements() const;
     MeasurementsAdder newMeasurements();
     void removeMeasurements();
+
+    bool hasConnectablePosition() const;
+    ConnectablePosition getConnectablePosition() const;
+    ConnectablePositionAdder newConnectablePosition();
+    void removeConnectablePosition();
 };
 
 } // namespace iidm

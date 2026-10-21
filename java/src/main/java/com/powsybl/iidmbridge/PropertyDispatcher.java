@@ -232,6 +232,8 @@ public final class PropertyDispatcher {
             case EXT_LEG_F_XZ -> ((LegFortescue) obj).getXz();
             case EXT_LEG_F_GROUNDING_R -> ((LegFortescue) obj).getGroundingR();
             case EXT_LEG_F_GROUNDING_X -> ((LegFortescue) obj).getGroundingX();
+            case COORD_LATITUDE -> ((Coordinate) obj).getLatitude();
+            case COORD_LONGITUDE -> ((Coordinate) obj).getLongitude();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown double property: " + property);
         };
     }
@@ -482,6 +484,9 @@ public final class PropertyDispatcher {
             case EXT_TWO_WT_PAC_CLOCK -> ((TwoWindingsTransformerPhaseAngleClock) obj).getPhaseAngleClock();
             case EXT_THREE_WT_PAC_CLOCK_LEG2 -> ((ThreeWindingsTransformerPhaseAngleClock) obj).getPhaseAngleClockLeg2();
             case EXT_THREE_WT_PAC_CLOCK_LEG3 -> ((ThreeWindingsTransformerPhaseAngleClock) obj).getPhaseAngleClockLeg3();
+            case EXT_BSP_BUSBAR_INDEX -> ((BusbarSectionPosition) obj).getBusbarIndex();
+            case EXT_BSP_SECTION_INDEX -> ((BusbarSectionPosition) obj).getSectionIndex();
+            case EXT_FEEDER_DIRECTION -> ((ConnectablePosition.Feeder) obj).getDirection().ordinal();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown int property: " + property);
         };
     }
@@ -536,6 +541,11 @@ public final class PropertyDispatcher {
             case EXT_TWO_WT_PAC_CLOCK -> ((TwoWindingsTransformerPhaseAngleClock) obj).setPhaseAngleClock(value);
             case EXT_THREE_WT_PAC_CLOCK_LEG2 -> ((ThreeWindingsTransformerPhaseAngleClock) obj).setPhaseAngleClockLeg2(value);
             case EXT_THREE_WT_PAC_CLOCK_LEG3 -> ((ThreeWindingsTransformerPhaseAngleClock) obj).setPhaseAngleClockLeg3(value);
+            case EXT_BSP_BUSBAR_INDEX -> ((BusbarSectionPosition) obj).setBusbarIndex(value);
+            case EXT_BSP_SECTION_INDEX -> ((BusbarSectionPosition) obj).setSectionIndex(value);
+            case EXT_FEEDER_ORDER -> ((ConnectablePosition.Feeder) obj).setOrder(value);
+            case EXT_FEEDER_DIRECTION -> ((ConnectablePosition.Feeder) obj)
+                .setDirection(Creation.enumValue(ConnectablePosition.Direction.class, value));
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown int property for set: " + property);
         }
     }
@@ -663,6 +673,8 @@ public final class PropertyDispatcher {
             case EXT_OBS_AREA_CONSISTENT -> ((ObservabilityArea) obj).isConsistentWithTopology();
             case EXT_SA_STANDBY             -> ((StandbyAutomaton) obj).isStandby();
             case EXT_MFRR_PARTICIPATE       -> ((ManualFrequencyRestorationReserve<?>) obj).isParticipate();
+            case COORDINATE                 -> obj instanceof Coordinate;
+            case FEEDER                     -> obj instanceof ConnectablePosition.Feeder;
             case LEG_FORTESCUE              -> obj instanceof LegFortescue;
             case EXT_GF_GROUNDED            -> ((GeneratorFortescue) obj).isGrounded();
             case EXT_LINE_F_OPEN_PHASE_A    -> ((LineFortescue) obj).isOpenPhaseA();
@@ -828,6 +840,7 @@ public final class PropertyDispatcher {
             case DESELECT_OLG     -> LimitsDispatch.holder(obj).deselectOperationalLimitsGroup(value);
             case REMOVE_OLG       -> LimitsDispatch.holder(obj).removeOperationalLimitsGroup(value);
             case EXT_DMI_MODEL_NAME -> ((DynamicModelInfo<?>) obj).setModelName(value);
+            case EXT_FEEDER_NAME -> ((ConnectablePosition.Feeder) obj).setName(value);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown string property for set: " + property);
         }
     }
@@ -852,6 +865,8 @@ public final class PropertyDispatcher {
             case TC_TAP_POSITION            -> tapChanger(obj).findTapPosition();
             case TC_SOLVED_TAP_POSITION     -> tapChanger(obj).findSolvedTapPosition();
             case TC_NEUTRAL_POSITION        -> tapChanger(obj).getNeutralPosition();
+            case EXT_FEEDER_ORDER           -> ((ConnectablePosition.Feeder) obj).getOrder()
+                                               .map(OptionalInt::of).orElse(OptionalInt.empty());
             default -> OptionalInt.of(getInt(obj, property));
         };
         return value.isPresent() ? value.getAsInt() : NO_INT;
@@ -870,6 +885,7 @@ public final class PropertyDispatcher {
             case DMEAS_ID       -> ((DiscreteMeasurement) obj).getId();
             case SELECTED_OLG_ID -> LimitsDispatch.holder(obj).getSelectedOperationalLimitsGroupId().orElse(null);
             case BL_PAIRING_KEY -> pairingKey(obj);
+            case EXT_FEEDER_NAME -> ((ConnectablePosition.Feeder) obj).getName().orElse(null);
             default -> getString(obj, property);
         };
     }
@@ -1197,6 +1213,7 @@ public final class PropertyDispatcher {
                 case Component component -> StreamSupport.stream(component.getBuses().spliterator(), false);
                 default -> StreamSupport.stream(((VoltageLevel) obj).getBusBreakerView().getBuses().spliterator(), false);
             };
+            case COORDINATE -> ((LinePosition<?>) obj).getCoordinates().stream();
             case REL_CONNECTED_COMPONENT -> ((Network) obj).getBusView().getConnectedComponents().stream();
             case NETWORK -> ((Network) obj).getSubnetworks().stream();
             // A set: sorted, so that both backends list it in the same order
@@ -1276,6 +1293,7 @@ public final class PropertyDispatcher {
             case VARIANT_MANAGER -> ((Network) obj).getVariantManager();
             case REL_CONNECTED_COMPONENT -> ((Bus) obj).getConnectedComponent();
             case REL_SYNCHRONOUS_COMPONENT -> ((Bus) obj).getSynchronousComponent();
+            case COORDINATE -> ((SubstationPosition) obj).getCoordinate();
             case REL_PARENT_NETWORK -> ((Identifiable<?>) obj).getParentNetwork();
             case REL_CONVERTER_STATION1 -> ((HvdcLine) obj).getConverterStation1();
             case REL_CONVERTER_STATION2 -> ((HvdcLine) obj).getConverterStation2();
@@ -1456,6 +1474,10 @@ public final class PropertyDispatcher {
                 ((TieLine) obj).remove(true);
                 yield null;
             }
+            case ACT_REMOVE_ORDER -> {
+                ((ConnectablePosition.Feeder) obj).removeOrder();
+                yield null;
+            }
             case ACT_DETACH -> ((Network) obj).detach();
             case ACT_FLATTEN -> {
                 ((Network) obj).flatten();
@@ -1591,6 +1613,13 @@ public final class PropertyDispatcher {
             case INTERNAL_CONNECTION -> ((VoltageLevel) obj).getNodeBreakerView().getNodesInternalConnectedTo(index);
             case REL_TERMINAL -> ((ThreeWindingsTransformer) obj).getTerminal(Creation.enumValue(ThreeSides.class, index));
             case THREE_WINDINGS_TRANSFORMER_LEG -> ((ThreeWindingsTransformer) obj).getLeg(Creation.enumValue(ThreeSides.class, index));
+            case FEEDER -> switch (index) {
+                case 0 -> ((ConnectablePosition<?>) obj).getFeeder();
+                case 1 -> ((ConnectablePosition<?>) obj).getFeeder1();
+                case 2 -> ((ConnectablePosition<?>) obj).getFeeder2();
+                case 3 -> ((ConnectablePosition<?>) obj).getFeeder3();
+                default -> throw new IllegalArgumentException("Invalid feeder slot: " + index);
+            };
             case LEG_FORTESCUE -> switch (Creation.enumValue(ThreeSides.class, index)) {
                 case ONE -> ((ThreeWindingsTransformerFortescue) obj).getLeg1();
                 case TWO -> ((ThreeWindingsTransformerFortescue) obj).getLeg2();

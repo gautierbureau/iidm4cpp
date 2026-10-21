@@ -3,6 +3,7 @@
 #include <iidm/PropertyCodes.h>
 #include <iidm/TieLine.h>
 #include <iidm/VoltageLevel.h>
+#include "Extensions.h"
 #include "BoundaryLineFilter.h"
 #include "Wrap.h"
 
@@ -200,6 +201,22 @@ std::vector<BoundaryLine> detail::filterBoundaryLines(std::vector<BoundaryLine> 
                                [paired](const BoundaryLine& line) { return line.isPaired() != paired; }),
                 lines.end());
     return lines;
+}
+
+bool BoundaryLine::hasLinePosition() const {
+    return detail::hasExtension<LinePosition>(backend_, handle_);
+}
+
+LinePosition BoundaryLine::getLinePosition() const {
+    return detail::getExtension<LinePosition>(backend_, handle_, "LinePosition");
+}
+
+LinePositionAdder BoundaryLine::newLinePosition() {
+    return detail::newExtension<LinePosition, LinePositionAdder>(backend_, handle_);
+}
+
+void BoundaryLine::removeLinePosition() {
+    detail::removeExtension<LinePosition>(backend_, handle_);
 }
 
 } // namespace iidm

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iidm:network xmlns:iidm="http://www.powsybl.org/schema/iidm/1_18" xmlns:lp="http://www.powsybl.org/schema/iidm/ext/line_position/1_0" xmlns:cp="http://www.powsybl.org/schema/iidm/ext/connectable_position/1_1" xmlns:bbsp="http://www.itesla_project.eu/schema/iidm/ext/busbarsectionposition/1_0" xmlns:sp="http://www.powsybl.org/schema/iidm/ext/substation_position/1_0" id="positions_test" caseDate="2026-01-31T12:00:00.000Z" forecastDistance="0" sourceFormat="test" minimumValidationLevel="STEADY_STATE_HYPOTHESIS">
+    <iidm:substation id="S1" country="FR">
+        <iidm:voltageLevel id="VL1" nominalV="400.0" topologyKind="NODE_BREAKER">
+            <iidm:nodeBreakerTopology>
+                <iidm:busbarSection id="BBS" node="0"/>
+                <iidm:switch id="BR_LD" kind="BREAKER" open="false" node1="0" node2="1"/>
+                <iidm:switch id="BR_L12" kind="BREAKER" open="false" node1="0" node2="2"/>
+                <iidm:switch id="BR_G" kind="BREAKER" open="false" node1="0" node2="3"/>
+            </iidm:nodeBreakerTopology>
+            <iidm:generator id="G" energySource="OTHER" minP="0.0" maxP="500.0" targetP="200.0" localTargetQ="0.0" node="3">
+                <iidm:minMaxReactiveLimits minQ="-1.7976931348623157E308" maxQ="1.7976931348623157E308"/>
+            </iidm:generator>
+            <iidm:load id="LD" loadType="UNDEFINED" p0="80.0" q0="10.0" node="1"/>
+        </iidm:voltageLevel>
+    </iidm:substation>
+    <iidm:substation id="S2" country="BE">
+        <iidm:voltageLevel id="VL2" nominalV="400.0" topologyKind="BUS_BREAKER">
+            <iidm:busBreakerTopology>
+                <iidm:bus id="B2"/>
+            </iidm:busBreakerTopology>
+            <iidm:boundaryLine id="BL" p0="10.0" q0="1.0" r="1.0" x="10.0" bus="B2" connectableBus="B2"/>
+        </iidm:voltageLevel>
+    </iidm:substation>
+    <iidm:line id="L12" r="1.0" x="10.0" voltageLevelId1="VL1" node1="2" voltageLevelId2="VL2" bus2="B2" connectableBus2="B2"/>
+    <iidm:extension id="BL">
+        <lp:linePosition>
+            <lp:coordinate longitude="4.35" latitude="50.85"/>
+            <lp:coordinate longitude="5.0" latitude="51.0"/>
+        </lp:linePosition>
+    </iidm:extension>
+    <iidm:extension id="L12">
+        <lp:linePosition>
+            <lp:coordinate longitude="2.35" latitude="48.85"/>
+            <lp:coordinate longitude="3.1" latitude="49.5"/>
+            <lp:coordinate longitude="4.35" latitude="50.85"/>
+        </lp:linePosition>
+        <cp:position>
+            <cp:feeder1 direction="TOP"/>
+            <cp:feeder2 order="3" direction="BOTTOM"/>
+        </cp:position>
+    </iidm:extension>
+    <iidm:extension id="BBS">
+        <bbsp:busbarSectionPosition busbarIndex="1" sectionIndex="2"/>
+    </iidm:extension>
+    <iidm:extension id="LD">
+        <cp:position>
+            <cp:feeder name="LD feeder" order="10" direction="BOTTOM"/>
+        </cp:position>
+    </iidm:extension>
+    <iidm:extension id="S1">
+        <sp:substationPosition>
+            <sp:coordinate longitude="2.35" latitude="48.85"/>
+        </sp:substationPosition>
+    </iidm:extension>
+</iidm:network>

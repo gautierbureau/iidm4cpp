@@ -55,7 +55,11 @@ final class Extensions {
         type(TWO_WINDINGS_TRANSFORMER_PHASE_ANGLE_CLOCK, TwoWindingsTransformerPhaseAngleClock.class,
             TwoWindingsTransformerPhaseAngleClockAdder.class),
         type(THREE_WINDINGS_TRANSFORMER_PHASE_ANGLE_CLOCK, ThreeWindingsTransformerPhaseAngleClock.class,
-            ThreeWindingsTransformerPhaseAngleClockAdder.class));
+            ThreeWindingsTransformerPhaseAngleClockAdder.class),
+        type(BUSBAR_SECTION_POSITION, BusbarSectionPosition.class, BusbarSectionPositionAdder.class),
+        type(SUBSTATION_POSITION, SubstationPosition.class, SubstationPositionAdder.class),
+        type(LINE_POSITION, LinePosition.class, LinePositionAdder.class),
+        type(CONNECTABLE_POSITION, ConnectablePosition.class, ConnectablePositionAdder.class));
 
     private Extensions() {
     }

@@ -150,6 +150,11 @@ set(IIDM_BRIDGE_SOURCES
     src/ThreeWindingsTransformerFortescue.cpp
     src/TwoWindingsTransformerPhaseAngleClock.cpp
     src/ThreeWindingsTransformerPhaseAngleClock.cpp
+    src/Coordinate.cpp
+    src/BusbarSectionPosition.cpp
+    src/SubstationPosition.cpp
+    src/LinePosition.cpp
+    src/ConnectablePosition.cpp
 )
 
 if(IIDM_BRIDGE_ENABLE_GRAALVM)

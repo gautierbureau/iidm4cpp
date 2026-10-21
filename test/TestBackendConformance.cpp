@@ -844,6 +844,10 @@ TEST(BackendConformanceTest, AsymmetricalExtensions) {
     checkConformance("data/asymmetrical_test.xiidm");
 }
 
+TEST(BackendConformanceTest, PositionExtensions) {
+    checkConformance("data/positions_test.xiidm");
+}
+
 TEST(BackendConformanceTest, CreatedFromScratch) {
     checkConformance("created from scratch", buildNetwork);
 }
