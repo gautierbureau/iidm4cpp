@@ -55,6 +55,9 @@
 #include <iidm/SubstationPosition.h>
 #include <iidm/LinePosition.h>
 #include <iidm/ConnectablePosition.h>
+#include <iidm/ReferencePriority.h>
+#include <iidm/ReferencePriorities.h>
+#include <iidm/ReferenceTerminals.h>
 #include <iidm/Generator.h>
 #include <iidm/Load.h>
 #include <iidm/Line.h>
@@ -143,6 +146,9 @@
 #include <iidm/SubstationPositionAdder.h>
 #include <iidm/LinePositionAdder.h>
 #include <iidm/ConnectablePositionAdder.h>
+#include <iidm/ReferencePrioritiesAdder.h>
+#include <iidm/ReferenceTerminalsAdder.h>
+#include <iidm/ObservabilityAreaAdder.h>
 #include <iidm/VariantManager.h>
 #include <iidm/Network.h>
 #include <iidm/NetworkFactory.h>

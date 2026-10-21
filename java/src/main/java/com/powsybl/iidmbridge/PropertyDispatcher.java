@@ -487,6 +487,7 @@ public final class PropertyDispatcher {
             case EXT_BSP_BUSBAR_INDEX -> ((BusbarSectionPosition) obj).getBusbarIndex();
             case EXT_BSP_SECTION_INDEX -> ((BusbarSectionPosition) obj).getSectionIndex();
             case EXT_FEEDER_DIRECTION -> ((ConnectablePosition.Feeder) obj).getDirection().ordinal();
+            case EXT_RP_PRIORITY -> ((ReferencePriority) obj).getPriority();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown int property: " + property);
         };
     }
@@ -673,6 +674,7 @@ public final class PropertyDispatcher {
             case EXT_OBS_AREA_CONSISTENT -> ((ObservabilityArea) obj).isConsistentWithTopology();
             case EXT_SA_STANDBY             -> ((StandbyAutomaton) obj).isStandby();
             case EXT_MFRR_PARTICIPATE       -> ((ManualFrequencyRestorationReserve<?>) obj).isParticipate();
+            case REFERENCE_PRIORITY         -> obj instanceof ReferencePriority;
             case COORDINATE                 -> obj instanceof Coordinate;
             case FEEDER                     -> obj instanceof ConnectablePosition.Feeder;
             case LEG_FORTESCUE              -> obj instanceof LegFortescue;
@@ -1067,6 +1069,20 @@ public final class PropertyDispatcher {
                 if (args.length != 3) throw wrongArgumentCount(code, args);
                 yield shape.isInside(args[0], args[1], args[2]) ? 1 : 0;
             }
+            case EXT_RP_PRIORITY -> switch (obj) {
+                case Injection<?> injection -> {
+                    if (args.length != 0) throw wrongArgumentCount(code, args);
+                    yield ReferencePriority.get(injection);
+                }
+                case Branch<?> branch -> {
+                    if (args.length != 1) throw wrongArgumentCount(code, args);
+                    yield ReferencePriority.get(branch, Creation.enumValue(TwoSides.class, (int) args[0]));
+                }
+                default -> {
+                    if (args.length != 1) throw wrongArgumentCount(code, args);
+                    yield ReferencePriority.get((ThreeWindingsTransformer) obj, Creation.enumValue(ThreeSides.class, (int) args[0]));
+                }
+            };
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown code to evaluate: " + code);
         };
     }
@@ -1151,9 +1167,14 @@ public final class PropertyDispatcher {
             }
             case BRANCH -> ((Network) obj).getBranchStream();
             case HVDC_CONVERTER_STATION -> ((Network) obj).getHvdcConverterStationStream();
-            case TERMINAL -> obj instanceof Bus bus
-                ? bus.getConnectedTerminalStream()
-                : ((Connectable<?>) obj).getTerminals().stream();
+            case TERMINAL -> switch (obj) {
+                case Bus bus -> bus.getConnectedTerminalStream();
+                case ReferenceTerminals referenceTerminals -> referenceTerminals.getReferenceTerminals().stream();
+                default -> ((Connectable<?>) obj).getTerminals().stream();
+            };
+            case REFERENCE_PRIORITY -> obj instanceof Network network
+                ? ReferencePriorities.get(network).stream()
+                : ((ReferencePriorities<?>) obj).getReferencePriorities().stream();
             case SUBSTATION  -> ((Network) obj).getSubstationStream();
             case VOLTAGE_LEVEL -> switch (obj) {
                 case Substation sub -> StreamSupport.stream(sub.getVoltageLevels().spliterator(), false);
@@ -1259,6 +1280,7 @@ public final class PropertyDispatcher {
                 if (obj instanceof ThreeWindingsTransformer.Leg leg) yield leg.getTerminal();
                 if (obj instanceof SlackTerminal st) yield st.getTerminal();
                 if (obj instanceof AreaBoundary boundary) yield boundary.getTerminal().orElse(null);
+                if (obj instanceof ReferencePriority priority) yield priority.getTerminal();
                 throw new BridgeErrors.PropertyNotFoundException("Object does not have a single terminal: " + obj);
             }
             case REL_TERMINAL1 -> {
@@ -1362,6 +1384,7 @@ public final class PropertyDispatcher {
             case ADD_AREA             -> ((VoltageLevel) obj).addArea((Area) value);
             case REMOVE_AREA          -> ((VoltageLevel) obj).removeArea((Area) value);
             case ADD_TRIPPING -> ((OverloadManagementSystem) obj).addTripping((OverloadManagementSystem.Tripping) value);
+            case ADD_REFERENCE_TERMINAL -> ((ReferenceTerminals) obj).addReferenceTerminal((Terminal) value);
             case REMOVE_AREA_BOUNDARY -> {
                 if (value instanceof Terminal terminal) ((Area) obj).removeAreaBoundary(terminal);
                 else ((Area) obj).removeAreaBoundary((Boundary) value);
@@ -1476,6 +1499,20 @@ public final class PropertyDispatcher {
             }
             case ACT_REMOVE_ORDER -> {
                 ((ConnectablePosition.Feeder) obj).removeOrder();
+                yield null;
+            }
+            case ACT_DELETE_REFERENCE_PRIORITIES -> {
+                if (obj instanceof Network network) ReferencePriorities.delete(network);
+                else ((ReferencePriorities<?>) obj).deleteReferencePriorities();
+                yield null;
+            }
+            case ACT_RESET_REFERENCE_TERMINALS -> {
+                if (obj instanceof Network network) ReferenceTerminals.reset(network);
+                else ((ReferenceTerminals) obj).reset();
+                yield null;
+            }
+            case ACT_ADD_REFERENCE_TERMINAL -> {
+                ReferenceTerminals.addTerminal((Terminal) obj);
                 yield null;
             }
             case ACT_DETACH -> ((Network) obj).detach();

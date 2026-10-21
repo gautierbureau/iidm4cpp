@@ -848,6 +848,10 @@ TEST(BackendConformanceTest, PositionExtensions) {
     checkConformance("data/positions_test.xiidm");
 }
 
+TEST(BackendConformanceTest, ReferenceExtensions) {
+    checkConformance("data/references_test.xiidm");
+}
+
 TEST(BackendConformanceTest, CreatedFromScratch) {
     checkConformance("created from scratch", buildNetwork);
 }

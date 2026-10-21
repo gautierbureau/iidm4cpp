@@ -33,7 +33,7 @@ final class Extensions {
         type(BRANCH_OBSERVABILITY, BranchObservability.class, BranchObservabilityAdder.class),
         type(MEASUREMENTS, Measurements.class, MeasurementsAdder.class),
         type(DISCRETE_MEASUREMENTS, DiscreteMeasurements.class, DiscreteMeasurementsAdder.class),
-        type(OBSERVABILITY_AREA, ObservabilityArea.class, null),
+        type(OBSERVABILITY_AREA, ObservabilityArea.class, ObservabilityAreaAdder.class),
         type(GENERATOR_SHORT_CIRCUIT, GeneratorShortCircuit.class, GeneratorShortCircuitAdder.class),
         type(BATTERY_SHORT_CIRCUIT, BatteryShortCircuit.class, BatteryShortCircuitAdder.class),
         type(IDENTIFIABLE_SHORT_CIRCUIT, IdentifiableShortCircuit.class, IdentifiableShortCircuitAdder.class),
@@ -59,7 +59,9 @@ final class Extensions {
         type(BUSBAR_SECTION_POSITION, BusbarSectionPosition.class, BusbarSectionPositionAdder.class),
         type(SUBSTATION_POSITION, SubstationPosition.class, SubstationPositionAdder.class),
         type(LINE_POSITION, LinePosition.class, LinePositionAdder.class),
-        type(CONNECTABLE_POSITION, ConnectablePosition.class, ConnectablePositionAdder.class));
+        type(CONNECTABLE_POSITION, ConnectablePosition.class, ConnectablePositionAdder.class),
+        type(REFERENCE_PRIORITIES, ReferencePriorities.class, ReferencePrioritiesAdder.class),
+        type(REFERENCE_TERMINALS, ReferenceTerminals.class, ReferenceTerminalsAdder.class));
 
     private Extensions() {
     }

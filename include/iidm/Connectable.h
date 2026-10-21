@@ -5,6 +5,8 @@
 #include <iidm/Identifiable.h>
 #include <iidm/Measurement.h>
 #include <iidm/MeasurementsAdder.h>
+#include <iidm/ReferencePriorities.h>
+#include <iidm/ReferencePrioritiesAdder.h>
 #include <iidm/Terminal.h>
 #include <vector>
 
@@ -48,6 +50,11 @@ public:
     ConnectablePosition getConnectablePosition() const;
     ConnectablePositionAdder newConnectablePosition();
     void removeConnectablePosition();
+
+    bool hasReferencePriorities() const;
+    ReferencePriorities getReferencePriorities() const;
+    ReferencePrioritiesAdder newReferencePriorities();
+    void removeReferencePriorities();
 };
 
 } // namespace iidm

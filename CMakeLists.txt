@@ -155,6 +155,8 @@ set(IIDM_BRIDGE_SOURCES
     src/SubstationPosition.cpp
     src/LinePosition.cpp
     src/ConnectablePosition.cpp
+    src/ReferencePriorities.cpp
+    src/ReferenceTerminals.cpp
 )
 
 if(IIDM_BRIDGE_ENABLE_GRAALVM)

@@ -364,6 +364,67 @@ public final class Creation {
         }
     }
 
+    /** An area of a new ObservabilityArea: by bus-breaker view buses, by a bus view bus, or by nodes. */
+    static final class NewObservabilityArea {
+        private final ObservabilityAreaAdder adder;
+        private int number;
+        private ObservabilityArea.ObservabilityStatus status;
+        private final java.util.Set<String> busBreakerBusIds = new java.util.LinkedHashSet<>();
+        private String busId;
+        private final java.util.Set<Integer> nodes = new java.util.LinkedHashSet<>();
+
+        NewObservabilityArea(ObservabilityAreaAdder adder) {
+            this.adder = adder;
+        }
+
+        void apply() {
+            if (busId != null) {
+                adder.withObservabilityAreaByBusViewBus(busId, number, status);
+            } else if (!nodes.isEmpty()) {
+                adder.withObservabilityAreaByNodes(nodes, number, status);
+            } else {
+                adder.withObservabilityAreaByBusBreakerViewBuses(busBreakerBusIds, number, status);
+            }
+        }
+    }
+
+    /** ReferencePriority.set of an injection, or of a side of a branch or of a 3WT. */
+    static final class PrioritySet {
+        private final Object connectable;
+        private int side;
+        private int priority;
+
+        PrioritySet(Object connectable) {
+            this.connectable = connectable;
+        }
+
+        void apply() {
+            switch (connectable) {
+                case Injection<?> injection -> ReferencePriority.set(injection, priority);
+                case Branch<?> branch -> ReferencePriority.set(branch, enumValue(TwoSides.class, side), priority);
+                default -> ReferencePriority.set((ThreeWindingsTransformer) connectable, enumValue(ThreeSides.class, side), priority);
+            }
+        }
+    }
+
+    /** The terminals of a new ReferenceTerminals, or the new ones of an existing one (setReferenceTerminals). */
+    static final class NewReferenceTerminals {
+        private final Object target;
+        private final java.util.Set<Terminal> terminals = new java.util.LinkedHashSet<>();
+
+        NewReferenceTerminals(Object target) {
+            this.target = target;
+        }
+
+        Object apply() {
+            if (target instanceof ReferenceTerminalsAdder adder) {
+                return adder.withTerminals(terminals).add();
+            }
+            ((ReferenceTerminals) target).setReferenceTerminals(terminals);
+            return null;
+        }
+    }
+
     /** A new, empty network. */
     public static Network createNetwork(String id) {
         return Network.create(id, SOURCE_FORMAT);
@@ -391,6 +452,11 @@ public final class Creation {
             case SUBSTATION_POSITION, LINE_POSITION -> new NewPosition(Extensions.newAdder(owner, type));
             case COORDINATE -> new NewCoordinate((NewPosition) owner);
             case FEEDER -> new NewFeeder((ConnectablePositionAdder<?>) owner);
+            case AREA_CHARACTERISTICS -> new NewObservabilityArea((ObservabilityAreaAdder) owner);
+            case REFERENCE_PRIORITY -> ((ReferencePriorities<?>) owner).newReferencePriority();
+            case EXT_RP_PRIORITY -> new PrioritySet(owner);
+            case REFERENCE_TERMINALS -> new NewReferenceTerminals(Extensions.newAdder(owner, type));
+            case TERMINAL -> new NewReferenceTerminals((ReferenceTerminals) owner);
             case SWITCH_TRIPPING -> ((OverloadManagementSystemAdder) owner).newSwitchTripping();
             case BRANCH_TRIPPING -> ((OverloadManagementSystemAdder) owner).newBranchTripping();
             case THREE_WINDINGS_TRANSFORMER_TRIPPING -> ((OverloadManagementSystemAdder) owner).newThreeWindingsTransformerTripping();
@@ -480,6 +546,16 @@ public final class Creation {
                 feeder.apply();
                 yield null;
             }
+            case NewObservabilityArea area -> {
+                area.apply();
+                yield null;
+            }
+            case ReferencePriorityAdder adder -> adder.add();
+            case PrioritySet set -> {
+                set.apply();
+                yield null;
+            }
+            case NewReferenceTerminals terminals -> terminals.apply();
             case BoundaryElementCheck check -> check.run();
             case VariantClone clone -> {
                 clone.apply();
@@ -694,7 +770,23 @@ public final class Creation {
                 }
             }
             case IC_NODE1 -> ((InternalConnectionsRemoval) a).node1 = value;
-            case TERMINAL_SIDE -> ((TemporaryLimitsCheck) a).side = value;
+            case TERMINAL_SIDE -> {
+                if (a instanceof PrioritySet set) {
+                    set.side = value;
+                } else {
+                    ((TemporaryLimitsCheck) a).side = value;
+                }
+            }
+            case EXT_RP_PRIORITY -> {
+                if (a instanceof PrioritySet set) {
+                    set.priority = value;
+                } else {
+                    ((ReferencePriorityAdder) a).setPriority(value);
+                }
+            }
+            case OBS_AREA_NUMBER -> ((NewObservabilityArea) a).number = value;
+            case OBS_AREA_STATUS -> ((NewObservabilityArea) a).status = enumValue(ObservabilityArea.ObservabilityStatus.class, value);
+            case OBS_AREA_NODE -> ((NewObservabilityArea) a).nodes.add(value);
             case OMS_MONITORED_SIDE -> ((OverloadManagementSystemAdder) a).setMonitoredElementSide(enumValue(ThreeSides.class, value));
             case TRIPPING_SIDE -> {
                 if (a instanceof OverloadManagementSystemAdder.BranchTrippingAdder adder) {
@@ -870,6 +962,8 @@ public final class Creation {
             case TL_NAME -> ((LoadingLimitsAdder.TemporaryLimitAdder<?>) a).setName(value);
             case EXT_DMI_MODEL_NAME -> ((DynamicModelInfoAdder<?>) a).setModelName(value);
             case EXT_FEEDER_NAME -> ((NewFeeder) a).name = value;
+            case OBS_AREA_BUS_BREAKER_BUS_ID -> ((NewObservabilityArea) a).busBreakerBusIds.add(value);
+            case OBS_AREA_BUS_ID -> ((NewObservabilityArea) a).busId = value;
             default -> throw unknownField("string", property);
         }
     }
@@ -899,6 +993,7 @@ public final class Creation {
                     case SlackTerminalAdder adder -> adder.withTerminal((Terminal) value);
                     case AreaBoundaryAdder adder -> adder.setTerminal((Terminal) value);
                     case NewAreaBoundary boundary -> boundary.terminal = (Terminal) value;
+                    case ReferencePriorityAdder adder -> adder.setTerminal((Terminal) value);
                     default -> ((VoltageRegulationAdderOrBuilder<?>) a).withTerminal((Terminal) value);
                 }
             }
@@ -913,6 +1008,7 @@ public final class Creation {
             case REL_TERMINAL_TO -> ((VoltageAngleLimitAdder) a).to((Terminal) value);
             case ADD_VOLTAGE_LEVEL -> ((AreaAdder) a).addVoltageLevel((VoltageLevel) value);
             case IDENTIFIABLE -> ((BoundaryElementCheck) a).identifiable = (Identifiable<?>) value;
+            case ADD_REFERENCE_TERMINAL -> ((NewReferenceTerminals) a).terminals.add((Terminal) value);
             default -> throw unknownField("related object", relation);
         }
     }

@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 #include <iidm/ObservabilityArea.h>
+#include <iidm/ObservabilityAreaAdder.h>
 
 namespace iidm {
 
@@ -214,6 +215,7 @@ public:
 
     bool hasObservabilityArea() const;
     ObservabilityArea getObservabilityArea() const;
+    ObservabilityAreaAdder newObservabilityArea();
     void removeObservabilityArea();
 };
 

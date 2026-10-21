@@ -69,4 +69,20 @@ void Connectable::removeConnectablePosition() {
     detail::removeExtension<ConnectablePosition>(backend_, handle_);
 }
 
+bool Connectable::hasReferencePriorities() const {
+    return detail::hasExtension<ReferencePriorities>(backend_, handle_);
+}
+
+ReferencePriorities Connectable::getReferencePriorities() const {
+    return detail::getExtension<ReferencePriorities>(backend_, handle_, "ReferencePriorities");
+}
+
+ReferencePrioritiesAdder Connectable::newReferencePriorities() {
+    return detail::newExtension<ReferencePriorities, ReferencePrioritiesAdder>(backend_, handle_);
+}
+
+void Connectable::removeReferencePriorities() {
+    detail::removeExtension<ReferencePriorities>(backend_, handle_);
+}
+
 } // namespace iidm

@@ -512,6 +512,10 @@ ObservabilityArea VoltageLevel::getObservabilityArea() const {
     return detail::getExtension<ObservabilityArea>(backend_, handle_, "ObservabilityArea");
 }
 
+ObservabilityAreaAdder VoltageLevel::newObservabilityArea() {
+    return detail::newExtension<ObservabilityArea, ObservabilityAreaAdder>(backend_, handle_);
+}
+
 void VoltageLevel::removeObservabilityArea() {
     detail::removeExtension<ObservabilityArea>(backend_, handle_);
 }

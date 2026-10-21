@@ -15,7 +15,8 @@ namespace iidm {
 class BackendProvider;
 
 // The ObservabilityArea extension of a voltage level: an object of its own, from
-// VoltageLevel::getObservabilityArea() (read-only: its areas come from a state estimator).
+// VoltageLevel::getObservabilityArea(). Its areas come from a state estimator: they are given when
+// it is created (VoltageLevel::newObservabilityArea()), then read only.
 class ObservabilityArea : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::OBSERVABILITY_AREA;

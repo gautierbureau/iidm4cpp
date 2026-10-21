@@ -1051,7 +1051,7 @@ powsybl-core.
 
 #### Supported extensions
 
-Every extension below has an adder (`newX()`), except `ObservabilityArea` for now.
+Every extension below has an adder (`newX()`).
 
 | Extension | Hosts | Codes |
 |---|---|---|
@@ -1066,7 +1066,7 @@ Every extension below has an adder (`newX()`), except `ObservabilityArea` for no
 | `BranchObservability` | all branches | `BRANCH_OBSERVABILITY`, `EXT_OBS_OBSERVABLE`, `OBS_QUALITY_*` |
 | `TwoWindingsTransformerToBeEstimated` | 2WT | `TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED`, `EXT_TWO_WT_TBE_*` |
 | `ThreeWindingsTransformerToBeEstimated` | 3WT | `THREE_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED`, `EXT_THREE_WT_TBE_*` |
-| `ObservabilityArea` | VoltageLevel (read-only) | `OBSERVABILITY_AREA`, `EXT_OBS_AREA_*`; its `AREA_CHARACTERISTICS`: `OBS_AREA_*` |
+| `ObservabilityArea` | VoltageLevel | `OBSERVABILITY_AREA`, `EXT_OBS_AREA_*`; its `AREA_CHARACTERISTICS`: `OBS_AREA_*` |
 | `GeneratorShortCircuit` | Generator | `GENERATOR_SHORT_CIRCUIT`, `EXT_SC_*` |
 | `BatteryShortCircuit` | Battery | `BATTERY_SHORT_CIRCUIT`, `EXT_SC_*` |
 | `IdentifiableShortCircuit` | all identifiables (voltage levels) | `IDENTIFIABLE_SHORT_CIRCUIT`, `EXT_ISC_*` |
@@ -1088,6 +1088,8 @@ Every extension below has an adder (`newX()`), except `ObservabilityArea` for no
 | `SubstationPosition` | Substation | `SUBSTATION_POSITION`; its `COORDINATE`: `COORD_*` (a `Coordinate` value) |
 | `LinePosition` | Line, BoundaryLine | `LINE_POSITION`; its `COORDINATE`s: `COORD_*` |
 | `ConnectablePosition` | all connectables | `CONNECTABLE_POSITION`; its `FEEDER`s by slot: `EXT_FEEDER_*`, `ACT_REMOVE_ORDER` |
+| `ReferencePriorities` | all connectables (and the powsybl static helpers) | `REFERENCE_PRIORITIES`; its `REFERENCE_PRIORITY`s: `EXT_RP_PRIORITY` |
+| `ReferenceTerminals` | Network (and the powsybl static helpers) | `REFERENCE_TERMINALS`, `ADD_REFERENCE_TERMINAL`, `ACT_RESET_REFERENCE_TERMINALS` |
 
 The `VoltagePerReactivePowerControl`, `RemoteReactivePowerControl` and battery `VoltageRegulation`
 extensions were removed from powsybl-core 7.4 (`extensions.removed`): their data is the core
