@@ -42,9 +42,9 @@ public:
 
     void loadNetwork(const std::string&) override { fail(); }
     void createNetwork(const std::string&) override { fail(); }
-    void saveNetwork(const std::string&) override { fail(); }
+    void saveNetwork(ObjectHandle, const std::string&) override { fail(); }
     void loadNetworkBytes(const char*, std::size_t, const std::string&) override { fail(); }
-    std::string saveNetworkBytes(const std::string&) const override { fail(); }
+    std::string saveNetworkBytes(ObjectHandle, const std::string&) const override { fail(); }
 
     void close() override {}
 

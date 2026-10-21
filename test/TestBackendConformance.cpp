@@ -693,8 +693,8 @@ private:
     }
 
     void compareSavedNetworks() {
-        Outcome g = attempt([&] { return g_.saveNetworkBytes("network.xiidm"); });
-        Outcome j = attempt([&] { return j_.saveNetworkBytes("network.xiidm"); });
+        Outcome g = attempt([&] { return g_.saveNetworkBytes(g_.getNetworkHandle(), "network.xiidm"); });
+        Outcome j = attempt([&] { return j_.saveNetworkBytes(j_.getNetworkHandle(), "network.xiidm"); });
         if (g.threw() || j.threw() || g.value == j.value) {
             compare("saveNetworkBytes", "network", "", g, j);
             return;
@@ -830,6 +830,10 @@ TEST(BackendConformanceTest, Areas) {
 
 TEST(BackendConformanceTest, Automation) {
     checkConformance("data/automation_test.xiidm");
+}
+
+TEST(BackendConformanceTest, Subnetworks) {
+    checkConformance("data/subnetworks_test.xiidm");
 }
 
 TEST(BackendConformanceTest, CreatedFromScratch) {

@@ -151,8 +151,8 @@ void GraalVMBackend::createNetwork(const std::string& id) {
     networkHandle_ = h;
 }
 
-void GraalVMBackend::saveNetwork(const std::string& filePath) {
-    check(fnSaveNetwork_(thread_, networkHandle_, filePath.c_str()));
+void GraalVMBackend::saveNetwork(ObjectHandle network, const std::string& filePath) {
+    check(fnSaveNetwork_(thread_, network, filePath.c_str()));
 }
 
 void GraalVMBackend::loadNetworkBytes(const char* data, std::size_t length,
@@ -162,10 +162,10 @@ void GraalVMBackend::loadNetworkBytes(const char* data, std::size_t length,
     networkHandle_ = h;
 }
 
-std::string GraalVMBackend::saveNetworkBytes(const std::string& filenameHint) const {
+std::string GraalVMBackend::saveNetworkBytes(ObjectHandle network, const std::string& filenameHint) const {
     char* outData = nullptr;
     int   outLen  = 0;
-    check(fnSaveNetworkBytes_(thread_, networkHandle_, filenameHint.c_str(), &outData, &outLen));
+    check(fnSaveNetworkBytes_(thread_, network, filenameHint.c_str(), &outData, &outLen));
     std::string result(outData ? outData : "", static_cast<std::size_t>(outLen));
     if (outData) fnFree_(thread_, outData);
     return result;

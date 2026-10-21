@@ -103,13 +103,13 @@ public final class IidmBridgeRegistry {
     }
 
     /**
-     * Called from JNI to save a registered network to an XIIDM file.
+     * Called from JNI to save a network to an XIIDM file: the registered one, one of its
+     * subnetworks, or a network detached from it.
      *
-     * @param id       network identifier
+     * @param network  the network
      * @param filePath destination file path
      */
-    public static void save(String id, String filePath) {
-        Network network = get(id);
+    public static void save(Network network, String filePath) {
         NetworkSerDe.write(network, Path.of(filePath));
     }
 
@@ -144,16 +144,14 @@ public final class IidmBridgeRegistry {
     }
 
     /**
-     * Called from JNI to serialize a registered network to an in-memory byte
-     * buffer.
+     * Called from JNI to serialize a network (as for {@link #save}) to an in-memory byte buffer.
      *
-     * @param id           network identifier
+     * @param network      the network
      * @param filenameHint format hint (reserved for future multi-format
      *                     support; currently always XIIDM)
      * @return serialized network bytes
      */
-    public static byte[] saveToBytes(String id, String filenameHint) {
-        Network network = get(id);
+    public static byte[] saveToBytes(Network network, String filenameHint) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         NetworkSerDe.write(network, out);
         return out.toByteArray();

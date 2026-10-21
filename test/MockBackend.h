@@ -52,6 +52,7 @@ public:
     ObjectHandle networkHandle = 1;
     bool closed = false;
     std::string lastSavedPath;
+    mutable ObjectHandle lastSavedNetwork = INVALID_HANDLE;
     // Stream-API hooks
     std::string lastLoadedBytes;
     std::string lastLoadedFilenameHint;
@@ -158,9 +159,10 @@ public:
         return it->second;
     }
 
+    // On the network, a type code finds by id (as the backends do), unless relatedByString says otherwise
     ObjectHandle getRelatedByString(ObjectHandle h, int relation, const std::string& key) const override {
         auto it = relatedByString.find({h, relation, key});
-        if (it == relatedByString.end()) return INVALID_HANDLE;
+        if (it == relatedByString.end()) return h == networkHandle ? findById(relation, key) : INVALID_HANDLE;
         return it->second;
     }
 
@@ -176,13 +178,17 @@ public:
 
     ObjectHandle getNetworkHandle() const override { return networkHandle; }
     void loadNetwork(const std::string&) override {}
-    void saveNetwork(const std::string& path) override { lastSavedPath = path; }
+    void saveNetwork(ObjectHandle network, const std::string& path) override {
+        lastSavedNetwork = network;
+        lastSavedPath = path;
+    }
     void loadNetworkBytes(const char* data, std::size_t length,
                           const std::string& filenameHint) override {
         lastLoadedBytes.assign(data, length);
         lastLoadedFilenameHint = filenameHint;
     }
-    std::string saveNetworkBytes(const std::string& filenameHint) const override {
+    std::string saveNetworkBytes(ObjectHandle network, const std::string& filenameHint) const override {
+        lastSavedNetwork = network;
         lastSavedFilenameHint = filenameHint;
         return bytesToReturnOnSave;
     }

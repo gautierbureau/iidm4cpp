@@ -40,7 +40,8 @@ public:
     // ValidationException for the initial variant. Removing the working variant leaves none: the
     // state of the objects can then neither be read nor changed until one is set.
     void removeVariant(const std::string& variantId);
-    // Allowed, each thread has its own working variant (none for another thread until it sets one)
+    // Allowed, each thread has its own working variant (none for another thread until it sets one).
+    // The backends are used from one thread for now: see README §8.
     VariantManager& allowVariantMultiThreadAccess(bool allow);
     bool isVariantMultiThreadAccessAllowed() const;
 };

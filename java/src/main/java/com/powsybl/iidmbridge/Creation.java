@@ -247,6 +247,36 @@ public final class Creation {
         }
     }
 
+    /** Network.createSubnetwork(id, name, sourceFormat). */
+    static final class NewSubnetwork {
+        private final Network network;
+        private String id;
+        private String name;
+        private String sourceFormat;
+
+        NewSubnetwork(Network network) {
+            this.network = network;
+        }
+
+        Network create() {
+            return network.createSubnetwork(id, name, sourceFormat);
+        }
+    }
+
+    /** Network.isBoundaryElement(identifiable): the identifiable when it is one, else null. */
+    static final class BoundaryElementCheck {
+        private final Network network;
+        private Identifiable<?> identifiable;
+
+        BoundaryElementCheck(Network network) {
+            this.network = network;
+        }
+
+        Identifiable<?> run() {
+            return network.isBoundaryElement(Objects.requireNonNull(identifiable, "identifiable")) ? identifiable : null;
+        }
+    }
+
     /** A new, empty network. */
     public static Network createNetwork(String id) {
         return Network.create(id, SOURCE_FORMAT);
@@ -267,6 +297,8 @@ public final class Creation {
             case VOLTAGE_ANGLE_LIMIT -> ((Network) owner).newVoltageAngleLimit();
             case OVERLOAD_MANAGEMENT_SYSTEM -> ((Substation) owner).newOverloadManagementSystem();
             case VARIANT_CLONE -> new VariantClone((VariantManager) owner);
+            case NETWORK -> new NewSubnetwork((Network) owner);
+            case BOUNDARY_ELEMENT -> new BoundaryElementCheck((Network) owner);
             case SWITCH_TRIPPING -> ((OverloadManagementSystemAdder) owner).newSwitchTripping();
             case BRANCH_TRIPPING -> ((OverloadManagementSystemAdder) owner).newBranchTripping();
             case THREE_WINDINGS_TRANSFORMER_TRIPPING -> ((OverloadManagementSystemAdder) owner).newThreeWindingsTransformerTripping();
@@ -350,6 +382,8 @@ public final class Creation {
                 yield null;
             }
             case TemporaryLimitsCheck check -> check.run();
+            case NewSubnetwork subnetwork -> subnetwork.create();
+            case BoundaryElementCheck check -> check.run();
             case VariantClone clone -> {
                 clone.apply();
                 yield null;
@@ -615,8 +649,21 @@ public final class Creation {
     static void setString(PendingAdd pending, int property, String value) {
         Object a = pending.adder();
         switch (property) {
-            case ID -> ((IdentifiableAdder<?, ?>) a).setId(value);
-            case NAME -> ((IdentifiableAdder<?, ?>) a).setName(value);
+            case ID -> {
+                if (a instanceof NewSubnetwork subnetwork) {
+                    subnetwork.id = value;
+                } else {
+                    ((IdentifiableAdder<?, ?>) a).setId(value);
+                }
+            }
+            case NAME -> {
+                if (a instanceof NewSubnetwork subnetwork) {
+                    subnetwork.name = value;
+                } else {
+                    ((IdentifiableAdder<?, ?>) a).setName(value);
+                }
+            }
+            case NETWORK_SOURCE_FORMAT -> ((NewSubnetwork) a).sourceFormat = value;
             case COUNTRY -> ((SubstationAdder) a).setCountry(Country.valueOf(value));
             case SUBSTATION_TSO -> ((SubstationAdder) a).setTso(value);
             case TERMINAL_BUS_BREAKER_BUS_ID -> ((InjectionAdder<?, ?>) a).setBus(value);
@@ -698,6 +745,7 @@ public final class Creation {
             case REL_TERMINAL_FROM -> ((VoltageAngleLimitAdder) a).from((Terminal) value);
             case REL_TERMINAL_TO -> ((VoltageAngleLimitAdder) a).to((Terminal) value);
             case ADD_VOLTAGE_LEVEL -> ((AreaAdder) a).addVoltageLevel((VoltageLevel) value);
+            case IDENTIFIABLE -> ((BoundaryElementCheck) a).identifiable = (Identifiable<?>) value;
             default -> throw unknownField("related object", relation);
         }
     }

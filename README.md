@@ -585,6 +585,11 @@ public:
     // Its variants (§4.1)
     VariantManager getVariantManager() const;
 
+    // Subnetworks (views, like getNetwork()): getSubnetworks() / getSubnetwork(id),
+    // createSubnetwork(id, name, sourceFormat), detach() / isDetachable(), flatten();
+    // getBoundaryElements() / isBoundaryElement(identifiable). Lookups by id and saves apply to
+    // the network they are called on: a subnetwork finds and saves its own objects only.
+
     // Validation: getValidationLevel(), setMinimumAcceptableValidationLevel(level),
     // runValidationChecks(throwsException = true) → ValidationLevel
     // getCountries() → std::set<Country>, getCountryCount(), getContainerType()
@@ -761,6 +766,8 @@ public:
     virtual ObjectHandle getNetworkHandle() const = 0;
     virtual void loadNetwork(const std::string& filePath) = 0;
     virtual void createNetwork(const std::string& id);
+    // Its network, one of its subnetworks or a network detached from it
+    virtual void saveNetwork(ObjectHandle network, const std::string& filePath) = 0;
     virtual void close() = 0;
     // … in-memory load and save, handle release
 };
@@ -792,8 +799,9 @@ IIDM_CODE(GEN_TARGET_P,                200)
 A code is named after the powsybl interface that declares the method (`CONVERTER_STATION_LOSS_FACTOR`
 for `HvdcConverterStation.getLossFactor`, whatever the station), and means the same in every
 primitive. A type code stands for its type: `getChildren(parent, TYPE)` lists the parent's objects
-of that type, `findById(TYPE, id)` looks one up, `getBool(object, TYPE)` tells whether the object is
-one, `invoke(parent, TYPE)` starts a new one. For a property that may have no value,
+of that type, `getRelatedByString(network, TYPE, id)` looks one up in a network (`findById(TYPE,
+id)` in the backend's own network), `getBool(object, TYPE)` tells whether the object is one,
+`invoke(parent, TYPE)` starts a new one. For a property that may have no value,
 `getString`/`getInt` give a value or fail (`getString(NAME)` is the name, or else the id) while
 `getOptString`/`getOptInt` give it as it is (`getOptString(NAME)` is empty without a name). A
 method with arguments keeps the code of its name: `getDouble(limits, RL_MIN_Q)` is

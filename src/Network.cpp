@@ -63,18 +63,18 @@ BackendProvider& Network::getBackend() {
 }
 
 void Network::save(const std::string& filePath) const {
-    backend_->saveNetwork(filePath);
+    backend_->saveNetwork(handle_, filePath);
 }
 
 void Network::save(std::ostream& out, const std::string& filenameHint) const {
-    const std::string bytes = backend_->saveNetworkBytes(filenameHint);
+    const std::string bytes = backend_->saveNetworkBytes(handle_, filenameHint);
     if (!bytes.empty()) {
         out.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
     }
 }
 
 std::string Network::saveToBytes(const std::string& filenameHint) const {
-    return backend_->saveNetworkBytes(filenameHint);
+    return backend_->saveNetworkBytes(handle_, filenameHint);
 }
 
 SubstationAdder Network::newSubstation() {
@@ -97,6 +97,54 @@ VoltageAngleLimitAdder Network::newVoltageAngleLimit() {
     return VoltageAngleLimitAdder(backend_->invoke(handle_, prop::VOLTAGE_ANGLE_LIMIT), backend_);
 }
 
+// ── Subnetworks ──────────────────────────────────────────────────────────────
+
+std::vector<Network> Network::getSubnetworks() const {
+    const std::vector<ObjectHandle> handles = backend_->getChildren(handle_, prop::NETWORK);
+    std::vector<Network> subnetworks;
+    subnetworks.reserve(handles.size());
+    for (ObjectHandle h : handles) subnetworks.push_back(Network(h, backend_));
+    return subnetworks;
+}
+
+iidm::optional<Network> Network::getSubnetwork(const std::string& id) const {
+    const ObjectHandle h = backend_->getRelatedByString(handle_, prop::NETWORK, id);
+    if (h == INVALID_HANDLE) return iidm::optional<Network>();
+    return iidm::optional<Network>(Network(h, backend_));
+}
+
+Network Network::createSubnetwork(const std::string& subnetworkId, const std::string& name,
+                                  const std::string& sourceFormat) {
+    HandleRef pending(backend_->invoke(handle_, prop::NETWORK), backend_);
+    backend_->setString(pending, prop::ID, subnetworkId);
+    backend_->setString(pending, prop::NAME, name);
+    backend_->setString(pending, prop::NETWORK_SOURCE_FORMAT, sourceFormat);
+    return Network(backend_->invoke(pending, prop::ACT_ADD), backend_);
+}
+
+Network Network::detach() {
+    return Network(backend_->invoke(handle_, prop::ACT_DETACH), backend_);
+}
+
+bool Network::isDetachable() const {
+    return backend_->getBool(handle_, prop::NETWORK_DETACHABLE);
+}
+
+void Network::flatten() {
+    backend_->invoke(handle_, prop::ACT_FLATTEN);
+}
+
+std::vector<Identifiable> Network::getBoundaryElements() const {
+    return detail::wrapAll<Identifiable>(backend_->getChildren(handle_, prop::BOUNDARY_ELEMENT), backend_);
+}
+
+bool Network::isBoundaryElement(const Identifiable& identifiable) const {
+    HandleRef check(backend_->invoke(handle_, prop::BOUNDARY_ELEMENT), backend_);
+    backend_->setRelated(check, prop::IDENTIFIABLE, detail::Access::handle(identifiable));
+    HandleRef found(backend_->invoke(check, prop::ACT_ADD), backend_);
+    return found != INVALID_HANDLE;
+}
+
 // ── Iteration helpers ────────────────────────────────────────────────────────
 
 namespace {
@@ -106,9 +154,10 @@ std::vector<T> all(BackendProvider* backend, ObjectHandle network) {
     return detail::wrapAll<T>(backend->getChildren(network, T::TYPE), backend);
 }
 
+// In this network only: a subnetwork finds its own objects
 template <class T>
-iidm::optional<T> find(BackendProvider* backend, const std::string& id) {
-    return detail::wrapOptional<T>(backend->findById(T::TYPE, id), backend);
+iidm::optional<T> find(BackendProvider* backend, ObjectHandle network, const std::string& id) {
+    return detail::wrapOptional<T>(backend->getRelatedByString(network, T::TYPE, id), backend);
 }
 
 } // namespace
@@ -212,103 +261,103 @@ std::vector<LccConverterStation> Network::getLccConverterStations() const {
 // ── Lookup by ID ─────────────────────────────────────────────────────────────
 
 iidm::optional<Identifiable> Network::getIdentifiable(const std::string& id) const {
-    return find<Identifiable>(backend_, id);
+    return find<Identifiable>(backend_, handle_, id);
 }
 
 iidm::optional<Connectable> Network::getConnectable(const std::string& id) const {
-    return find<Connectable>(backend_, id);
+    return find<Connectable>(backend_, handle_, id);
 }
 
 iidm::optional<Branch> Network::getBranch(const std::string& id) const {
-    return find<Branch>(backend_, id);
+    return find<Branch>(backend_, handle_, id);
 }
 
 iidm::optional<HvdcConverterStation> Network::getHvdcConverterStation(const std::string& id) const {
-    return find<HvdcConverterStation>(backend_, id);
+    return find<HvdcConverterStation>(backend_, handle_, id);
 }
 
 iidm::optional<Substation> Network::getSubstation(const std::string& id) const {
-    return find<Substation>(backend_, id);
+    return find<Substation>(backend_, handle_, id);
 }
 
 iidm::optional<VoltageLevel> Network::getVoltageLevel(const std::string& id) const {
-    return find<VoltageLevel>(backend_, id);
+    return find<VoltageLevel>(backend_, handle_, id);
 }
 
 iidm::optional<Battery> Network::getBattery(const std::string& id) const {
-    return find<Battery>(backend_, id);
+    return find<Battery>(backend_, handle_, id);
 }
 
 iidm::optional<Generator> Network::getGenerator(const std::string& id) const {
-    return find<Generator>(backend_, id);
+    return find<Generator>(backend_, handle_, id);
 }
 
 iidm::optional<Load> Network::getLoad(const std::string& id) const {
-    return find<Load>(backend_, id);
+    return find<Load>(backend_, handle_, id);
 }
 
 iidm::optional<Line> Network::getLine(const std::string& id) const {
-    return find<Line>(backend_, id);
+    return find<Line>(backend_, handle_, id);
 }
 
 iidm::optional<TwoWindingsTransformer> Network::getTwoWindingsTransformer(const std::string& id) const {
-    return find<TwoWindingsTransformer>(backend_, id);
+    return find<TwoWindingsTransformer>(backend_, handle_, id);
 }
 
 iidm::optional<ThreeWindingsTransformer> Network::getThreeWindingsTransformer(const std::string& id) const {
-    return find<ThreeWindingsTransformer>(backend_, id);
+    return find<ThreeWindingsTransformer>(backend_, handle_, id);
 }
 
 iidm::optional<HvdcLine> Network::getHvdcLine(const std::string& id) const {
-    return find<HvdcLine>(backend_, id);
+    return find<HvdcLine>(backend_, handle_, id);
 }
 
 iidm::optional<BoundaryLine> Network::getBoundaryLine(const std::string& id) const {
-    return find<BoundaryLine>(backend_, id);
+    return find<BoundaryLine>(backend_, handle_, id);
 }
 
 iidm::optional<TieLine> Network::getTieLine(const std::string& id) const {
-    return find<TieLine>(backend_, id);
+    return find<TieLine>(backend_, handle_, id);
 }
 
 iidm::optional<Ground> Network::getGround(const std::string& id) const {
-    return find<Ground>(backend_, id);
+    return find<Ground>(backend_, handle_, id);
 }
 
 iidm::optional<Area> Network::getArea(const std::string& id) const {
-    return find<Area>(backend_, id);
+    return find<Area>(backend_, handle_, id);
 }
 
 iidm::optional<VoltageAngleLimit> Network::getVoltageAngleLimit(const std::string& id) const {
-    return find<VoltageAngleLimit>(backend_, id);
+    return find<VoltageAngleLimit>(backend_, handle_, id);
 }
 
 iidm::optional<OverloadManagementSystem> Network::getOverloadManagementSystem(const std::string& id) const {
-    return find<OverloadManagementSystem>(backend_, id);
+    return find<OverloadManagementSystem>(backend_, handle_, id);
 }
 
 iidm::optional<ShuntCompensator> Network::getShuntCompensator(const std::string& id) const {
-    return find<ShuntCompensator>(backend_, id);
+    return find<ShuntCompensator>(backend_, handle_, id);
 }
 
 iidm::optional<StaticVarCompensator> Network::getStaticVarCompensator(const std::string& id) const {
-    return find<StaticVarCompensator>(backend_, id);
+    return find<StaticVarCompensator>(backend_, handle_, id);
 }
 
 iidm::optional<VscConverterStation> Network::getVscConverterStation(const std::string& id) const {
-    return find<VscConverterStation>(backend_, id);
+    return find<VscConverterStation>(backend_, handle_, id);
 }
 
 iidm::optional<LccConverterStation> Network::getLccConverterStation(const std::string& id) const {
-    return find<LccConverterStation>(backend_, id);
+    return find<LccConverterStation>(backend_, handle_, id);
 }
 
 iidm::optional<Switch> Network::getSwitch(const std::string& id) const {
-    return find<Switch>(backend_, id);
+    return find<Switch>(backend_, handle_, id);
 }
 
 iidm::optional<BusbarSection> Network::getBusbarSection(const std::string& id) const {
-    return find<BusbarSection>(backend_, id);
+    return find<BusbarSection>(backend_, handle_, id);
 }
 
 std::vector<Switch> Network::getSwitches() const {

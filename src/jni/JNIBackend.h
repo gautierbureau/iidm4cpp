@@ -55,10 +55,10 @@ public:
 
     void loadNetwork(const std::string& filePath) override;
     void createNetwork(const std::string& id) override;
-    void saveNetwork(const std::string& filePath) override;
+    void saveNetwork(ObjectHandle network, const std::string& filePath) override;
     void loadNetworkBytes(const char* data, std::size_t length,
                           const std::string& filenameHint) override;
-    std::string saveNetworkBytes(const std::string& filenameHint) const override;
+    std::string saveNetworkBytes(ObjectHandle network, const std::string& filenameHint) const override;
     void close() override;
 
     void releaseHandle(ObjectHandle h) override;
