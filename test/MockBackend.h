@@ -86,7 +86,12 @@ public:
     void setDouble(ObjectHandle h, int p, double v) override { doubles[{h, p}] = v; }
     void setInt   (ObjectHandle h, int p, int v)    override { ints[{h, p}] = v; }
     void setBool  (ObjectHandle h, int p, bool v)   override { bools[{h, p}] = v; }
-    void setString(ObjectHandle h, int p, const std::string& v) override { strings[{h, p}] = v; }
+    void setString(ObjectHandle h, int p, const std::string& v) override {
+        strings[{h, p}] = v;
+        stringSets.push_back(std::make_tuple(h, p, v));
+    }
+    // Every setString, in order (a field set more than once keeps only its last value in strings)
+    std::vector<std::tuple<ObjectHandle, int, std::string>> stringSets;
 
     iidm::optional<double> getOptDouble(ObjectHandle h, int p) const override {
         double v = getDouble(h, p);

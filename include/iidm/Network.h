@@ -29,6 +29,8 @@
 #include <iidm/LccConverterStation.h>
 #include <iidm/BusbarSection.h>
 #include <iidm/Switch.h>
+#include <iidm/Component.h>
+#include <iidm/VariantManager.h>
 #include <iidm/VoltageAngleLimit.h>
 #include <iosfwd>
 #include <memory>
@@ -70,6 +72,9 @@ public:
         std::vector<Bus> getBuses() const;
         // Empty when there is no such bus
         iidm::optional<Bus> getBus(const std::string& id) const;
+        // Its connected (synchronous) components, the main one first
+        std::vector<Component> getConnectedComponents() const;
+        std::vector<Component> getSynchronousComponents() const;
     };
 
     ~Network();
@@ -143,6 +148,8 @@ public:
 
     BusBreakerView getBusBreakerView() const;
     BusView getBusView() const;
+
+    VariantManager getVariantManager() const;
 
     // ── Counts ───────────────────────────────────────────────────────────
     int getConnectableCount() const;

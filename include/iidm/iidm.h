@@ -14,6 +14,7 @@
 #include <iidm/Injection.h>
 #include <iidm/Branch.h>
 #include <iidm/HvdcConverterStation.h>
+#include <iidm/Component.h>
 #include <iidm/Bus.h>
 #include <iidm/Terminal.h>
 #include <iidm/Substation.h>
@@ -98,5 +99,6 @@
 #include <iidm/BranchObservabilityAdder.h>
 #include <iidm/MeasurementsAdder.h>
 #include <iidm/DiscreteMeasurementsAdder.h>
+#include <iidm/VariantManager.h>
 #include <iidm/Network.h>
 #include <iidm/NetworkFactory.h>

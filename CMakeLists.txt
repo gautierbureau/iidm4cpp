@@ -111,6 +111,7 @@ set(IIDM_BRIDGE_SOURCES
     src/VoltageAngleLimit.cpp
     src/OverloadManagementSystem.cpp
     src/Bus.cpp
+    src/Component.cpp
     src/Substation.cpp
     src/VoltageLevel.cpp
     src/Line.cpp
@@ -130,6 +131,7 @@ set(IIDM_BRIDGE_SOURCES
     src/LoadingLimits.cpp
     src/Overload.cpp
     src/OperationalLimitsGroup.cpp
+    src/VariantManager.cpp
 )
 
 if(IIDM_BRIDGE_ENABLE_GRAALVM)

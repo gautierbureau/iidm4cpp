@@ -476,9 +476,20 @@ Bus (of a bus-breaker view or of a bus view)
 ├── getV() / getAngle() → double (+ setters), unsetSolvedValues()
 ├── getP() / getQ() → double (its equipment, load sign convention)
 ├── getFictitiousP0() / getFictitiousQ0() → double (+ setters)
-├── isInMainConnectedComponent() / isInMainSynchronousComponent() → bool
+├── getConnectedComponent() / getSynchronousComponent() → optional<Component> (empty when it
+│   is in none), isInMainConnectedComponent() / isInMainSynchronousComponent() → bool
 └── getConnectedTerminals() (+ count), getLines(), getGenerators(), getLoads()…,
     getBoundaryLines([BoundaryLineFilter])
+Component (connected: AC and HVDC links; synchronous: AC only)
+└── getNum() (0: the main, biggest one), getSize(), getBuses() (of the bus view)
+    (Network::getBusView().getConnectedComponents() / getSynchronousComponents(), the main first)
+
+VariantManager (Network::getVariantManager()): variants are copies of the network's state
+├── getVariantIds() (sorted), getWorkingVariantId() / setWorkingVariant(id)
+├── cloneVariant(source id, target id or ids, mayOverwrite = false), removeVariant(id)
+│   (VariantManager::INITIAL_VARIANT_ID: the variant of a new network)
+└── allowVariantMultiThreadAccess(bool) / isVariantMultiThreadAccessAllowed(): a working variant
+    per thread (see §8: a backend is used from one thread for now)
 ```
 
 ### 4.2 Handle Model
@@ -566,9 +577,13 @@ public:
     // … and so on for each type
 
     // The buses and switches of all its voltage levels: getBusBreakerView().getBuses() /
-    // getSwitches() / getBus(id), getBusView().getBuses() / getBus(id)
+    // getSwitches() / getBus(id), getBusView().getBuses() / getBus(id) /
+    // getConnectedComponents() / getSynchronousComponents()
     BusBreakerView getBusBreakerView() const;
     BusView getBusView() const;
+
+    // Its variants (§4.1)
+    VariantManager getVariantManager() const;
 
     // Validation: getValidationLevel(), setMinimumAcceptableValidationLevel(level),
     // runValidationChecks(throwsException = true) → ValidationLevel
@@ -1369,6 +1384,13 @@ C++ component objects themselves are **not thread-safe** at the object
 level (i.e., calling `setTargetP` and `getTargetP` on the same `Generator`
 from two threads simultaneously requires external synchronization). This
 matches the contract of the Java IIDM objects themselves.
+
+**Status: the per-thread attachment above is not implemented yet.** Both backends
+make every call through the thread that created them (the JNI environment or
+the GraalVM isolate thread taken at construction), so a backend must only be used
+from that thread for now. `VariantManager::allowVariantMultiThreadAccess()` is
+ported (in powsybl, it gives each thread its own working variant), but it is only
+useful once each calling thread is attached.
 
 ---
 

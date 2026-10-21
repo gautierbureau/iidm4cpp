@@ -68,6 +68,14 @@ Bus& Bus::setFictitiousQ0(double q0) {
     return *this;
 }
 
+iidm::optional<Component> Bus::getConnectedComponent() const {
+    return detail::wrapOptional<Component>(backend_->getRelated(handle_, prop::REL_CONNECTED_COMPONENT), backend_);
+}
+
+iidm::optional<Component> Bus::getSynchronousComponent() const {
+    return detail::wrapOptional<Component>(backend_->getRelated(handle_, prop::REL_SYNCHRONOUS_COMPONENT), backend_);
+}
+
 bool Bus::isInMainConnectedComponent() const {
     return backend_->getBool(handle_, prop::BUS_IN_MAIN_CONNECTED_COMPONENT);
 }
