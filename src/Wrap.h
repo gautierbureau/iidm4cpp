@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iidm/BackendProvider.h>
+#include <iidm/PropertyCodes.h>
 #include <iidm/stdcxx/optional.hpp>
 #include <vector>
 
@@ -20,6 +21,11 @@ template <class T>
 iidm::optional<T> wrapOptional(ObjectHandle h, BackendProvider* backend) {
     if (h == INVALID_HANDLE) return {};
     return T(h, backend);
+}
+
+// The number of objects of a type in an object (a container, a view, a bus)
+inline int countOf(BackendProvider* backend, ObjectHandle h, int type) {
+    return static_cast<int>(backend->evaluate(h, prop::CHILD_COUNT, {static_cast<double>(type)}));
 }
 
 } } // namespace iidm::detail

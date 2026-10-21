@@ -1,4 +1,5 @@
 #include <iidm/Switch.h>
+#include <iidm/VoltageLevel.h>
 #include <iidm/BackendProvider.h>
 #include <iidm/PropertyCodes.h>
 
@@ -32,6 +33,10 @@ int Switch::getNode1() const {
 
 int Switch::getNode2() const {
     return backend_->getInt(handle_, prop::SW_NODE2);
+}
+
+VoltageLevel Switch::getVoltageLevel() const {
+    return VoltageLevel(backend_->getRelated(handle_, prop::REL_VOLTAGE_LEVEL), backend_);
 }
 
 } // namespace iidm

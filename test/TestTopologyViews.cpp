@@ -38,6 +38,8 @@ protected:
 
         // Switches and busbar sections under the VL
         backend.children[{VL_HANDLE, prop::SWITCH}]        = {SW1};
+        backend.children[{VL_HANDLE, prop::REL_NBV_SWITCH}] = {SW1};
+        backend.children[{VL_HANDLE, prop::REL_BBV_SWITCH}] = {SW1};
         backend.children[{VL_HANDLE, prop::BUSBAR_SECTION}] = {BBS1};
         backend.strings[{SW1,  prop::ID}]  = "SW1";
         backend.strings[{BBS1, prop::ID}]  = "BBS1";
@@ -278,7 +280,7 @@ TEST_F(TopologyViewTest, VlNodeBreakerViewGetNodesEmpty) {
 }
 
 TEST_F(TopologyViewTest, VlNodeBreakerViewGetSwitchById) {
-    backend.byId[{prop::SWITCH, "SW1"}] = SW1;
+    backend.relatedByString[std::make_tuple(ObjectHandle(VL_HANDLE), prop::REL_NBV_SWITCH, std::string("SW1"))] = SW1;
     backend.strings[{SW1, prop::ID}] = "SW1";
     VoltageLevel vl(VL_HANDLE, &backend);
     auto sw = vl.getNodeBreakerView().getSwitch("SW1");

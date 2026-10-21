@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iidm/Connectable.h>
+#include <iidm/Container.h>
 #include <iidm/Enums.h>
 #include <iidm/Identifiable.h>
 #include <iidm/Bus.h>
@@ -14,6 +15,7 @@
 #include <iidm/InternalConnection.h>
 #include <iidm/Terminal.h>
 #include <iidm/stdcxx/optional.hpp>
+#include <iosfwd>
 #include <string>
 #include <vector>
 #include <iidm/ObservabilityArea.h>
@@ -28,8 +30,12 @@ class StaticVarCompensator;
 class BoundaryLine;
 class LccConverterStation;
 class VscConverterStation;
+class Line;
+class TwoWindingsTransformer;
+class ThreeWindingsTransformer;
+class Substation;
 
-class VoltageLevel : public Identifiable {
+class VoltageLevel : public Identifiable, public detail::ContainerMethods<VoltageLevel> {
 public:
     // ── NodeBreakerView ──────────────────────────────────────────────────────
     class NodeBreakerView : public detail::ObjectRef {
@@ -65,23 +71,53 @@ public:
         void removeBus(const std::string& busId);
     };
 
+    // ── BusView ──────────────────────────────────────────────────────────────
+    // The buses that the closed switches make of its topology
+    class BusView : public detail::ObjectRef {
+    public:
+        BusView() = default;
+        explicit BusView(ObjectHandle vlHandle, BackendProvider* backend) : ObjectRef(vlHandle, backend) {}
+
+        std::vector<Bus> getBuses() const;
+        // Empty when there is no such bus
+        iidm::optional<Bus> getBus(const std::string& id) const;
+        // The bus that holds a configured bus (bus-breaker topology) or a busbar section
+        // (node-breaker topology); empty when it is in none (PropertyNotFoundException for an
+        // unknown id)
+        iidm::optional<Bus> getMergedBus(const std::string& configuredBusId) const;
+    };
+
     // ── VoltageLevel ─────────────────────────────────────────────────────────
     static constexpr int TYPE = prop::VOLTAGE_LEVEL;
 
     VoltageLevel() = default;
     explicit VoltageLevel(ObjectHandle handle, BackendProvider* backend) : Identifiable(handle, backend) {}
 
+    // Empty when it is not in a substation
+    iidm::optional<Substation> getSubstation() const;
+
     double getNominalV() const;
+    VoltageLevel& setNominalV(double nominalV);
     iidm::optional<double> getLowVoltageLimit() const;
+    // NaN: none
+    VoltageLevel& setLowVoltageLimit(double lowVoltageLimit);
     iidm::optional<double> getHighVoltageLimit() const;
+    VoltageLevel& setHighVoltageLimit(double highVoltageLimit);
 
     TopologyKind getTopologyKind() const;
+    // To bus-breaker topology (powsybl cannot convert to node-breaker yet)
+    void convertToTopology(TopologyKind topologyKind);
+    // Its topology as text, as powsybl prints it
+    void printTopology() const;
+    void printTopology(std::ostream& out) const;
 
     std::vector<Switch>        getSwitches() const;
     std::vector<BusbarSection> getBusbarSections() const;
 
-    // Every equipment connected to it
+    // Every equipment connected to it; one of them (empty when it has no such equipment)
     std::vector<Connectable> getConnectables() const;
+    iidm::optional<Connectable> getConnectable(const std::string& id) const;
+    int getConnectableCount() const;
 
     // ── Per-injector getters ─────────────────────────────────────────────────
     std::vector<Generator>            getGenerators() const;
@@ -92,9 +128,27 @@ public:
     std::vector<BoundaryLine>         getBoundaryLines() const;
     std::vector<LccConverterStation>  getLccConverterStations() const;
     std::vector<VscConverterStation>  getVscConverterStations() const;
+    std::vector<Line>                 getLines() const;
+    std::vector<TwoWindingsTransformer> getTwoWindingsTransformers() const;
+    std::vector<ThreeWindingsTransformer> getThreeWindingsTransformers() const;
+
+    // ── Counts ───────────────────────────────────────────────────────────────
+    int getGeneratorCount() const;
+    int getLoadCount() const;
+    int getBatteryCount() const;
+    int getShuntCompensatorCount() const;
+    int getStaticVarCompensatorCount() const;
+    int getBoundaryLineCount() const;
+    int getLccConverterStationCount() const;
+    int getVscConverterStationCount() const;
+    int getLineCount() const;
+    int getTwoWindingsTransformerCount() const;
+    int getThreeWindingsTransformerCount() const;
+    int getSwitchCount() const;
 
     NodeBreakerView getNodeBreakerView() const;
     BusBreakerView  getBusBreakerView()  const;
+    BusView         getBusView()         const;
 
     // ── Creation and removal ─────────────────────────────────────────────────
     GeneratorAdder newGenerator();

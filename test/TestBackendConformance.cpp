@@ -816,6 +816,10 @@ TEST(BackendConformanceTest, Injections) {
     checkConformance("data/injections_test.xiidm");
 }
 
+TEST(BackendConformanceTest, Topology) {
+    checkConformance("data/topology_test.xiidm");
+}
+
 TEST(BackendConformanceTest, CreatedFromScratch) {
     checkConformance("created from scratch", buildNetwork);
 }

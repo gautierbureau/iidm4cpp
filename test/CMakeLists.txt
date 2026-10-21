@@ -13,6 +13,8 @@ set(TEST_SOURCES
     TestLinesNetwork.cpp
     TestBoundaryLinesNetwork.cpp
     TestInjectionsNetwork.cpp
+    TestContainers.cpp
+    TestContainersNetwork.cpp
     TestTopologyViews.cpp
     TestGenerator.cpp
     TestActivePowerControl.cpp

@@ -16,6 +16,11 @@
 #include <iidm/BoundaryLine.h>
 #include <iidm/LccConverterStation.h>
 #include <iidm/VscConverterStation.h>
+#include <iidm/Line.h>
+#include <iidm/TwoWindingsTransformer.h>
+#include <iidm/ThreeWindingsTransformer.h>
+#include <iidm/Substation.h>
+#include <iostream>
 #include "Extensions.h"
 #include "Wrap.h"
 
@@ -27,11 +32,7 @@ VoltageLevel::NodeBreakerView::NodeBreakerView(ObjectHandle h, BackendProvider* 
     : ObjectRef(h, b) {}
 
 std::vector<Switch> VoltageLevel::NodeBreakerView::getSwitches() const {
-    auto handles = backend_->getChildren(handle_, prop::SWITCH);
-    std::vector<Switch> result;
-    result.reserve(handles.size());
-    for (auto h : handles) result.emplace_back(h, backend_);
-    return result;
+    return detail::wrapAll<Switch>(backend_->getChildren(handle_, prop::REL_NBV_SWITCH), backend_);
 }
 
 std::vector<BusbarSection> VoltageLevel::NodeBreakerView::getBusbarSections() const {
@@ -55,9 +56,7 @@ std::vector<int> VoltageLevel::NodeBreakerView::getNodes() const {
 }
 
 iidm::optional<Switch> VoltageLevel::NodeBreakerView::getSwitch(const std::string& id) const {
-    ObjectHandle h = backend_->findById(prop::SWITCH, id);
-    if (h == INVALID_HANDLE) return {};
-    return Switch(h, backend_);
+    return detail::wrapOptional<Switch>(backend_->getRelatedByString(handle_, prop::REL_NBV_SWITCH, id), backend_);
 }
 
 Terminal VoltageLevel::NodeBreakerView::getTerminal(int node) const {
@@ -79,11 +78,7 @@ std::vector<Bus> VoltageLevel::BusBreakerView::getBuses() const {
 }
 
 std::vector<Switch> VoltageLevel::BusBreakerView::getSwitches() const {
-    auto handles = backend_->getChildren(handle_, prop::SWITCH);
-    std::vector<Switch> result;
-    result.reserve(handles.size());
-    for (auto h : handles) result.emplace_back(h, backend_);
-    return result;
+    return detail::wrapAll<Switch>(backend_->getChildren(handle_, prop::REL_BBV_SWITCH), backend_);
 }
 
 Bus VoltageLevel::BusBreakerView::getBus1(const std::string& switchId) const {
@@ -108,26 +103,91 @@ void VoltageLevel::BusBreakerView::removeBus(const std::string& busId) {
     backend_->invoke(detail::Access::handle(*bus), prop::ACT_REMOVE);
 }
 
+// ── BusView ───────────────────────────────────────────────────────────────────
+
+std::vector<Bus> VoltageLevel::BusView::getBuses() const {
+    return detail::wrapAll<Bus>(backend_->getChildren(handle_, prop::REL_BV_BUS), backend_);
+}
+
+iidm::optional<Bus> VoltageLevel::BusView::getBus(const std::string& id) const {
+    return detail::wrapOptional<Bus>(backend_->getRelatedByString(handle_, prop::REL_BV_BUS, id), backend_);
+}
+
+iidm::optional<Bus> VoltageLevel::BusView::getMergedBus(const std::string& configuredBusId) const {
+    return detail::wrapOptional<Bus>(backend_->getRelatedByString(handle_, prop::REL_MERGED_BUS, configuredBusId), backend_);
+}
+
 // ── VoltageLevel ──────────────────────────────────────────────────────────────
+
+iidm::optional<Substation> VoltageLevel::getSubstation() const {
+    return detail::wrapOptional<Substation>(backend_->getRelated(handle_, prop::REL_SUBSTATION), backend_);
+}
 
 double VoltageLevel::getNominalV() const {
     return backend_->getDouble(handle_, prop::VL_NOMINAL_V);
+}
+
+VoltageLevel& VoltageLevel::setNominalV(double nominalV) {
+    backend_->setDouble(handle_, prop::VL_NOMINAL_V, nominalV);
+    return *this;
 }
 
 iidm::optional<double> VoltageLevel::getLowVoltageLimit() const {
     return backend_->getOptDouble(handle_, prop::VL_LOW_VOLTAGE_LIMIT);
 }
 
+VoltageLevel& VoltageLevel::setLowVoltageLimit(double lowVoltageLimit) {
+    backend_->setDouble(handle_, prop::VL_LOW_VOLTAGE_LIMIT, lowVoltageLimit);
+    return *this;
+}
+
 iidm::optional<double> VoltageLevel::getHighVoltageLimit() const {
     return backend_->getOptDouble(handle_, prop::VL_HIGH_VOLTAGE_LIMIT);
+}
+
+VoltageLevel& VoltageLevel::setHighVoltageLimit(double highVoltageLimit) {
+    backend_->setDouble(handle_, prop::VL_HIGH_VOLTAGE_LIMIT, highVoltageLimit);
+    return *this;
 }
 
 TopologyKind VoltageLevel::getTopologyKind() const {
     return static_cast<TopologyKind>(backend_->getInt(handle_, prop::VL_TOPOLOGY_KIND));
 }
 
+void VoltageLevel::convertToTopology(TopologyKind topologyKind) {
+    backend_->setInt(handle_, prop::VL_TOPOLOGY_KIND, static_cast<int>(topologyKind));
+}
+
+void VoltageLevel::printTopology() const {
+    printTopology(std::cout);
+}
+
+void VoltageLevel::printTopology(std::ostream& out) const {
+    out << backend_->getString(handle_, prop::VL_TOPOLOGY_TEXT);
+}
+
 std::vector<Connectable> VoltageLevel::getConnectables() const {
     return detail::wrapAll<Connectable>(backend_->getChildren(handle_, prop::CONNECTABLE), backend_);
+}
+
+iidm::optional<Connectable> VoltageLevel::getConnectable(const std::string& id) const {
+    return detail::wrapOptional<Connectable>(backend_->getRelatedByString(handle_, prop::CONNECTABLE, id), backend_);
+}
+
+int VoltageLevel::getConnectableCount() const {
+    return detail::countOf(backend_, handle_, prop::CONNECTABLE);
+}
+
+std::vector<Line> VoltageLevel::getLines() const {
+    return detail::wrapAll<Line>(backend_->getChildren(handle_, prop::LINE), backend_);
+}
+
+std::vector<TwoWindingsTransformer> VoltageLevel::getTwoWindingsTransformers() const {
+    return detail::wrapAll<TwoWindingsTransformer>(backend_->getChildren(handle_, prop::TWO_WINDINGS_TRANSFORMER), backend_);
+}
+
+std::vector<ThreeWindingsTransformer> VoltageLevel::getThreeWindingsTransformers() const {
+    return detail::wrapAll<ThreeWindingsTransformer>(backend_->getChildren(handle_, prop::THREE_WINDINGS_TRANSFORMER), backend_);
 }
 
 std::vector<Switch> VoltageLevel::getSwitches() const {
@@ -212,6 +272,60 @@ std::vector<VscConverterStation> VoltageLevel::getVscConverterStations() const {
     result.reserve(handles.size());
     for (auto h : handles) result.emplace_back(h, backend_);
     return result;
+}
+
+// ── Counts ───────────────────────────────────────────────────────────────────
+
+int VoltageLevel::getGeneratorCount() const {
+    return detail::countOf(backend_, handle_, prop::GENERATOR);
+}
+
+int VoltageLevel::getLoadCount() const {
+    return detail::countOf(backend_, handle_, prop::LOAD);
+}
+
+int VoltageLevel::getBatteryCount() const {
+    return detail::countOf(backend_, handle_, prop::BATTERY);
+}
+
+int VoltageLevel::getShuntCompensatorCount() const {
+    return detail::countOf(backend_, handle_, prop::SHUNT_COMPENSATOR);
+}
+
+int VoltageLevel::getStaticVarCompensatorCount() const {
+    return detail::countOf(backend_, handle_, prop::STATIC_VAR_COMPENSATOR);
+}
+
+int VoltageLevel::getBoundaryLineCount() const {
+    return detail::countOf(backend_, handle_, prop::BOUNDARY_LINE);
+}
+
+int VoltageLevel::getLccConverterStationCount() const {
+    return detail::countOf(backend_, handle_, prop::LCC_CONVERTER_STATION);
+}
+
+int VoltageLevel::getVscConverterStationCount() const {
+    return detail::countOf(backend_, handle_, prop::VSC_CONVERTER_STATION);
+}
+
+int VoltageLevel::getLineCount() const {
+    return detail::countOf(backend_, handle_, prop::LINE);
+}
+
+int VoltageLevel::getTwoWindingsTransformerCount() const {
+    return detail::countOf(backend_, handle_, prop::TWO_WINDINGS_TRANSFORMER);
+}
+
+int VoltageLevel::getThreeWindingsTransformerCount() const {
+    return detail::countOf(backend_, handle_, prop::THREE_WINDINGS_TRANSFORMER);
+}
+
+int VoltageLevel::getSwitchCount() const {
+    return detail::countOf(backend_, handle_, prop::SWITCH);
+}
+
+VoltageLevel::BusView VoltageLevel::getBusView() const {
+    return BusView(handle_, backend_);
 }
 
 VoltageLevel::NodeBreakerView VoltageLevel::getNodeBreakerView() const {

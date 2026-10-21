@@ -3,6 +3,7 @@
 #include <iidm/BackendProvider.h>
 #include <iidm/Branch.h>
 #include <iidm/Connectable.h>
+#include <iidm/Container.h>
 #include <iidm/HvdcConverterStation.h>
 #include <iidm/Identifiable.h>
 #include <iidm/Substation.h>
@@ -25,6 +26,7 @@
 #include <iidm/Switch.h>
 #include <iosfwd>
 #include <memory>
+#include <set>
 #include <iidm/stdcxx/optional.hpp>
 #include <string>
 #include <vector>
@@ -34,9 +36,36 @@ namespace iidm {
 class NetworkFactory;
 
 // A network (powsybl Network), created by NetworkFactory. It owns its backend session: it
-// cannot be copied, and the objects taken from it are valid while it lives.
-class Network : public Identifiable {
+// cannot be copied, and the objects taken from it are valid while it lives. The network of an
+// object (Identifiable::getNetwork()) is a view of it, which owns nothing.
+class Network : public Identifiable, public detail::ContainerMethods<Network> {
 public:
+    // ── Topology views ───────────────────────────────────────────────────
+    // The buses and switches of the bus-breaker views of all its voltage levels
+    class BusBreakerView : public detail::ObjectRef {
+    public:
+        BusBreakerView() = default;
+        explicit BusBreakerView(ObjectHandle networkHandle, BackendProvider* backend) : ObjectRef(networkHandle, backend) {}
+
+        std::vector<Bus> getBuses() const;
+        int getBusCount() const;
+        std::vector<Switch> getSwitches() const;
+        int getSwitchCount() const;
+        // Empty when there is no such bus
+        iidm::optional<Bus> getBus(const std::string& id) const;
+    };
+
+    // The buses of the bus views of all its voltage levels
+    class BusView : public detail::ObjectRef {
+    public:
+        BusView() = default;
+        explicit BusView(ObjectHandle networkHandle, BackendProvider* backend) : ObjectRef(networkHandle, backend) {}
+
+        std::vector<Bus> getBuses() const;
+        // Empty when there is no such bus
+        iidm::optional<Bus> getBus(const std::string& id) const;
+    };
+
     ~Network();
     Network(Network&&) noexcept;
     Network& operator=(Network&&) noexcept;
@@ -51,6 +80,17 @@ public:
     int getForecastDistance() const;
     Network& setForecastDistance(int forecastDistance);
     std::string getSourceFormat() const;
+
+    // ── Validation ───────────────────────────────────────────────────────
+    ValidationLevel getValidationLevel() const;
+    // The lowest level its values may fall to (EQUIPMENT: steady state values may be missing)
+    Network& setMinimumAcceptableValidationLevel(ValidationLevel validationLevel);
+    // Validates every value again: the level reached, or ValidationException with throwsException
+    ValidationLevel runValidationChecks(bool throwsException = true);
+
+    // The countries of its substations
+    std::set<Country> getCountries() const;
+    int getCountryCount() const;
 
     // Save the network to an XIIDM file.
     void save(const std::string& filePath) const;
@@ -82,6 +122,35 @@ public:
     std::vector<BoundaryLine>            getBoundaryLines() const;
     std::vector<VscConverterStation>     getVscConverterStations() const;
     std::vector<LccConverterStation>     getLccConverterStations() const;
+    std::vector<Switch>                  getSwitches() const;
+    std::vector<BusbarSection>           getBusbarSections() const;
+    // Those of a country (any when empty), of a TSO (any when empty), with all these tags
+    std::vector<Substation> getSubstations(const iidm::optional<Country>& country, const iidm::optional<std::string>& tsoId,
+                                           const std::vector<std::string>& geographicalTags = {}) const;
+
+    BusBreakerView getBusBreakerView() const;
+    BusView getBusView() const;
+
+    // ── Counts ───────────────────────────────────────────────────────────
+    int getConnectableCount() const;
+    int getBranchCount() const;
+    int getHvdcConverterStationCount() const;
+    int getSubstationCount() const;
+    int getVoltageLevelCount() const;
+    int getBatteryCount() const;
+    int getGeneratorCount() const;
+    int getLoadCount() const;
+    int getLineCount() const;
+    int getTwoWindingsTransformerCount() const;
+    int getThreeWindingsTransformerCount() const;
+    int getHvdcLineCount() const;
+    int getShuntCompensatorCount() const;
+    int getStaticVarCompensatorCount() const;
+    int getBoundaryLineCount() const;
+    int getVscConverterStationCount() const;
+    int getLccConverterStationCount() const;
+    int getSwitchCount() const;
+    int getBusbarSectionCount() const;
 
     // ── Lookup by ID (or alias) ──────────────────────────────────────────
     iidm::optional<Identifiable>            getIdentifiable(const std::string& id) const;
@@ -115,7 +184,10 @@ public:
 
 private:
     friend class NetworkFactory;
+    friend class Identifiable;
     explicit Network(std::unique_ptr<BackendProvider> backend);
+    // A view: it owns nothing
+    Network(ObjectHandle handle, BackendProvider* backend) : Identifiable(handle, backend) {}
 
     std::unique_ptr<BackendProvider> owned_;
 };

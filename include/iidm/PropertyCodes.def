@@ -53,6 +53,7 @@ IIDM_CODE(BOUNDARY_LINE_GENERATION,    55) // the generation of a boundary line
 IIDM_CODE(BOUNDARY,                    56) // the far end of a boundary line
 IIDM_CODE(ZIP_LOAD_MODEL,              58)
 IIDM_CODE(EXPONENTIAL_LOAD_MODEL,      59)
+IIDM_CODE(NETWORK,                     60) // getRelated(identifiable, NETWORK): its network
 // Abstract types (Java interfaces)
 IIDM_CODE(IDENTIFIABLE,                43)
 IIDM_CODE(CONNECTABLE,                 44)
@@ -79,6 +80,11 @@ IIDM_CODE(ALIAS_TYPE,                  122) // keyed by alias: its type (none if
                                             // set: addAlias(alias, type), "" = no type; set none: removeAlias
 IIDM_CODE(UNIQUE_ALIAS_TYPE,           123) // keyed by alias, set only: addAlias(alias, type, ensureAliasUnicity = true)
 IIDM_CODE(ALIAS_FROM_TYPE,             124) // keyed by alias type: the alias of that type
+IIDM_CODE(CONTAINER_TYPE,              125) // int, read-only: ContainerType ordinal (network, substation, voltage level)
+// The number of objects of a type in a container, a view...: evaluate(object, CHILD_COUNT,
+// {type code}), the size of getChildren(object, type code)
+IIDM_CODE(CHILD_COUNT,                 126)
+// setString(identifiable, ID, id): setId
 
 // ── Properties (identifiables and the other powsybl properties holders) ──────
 IIDM_CODE(PROPERTY,                    130) // keyed by property name: its value (none when absent); set none: removeProperty
@@ -92,9 +98,18 @@ IIDM_CODE(CONVERTER_STATION_HVDC_TYPE, 150) // int: HvdcType ordinal (VSC, LCC)
 IIDM_CODE(CONVERTER_STATION_LOSS_FACTOR, 151) // double (a float in powsybl)
 
 // ── Network ──────────────────────────────────────────────────────────────────
+// Its bus-breaker view buses: getChildren(network, BUS), getRelatedByString(network, REL_BBV_BUS,
+// id); its bus view buses: REL_BV_BUS the same way. getRelated(identifiable, REL_PARENT_NETWORK):
+// the smallest network that holds it.
 IIDM_CODE(NETWORK_CASE_DATE,           110) // string: ISO-8601 date-time (ZonedDateTime)
 IIDM_CODE(NETWORK_FORECAST_DISTANCE,   111) // int: minutes
 IIDM_CODE(NETWORK_SOURCE_FORMAT,       112) // string, read-only
+IIDM_CODE(NETWORK_VALIDATION_LEVEL,    113) // int, read-only: ValidationLevel ordinal;
+                                            // evaluate {throwsException}: runValidationChecks
+IIDM_CODE(NETWORK_MIN_VALIDATION_LEVEL, 114) // int, set only: setMinimumAcceptableValidationLevel
+IIDM_CODE(NETWORK_COUNTRIES,           115) // string list: the countries of its substations (Country names, sorted)
+IIDM_CODE(SUBSTATION_GEOGRAPHICAL_TAGS, 116) // string list (sorted)
+IIDM_CODE(ADD_GEOGRAPHICAL_TAG,        117) // string, set only, on a substation: addGeographicalTag
 
 // ── Generator-specific ───────────────────────────────────────────────────────
 IIDM_CODE(GEN_TARGET_P,                200)
@@ -135,10 +150,14 @@ IIDM_CODE(BUS_V,                       500)
 IIDM_CODE(BUS_ANGLE,                   501)
 
 // ── VoltageLevel ─────────────────────────────────────────────────────────────
+// Its bus view buses: getChildren(vl, REL_BV_BUS), getRelatedByString(vl, REL_BV_BUS, id);
+// getRelatedByString(vl, REL_MERGED_BUS, busbar section id): getMergedBus;
+// getRelatedByString(vl, CONNECTABLE, id): getConnectable(id).
 IIDM_CODE(VL_NOMINAL_V,                600)
 IIDM_CODE(VL_LOW_VOLTAGE_LIMIT,        601)
 IIDM_CODE(VL_HIGH_VOLTAGE_LIMIT,       602)
-IIDM_CODE(VL_TOPOLOGY_KIND,            603)
+IIDM_CODE(VL_TOPOLOGY_KIND,            603) // int: TopologyKind ordinal; set: convertToTopology
+IIDM_CODE(VL_TOPOLOGY_TEXT,            605) // string, read-only: printTopology
 IIDM_CODE(VL_NBV_NODES,               604) // int list: node numbers in NodeBreakerView
 
 // ── Line ─────────────────────────────────────────────────────────────────────
@@ -397,7 +416,12 @@ IIDM_CODE(REL_CONNECTABLE,             2022) // Terminal → its Connectable
 IIDM_CODE(REL_CONVERTER_STATION1,      2030) // HvdcLine → converter station 1
 IIDM_CODE(REL_CONVERTER_STATION2,      2031) // HvdcLine → converter station 2
 IIDM_CODE(REL_OTHER_CONVERTER_STATION, 2032) // converter station → the other station of its HVDC line (none without line)
-IIDM_CODE(REL_BBV_BUS,                 2033) // VL (keyed by bus id) → bus-breaker view bus (getRelatedByString)
+IIDM_CODE(REL_BBV_BUS,                 2033) // VL or network (keyed by bus id) → bus-breaker view bus (getRelatedByString)
+IIDM_CODE(REL_BV_BUS,                  2034) // VL or network: bus view buses (getChildren), one (getRelatedByString)
+IIDM_CODE(REL_MERGED_BUS,              2035) // VL (keyed by configured bus or busbar section id) → bus view bus
+IIDM_CODE(REL_BBV_SWITCH,              2037) // VL or network: bus-breaker view switches (getChildren), one (getRelatedByString)
+IIDM_CODE(REL_NBV_SWITCH,              2038) // VL: node-breaker view switches (getChildren), one (getRelatedByString)
+IIDM_CODE(REL_PARENT_NETWORK,          2036) // identifiable → the smallest network that holds it
 IIDM_CODE(REL_VL_BBV_BUS1,            2023) // VL (keyed by switchId) → Bus on side 1 (getRelatedByString)
 IIDM_CODE(REL_VL_BBV_BUS2,            2024) // VL (keyed by switchId) → Bus on side 2 (getRelatedByString)
 

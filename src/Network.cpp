@@ -4,6 +4,7 @@
 #include <iidm/PropertyCodes.h>
 #include "Wrap.h"
 
+#include <algorithm>
 #include <ostream>
 
 namespace iidm {
@@ -251,6 +252,180 @@ iidm::optional<Switch> Network::getSwitch(const std::string& id) const {
 
 iidm::optional<BusbarSection> Network::getBusbarSection(const std::string& id) const {
     return find<BusbarSection>(backend_, id);
+}
+
+std::vector<Switch> Network::getSwitches() const {
+    return all<Switch>(backend_, handle_);
+}
+
+std::vector<BusbarSection> Network::getBusbarSections() const {
+    return all<BusbarSection>(backend_, handle_);
+}
+
+std::vector<Substation> Network::getSubstations(const iidm::optional<Country>& country,
+                                                const iidm::optional<std::string>& tsoId,
+                                                const std::vector<std::string>& geographicalTags) const {
+    // As powsybl filters them
+    std::vector<Substation> result;
+    for (Substation& substation : getSubstations()) {
+        if (country && substation.getCountry() != country) continue;
+        if (tsoId && substation.getTso() != tsoId) continue;
+        const std::vector<std::string> tags = substation.getGeographicalTags();
+        bool allTags = true;
+        for (const std::string& tag : geographicalTags) {
+            if (std::find(tags.begin(), tags.end(), tag) == tags.end()) {
+                allTags = false;
+                break;
+            }
+        }
+        if (allTags) result.push_back(std::move(substation));
+    }
+    return result;
+}
+
+Network::BusBreakerView Network::getBusBreakerView() const {
+    return BusBreakerView(handle_, backend_);
+}
+
+Network::BusView Network::getBusView() const {
+    return BusView(handle_, backend_);
+}
+
+// ── Validation ───────────────────────────────────────────────────────────────
+
+ValidationLevel Network::getValidationLevel() const {
+    return static_cast<ValidationLevel>(backend_->getInt(handle_, prop::NETWORK_VALIDATION_LEVEL));
+}
+
+Network& Network::setMinimumAcceptableValidationLevel(ValidationLevel validationLevel) {
+    backend_->setInt(handle_, prop::NETWORK_MIN_VALIDATION_LEVEL, static_cast<int>(validationLevel));
+    return *this;
+}
+
+ValidationLevel Network::runValidationChecks(bool throwsException) {
+    return static_cast<ValidationLevel>(static_cast<int>(
+        backend_->evaluate(handle_, prop::NETWORK_VALIDATION_LEVEL, {throwsException ? 1.0 : 0.0})));
+}
+
+std::set<Country> Network::getCountries() const {
+    std::set<Country> countries;
+    for (const std::string& name : backend_->getStringList(handle_, prop::NETWORK_COUNTRIES)) {
+        iidm::optional<Country> country = countryFromName(name);
+        if (country) countries.insert(*country);
+    }
+    return countries;
+}
+
+int Network::getCountryCount() const {
+    return static_cast<int>(getCountries().size());
+}
+
+// ── Counts ───────────────────────────────────────────────────────────────────
+
+int Network::getConnectableCount() const {
+    return detail::countOf(backend_, handle_, prop::CONNECTABLE);
+}
+
+int Network::getBranchCount() const {
+    return detail::countOf(backend_, handle_, prop::BRANCH);
+}
+
+int Network::getHvdcConverterStationCount() const {
+    return detail::countOf(backend_, handle_, prop::HVDC_CONVERTER_STATION);
+}
+
+int Network::getSubstationCount() const {
+    return detail::countOf(backend_, handle_, prop::SUBSTATION);
+}
+
+int Network::getVoltageLevelCount() const {
+    return detail::countOf(backend_, handle_, prop::VOLTAGE_LEVEL);
+}
+
+int Network::getBatteryCount() const {
+    return detail::countOf(backend_, handle_, prop::BATTERY);
+}
+
+int Network::getGeneratorCount() const {
+    return detail::countOf(backend_, handle_, prop::GENERATOR);
+}
+
+int Network::getLoadCount() const {
+    return detail::countOf(backend_, handle_, prop::LOAD);
+}
+
+int Network::getLineCount() const {
+    return detail::countOf(backend_, handle_, prop::LINE);
+}
+
+int Network::getTwoWindingsTransformerCount() const {
+    return detail::countOf(backend_, handle_, prop::TWO_WINDINGS_TRANSFORMER);
+}
+
+int Network::getThreeWindingsTransformerCount() const {
+    return detail::countOf(backend_, handle_, prop::THREE_WINDINGS_TRANSFORMER);
+}
+
+int Network::getHvdcLineCount() const {
+    return detail::countOf(backend_, handle_, prop::HVDC_LINE);
+}
+
+int Network::getShuntCompensatorCount() const {
+    return detail::countOf(backend_, handle_, prop::SHUNT_COMPENSATOR);
+}
+
+int Network::getStaticVarCompensatorCount() const {
+    return detail::countOf(backend_, handle_, prop::STATIC_VAR_COMPENSATOR);
+}
+
+int Network::getBoundaryLineCount() const {
+    return detail::countOf(backend_, handle_, prop::BOUNDARY_LINE);
+}
+
+int Network::getVscConverterStationCount() const {
+    return detail::countOf(backend_, handle_, prop::VSC_CONVERTER_STATION);
+}
+
+int Network::getLccConverterStationCount() const {
+    return detail::countOf(backend_, handle_, prop::LCC_CONVERTER_STATION);
+}
+
+int Network::getSwitchCount() const {
+    return detail::countOf(backend_, handle_, prop::SWITCH);
+}
+
+int Network::getBusbarSectionCount() const {
+    return detail::countOf(backend_, handle_, prop::BUSBAR_SECTION);
+}
+
+// ── Topology views ───────────────────────────────────────────────────────────
+
+std::vector<Bus> Network::BusBreakerView::getBuses() const {
+    return detail::wrapAll<Bus>(backend_->getChildren(handle_, prop::BUS), backend_);
+}
+
+int Network::BusBreakerView::getBusCount() const {
+    return detail::countOf(backend_, handle_, prop::BUS);
+}
+
+std::vector<Switch> Network::BusBreakerView::getSwitches() const {
+    return detail::wrapAll<Switch>(backend_->getChildren(handle_, prop::REL_BBV_SWITCH), backend_);
+}
+
+int Network::BusBreakerView::getSwitchCount() const {
+    return detail::countOf(backend_, handle_, prop::REL_BBV_SWITCH);
+}
+
+iidm::optional<Bus> Network::BusBreakerView::getBus(const std::string& id) const {
+    return detail::wrapOptional<Bus>(backend_->getRelatedByString(handle_, prop::REL_BBV_BUS, id), backend_);
+}
+
+std::vector<Bus> Network::BusView::getBuses() const {
+    return detail::wrapAll<Bus>(backend_->getChildren(handle_, prop::REL_BV_BUS), backend_);
+}
+
+iidm::optional<Bus> Network::BusView::getBus(const std::string& id) const {
+    return detail::wrapOptional<Bus>(backend_->getRelatedByString(handle_, prop::REL_BV_BUS, id), backend_);
 }
 
 } // namespace iidm
