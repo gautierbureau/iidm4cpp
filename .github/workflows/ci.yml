@@ -394,8 +394,10 @@ jobs:
             -DIIDM_BRIDGE_BUILD_JAVA=ON \
             -DIIDM_BRIDGE_BUILD_NATIVE=ON
 
+      # Four jobs: with Unix Makefiles, a bare --parallel is an unbounded make -j, which runs
+      # out of memory compiling the test sources with GCC 8.
       - name: Build
-        run: cmake --build build --parallel
+        run: cmake --build build --parallel 4
 
       - name: Run unit and integration tests
         env:
