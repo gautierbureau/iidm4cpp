@@ -44,15 +44,17 @@ IIDM_CODE(SHUNT_SECTION,               28)
 IIDM_CODE(INTERNAL_CONNECTION,         29)
 IIDM_CODE(CURRENT_LIMITS,              30)
 IIDM_CODE(TEMPORARY_LIMIT,             31)
-IIDM_CODE(OLG_SIDE1,                   32) // all OperationalLimitsGroups for Branch side 1
-IIDM_CODE(OLG_SIDE2,                   33) // all OperationalLimitsGroups for Branch side 2
-IIDM_CODE(OPERATIONAL_LIMITS_GROUP,    34) // the groups of a flows limits holder (3WT leg, dangling line)
+IIDM_CODE(OPERATIONAL_LIMITS_GROUP,    34)
+IIDM_CODE(ACTIVE_POWER_LIMITS,         49)
+IIDM_CODE(APPARENT_POWER_LIMITS,       50)
 // Abstract types (Java interfaces)
 IIDM_CODE(IDENTIFIABLE,                43)
 IIDM_CODE(CONNECTABLE,                 44)
 IIDM_CODE(INJECTION,                   45)
 IIDM_CODE(BRANCH,                      46)
 IIDM_CODE(HVDC_CONVERTER_STATION,      47)
+IIDM_CODE(LOADING_LIMITS,              48) // current, active power or apparent power limits
+IIDM_CODE(FLOWS_LIMITS_HOLDER,         51) // what holds flows limits: a 3WT leg, a dangling line, a branch side
 
 // ── Shared properties (applicable to many types) ────────────────────────────
 IIDM_CODE(ID,                          100)
@@ -143,9 +145,8 @@ IIDM_CODE(TWO_WT_RATED_S,              806)
 // three legs, getRelatedByIndex(transformer, <it>, side) one of them (ThreeSides ordinal), and
 // getRelatedByIndex(transformer, REL_TERMINAL, side) the terminal of a side. On a leg,
 // getRelated(leg, REL_TERMINAL) is its terminal, getRelated(leg, THREE_WINDINGS_TRANSFORMER) its
-// transformer, getRelated(leg, RATIO_TAP_CHANGER / PHASE_TAP_CHANGER) its tap changers, and its limits
-// are those of a flows limits holder (OPERATIONAL_LIMITS_GROUP children, REL_SELECTED_OLG,
-// CURRENT_LIMITS).
+// transformer, getRelated(leg, RATIO_TAP_CHANGER / PHASE_TAP_CHANGER) its tap changers; a leg is a
+// flows limits holder (see Limits).
 IIDM_CODE(LEG_R,                       820) // double
 IIDM_CODE(LEG_X,                       821) // double
 IIDM_CODE(LEG_G,                       822) // double
@@ -289,18 +290,42 @@ IIDM_CODE(EXT_HOAR_OPR_CS2_TO_CS1,    3302) // double (a float in powsybl)
 IIDM_CODE(SLACK_TERMINAL,             3500)
 IIDM_CODE(EXT_ST_EMPTY,               3501) // bool, read-only: no terminal in any variant
 
-// ── CurrentLimits ─────────────────────────────────────────────────────────────
-IIDM_CODE(CL_PERMANENT_LIMIT,          1970)
-
-// ── TemporaryLimit (child of CurrentLimits) ───────────────────────────────────
-IIDM_CODE(TL_VALUE,                    1971)
-IIDM_CODE(TL_ACCEPTABLE_DURATION,      1972)
-IIDM_CODE(TL_FICTITIOUS,               1973)
-IIDM_CODE(TL_NAME,                     1974)
-
-// ── OperationalLimitsGroup ────────────────────────────────────────────────────
-IIDM_CODE(OLG_ID,                      1980) // string: group identifier
+// ── Limits ───────────────────────────────────────────────────────────────────
+// A flows limits holder (FLOWS_LIMITS_HOLDER) is a 3WT leg, a dangling line, or one side of a
+// branch: getRelatedByIndex(branch, FLOWS_LIMITS_HOLDER, side) (TwoSides ordinal). Its groups:
+// getChildren(holder, OPERATIONAL_LIMITS_GROUP), getRelatedByString(holder, OPERATIONAL_LIMITS_GROUP,
+// id) one of them, invoke(holder, OPERATIONAL_LIMITS_GROUP) a new one (adder field OLG_ID). The
+// selected group: getRelated(holder, REL_SELECTED_OLG), getChildren(holder, REL_SELECTED_OLG) all of
+// them, setRelated(holder, REL_SELECTED_OLG, INVALID_HANDLE) deselects them all, and
+// invoke(holder, REL_SELECTED_OLG) starts getOrCreateSelectedOperationalLimitsGroup (field OLG_ID:
+// that group). The limits of a type, CURRENT_LIMITS, ACTIVE_POWER_LIMITS or APPARENT_POWER_LIMITS:
+// getRelated(holder, <type>) those of the selected group, getChildren(holder, <type>) those of every
+// selected group, getRelatedByString(holder, <type>, id) those of group id; getRelated(group,
+// <type>) those of a group, invoke(group, <type>) their adder, setRelated(group, <type>,
+// INVALID_HANDLE) removes them. getRelatedByIndex(holder or group, LOADING_LIMITS, type): the limits
+// of a LimitType. Limits: getChildren(limits, TEMPORARY_LIMIT) their temporary limits,
+// getRelatedByIndex(limits, TEMPORARY_LIMIT, acceptableDuration) one of them, invoke(limits adder,
+// TEMPORARY_LIMIT) the adder of a new one (beginTemporaryLimit).
+IIDM_CODE(LL_PERMANENT_LIMIT,          1970) // double (also an adder field)
+IIDM_CODE(TL_VALUE,                    1971) // double, on a temporary limit (and its adder)
+IIDM_CODE(TL_ACCEPTABLE_DURATION,      1972) // int, on a temporary limit (and its adder)
+IIDM_CODE(TL_FICTITIOUS,               1973) // bool, on a temporary limit (and its adder)
+IIDM_CODE(TL_NAME,                     1974) // string, on a temporary limit (and its adder)
+IIDM_CODE(LL_PERMANENT_LIMIT_NAME,     1975) // string (also an adder field)
+IIDM_CODE(LL_DETECTION_KIND,           1976) // int: DetectionKind ordinal, read-only (also an adder field)
+IIDM_CODE(LL_LIMIT_TYPE,               1977) // int: LimitType ordinal, read-only
+IIDM_CODE(LL_TEMPORARY_LIMIT_VALUE,    1978) // evaluate(limits, <it>, {acceptableDuration}): its value;
+                                             // invoke(limits, <it>): setTemporaryLimitValue (fields
+                                             // TL_ACCEPTABLE_DURATION and TL_VALUE)
+IIDM_CODE(OLG_ID,                      1980) // string: group identifier (also an adder field)
 IIDM_CODE(OLG_EMPTY,                   1981) // bool: isEmpty()
+IIDM_CODE(SELECTED_OLG_ID,             1982) // string, on a holder: the selected group id (none when
+                                             // none is); set: setSelectedOperationalLimitsGroup
+IIDM_CODE(ADD_SELECTED_OLG,            1983) // string, on a holder, set only: addSelectedOperationalLimitsGroups
+IIDM_CODE(DESELECT_OLG,                1984) // string, on a holder, set only: deselectOperationalLimitsGroups
+IIDM_CODE(REMOVE_OLG,                  1985) // string, on a holder, set only: removeOperationalLimitsGroup
+IIDM_CODE(ALL_SELECTED_OLG_IDS,        1986) // string list, on a holder (sorted)
+IIDM_CODE(ALL_SELECTED_OLG_IDS_ORDERED, 1987) // string list, on a holder (in selection order)
 
 // ── Relations (used in getRelated) ──────────────────────────────────────────
 IIDM_CODE(REL_TERMINAL1,               2000)
@@ -311,12 +336,7 @@ IIDM_CODE(REL_VOLTAGE_LEVEL,           2004)
 IIDM_CODE(REL_SUBSTATION,              2005)
 IIDM_CODE(REL_CONNECTABLE_BUS,         2007) // bus-breaker topology bus (may differ from bus view)
 IIDM_CODE(REL_REGULATING_TERMINAL,     2008) // regulation holder → terminal of a remote regulation, else its own
-IIDM_CODE(REL_CURRENT_LIMITS1,         2009) // Branch side 1 → current limits of its selected OLG
-IIDM_CODE(REL_CURRENT_LIMITS2,         2010) // Branch side 2 → current limits of its selected OLG
-IIDM_CODE(REL_SELECTED_OLG1,           2012) // Branch side 1 → selected OLG
-IIDM_CODE(REL_SELECTED_OLG2,           2013) // Branch side 2 → selected OLG
-IIDM_CODE(REL_SELECTED_OLG,            2014) // flows limits holder (3WT leg, dangling line) → selected OLG
-// getRelated(flows limits holder or OLG, CURRENT_LIMITS): the current limits of its selected OLG (of the OLG)
+IIDM_CODE(REL_SELECTED_OLG,            2014) // flows limits holder → its selected group (see Limits)
 IIDM_CODE(REL_HVDC_LINE,               2016) // converter station → its HvdcLine (none when not in an HVDC line)
 IIDM_CODE(REL_CURRENT_STEP,            2017) // tap changer → step at its tap position (none when unset)
 IIDM_CODE(REL_SOLVED_CURRENT_STEP,     2018) // tap changer → step at its solved tap position (none when unset)

@@ -41,6 +41,10 @@ enum class HvdcType { VSC, LCC };
 enum class ReactiveLimitsKind { MIN_MAX, CURVE, SHAPE };
 // Mode of a VoltageRegulation (powsybl 7.4 regulation.RegulationMode)
 enum class RegulationMode { VOLTAGE, REACTIVE_POWER, VOLTAGE_PER_REACTIVE_POWER };
+// Type of operational limits (powsybl LimitType)
+enum class LimitType { ACTIVE_POWER, APPARENT_POWER, CURRENT, VOLTAGE, VOLTAGE_ANGLE };
+// Whether limits are maximums (HIGH) or minimums (LOW) (powsybl DetectionKind)
+enum class DetectionKind { HIGH, LOW };
 
 // ── State estimation extensions (same order as the powsybl-core enums) ──────
 enum class MeasurementType {

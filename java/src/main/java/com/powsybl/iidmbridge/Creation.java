@@ -62,6 +62,41 @@ public final class Creation {
         }
     }
 
+    /** The argument of holder.newOperationalLimitsGroup(id): field OLG_ID. */
+    static final class NewGroup {
+        private final LimitsDispatch.Holder holder;
+        private String id;
+
+        NewGroup(LimitsDispatch.Holder holder) {
+            this.holder = holder;
+        }
+    }
+
+    /** holder.getOrCreateSelectedOperationalLimitsGroup(), or (id) when OLG_ID is set. */
+    static final class SelectedGroup {
+        private final LimitsDispatch.Holder holder;
+        private String id;
+
+        SelectedGroup(LimitsDispatch.Holder holder) {
+            this.holder = holder;
+        }
+    }
+
+    /** The arguments of LoadingLimits.setTemporaryLimitValue(acceptableDuration, value). */
+    static final class TemporaryLimitValueChange {
+        private final LoadingLimits limits;
+        private Integer acceptableDuration;
+        private double value = Double.NaN;
+
+        TemporaryLimitValueChange(LoadingLimits limits) {
+            this.limits = limits;
+        }
+
+        void apply() {
+            limits.setTemporaryLimitValue(Objects.requireNonNull(acceptableDuration, "acceptable duration"), value);
+        }
+    }
+
     /** A new, empty network. */
     public static Network createNetwork(String id) {
         return Network.create(id, SOURCE_FORMAT);
@@ -92,6 +127,13 @@ public final class Creation {
             case MEASUREMENT -> ((Measurements<?>) owner).newMeasurement();
             case DISCRETE_MEASUREMENT -> ((DiscreteMeasurements<?>) owner).newDiscreteMeasurement();
             case REL_TERMINAL -> new TerminalChange((VoltageRegulation) owner);
+            case OPERATIONAL_LIMITS_GROUP -> new NewGroup(LimitsDispatch.holder(owner));
+            case REL_SELECTED_OLG -> new SelectedGroup(LimitsDispatch.holder(owner));
+            case CURRENT_LIMITS -> ((OperationalLimitsGroup) owner).newCurrentLimits();
+            case ACTIVE_POWER_LIMITS -> ((OperationalLimitsGroup) owner).newActivePowerLimits();
+            case APPARENT_POWER_LIMITS -> ((OperationalLimitsGroup) owner).newApparentPowerLimits();
+            case TEMPORARY_LIMIT -> ((LoadingLimitsAdder<?, ?>) owner).beginTemporaryLimit();
+            case LL_TEMPORARY_LIMIT_VALUE -> new TemporaryLimitValueChange((LoadingLimits) owner);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown type to create: " + type);
         };
         return new PendingAdd(adder, parent);
@@ -116,6 +158,19 @@ public final class Creation {
                 change.apply();
                 yield null;
             }
+            case OperationalLimitsAdder<?, ?> adder -> adder.add();
+            case LoadingLimitsAdder.TemporaryLimitAdder<?> adder -> {
+                adder.endTemporaryLimit();
+                yield null;
+            }
+            case TemporaryLimitValueChange change -> {
+                change.apply();
+                yield null;
+            }
+            case NewGroup group -> group.holder.newOperationalLimitsGroup(Objects.requireNonNull(group.id, "group id"));
+            case SelectedGroup group -> group.id == null
+                ? group.holder.getOrCreateSelectedOperationalLimitsGroup()
+                : group.holder.getOrCreateSelectedOperationalLimitsGroup(group.id);
             default -> throw new BridgeErrors.PropertyNotFoundException("Not an adder: " + pending.adder());
         };
     }
@@ -127,6 +182,7 @@ public final class Creation {
             case TapChanger<?, ?, ?, ?> tapChanger -> tapChanger.remove();
             case Measurement measurement -> measurement.remove();
             case DiscreteMeasurement measurement -> measurement.remove();
+            case OperationalLimits limits -> limits.remove();
             case VoltageLevel voltageLevel -> voltageLevel.remove();
             case Substation substation -> substation.remove();
             case HvdcLine hvdcLine -> hvdcLine.remove();
@@ -155,6 +211,10 @@ public final class Creation {
             case MEASUREMENTS -> removeExtension(host, Measurements.class);
             case DISCRETE_MEASUREMENTS -> removeExtension(host, DiscreteMeasurements.class);
             case OBSERVABILITY_AREA -> removeExtension(host, ObservabilityArea.class);
+            case REL_SELECTED_OLG -> LimitsDispatch.holder(host).cancelSelectedOperationalLimitsGroup();
+            case CURRENT_LIMITS -> ((OperationalLimitsGroup) host).removeCurrentLimits();
+            case ACTIVE_POWER_LIMITS -> ((OperationalLimitsGroup) host).removeActivePowerLimits();
+            case APPARENT_POWER_LIMITS -> ((OperationalLimitsGroup) host).removeApparentPowerLimits();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown code to clear: " + code);
         }
     }
@@ -202,6 +262,14 @@ public final class Creation {
             case OBS_QUALITY_Q2 -> ((BranchObservabilityAdder<?>) a).withStandardDeviationQ2(value);
             case MEAS_VALUE -> ((MeasurementAdder) a).setValue(value);
             case MEAS_STD_DEV -> ((MeasurementAdder) a).setStandardDeviation(value);
+            case LL_PERMANENT_LIMIT -> ((LoadingLimitsAdder<?, ?>) a).setPermanentLimit(value);
+            case TL_VALUE -> {
+                if (a instanceof TemporaryLimitValueChange change) {
+                    change.value = value;
+                } else {
+                    ((LoadingLimitsAdder.TemporaryLimitAdder<?>) a).setValue(value);
+                }
+            }
             default -> throw unknownField("double", property);
         }
     }
@@ -227,6 +295,14 @@ public final class Creation {
             case DMEAS_TAP_CHANGER -> ((DiscreteMeasurementAdder) a)
                 .setTapChanger(value < 0 ? null : enumValue(DiscreteMeasurement.TapChanger.class, value));
             case DMEAS_VALUE_INT -> ((DiscreteMeasurementAdder) a).setValue(value);
+            case LL_DETECTION_KIND -> ((LoadingLimitsAdder<?, ?>) a).setDetectionKind(enumValue(DetectionKind.class, value));
+            case TL_ACCEPTABLE_DURATION -> {
+                if (a instanceof TemporaryLimitValueChange change) {
+                    change.acceptableDuration = value;
+                } else {
+                    ((LoadingLimitsAdder.TemporaryLimitAdder<?>) a).setAcceptableDuration(value);
+                }
+            }
             default -> throw unknownField("int", property);
         }
     }
@@ -239,6 +315,10 @@ public final class Creation {
                 switch (a) {
                     case MeasurementAdder m -> m.setEnsureIdUnicity(value);
                     case DiscreteMeasurementAdder m -> m.setEnsureIdUnicity(value);
+                    case LoadingLimitsAdder.TemporaryLimitAdder<?> t -> {
+                        // the name of a temporary limit
+                        if (value) t.ensureNameUnicity();
+                    }
                     default -> ((IdentifiableAdder<?, ?>) a).setEnsureIdUnicity(value);
                 }
             }
@@ -262,6 +342,7 @@ public final class Creation {
             case MEAS_VALID -> ((MeasurementAdder) a).setValid(value);
             case DMEAS_VALID -> ((DiscreteMeasurementAdder) a).setValid(value);
             case DMEAS_VALUE_BOOL -> ((DiscreteMeasurementAdder) a).setValue(value);
+            case TL_FICTITIOUS -> ((LoadingLimitsAdder.TemporaryLimitAdder<?>) a).setFictitious(value);
             default -> throw unknownField("bool", property);
         }
     }
@@ -278,6 +359,14 @@ public final class Creation {
             case MEAS_ID -> ((MeasurementAdder) a).setId(value);
             case DMEAS_ID -> ((DiscreteMeasurementAdder) a).setId(value);
             case DMEAS_VALUE_STRING -> ((DiscreteMeasurementAdder) a).setValue(value);
+            case OLG_ID -> {
+                switch (a) {
+                    case NewGroup group -> group.id = value;
+                    default -> ((SelectedGroup) a).id = value;
+                }
+            }
+            case LL_PERMANENT_LIMIT_NAME -> ((LoadingLimitsAdder<?, ?>) a).setPermanentLimitName(value);
+            case TL_NAME -> ((LoadingLimitsAdder.TemporaryLimitAdder<?>) a).setName(value);
             default -> throw unknownField("string", property);
         }
     }

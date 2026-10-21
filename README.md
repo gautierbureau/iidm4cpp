@@ -203,7 +203,8 @@ Branch                    any Line or TwoWindingsTransformer: both convert to a 
 
 Objects that are not identifiables: ThreeWindingsTransformer::Leg, RatioTapChanger,
 PhaseTapChanger and their steps, ReactiveLimits and their points or planes, Terminal,
-VoltageRegulation, OperationalLimitsGroup, CurrentLimits, the extensions...
+VoltageRegulation, OperationalLimitsGroup, LoadingLimits and their temporary limits, the
+extensions...
 ```
 
 - **Base classes, as in powsybl.** A `Generator` is an `Injection`, a `Connectable` and an
@@ -223,8 +224,9 @@ VoltageRegulation, OperationalLimitsGroup, CurrentLimits, the extensions...
   `Injection`, Measurements on `Connectable`, DiscreteMeasurements on `Identifiable`,
   BranchObservability on the branches.
 - **Sub-objects are objects.** A leg of a three windings transformer, a tap changer and its steps,
-  reactive limits and their points are objects of their own, as in powsybl:
-  `twt.getLeg2().getRatioTapChanger()->getStep(-1)`, `gen.getReactiveLimits().getMaxQ(p)`.
+  reactive limits and their points, limits groups, limits and their temporary limits are objects
+  of their own, as in powsybl: `twt.getLeg2().getRatioTapChanger()->getStep(-1)`,
+  `gen.getReactiveLimits().getMaxQ(p)`, `line.getCurrentLimits1()->getTemporaryLimit(60)`.
   `is<T>()` / `as<T>()` work on any of them (`limits.as<ReactiveCapabilityCurve>()`).
 - **Only current powsybl APIs** (powsybl 7.4): `getNameOrId()` / `getOptionalName()` rather than a
   `getName()`, `connect()` returning powsybl's result, the `VoltageRegulation` object of
@@ -303,8 +305,29 @@ ThreeWindingsTransformer::Leg
 ├── getTerminal() / getSide() / getTransformer()
 ├── getR() / getX() / getG() / getB() / getRatedU() → double, getRatedS() → optional (+ setters)
 ├── its tap changers, as a TwoWindingsTransformer
-└── its limits, as a DanglingLine (flows limits holders): getOperationalLimitsGroups(),
-    getSelectedOperationalLimitsGroup(), getCurrentLimits()
+├── its limits, as a flows limits holder (below)
+└── getLimits(type) / getAllSelectedLimits(type) → LoadingLimits of a LimitType
+
+Flows limits holders: ThreeWindingsTransformer::Leg, DanglingLine, and each side of a Line or
+TwoWindingsTransformer (the same methods, suffixed 1 / 2 or taking the side)
+├── getOperationalLimitsGroups() / getOperationalLimitsGroup(id) → groups
+├── newOperationalLimitsGroup(id) / removeOperationalLimitsGroup(id)
+├── getSelectedOperationalLimitsGroup() / getSelectedOperationalLimitsGroupId() → optional
+├── setSelectedOperationalLimitsGroup(id) / cancelSelectedOperationalLimitsGroup() /
+│   getOrCreateSelectedOperationalLimitsGroup([id])
+├── several selected groups: getAllSelectedOperationalLimitsGroups(), …Ids(), …IdsOrdered(),
+│   addSelectedOperationalLimitsGroups(ids) / deselectOperationalLimitsGroups(ids)
+└── the limits in force: getCurrentLimits() / getActivePowerLimits() / getApparentPowerLimits()
+    (of the selected group), getAllSelected…Limits(), get…LimitsFromId(id)
+
+OperationalLimitsGroup     getId(), isEmpty(), properties; get / new / remove the current,
+                           active power and apparent power limits; getLoadingLimits(type)
+LoadingLimits: CurrentLimits, ActivePowerLimits, ApparentPowerLimits
+├── getPermanentLimit() / getPermanentLimitName() (+ setters), getLimitType(), getDetectionKind()
+├── getTemporaryLimits() (by decreasing acceptable duration) / getTemporaryLimit(duration):
+│   TemporaryLimit getName() / getValue() / getAcceptableDuration() / isFictitious(), properties
+├── getTemporaryLimitValue(duration) / setTemporaryLimitValue(duration, value)
+└── remove(), properties
 
 Load
 ├── getP0() → double             setP0(double)

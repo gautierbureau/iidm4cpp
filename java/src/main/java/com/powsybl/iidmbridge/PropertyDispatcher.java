@@ -138,7 +138,7 @@ public final class PropertyDispatcher {
             case POINT_MIN_Q -> ((ReactiveCapabilityCurve.Point) obj).getMinQ();
             case POINT_MAX_Q -> ((ReactiveCapabilityCurve.Point) obj).getMaxQ();
             // CurrentLimits
-            case CL_PERMANENT_LIMIT -> ((LoadingLimits) obj).getPermanentLimit();
+            case LL_PERMANENT_LIMIT -> ((LoadingLimits) obj).getPermanentLimit();
             // TemporaryLimit
             case TL_VALUE -> ((TemporaryLimit) obj).getValue();
             // ThreeWT
@@ -211,6 +211,7 @@ public final class PropertyDispatcher {
             case STEP_B         -> ((TapChangerStep<?>) obj).setB(value);
             case PTC_STEP_ALPHA -> ((PhaseTapChangerStep) obj).setAlpha(value);
             case BAT_TARGET_P -> ((Battery) obj).setTargetP(value);
+            case LL_PERMANENT_LIMIT -> ((LoadingLimits) obj).setPermanentLimit(value);
             case OBS_QUALITY_STANDARD_DEVIATION -> ((ObservabilityQuality<?>) obj).setStandardDeviation(value);
             // Creates the quality if needed
             case OBS_QUALITY_P  -> ((InjectionObservability<?>) obj).setQualityP(value);
@@ -257,6 +258,8 @@ public final class PropertyDispatcher {
             case IC_NODE1 -> ((VoltageLevel.NodeBreakerView.InternalConnection) obj).getNode1();
             case IC_NODE2 -> ((VoltageLevel.NodeBreakerView.InternalConnection) obj).getNode2();
             case TL_ACCEPTABLE_DURATION -> ((TemporaryLimit) obj).getAcceptableDuration();
+            case LL_DETECTION_KIND -> ((LoadingLimits) obj).getDetectionKind().ordinal();
+            case LL_LIMIT_TYPE -> ((OperationalLimits) obj).getLimitType().ordinal();
             case TC_LOW_TAP_POSITION  -> tapChanger(obj).getLowTapPosition();
             case TC_HIGH_TAP_POSITION -> tapChanger(obj).getHighTapPosition();
             case TC_TAP_POSITION      -> tapChanger(obj).getTapPosition(); // fails when unset
@@ -356,6 +359,13 @@ public final class PropertyDispatcher {
             case REACTIVE_CAPABILITY_SHAPE  -> obj instanceof ReactiveCapabilityShape;
             case REACTIVE_CURVE_POINT       -> obj instanceof ReactiveCapabilityCurve.Point;
             case REACTIVE_CAPABILITY_SHAPE_PLANE -> obj instanceof ReactiveCapabilityShapePlane;
+            case LOADING_LIMITS             -> obj instanceof LoadingLimits;
+            case CURRENT_LIMITS             -> obj instanceof CurrentLimits;
+            case ACTIVE_POWER_LIMITS        -> obj instanceof ActivePowerLimits;
+            case APPARENT_POWER_LIMITS      -> obj instanceof ApparentPowerLimits;
+            case TEMPORARY_LIMIT            -> obj instanceof TemporaryLimit;
+            case OPERATIONAL_LIMITS_GROUP   -> obj instanceof OperationalLimitsGroup;
+            case FLOWS_LIMITS_HOLDER        -> obj instanceof FlowsLimitsHolder || obj instanceof LimitsDispatch.BranchSide;
             case ACTIVE_POWER_CONTROL       -> obj instanceof ActivePowerControl<?>;
             case COORDINATED_REACTIVE_CONTROL -> obj instanceof CoordinatedReactiveControl;
             case HVDC_ANGLE_DROOP_ACTIVE_POWER_CONTROL -> obj instanceof HvdcAngleDroopActivePowerControl;
@@ -478,6 +488,8 @@ public final class PropertyDispatcher {
             case NETWORK_CASE_DATE -> ((Network) obj).getCaseDate().toString();
             case NETWORK_SOURCE_FORMAT -> ((Network) obj).getSourceFormat();
             case OLG_ID -> ((OperationalLimitsGroup) obj).getId();
+            case LL_PERMANENT_LIMIT_NAME -> ((LoadingLimits) obj).getPermanentLimitName();
+            case SELECTED_OLG_ID -> LimitsDispatch.holder(obj).getSelectedOperationalLimitsGroupId().orElse(null);
             case COUNTRY -> ((Substation) obj).getCountry().map(Country::name).orElse("");
             case MEAS_ID            -> ((Measurement) obj).getId();
             case DMEAS_ID           -> ((DiscreteMeasurement) obj).getId();
@@ -508,6 +520,11 @@ public final class PropertyDispatcher {
             case SUBSTATION_TSO -> ((Substation) obj).setTso(value);
             case NETWORK_CASE_DATE -> ((Network) obj).setCaseDate(java.time.ZonedDateTime.parse(value));
             case DMEAS_VALUE_STRING -> ((DiscreteMeasurement) obj).setValue(value);
+            case LL_PERMANENT_LIMIT_NAME -> ((LoadingLimits) obj).setPermanentLimitName(value);
+            case SELECTED_OLG_ID  -> LimitsDispatch.holder(obj).setSelectedOperationalLimitsGroup(value);
+            case ADD_SELECTED_OLG -> LimitsDispatch.holder(obj).addSelectedOperationalLimitsGroup(value);
+            case DESELECT_OLG     -> LimitsDispatch.holder(obj).deselectOperationalLimitsGroup(value);
+            case REMOVE_OLG       -> LimitsDispatch.holder(obj).removeOperationalLimitsGroup(value);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown string property for set: " + property);
         }
     }
@@ -548,6 +565,7 @@ public final class PropertyDispatcher {
             case COUNTRY        -> ((Substation) obj).getCountry().map(Country::name).orElse(null);
             case MEAS_ID        -> ((Measurement) obj).getId();
             case DMEAS_ID       -> ((DiscreteMeasurement) obj).getId();
+            case SELECTED_OLG_ID -> LimitsDispatch.holder(obj).getSelectedOperationalLimitsGroupId().orElse(null);
             default -> getString(obj, property);
         };
     }
@@ -558,8 +576,11 @@ public final class PropertyDispatcher {
         return getStringList(NetworkRegistry.lookup(handle), listCode);
     }
 
-    /** Sets are sorted, so that both backends list them in the same order. */
+    /** Sets are sorted, so that both backends list them in the same order; lists keep theirs. */
     public static String[] getStringList(Object obj, int listCode) {
+        if (listCode == ALL_SELECTED_OLG_IDS_ORDERED) {
+            return LimitsDispatch.holder(obj).getAllSelectedOperationalLimitsGroupIdsOrdered().toArray(String[]::new);
+        }
         Collection<String> values = switch (listCode) {
             case PROPERTY_NAMES -> switch (obj) {
                 case Measurement m -> m.getPropertyNames();
@@ -567,6 +588,7 @@ public final class PropertyDispatcher {
                 default -> ((BasePropertiesHolder) obj).getPropertyNames();
             };
             case ALIASES        -> ((Identifiable<?>) obj).getAliases();
+            case ALL_SELECTED_OLG_IDS -> LimitsDispatch.holder(obj).getAllSelectedOperationalLimitsGroupIds();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown string list code: " + listCode);
         };
         return values.stream().sorted().toArray(String[]::new);
@@ -659,6 +681,10 @@ public final class PropertyDispatcher {
                         : ((ReactiveCapabilityShape) limits).getMaxQ(args[0], args[1]);
                     default -> throw wrongArgumentCount(code, args);
                 };
+            }
+            case LL_TEMPORARY_LIMIT_VALUE -> {
+                if (args.length != 1) throw wrongArgumentCount(code, args);
+                yield ((LoadingLimits) obj).getTemporaryLimitValue((int) args[0]);
             }
             case SHAPE_IS_INSIDE -> {
                 ReactiveCapabilityShape shape = (ReactiveCapabilityShape) obj;
@@ -781,9 +807,10 @@ public final class PropertyDispatcher {
                 yield sc.getModel(ShuntCompensatorNonLinearModel.class).getAllSections().stream();
             }
             case TEMPORARY_LIMIT -> ((LoadingLimits) obj).getTemporaryLimits().stream();
-            case OLG_SIDE1 -> ((Branch<?>) obj).getOperationalLimitsGroups1().stream();
-            case OLG_SIDE2 -> ((Branch<?>) obj).getOperationalLimitsGroups2().stream();
-            case OPERATIONAL_LIMITS_GROUP -> ((FlowsLimitsHolder) obj).getOperationalLimitsGroups().stream();
+            case OPERATIONAL_LIMITS_GROUP -> LimitsDispatch.holder(obj).getOperationalLimitsGroups().stream();
+            case REL_SELECTED_OLG -> LimitsDispatch.holder(obj).getAllSelectedOperationalLimitsGroups().stream();
+            case CURRENT_LIMITS, ACTIVE_POWER_LIMITS, APPARENT_POWER_LIMITS
+                -> LimitsDispatch.holder(obj).getAllSelectedLimits(LimitsDispatch.limitType(childType)).stream();
             case MEASUREMENT          -> ((Measurements<?>) obj).getMeasurements().stream();
             case DISCRETE_MEASUREMENT -> ((DiscreteMeasurements<?>) obj).getDiscreteMeasurements().stream();
             case AREA_CHARACTERISTICS -> StateEstimationDispatch.observabilityAreas((ObservabilityArea) obj);
@@ -842,14 +869,9 @@ public final class PropertyDispatcher {
             }
             case REL_CONNECTABLE_BUS -> ((Terminal) obj).getBusBreakerView().getConnectableBus();
             case REL_REGULATING_TERMINAL -> ((VoltageRegulationHolder<?>) obj).getRegulatingTerminal();
-            case REL_CURRENT_LIMITS1 -> ((Branch<?>) obj).getCurrentLimits1().orElse(null);
-            case REL_CURRENT_LIMITS2 -> ((Branch<?>) obj).getCurrentLimits2().orElse(null);
-            case REL_SELECTED_OLG1 -> ((Branch<?>) obj).getSelectedOperationalLimitsGroup1().orElse(null);
-            case REL_SELECTED_OLG2 -> ((Branch<?>) obj).getSelectedOperationalLimitsGroup2().orElse(null);
-            case REL_SELECTED_OLG -> ((FlowsLimitsHolder) obj).getSelectedOperationalLimitsGroup().orElse(null);
-            case CURRENT_LIMITS -> obj instanceof OperationalLimitsGroup group
-                ? group.getCurrentLimits().orElse(null)
-                : ((FlowsLimitsHolder) obj).getCurrentLimits().orElse(null);
+            case REL_SELECTED_OLG -> LimitsDispatch.holder(obj).getSelectedOperationalLimitsGroup().orElse(null);
+            case CURRENT_LIMITS, ACTIVE_POWER_LIMITS, APPARENT_POWER_LIMITS
+                -> LimitsDispatch.limits(obj, LimitsDispatch.limitType(relation));
             case REL_CONNECTABLE -> ((Terminal) obj).getConnectable();
             case VOLTAGE_REGULATION -> ((VoltageRegulationHolder<?>) obj).getVoltageRegulation();
             case ACTIVE_POWER_CONTROL -> extension(obj, ActivePowerControl.class);
@@ -900,7 +922,8 @@ public final class PropertyDispatcher {
                  HVDC_ANGLE_DROOP_ACTIVE_POWER_CONTROL, HVDC_OPERATOR_ACTIVE_POWER_RANGE, SLACK_TERMINAL,
                  TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED, THREE_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED,
                  INJECTION_OBSERVABILITY, BRANCH_OBSERVABILITY, MEASUREMENTS, DISCRETE_MEASUREMENTS,
-                 OBSERVABILITY_AREA -> Creation.clear(obj, relation, value);
+                 OBSERVABILITY_AREA, REL_SELECTED_OLG, CURRENT_LIMITS, ACTIVE_POWER_LIMITS,
+                 APPARENT_POWER_LIMITS -> Creation.clear(obj, relation, value);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown relation for set: " + relation);
         }
     }
@@ -1004,6 +1027,9 @@ public final class PropertyDispatcher {
             case DISCRETE_MEASUREMENT -> ((DiscreteMeasurements<?>) obj).getDiscreteMeasurement(key);
             case REL_OBS_AREA_BY_BUS, REL_OBS_AREA_BY_BBV_BUS
                 -> StateEstimationDispatch.observabilityAreaByBus((ObservabilityArea) obj, relation, key);
+            case OPERATIONAL_LIMITS_GROUP -> LimitsDispatch.holder(obj).getOperationalLimitsGroup(key).orElse(null);
+            case CURRENT_LIMITS, ACTIVE_POWER_LIMITS, APPARENT_POWER_LIMITS
+                -> LimitsDispatch.holder(obj).getLimitsFromId(LimitsDispatch.limitType(relation), key).orElse(null);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown keyed relation: " + relation);
         };
     }
@@ -1022,6 +1048,9 @@ public final class PropertyDispatcher {
             case RATIO_TAP_CHANGER_STEP -> ((RatioTapChanger) obj).getStep(index);
             case PHASE_TAP_CHANGER_STEP -> ((PhaseTapChanger) obj).getStep(index);
             case REL_OBS_AREA_BY_NODE -> StateEstimationDispatch.observabilityAreaByNode((ObservabilityArea) obj, index);
+            case FLOWS_LIMITS_HOLDER -> LimitsDispatch.branchSide(obj, index);
+            case LOADING_LIMITS -> LimitsDispatch.limits(obj, Creation.enumValue(LimitType.class, index));
+            case TEMPORARY_LIMIT -> ((LoadingLimits) obj).getTemporaryLimit(index);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown indexed relation: " + relation);
         };
     }

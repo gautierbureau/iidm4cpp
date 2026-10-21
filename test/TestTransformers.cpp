@@ -147,7 +147,7 @@ void checkThreeWindingsTransformer(BackendProvider& b) {
     CurrentLimits limits = *leg1.getCurrentLimits();
     EXPECT_DOUBLE_EQ(limits.getPermanentLimit(), 400.0);
     ASSERT_EQ(limits.getTemporaryLimits().size(), 1u);
-    EXPECT_EQ(limits.getTemporaryLimits()[0].name, "TL20");
+    EXPECT_EQ(limits.getTemporaryLimits()[0].getName(), "TL20");
     EXPECT_TRUE(legs[1].getOperationalLimitsGroups().empty());
     EXPECT_EQ(groupIds(legs[2].getOperationalLimitsGroups()), (std::set<std::string>{"ONLY"}));
     EXPECT_FALSE(legs[2].getSelectedOperationalLimitsGroup().has_value());

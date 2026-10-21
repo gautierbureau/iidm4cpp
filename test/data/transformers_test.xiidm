@@ -27,7 +27,7 @@
             </iidm:busBreakerTopology>
             <iidm:load id="L3" loadType="UNDEFINED" p0="50.0" q0="10.0" bus="B3" connectableBus="B3"/>
         </iidm:voltageLevel>
-        <iidm:twoWindingsTransformer id="T2" r="0.5" x="20.0" ratedU1="400.0" ratedU2="225.0" ratedS="300.0" voltageLevelId1="VL1" bus1="B1" connectableBus1="B1" voltageLevelId2="VL2" bus2="B2" connectableBus2="B2" selectedOperationalLimitsGroupIds1="DEFAULT">
+        <iidm:twoWindingsTransformer id="T2" r="0.5" x="20.0" ratedU1="400.0" ratedU2="225.0" ratedS="300.0" voltageLevelId1="VL1" bus1="B1" connectableBus1="B1" voltageLevelId2="VL2" bus2="B2" connectableBus2="B2" selectedOperationalLimitsGroupIds1="DEFAULT" selectedOperationalLimitsGroupIds2="WINTER,SUMMER">
             <iidm:ratioTapChanger lowTapPosition="-1" tapPosition="0" solvedTapPosition="1" loadTapChangingCapabilities="true">
                 <iidm:property name="maker" value="ACME"/>
                 <iidm:step r="1.0" x="2.0" rho="0.95"/>
@@ -44,8 +44,27 @@
                 <iidm:step rho="1.0" alpha="5.0"/>
             </iidm:phaseTapChanger>
             <iidm:operationalLimitsGroup1 id="DEFAULT">
-                <iidm:currentLimits detectionKind="HIGH" permanentLimit="800.0"/>
+                <iidm:property name="season" value="all"/>
+                <iidm:activePowerLimits detectionKind="HIGH" permanentLimit="300.0"/>
+                <iidm:currentLimits detectionKind="HIGH" permanentLimitName="PATL" permanentLimit="800.0">
+                    <iidm:property name="checked" value="yes"/>
+                    <iidm:temporaryLimit name="TL10" acceptableDuration="600" value="900.0">
+                        <iidm:property name="source" value="rte"/>
+                    </iidm:temporaryLimit>
+                    <iidm:temporaryLimit name="TL1" acceptableDuration="60" value="1000.0" fictitious="true"/>
+                </iidm:currentLimits>
             </iidm:operationalLimitsGroup1>
+            <iidm:operationalLimitsGroup2 id="WINTER">
+                <iidm:apparentPowerLimits detectionKind="HIGH" permanentLimit="350.0"/>
+            </iidm:operationalLimitsGroup2>
+            <iidm:operationalLimitsGroup2 id="SUMMER">
+                <iidm:currentLimits detectionKind="HIGH" permanentLimit="700.0"/>
+            </iidm:operationalLimitsGroup2>
+            <iidm:operationalLimitsGroup2 id="LOW">
+                <iidm:currentLimits detectionKind="LOW">
+                    <iidm:temporaryLimit name="LOW10" acceptableDuration="600" value="10.0"/>
+                </iidm:currentLimits>
+            </iidm:operationalLimitsGroup2>
         </iidm:twoWindingsTransformer>
         <iidm:threeWindingsTransformer id="T3" r1="0.1" x1="5.0" ratedU1="400.0" ratedS1="200.0" r2="0.2" x2="6.0" ratedU2="225.0" r3="0.3" x3="7.0" ratedU3="63.0" ratedU0="400.0" voltageLevelId1="VL1" bus1="B1" connectableBus1="B1" voltageLevelId2="VL2" bus2="B2" connectableBus2="B2" voltageLevelId3="VL3" bus3="B3" connectableBus3="B3" selectedOperationalLimitsGroupIds1="WINTER">
             <iidm:phaseTapChanger1 regulating="true" lowTapPosition="-2" tapPosition="0" targetDeadband="5.0" loadTapChangingCapabilities="true" regulationMode="ACTIVE_POWER_CONTROL" regulationValue="80.0">

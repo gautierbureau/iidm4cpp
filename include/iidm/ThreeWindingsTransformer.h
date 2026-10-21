@@ -48,6 +48,11 @@ public:
 
         iidm::optional<double> getRatedS() const;
         Leg& setRatedS(double ratedS);
+
+        // Limits of a type (current, active power or apparent power): of the selected group, of
+        // every selected group
+        iidm::optional<LoadingLimits> getLimits(LimitType type) const { return limits(type); }
+        std::vector<LoadingLimits> getAllSelectedLimits(LimitType type) const { return allSelectedLimits(type); }
     };
 
     static constexpr int TYPE = prop::THREE_WINDINGS_TRANSFORMER;

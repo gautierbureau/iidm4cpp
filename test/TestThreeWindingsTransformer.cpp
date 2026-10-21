@@ -50,7 +50,7 @@ protected:
         backend.related [{LEG1, prop::CURRENT_LIMITS}]           = LIMITS;
         backend.related [{OLG, prop::CURRENT_LIMITS}]            = LIMITS;
         backend.strings [{OLG, prop::OLG_ID}]                    = "DEFAULT";
-        backend.doubles [{LIMITS, prop::CL_PERMANENT_LIMIT}]     = 600.0;
+        backend.doubles [{LIMITS, prop::LL_PERMANENT_LIMIT}]     = 600.0;
     }
 };
 

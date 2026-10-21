@@ -224,7 +224,7 @@ class TapChangerDispatchTest {
         long selected = PropertyDispatcher.getRelated(leg1, REL_SELECTED_OLG);
         assertEquals("G1", PropertyDispatcher.getString(selected, OLG_ID));
         long limits = PropertyDispatcher.getRelated(leg1, CURRENT_LIMITS);
-        assertEquals(500, PropertyDispatcher.getDouble(limits, CL_PERMANENT_LIMIT));
+        assertEquals(500, PropertyDispatcher.getDouble(limits, LL_PERMANENT_LIMIT));
         assertTrue(PropertyDispatcher.isSameObject(limits, PropertyDispatcher.getRelated(selected, CURRENT_LIMITS)) == 1);
         long leg2 = reg(twt3.getLeg2());
         assertEquals(0L, PropertyDispatcher.getRelated(leg2, REL_SELECTED_OLG));
