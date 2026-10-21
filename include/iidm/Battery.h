@@ -19,7 +19,15 @@ public:
     Battery& setTargetP(double targetP);
 
     double getMinP() const;
+    Battery& setMinP(double minP);
     double getMaxP() const;
+    Battery& setMaxP(double maxP);
+
+    // ── Solved values ────────────────────────────────────────────────────
+    // Its targets (P, Q) from the solved values: both; the target P (setTargetQToQ() is that of
+    // the voltage regulation holder)
+    void applySolvedValues();
+    void setTargetPToP();
 };
 
 } // namespace iidm

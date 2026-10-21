@@ -10,4 +10,9 @@ double LccConverterStation::getPowerFactor() const {
     return backend_->getDouble(handle_, prop::LCC_POWER_FACTOR);
 }
 
+LccConverterStation& LccConverterStation::setPowerFactor(double powerFactor) {
+    backend_->setDouble(handle_, prop::LCC_POWER_FACTOR, powerFactor);
+    return *this;
+}
+
 } // namespace iidm

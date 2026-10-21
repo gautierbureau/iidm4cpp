@@ -56,3 +56,9 @@ TEST_F(LccConverterStationTest, IsValid) {
     EXPECT_TRUE(valid.isValid());
     EXPECT_FALSE(invalid.isValid());
 }
+
+TEST_F(LccConverterStationTest, SetPowerFactor) {
+    LccConverterStation lcc(LCC_H, &backend);
+    EXPECT_EQ(&lcc.setPowerFactor(0.95), &lcc);
+    EXPECT_DOUBLE_EQ(lcc.getPowerFactor(), 0.95);
+}

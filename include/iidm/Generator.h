@@ -37,6 +37,12 @@ public:
     EnergySource getEnergySource() const;
     Generator& setEnergySource(EnergySource energySource);
 
+    // ── Solved values ────────────────────────────────────────────────────
+    // Its targets (P, Q, V) from the solved values: all of them; the target P
+    // (setTargetQToQ() and setTargetVToV() are those of the voltage regulation holder)
+    void applySolvedValues();
+    void setTargetPToP();
+
     // ── Extensions ───────────────────────────────────────────────────────
     bool hasCoordinatedReactiveControl() const;
     CoordinatedReactiveControl getCoordinatedReactiveControl() const;

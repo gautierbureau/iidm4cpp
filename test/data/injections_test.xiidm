@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<iidm:network xmlns:iidm="http://www.powsybl.org/schema/iidm/1_18" id="injections_test" caseDate="2026-01-31T12:00:00.000Z" forecastDistance="0" sourceFormat="test" minimumValidationLevel="STEADY_STATE_HYPOTHESIS">
+    <iidm:substation id="S" country="FR">
+        <iidm:voltageLevel id="VL" nominalV="225.0" topologyKind="BUS_BREAKER">
+            <iidm:busBreakerTopology>
+                <iidm:bus id="B" v="226.0" angle="0.0"/>
+            </iidm:busBreakerTopology>
+            <iidm:generator id="G" energySource="OTHER" minP="0.0" maxP="200.0" targetP="70.0" localTargetV="226.0" bus="B" connectableBus="B" p="-72.0" q="-14.0">
+                <iidm:minMaxReactiveLimits minQ="-100.0" maxQ="100.0"/>
+                <iidm:voltageRegulation mode="VOLTAGE" regulating="true"/>
+            </iidm:generator>
+            <iidm:battery id="BAT" targetP="5.0" localTargetQ="0.0" minP="-20.0" maxP="20.0" bus="B" connectableBus="B" p="-4.0" q="1.0">
+                <iidm:minMaxReactiveLimits minQ="-10.0" maxQ="10.0"/>
+            </iidm:battery>
+            <iidm:load id="L_ZIP" loadType="UNDEFINED" p0="40.0" q0="10.0" bus="B" connectableBus="B" p="41.0" q="11.0">
+                <iidm:zipModel c0p="0.5" c1p="0.3" c2p="0.2" c0q="0.6" c1q="0.2" c2q="0.2">
+                    <iidm:property name="source" value="study"/>
+                </iidm:zipModel>
+            </iidm:load>
+            <iidm:load id="L_EXP" loadType="UNDEFINED" p0="20.0" q0="5.0" bus="B" connectableBus="B" p="19.5" q="4.8">
+                <iidm:exponentialModel np="1.2" nq="2.1"/>
+            </iidm:load>
+            <iidm:load id="L_PLAIN" loadType="AUXILIARY" p0="10.0" q0="2.0" bus="B" connectableBus="B"/>
+            <iidm:lccConverterStation id="LCC" lossFactor="0.011" powerFactor="0.8" bus="B" connectableBus="B"/>
+        </iidm:voltageLevel>
+    </iidm:substation>
+</iidm:network>

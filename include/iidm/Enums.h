@@ -47,6 +47,8 @@ enum class LimitType { ACTIVE_POWER, APPARENT_POWER, CURRENT, VOLTAGE, VOLTAGE_A
 enum class DetectionKind { HIGH, LOW };
 // Model of a shunt compensator's sections (powsybl ShuntCompensatorModelType)
 enum class ShuntCompensatorModelType { LINEAR, NON_LINEAR };
+// Model of the voltage dependence of a load (powsybl LoadModelType)
+enum class LoadModelType { EXPONENTIAL, ZIP };
 
 // ── State estimation extensions (same order as the powsybl-core enums) ──────
 enum class MeasurementType {

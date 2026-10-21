@@ -56,6 +56,14 @@ public final class PropertyDispatcher {
             case VR_SLOPE           -> ((VoltageRegulation) obj).getSlope();
             case LOAD_P0       -> ((Load) obj).getP0();
             case LOAD_Q0       -> ((Load) obj).getQ0();
+            case ZIP_C0P -> ((ZipLoadModel) obj).getC0p();
+            case ZIP_C1P -> ((ZipLoadModel) obj).getC1p();
+            case ZIP_C2P -> ((ZipLoadModel) obj).getC2p();
+            case ZIP_C0Q -> ((ZipLoadModel) obj).getC0q();
+            case ZIP_C1Q -> ((ZipLoadModel) obj).getC1q();
+            case ZIP_C2Q -> ((ZipLoadModel) obj).getC2q();
+            case EXP_NP  -> ((ExponentialLoadModel) obj).getNp();
+            case EXP_NQ  -> ((ExponentialLoadModel) obj).getNq();
             case TERMINAL_P    -> ((Terminal) obj).getP();
             case TERMINAL_Q    -> ((Terminal) obj).getQ();
             case BUS_V         -> ((Bus) obj).getV();
@@ -185,6 +193,14 @@ public final class PropertyDispatcher {
             case VR_SLOPE           -> ((VoltageRegulation) obj).setSlope(value);
             case LOAD_P0       -> ((Load) obj).setP0(value);
             case LOAD_Q0       -> ((Load) obj).setQ0(value);
+            case ZIP_C0P -> ((ZipLoadModel) obj).setC0p(value);
+            case ZIP_C1P -> ((ZipLoadModel) obj).setC1p(value);
+            case ZIP_C2P -> ((ZipLoadModel) obj).setC2p(value);
+            case ZIP_C0Q -> ((ZipLoadModel) obj).setC0q(value);
+            case ZIP_C1Q -> ((ZipLoadModel) obj).setC1q(value);
+            case ZIP_C2Q -> ((ZipLoadModel) obj).setC2q(value);
+            case EXP_NP  -> ((ExponentialLoadModel) obj).setNp(value);
+            case EXP_NQ  -> ((ExponentialLoadModel) obj).setNq(value);
             case TERMINAL_P    -> ((Terminal) obj).setP(value);
             case TERMINAL_Q    -> ((Terminal) obj).setQ(value);
             case BUS_V         -> ((Bus) obj).setV(value);
@@ -249,6 +265,9 @@ public final class PropertyDispatcher {
             case STEP_B         -> ((TapChangerStep<?>) obj).setB(value);
             case PTC_STEP_ALPHA -> ((PhaseTapChangerStep) obj).setAlpha(value);
             case BAT_TARGET_P -> ((Battery) obj).setTargetP(value);
+            case BAT_MIN_P    -> ((Battery) obj).setMinP(value);
+            case BAT_MAX_P    -> ((Battery) obj).setMaxP(value);
+            case LCC_POWER_FACTOR -> ((LccConverterStation) obj).setPowerFactor((float) value);
             case LL_PERMANENT_LIMIT -> ((LoadingLimits) obj).setPermanentLimit(value);
             case OBS_QUALITY_STANDARD_DEVIATION -> ((ObservabilityQuality<?>) obj).setStandardDeviation(value);
             // Creates the quality if needed
@@ -286,6 +305,7 @@ public final class PropertyDispatcher {
                 yield mode == null ? -1 : mode.ordinal();
             }
             case LOAD_TYPE          -> ((Load) obj).getLoadType().ordinal();
+            case LOAD_MODEL_TYPE    -> ((LoadModel) obj).getType().ordinal();
             case VL_TOPOLOGY_KIND   -> ((VoltageLevel) obj).getTopologyKind().ordinal();
             case HVDC_CONVERTERS_MODE -> ((HvdcLine) obj).getConvertersMode().ordinal();
             case SHUNT_SECTION_COUNT     -> ((ShuntCompensator) obj).getSectionCount(); // fails when undefined
@@ -336,6 +356,7 @@ public final class PropertyDispatcher {
         }
         switch (property) {
             case GEN_ENERGY_SOURCE -> ((Generator) obj).setEnergySource(Creation.enumValue(EnergySource.class, value));
+            case LOAD_TYPE -> ((Load) obj).setLoadType(Creation.enumValue(LoadType.class, value));
             case NETWORK_FORECAST_DISTANCE -> ((Network) obj).setForecastDistance(value);
             case VR_MODE -> ((VoltageRegulation) obj).setMode(value < 0 ? null : Creation.enumValue(RegulationMode.class, value));
             case HVDC_CONVERTERS_MODE ->
@@ -372,6 +393,9 @@ public final class PropertyDispatcher {
             case VOLTAGE_LEVEL              -> obj instanceof VoltageLevel;
             case GENERATOR                  -> obj instanceof Generator;
             case LOAD                       -> obj instanceof Load;
+            case LOAD_MODEL                 -> obj instanceof LoadModel;
+            case ZIP_LOAD_MODEL             -> obj instanceof ZipLoadModel;
+            case EXPONENTIAL_LOAD_MODEL     -> obj instanceof ExponentialLoadModel;
             case LINE                       -> obj instanceof Line;
             case TWO_WINDINGS_TRANSFORMER   -> obj instanceof TwoWindingsTransformer;
             case THREE_WINDINGS_TRANSFORMER -> obj instanceof ThreeWindingsTransformer;
@@ -907,6 +931,7 @@ public final class PropertyDispatcher {
                 default -> ((Terminal) obj).getVoltageLevel();
             };
             case BOUNDARY_LINE_GENERATION -> ((BoundaryLine) obj).getGeneration();
+            case LOAD_MODEL -> ((Load) obj).getModel().orElse(null);
             case BOUNDARY -> ((BoundaryLine) obj).getBoundary();
             case BOUNDARY_LINE -> ((Boundary) obj).getBoundaryLine();
             case REL_HVDC_LINE -> ((HvdcConverterStation<?>) obj).getHvdcLine();
@@ -1011,13 +1036,17 @@ public final class PropertyDispatcher {
                 switch (obj) {
                     case Generator generator -> generator.setTargetPToP();
                     case Battery battery -> battery.setTargetPToP();
+                    case Load load -> load.setP0ToP();
                     default -> ((BoundaryLine) obj).setGenerationTargetPToP();
                 }
                 yield null;
             }
             case ACT_SET_TARGET_Q_TO_Q -> {
-                if (obj instanceof BoundaryLine line) line.setGenerationTargetQToQ();
-                else ((VoltageRegulationHolder<?>) obj).setTargetQToQ();
+                switch (obj) {
+                    case BoundaryLine line -> line.setGenerationTargetQToQ();
+                    case Load load -> load.setQ0ToQ();
+                    default -> ((VoltageRegulationHolder<?>) obj).setTargetQToQ();
+                }
                 yield null;
             }
             case ACT_SET_TARGET_V_TO_V -> {

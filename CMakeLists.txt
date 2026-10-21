@@ -116,6 +116,7 @@ set(IIDM_BRIDGE_SOURCES
     src/BoundaryLine.cpp
     src/ShuntCompensator.cpp
     src/ShuntCompensatorModel.cpp
+    src/LoadModel.cpp
     src/StaticVarCompensator.cpp
     src/LccConverterStation.cpp
     src/Switch.cpp

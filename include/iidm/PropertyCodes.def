@@ -51,6 +51,8 @@ IIDM_CODE(SHUNT_COMPENSATOR_LINEAR_MODEL, 53)
 IIDM_CODE(SHUNT_COMPENSATOR_NON_LINEAR_MODEL, 54)
 IIDM_CODE(BOUNDARY_LINE_GENERATION,    55) // the generation of a boundary line
 IIDM_CODE(BOUNDARY,                    56) // the far end of a boundary line
+IIDM_CODE(ZIP_LOAD_MODEL,              58)
+IIDM_CODE(EXPONENTIAL_LOAD_MODEL,      59)
 // Abstract types (Java interfaces)
 IIDM_CODE(IDENTIFIABLE,                43)
 IIDM_CODE(CONNECTABLE,                 44)
@@ -60,6 +62,7 @@ IIDM_CODE(HVDC_CONVERTER_STATION,      47)
 IIDM_CODE(LOADING_LIMITS,              48) // current, active power or apparent power limits
 IIDM_CODE(FLOWS_LIMITS_HOLDER,         51) // what holds flows limits: a 3WT leg, a boundary line, a branch side
 IIDM_CODE(SHUNT_COMPENSATOR_MODEL,     52) // linear or non-linear
+IIDM_CODE(LOAD_MODEL,                  57) // ZIP or exponential
 
 // ── Shared properties (applicable to many types) ────────────────────────────
 IIDM_CODE(ID,                          100)
@@ -102,9 +105,20 @@ IIDM_CODE(GEN_RATED_S,                 210)
 IIDM_CODE(GEN_CONDENSER,               211) // bool
 
 // ── Load-specific ────────────────────────────────────────────────────────────
+// Its model: getRelated(load, LOAD_MODEL) (INVALID_HANDLE when it has none); invoke(load adder,
+// ZIP_LOAD_MODEL / EXPONENTIAL_LOAD_MODEL) starts it (nested adder).
 IIDM_CODE(LOAD_P0,                     300)
 IIDM_CODE(LOAD_Q0,                     301)
-IIDM_CODE(LOAD_TYPE,                   302)
+IIDM_CODE(LOAD_TYPE,                   302) // int: LoadType ordinal
+IIDM_CODE(LOAD_MODEL_TYPE,             303) // int, read-only, on a load model: LoadModelType ordinal
+IIDM_CODE(ZIP_C0P,                     310) // double, ZIP load model: constant power part of P
+IIDM_CODE(ZIP_C1P,                     311) // double: constant current part of P
+IIDM_CODE(ZIP_C2P,                     312) // double: constant impedance part of P
+IIDM_CODE(ZIP_C0Q,                     313) // double
+IIDM_CODE(ZIP_C1Q,                     314) // double
+IIDM_CODE(ZIP_C2Q,                     315) // double
+IIDM_CODE(EXP_NP,                      316) // double, exponential load model: P exponent
+IIDM_CODE(EXP_NQ,                      317) // double: Q exponent
 
 // ── Terminal ─────────────────────────────────────────────────────────────────
 IIDM_CODE(TERMINAL_P,                  400)
@@ -427,7 +441,7 @@ IIDM_CODE(ACT_REMOVE,                  5001) // invoke(identifiable): removes it
 IIDM_CODE(ACT_CONNECT,                 5002)
 IIDM_CODE(ACT_DISCONNECT,              5003)
 IIDM_CODE(ACT_SET_TARGET_Q_TO_Q,       5004) // invoke(regulation holder): targets Q from the solved Q;
-                                             // invoke(boundary line): its generation's
+                                             // invoke(boundary line): its generation's; invoke(load): Q0
 IIDM_CODE(ACT_SET_TARGET_V_TO_V,       5005) // invoke(regulation holder): targets V from the solved V;
                                              // invoke(boundary line): its generation's
 IIDM_CODE(ACT_UNSET_TAP_POSITION,      5006) // invoke(tap changer)
@@ -445,7 +459,7 @@ IIDM_CODE(ACT_UNSET_SOLVED_VALUES,     5014) // invoke(connectable, terminal, bu
 IIDM_CODE(ACT_SET_RATIO_TAP_POSITION_TO_SOLVED_TAP_POSITION, 5015) // invoke(2WT or 3WT): of its ratio tap changers
 IIDM_CODE(ACT_SET_PHASE_TAP_POSITION_TO_SOLVED_TAP_POSITION, 5016) // invoke(2WT or 3WT): of its phase tap changers
 IIDM_CODE(ACT_SET_TARGET_P_TO_P,       5017) // invoke(generator, battery): targets P from the solved P;
-                                             // invoke(boundary line): its generation's
+                                             // invoke(boundary line): its generation's; invoke(load): P0
 
 // TwoWindingsTransformerToBeEstimated (on a two windings transformer)
 IIDM_CODE(TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED, 3700)
