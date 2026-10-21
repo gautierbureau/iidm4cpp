@@ -77,6 +77,11 @@ TwoWindingsTransformerAdder Substation::newTwoWindingsTransformer() {
     return TwoWindingsTransformerAdder(backend_->invoke(handle_, prop::TWO_WINDINGS_TRANSFORMER), backend_);
 }
 
+TwoWindingsTransformerAdder Substation::newTwoWindingsTransformer(const TwoWindingsTransformer& copied) {
+    return detail::copyAdder<TwoWindingsTransformerAdder>(backend_, handle_, prop::TWO_WINDINGS_TRANSFORMER,
+                                                          detail::Access::handle(copied));
+}
+
 ThreeWindingsTransformerAdder Substation::newThreeWindingsTransformer() {
     return ThreeWindingsTransformerAdder(backend_->invoke(handle_, prop::THREE_WINDINGS_TRANSFORMER), backend_);
 }

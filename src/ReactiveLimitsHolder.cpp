@@ -24,6 +24,11 @@ ReactiveCapabilityCurveAdder ReactiveLimitsHolderMethods<Self>::newReactiveCapab
 }
 
 template <class Self>
+ReactiveCapabilityCurveAdder ReactiveLimitsHolderMethods<Self>::newReactiveCapabilityCurve(const ReactiveCapabilityCurve& copied) {
+    return copyAdder<ReactiveCapabilityCurveAdder>(backend(), handle(), prop::REACTIVE_CAPABILITY_CURVE, Access::handle(copied));
+}
+
+template <class Self>
 ReactiveCapabilityShapeAdder ReactiveLimitsHolderMethods<Self>::newReactiveCapabilityShape() {
     return ReactiveCapabilityShapeAdder(backend()->invoke(handle(), prop::REACTIVE_CAPABILITY_SHAPE), backend());
 }

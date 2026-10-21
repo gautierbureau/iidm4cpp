@@ -218,6 +218,9 @@ public:
     VoltageLevelAdder newVoltageLevel();
     // A line between two voltage levels
     LineAdder         newLine();
+    // A copy of a line, of this network or another: its values and voltage levels; on add(), its
+    // operational limits too
+    LineAdder         newLine(const Line& copied);
     TieLineAdder      newTieLine();
     HvdcLineAdder     newHvdcLine();
     AreaAdder         newArea();

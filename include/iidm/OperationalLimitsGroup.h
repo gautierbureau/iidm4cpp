@@ -37,6 +37,10 @@ public:
     CurrentLimitsAdder newCurrentLimits();
     ActivePowerLimitsAdder newActivePowerLimits();
     ApparentPowerLimitsAdder newApparentPowerLimits();
+    // The same, with the values of other limits (a copy)
+    CurrentLimitsAdder newCurrentLimits(const CurrentLimits& copied);
+    ActivePowerLimitsAdder newActivePowerLimits(const ActivePowerLimits& copied);
+    ApparentPowerLimitsAdder newApparentPowerLimits(const ApparentPowerLimits& copied);
 
     void removeCurrentLimits();
     void removeActivePowerLimits();

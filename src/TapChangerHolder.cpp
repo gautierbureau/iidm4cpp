@@ -37,6 +37,16 @@ PhaseTapChangerAdder TapChangerHolderMethods<Self>::newPhaseTapChanger() {
     return PhaseTapChangerAdder(backend()->invoke(handle(), prop::PHASE_TAP_CHANGER), backend());
 }
 
+template <class Self>
+RatioTapChangerAdder TapChangerHolderMethods<Self>::newRatioTapChanger(const RatioTapChanger& copied) {
+    return copyAdder<RatioTapChangerAdder>(backend(), handle(), prop::RATIO_TAP_CHANGER, Access::handle(copied));
+}
+
+template <class Self>
+PhaseTapChangerAdder TapChangerHolderMethods<Self>::newPhaseTapChanger(const PhaseTapChanger& copied) {
+    return copyAdder<PhaseTapChangerAdder>(backend(), handle(), prop::PHASE_TAP_CHANGER, Access::handle(copied));
+}
+
 template class TapChangerHolderMethods<TwoWindingsTransformer>;
 template class TapChangerHolderMethods<ThreeWindingsTransformer::Leg>;
 

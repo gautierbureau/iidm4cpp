@@ -19,6 +19,13 @@ public:
     TwoWindingsTransformerAdder& setRatedU2(double ratedU2) { return doubleField(prop::TWO_WT_RATED_U2, ratedU2); }
     TwoWindingsTransformerAdder& setRatedS(double ratedS)   { return doubleField(prop::TWO_WT_RATED_S, ratedS); }
 
+    // Sets the values and voltage levels of a transformer on an adder (powsybl
+    // TwoWindingsTransformerAdder.fillTwoWindingsTransformerAdder)
+    static TwoWindingsTransformerAdder& fillTwoWindingsTransformerAdder(TwoWindingsTransformerAdder& adder,
+                                                                         const TwoWindingsTransformer& transformer) {
+        return adder.relatedField(prop::FILL_FROM, detail::Access::handle(transformer));
+    }
+
     TwoWindingsTransformer add() { return TwoWindingsTransformer(create(), backend_); }
 };
 

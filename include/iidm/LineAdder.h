@@ -17,6 +17,11 @@ public:
     LineAdder& setG2(double g2) { return doubleField(prop::LINE_G2, g2); }
     LineAdder& setB2(double b2) { return doubleField(prop::LINE_B2, b2); }
 
+    // Sets the values and voltage levels of a line on an adder (powsybl LineAdder.fillLineAdder)
+    static LineAdder& fillLineAdder(LineAdder& adder, const Line& line) {
+        return adder.relatedField(prop::FILL_FROM, detail::Access::handle(line));
+    }
+
     Line add() { return Line(create(), backend_); }
 };
 

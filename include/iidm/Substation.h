@@ -46,6 +46,8 @@ public:
     VoltageLevelAdder newVoltageLevel();
     // Transformers between its voltage levels
     TwoWindingsTransformerAdder newTwoWindingsTransformer();
+    // A copy of a transformer: its values and voltage levels; on add(), its operational limits too
+    TwoWindingsTransformerAdder newTwoWindingsTransformer(const TwoWindingsTransformer& copied);
     ThreeWindingsTransformerAdder newThreeWindingsTransformer();
     std::vector<OverloadManagementSystem> getOverloadManagementSystems() const;
     int getOverloadManagementSystemCount() const;
