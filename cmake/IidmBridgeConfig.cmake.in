@@ -3,5 +3,11 @@
 
 @PACKAGE_INIT@
 
+# Below C++17, iidm::optional is boost::optional: the library's interface needs Boost
+include(CMakeFindDependencyMacro)
+if(@IIDM_BRIDGE_NEEDS_BOOST@)
+    find_dependency(Boost)
+endif()
+
 include("${CMAKE_CURRENT_LIST_DIR}/IidmBridgeTargets.cmake")
 check_required_components(IidmBridge)

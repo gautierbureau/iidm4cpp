@@ -9,7 +9,7 @@
 
 #ifdef IIDM_BRIDGE_JNI_ENABLED
 #include "jni/JNIBackend.h"
-#include <jni.h>
+#include "jni/JavaVMs.h"
 #endif
 
 namespace iidm {
@@ -48,12 +48,8 @@ std::unique_ptr<BackendProvider> selectBackend(const NetworkLoadOptions& opts) {
 
     // AUTO: probe for existing JVM
 #ifdef IIDM_BRIDGE_JNI_ENABLED
-    {
-        JavaVM* jvms[1];
-        jsize   count = 0;
-        if (JNI_GetCreatedJavaVMs(jvms, 1, &count) == JNI_OK && count > 0) {
-            return std::unique_ptr<BackendProvider>(new JNIBackend(opts.jniNetworkId));
-        }
+    if (detail::createdJavaVM()) {
+        return std::unique_ptr<BackendProvider>(new JNIBackend(opts.jniNetworkId));
     }
 #endif
 

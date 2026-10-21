@@ -46,7 +46,7 @@ cmake --build build --parallel 4
 This gives the library `build/libiidmbridge.so`, the native image
 `build/graalvm-native/libpowsybl-iidm-native.so`, the jar
 `java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar` and the examples in `build/examples`
-(Linux names throughout: on macOS, read `.dylib` and `DYLD_LIBRARY_PATH`).
+(Linux names throughout: on macOS, read `.dylib`).
 
 The JNI backend alone needs any JDK 21 and Maven (the jar is still built: the JVM needs it):
 
@@ -75,7 +75,6 @@ Add `-DIIDM_BRIDGE_BUILD_TESTS=ON` to either for the [tests](#tests). The main o
 image and a CMake package. In your `CMakeLists.txt`:
 
 ```cmake
-find_package(Boost)   # needed if Boost was found when the library was built
 find_package(IidmBridge 1.0 REQUIRED)
 target_link_libraries(my_app PRIVATE IidmBridge::iidmbridge)
 ```
@@ -83,9 +82,8 @@ target_link_libraries(my_app PRIVATE IidmBridge::iidmbridge)
 and configure your project with `-DCMAKE_PREFIX_PATH=/opt/iidm-bridge`. Notes:
 
 - The C++ standard must match: a library built in C++17 needs C++17 code, one built in C++11/14
-  takes any (a mismatch fails to compile).
-- With the JNI backend built in, the installed library needs `libjvm` at run time, even in
-  standalone mode: add `$JAVA_HOME/lib/server` to `LD_LIBRARY_PATH`.
+  takes any (a mismatch fails to compile). Below C++17, the package finds Boost
+  (`-DBOOST_ROOT=...` if CMake does not find it).
 - The jar is not installed: take it from `java/target`.
 
 ## Usage
@@ -140,7 +138,6 @@ Build it as `my_app` with the CMake project above, and run it from the root of t
 `IIDM_BRIDGE_GRAALVM_LIB`, else `libpowsybl-iidm-native.so` from the library path:
 
 ```text
-$ export LD_LIBRARY_PATH=$JAVA_HOME/lib/server   # libjvm, see the notes above
 $ IIDM_BRIDGE_GRAALVM_LIB=/opt/iidm-bridge/lib/libpowsybl-iidm-native.so path/to/my_app
 ieee14bus: 5 generators, 11 loads
   _GEN____1_SM targetP=232.346 MW, P=-232.39 MW

@@ -43,8 +43,9 @@ endif()
 
 # ── Boost ────────────────────────────────────────────────────────────────────
 # iidm::optional<T> resolves to std::optional (C++17) or boost::optional
-# (C++11/14).  Boost is required when building below C++17; silently optional
-# otherwise so that C++17 builds work without Boost installed.
+# (C++11/14).  Boost is required when building below C++17, for the library and
+# for its consumers (the installed package finds it too); C++17 builds do not
+# use it.
 #
 # Only boost::optional is used; it is header-only — no compiled Boost
 # libraries are required, so no COMPONENTS need to be listed.
@@ -54,13 +55,14 @@ endif()
 #   -DBOOST_LIBRARYDIR=/path/to/boost/lib   (MSVC binary distributions)
 # When BOOST_ROOT is set, disable system-path searching so the specified
 # root takes precedence over any ambient system installation.
-if(BOOST_ROOT)
-    set(Boost_NO_SYSTEM_PATHS ON CACHE BOOL "Restrict Boost search to BOOST_ROOT" FORCE)
-endif()
 if(CMAKE_CXX_STANDARD LESS 17)
+    set(IIDM_BRIDGE_NEEDS_BOOST 1)
+    if(BOOST_ROOT)
+        set(Boost_NO_SYSTEM_PATHS ON CACHE BOOL "Restrict Boost search to BOOST_ROOT" FORCE)
+    endif()
     find_package(Boost REQUIRED)
 else()
-    find_package(Boost QUIET)
+    set(IIDM_BRIDGE_NEEDS_BOOST 0)
 endif()
 
 # ── Library sources ──────────────────────────────────────────────────────────
@@ -168,7 +170,8 @@ endif()
 
 if(IIDM_BRIDGE_ENABLE_JNI)
     list(APPEND IIDM_BRIDGE_SOURCES
-        src/jni/JNIBackend.cpp)
+        src/jni/JNIBackend.cpp
+        src/jni/JavaVMs.cpp)
 endif()
 
 # On Windows/MSVC, export all non-inline symbols so that the linker generates
@@ -191,14 +194,13 @@ if(IIDM_BRIDGE_ENABLE_GRAALVM)
     target_include_directories(iidmbridge PRIVATE ${GRAALVM_INCLUDE_DIRS})
 endif()
 
+# libjvm is not linked: the JNI backend works with the JVM already running in the process, which
+# has loaded it (src/jni/JavaVMs.cpp), and the library loads in standalone mode without it.
 target_link_libraries(iidmbridge
     PRIVATE
         ${CMAKE_DL_LIBS}
 )
-if(IIDM_BRIDGE_ENABLE_JNI)
-    target_link_libraries(iidmbridge PUBLIC ${JNI_LIBRARIES})
-endif()
-if(Boost_FOUND)
+if(IIDM_BRIDGE_NEEDS_BOOST)
     # Expose Boost headers to consumers building in C++11/14 mode so that
     # iidm::optional<T> (which aliases boost::optional<T> below C++17) is
     # resolvable without any extra include-path setup on their side.
