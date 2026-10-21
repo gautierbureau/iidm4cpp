@@ -130,6 +130,7 @@ public:
     std::vector<Ground>                  getGrounds() const;
     std::vector<Area>                    getAreas() const;
     std::vector<VoltageAngleLimit>       getVoltageAngleLimits() const;
+    std::vector<OverloadManagementSystem> getOverloadManagementSystems() const;
     // The types of its areas (sorted)
     std::vector<std::string>             getAreaTypes() const;
     std::vector<VscConverterStation>     getVscConverterStations() const;
@@ -163,6 +164,7 @@ public:
     int getGroundCount() const;
     int getAreaCount() const;
     int getAreaTypeCount() const;
+    int getOverloadManagementSystemCount() const;
     int getVscConverterStationCount() const;
     int getLccConverterStationCount() const;
     int getSwitchCount() const;
@@ -187,6 +189,7 @@ public:
     iidm::optional<Ground>                 getGround(const std::string& id) const;
     iidm::optional<Area>                   getArea(const std::string& id) const;
     iidm::optional<VoltageAngleLimit>      getVoltageAngleLimit(const std::string& id) const;
+    iidm::optional<OverloadManagementSystem> getOverloadManagementSystem(const std::string& id) const;
     iidm::optional<ShuntCompensator>       getShuntCompensator(const std::string& id) const;
     iidm::optional<StaticVarCompensator>   getStaticVarCompensator(const std::string& id) const;
     iidm::optional<VscConverterStation>    getVscConverterStation(const std::string& id) const;

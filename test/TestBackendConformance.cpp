@@ -826,6 +826,10 @@ TEST(BackendConformanceTest, Areas) {
     checkConformance("data/areas_test.xiidm");
 }
 
+TEST(BackendConformanceTest, Automation) {
+    checkConformance("data/automation_test.xiidm");
+}
+
 TEST(BackendConformanceTest, CreatedFromScratch) {
     checkConformance("created from scratch", buildNetwork);
 }

@@ -193,6 +193,10 @@ std::vector<VoltageAngleLimit> Network::getVoltageAngleLimits() const {
     return all<VoltageAngleLimit>(backend_, handle_);
 }
 
+std::vector<OverloadManagementSystem> Network::getOverloadManagementSystems() const {
+    return all<OverloadManagementSystem>(backend_, handle_);
+}
+
 std::vector<std::string> Network::getAreaTypes() const {
     return backend_->getStringList(handle_, prop::AREA_TYPE);
 }
@@ -277,6 +281,10 @@ iidm::optional<Area> Network::getArea(const std::string& id) const {
 
 iidm::optional<VoltageAngleLimit> Network::getVoltageAngleLimit(const std::string& id) const {
     return find<VoltageAngleLimit>(backend_, id);
+}
+
+iidm::optional<OverloadManagementSystem> Network::getOverloadManagementSystem(const std::string& id) const {
+    return find<OverloadManagementSystem>(backend_, id);
 }
 
 iidm::optional<ShuntCompensator> Network::getShuntCompensator(const std::string& id) const {
@@ -445,6 +453,10 @@ int Network::getAreaCount() const {
 
 int Network::getAreaTypeCount() const {
     return static_cast<int>(getAreaTypes().size());
+}
+
+int Network::getOverloadManagementSystemCount() const {
+    return detail::countOf(backend_, handle_, prop::OVERLOAD_MANAGEMENT_SYSTEM);
 }
 
 int Network::getVscConverterStationCount() const {

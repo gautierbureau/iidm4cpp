@@ -3,6 +3,8 @@
 #include <iidm/Container.h>
 #include <iidm/Enums.h>
 #include <iidm/Identifiable.h>
+#include <iidm/OverloadManagementSystem.h>
+#include <iidm/OverloadManagementSystemAdder.h>
 #include <iidm/VoltageLevel.h>
 #include <iidm/VoltageLevelAdder.h>
 #include <iidm/stdcxx/optional.hpp>
@@ -38,6 +40,9 @@ public:
     std::vector<ThreeWindingsTransformer> getThreeWindingsTransformers() const;
     int getThreeWindingsTransformerCount() const;
     VoltageLevelAdder newVoltageLevel();
+    std::vector<OverloadManagementSystem> getOverloadManagementSystems() const;
+    int getOverloadManagementSystemCount() const;
+    OverloadManagementSystemAdder newOverloadManagementSystem();
 
     // Removes the substation, its voltage levels and everything connected to them
     void remove();

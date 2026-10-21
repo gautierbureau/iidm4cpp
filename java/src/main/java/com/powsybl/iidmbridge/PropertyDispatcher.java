@@ -175,6 +175,7 @@ public final class PropertyDispatcher {
             case AREA_BOUNDARY_Q         -> ((AreaBoundary) obj).getQ();
             case VAL_LOW_LIMIT  -> ((VoltageAngleLimit) obj).getLowLimit().orElse(Double.NaN);
             case VAL_HIGH_LIMIT -> ((VoltageAngleLimit) obj).getHighLimit().orElse(Double.NaN);
+            case TRIPPING_CURRENT_LIMIT -> ((OverloadManagementSystem.Tripping) obj).getCurrentLimit();
             // Overload
             case OVERLOAD_PREVIOUS_LIMIT -> ((Overload) obj).getPreviousLimit();
             case OVERLOAD_LIMIT_SCALING  -> ((Overload) obj).getLimitScalingCoefficient();
@@ -225,6 +226,7 @@ public final class PropertyDispatcher {
             case BUS_ANGLE     -> ((Bus) obj).setAngle(value);
             case FICTITIOUS_P0 -> ((Bus) obj).setFictitiousP0(value);
             case AREA_INTERCHANGE_TARGET -> ((Area) obj).setInterchangeTarget(value);
+            case TRIPPING_CURRENT_LIMIT -> ((OverloadManagementSystem.Tripping) obj).setCurrentLimit(value);
             case FICTITIOUS_Q0 -> ((Bus) obj).setFictitiousQ0(value);
             case VL_NOMINAL_V          -> ((VoltageLevel) obj).setNominalV(value);
             case VL_LOW_VOLTAGE_LIMIT  -> ((VoltageLevel) obj).setLowVoltageLimit(value);
@@ -344,6 +346,11 @@ public final class PropertyDispatcher {
             case IC_NODE1 -> ((VoltageLevel.NodeBreakerView.InternalConnection) obj).getNode1();
             case IC_NODE2 -> ((VoltageLevel.NodeBreakerView.InternalConnection) obj).getNode2();
             case TL_ACCEPTABLE_DURATION -> ((TemporaryLimit) obj).getAcceptableDuration();
+            case OMS_MONITORED_SIDE -> ((OverloadManagementSystem) obj).getMonitoredSide().ordinal();
+            case TRIPPING_TYPE -> ((OverloadManagementSystem.Tripping) obj).getType().ordinal();
+            case TRIPPING_SIDE -> obj instanceof OverloadManagementSystem.BranchTripping tripping
+                ? tripping.getSideToOperate().ordinal()
+                : ((OverloadManagementSystem.ThreeWindingsTransformerTripping) obj).getSideToOperate().ordinal();
             case OVERLOAD_DURATION -> overloadChecked(obj) instanceof ThreeWindingsTransformer twt
                 ? twt.getOverloadDuration()
                 : ((Branch<?>) obj).getOverloadDuration();
@@ -402,6 +409,14 @@ public final class PropertyDispatcher {
             case TC_SOLVED_TAP_POSITION -> tapChanger(obj).setSolvedTapPosition(value);
             case PTC_REGULATION_MODE ->
                 ((PhaseTapChanger) obj).setRegulationMode(Creation.enumValue(PhaseTapChanger.RegulationMode.class, value));
+            case TRIPPING_SIDE -> {
+                if (obj instanceof OverloadManagementSystem.BranchTripping tripping) {
+                    tripping.setSideToOperate(Creation.enumValue(TwoSides.class, value));
+                } else {
+                    ((OverloadManagementSystem.ThreeWindingsTransformerTripping) obj)
+                        .setSideToOperate(Creation.enumValue(ThreeSides.class, value));
+                }
+            }
             case OBS_QUALITY_REDUNDANT -> ((ObservabilityQuality<?>) obj).setRedundant(value < 0 ? null : value != 0);
             case DMEAS_VALUE_INT -> ((DiscreteMeasurement) obj).setValue(value);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown int property for set: " + property);
@@ -442,6 +457,13 @@ public final class PropertyDispatcher {
             case AREA_BOUNDARY              -> obj instanceof AreaBoundary;
             case AREA_BOUNDARY_AC           -> ((AreaBoundary) obj).isAc();
             case VOLTAGE_ANGLE_LIMIT        -> obj instanceof VoltageAngleLimit;
+            case OVERLOAD_MANAGEMENT_SYSTEM -> obj instanceof OverloadManagementSystem;
+            case TRIPPING                   -> obj instanceof OverloadManagementSystem.Tripping;
+            case SWITCH_TRIPPING            -> obj instanceof OverloadManagementSystem.SwitchTripping;
+            case BRANCH_TRIPPING            -> obj instanceof OverloadManagementSystem.BranchTripping;
+            case THREE_WINDINGS_TRANSFORMER_TRIPPING -> obj instanceof OverloadManagementSystem.ThreeWindingsTransformerTripping;
+            case AUTOMATION_SYSTEM_ENABLED  -> ((AutomationSystem<?>) obj).isEnabled();
+            case TRIPPING_OPEN_ACTION       -> ((OverloadManagementSystem.Tripping) obj).isOpenAction();
             case GROUND                     -> obj instanceof Ground;
             case BL_PAIRED                  -> ((BoundaryLine) obj).isPaired();
             case GENERATION_VOLTAGE_REGULATION_ON -> ((BoundaryLine.Generation) obj).isVoltageRegulationOn();
@@ -554,6 +576,8 @@ public final class PropertyDispatcher {
             case REGULATING -> ((PhaseTapChanger) obj).setRegulating(bval);
             case TC_LOAD_TAP_CHANGING_CAPABILITIES -> tapChanger(obj).setLoadTapChangingCapabilities(bval);
             case GENERATION_VOLTAGE_REGULATION_ON -> ((BoundaryLine.Generation) obj).setVoltageRegulationOn(bval);
+            case AUTOMATION_SYSTEM_ENABLED -> ((AutomationSystem<?>) obj).setEnabled(bval);
+            case TRIPPING_OPEN_ACTION -> ((OverloadManagementSystem.Tripping) obj).setOpenAction(bval);
             case EXT_APC_PARTICIPATE     -> activePowerControl(obj).setParticipate(bval);
             case EXT_HADAPC_ENABLED  -> ((HvdcAngleDroopActivePowerControl) obj).setEnabled(bval);
             case EXT_TWO_WT_TBE_RTC  -> ((TwoWindingsTransformerToBeEstimated) obj).shouldEstimateRatioTapChanger(bval);
@@ -607,6 +631,14 @@ public final class PropertyDispatcher {
             case OVERLOAD_PREVIOUS_LIMIT_NAME -> ((Overload) obj).getPreviousLimitName();
             case AREA_TYPE -> ((Area) obj).getAreaType();
             case VAL_ID -> ((VoltageAngleLimit) obj).getId();
+            case OMS_MONITORED_ELEMENT_ID -> ((OverloadManagementSystem) obj).getMonitoredElementId();
+            case TRIPPING_KEY -> ((OverloadManagementSystem.Tripping) obj).getKey();
+            case TRIPPING_NAME -> ((OverloadManagementSystem.Tripping) obj).getNameOrKey();
+            case TRIPPING_ELEMENT_ID -> switch (obj) {
+                case OverloadManagementSystem.SwitchTripping tripping -> tripping.getSwitchToOperateId();
+                case OverloadManagementSystem.BranchTripping tripping -> tripping.getBranchToOperateId();
+                default -> ((OverloadManagementSystem.ThreeWindingsTransformerTripping) obj).getThreeWindingsTransformerToOperateId();
+            };
             case OVERLOAD_OLG_ID -> ((Overload) obj).getOperationalLimitsGroupId();
             case LL_PERMANENT_LIMIT_NAME -> ((LoadingLimits) obj).getPermanentLimitName();
             case BL_PAIRING_KEY -> pairingKey(obj);
@@ -639,6 +671,14 @@ public final class PropertyDispatcher {
             case NAME    -> ((Identifiable<?>) obj).setName(value);
             case ID      -> ((Identifiable<?>) obj).setId(value);
             case ADD_GEOGRAPHICAL_TAG -> ((Substation) obj).addGeographicalTag(value);
+            case TRIPPING_NAME -> ((OverloadManagementSystem.Tripping) obj).setName(value);
+            case TRIPPING_ELEMENT_ID -> {
+                switch (obj) {
+                    case OverloadManagementSystem.SwitchTripping tripping -> tripping.setSwitchToOperateId(value);
+                    case OverloadManagementSystem.BranchTripping tripping -> tripping.setBranchToOperateId(value);
+                    default -> ((OverloadManagementSystem.ThreeWindingsTransformerTripping) obj).setThreeWindingsTransformerToOperateId(value);
+                }
+            }
             case TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID -> ((Terminal) obj).getBusBreakerView().setConnectableBus(value);
             case VL_NBV_REMOVE_SWITCH -> ((VoltageLevel) obj).getNodeBreakerView().removeSwitch(value);
             case VL_BBV_REMOVE_SWITCH -> ((VoltageLevel) obj).getBusBreakerView().removeSwitch(value);
@@ -974,6 +1014,13 @@ public final class PropertyDispatcher {
                 yield ((Network) obj).getAreaStream();
             }
             case AREA_BOUNDARY -> StreamSupport.stream(((Area) obj).getAreaBoundaries().spliterator(), false);
+            case OVERLOAD_MANAGEMENT_SYSTEM -> {
+                if (obj instanceof Substation substation) {
+                    yield StreamSupport.stream(substation.getOverloadManagementSystems().spliterator(), false);
+                }
+                yield ((Network) obj).getOverloadManagementSystemStream();
+            }
+            case TRIPPING -> ((OverloadManagementSystem) obj).getTrippings().stream();
             case VOLTAGE_ANGLE_LIMIT -> ((Network) obj).getVoltageAngleLimitsStream();
             case TWO_WINDINGS_TRANSFORMER -> switch (obj) {
                 case Substation sub -> StreamSupport.stream(sub.getTwoWindingsTransformers().spliterator(), false);
@@ -1094,6 +1141,7 @@ public final class PropertyDispatcher {
             case REL_NEUTRAL_STEP        -> tapChanger(obj).getNeutralStep().orElse(null);
             case REL_REGULATION_TERMINAL -> ((PhaseTapChanger) obj).getRegulationTerminal();
             case REL_SUBSTATION -> switch (obj) {
+                case OverloadManagementSystem system -> system.getSubstation();
                 case TwoWindingsTransformer twt -> twt.getSubstation().orElse(null);
                 case ThreeWindingsTransformer twt -> twt.getSubstation().orElse(null);
                 default -> ((VoltageLevel) obj).getSubstation().orElse(null);
@@ -1156,6 +1204,7 @@ public final class PropertyDispatcher {
             case REMOVE_VOLTAGE_LEVEL -> ((Area) obj).removeVoltageLevel((VoltageLevel) value);
             case ADD_AREA             -> ((VoltageLevel) obj).addArea((Area) value);
             case REMOVE_AREA          -> ((VoltageLevel) obj).removeArea((Area) value);
+            case ADD_TRIPPING -> ((OverloadManagementSystem) obj).addTripping((OverloadManagementSystem.Tripping) value);
             case REMOVE_AREA_BOUNDARY -> {
                 if (value instanceof Terminal terminal) ((Area) obj).removeAreaBoundary(terminal);
                 else ((Area) obj).removeAreaBoundary((Boundary) value);
@@ -1424,6 +1473,7 @@ public final class PropertyDispatcher {
             case TIE_LINE                   -> network.getTieLine(id);
             case AREA                       -> network.getArea(id);
             case VOLTAGE_ANGLE_LIMIT        -> network.getVoltageAngleLimit(id);
+            case OVERLOAD_MANAGEMENT_SYSTEM -> network.getOverloadManagementSystem(id);
             case GROUND                     -> network.getGround(id);
             case BOUNDARY_LINE              -> network.getBoundaryLine(id);
             case SHUNT_COMPENSATOR          -> network.getShuntCompensator(id);

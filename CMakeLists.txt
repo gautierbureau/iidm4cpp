@@ -109,6 +109,7 @@ set(IIDM_BRIDGE_SOURCES
     src/TieLine.cpp
     src/Area.cpp
     src/VoltageAngleLimit.cpp
+    src/OverloadManagementSystem.cpp
     src/Bus.cpp
     src/Substation.cpp
     src/VoltageLevel.cpp
