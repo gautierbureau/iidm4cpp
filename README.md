@@ -1,6 +1,7 @@
 # iidm-bridge
 
 [![CI](https://github.com/gautierbureau/iidm4cpp/actions/workflows/ci.yml/badge.svg)](https://github.com/gautierbureau/iidm4cpp/actions/workflows/ci.yml)
+[![MPL-2.0 License](https://img.shields.io/badge/license-MPL_2.0-blue.svg)](https://www.mozilla.org/en-US/MPL/2.0/)
 
 The [PowSyBl](https://www.powsybl.org) IIDM network model for C++, served by powsybl-core itself.
 
@@ -245,3 +246,7 @@ object of the test networks. The Java side has its own tests: `cd java && mvn ve
 
 [AGENTS.md](AGENTS.md) describes the architecture, the conventions (property codes, wrappers,
 adders, extensions) and how to add a component or an extension, with the tests to write.
+
+## License
+
+[Mozilla Public License 2.0](LICENSE.txt), as powsybl.
