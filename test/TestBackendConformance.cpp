@@ -196,11 +196,12 @@ const Read kReads[READ_COUNT] = {
     }},
 };
 
-// Arguments evaluate is tried with (an active power, then also a bool or a voltage...)
+// Arguments evaluate is tried with (an active power, then also a bool or a voltage..., a side, a
+// limit reduction and a limit type)
 const std::vector<double> kArgumentSets[] = {
     {0}, {50}, {-100}, {1e6},
-    {0, 0}, {50, 1}, {150, 0}, {150, 1}, {100, 400},
-    {0, 0, 400}, {100, 50, 400}, {300, 200, 63},
+    {0, 0}, {50, 1}, {150, 0}, {150, 1}, {100, 400}, {1, 2},
+    {0, 0, 400}, {100, 50, 400}, {300, 200, 63}, {0, 0.5, 2},
 };
 const int kArgumentSetCount = static_cast<int>(sizeof kArgumentSets / sizeof kArgumentSets[0]);
 

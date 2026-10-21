@@ -9,6 +9,7 @@ set(TEST_SOURCES
     TestThreeWindingsTransformer.cpp
     TestTransformers.cpp
     TestLimitsNetwork.cpp
+    TestOverloads.cpp
     TestShuntsNetwork.cpp
     TestLinesNetwork.cpp
     TestBoundaryLinesNetwork.cpp

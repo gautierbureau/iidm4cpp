@@ -35,6 +35,7 @@
 #include <iidm/Load.h>
 #include <iidm/Line.h>
 #include <iidm/TemporaryLimit.h>
+#include <iidm/Overload.h>
 #include <iidm/LoadingLimits.h>
 #include <iidm/LoadingLimitsAdder.h>
 #include <iidm/OperationalLimitsGroup.h>

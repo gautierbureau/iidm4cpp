@@ -3,6 +3,7 @@
 #include <iidm/Line.h>
 #include <iidm/TwoWindingsTransformer.h>
 #include "Extensions.h"
+#include "OverloadChecks.h"
 #include "Wrap.h"
 
 namespace iidm { namespace detail {
@@ -246,6 +247,93 @@ iidm::optional<LoadingLimits> BranchMethods<Self>::getLimits(LimitType type, Two
 template <class Self>
 std::vector<LoadingLimits> BranchMethods<Self>::getAllSelectedLimits(LimitType type, TwoSides side) const {
     return sideLimits(side).allSelectedLimits(type);
+}
+
+// ── Overloads ────────────────────────────────────────────────────────────────
+
+template <class Self>
+bool BranchMethods<Self>::isOverloaded() const {
+    return backend()->getBool(handle(), prop::OVERLOADED);
+}
+
+template <class Self>
+bool BranchMethods<Self>::isOverloaded(double limitReductionValue) const {
+    return backend()->evaluate(handle(), prop::OVERLOADED, {limitReductionValue}) != 0;
+}
+
+template <class Self>
+int BranchMethods<Self>::getOverloadDuration() const {
+    return backend()->getInt(handle(), prop::OVERLOAD_DURATION);
+}
+
+template <class Self>
+bool BranchMethods<Self>::checkPermanentLimit(TwoSides side, LimitType type) const {
+    return overPermanentLimit(backend(), handle(), static_cast<int>(side), iidm::optional<double>(), type);
+}
+
+template <class Self>
+bool BranchMethods<Self>::checkPermanentLimit(TwoSides side, double limitReductionValue, LimitType type) const {
+    return overPermanentLimit(backend(), handle(), static_cast<int>(side), iidm::optional<double>(limitReductionValue), type);
+}
+
+template <class Self>
+bool BranchMethods<Self>::checkPermanentLimit1(LimitType type) const {
+    return checkPermanentLimit(TwoSides::ONE, type);
+}
+
+template <class Self>
+bool BranchMethods<Self>::checkPermanentLimit1(double limitReductionValue, LimitType type) const {
+    return checkPermanentLimit(TwoSides::ONE, limitReductionValue, type);
+}
+
+template <class Self>
+bool BranchMethods<Self>::checkPermanentLimit2(LimitType type) const {
+    return checkPermanentLimit(TwoSides::TWO, type);
+}
+
+template <class Self>
+bool BranchMethods<Self>::checkPermanentLimit2(double limitReductionValue, LimitType type) const {
+    return checkPermanentLimit(TwoSides::TWO, limitReductionValue, type);
+}
+
+template <class Self>
+iidm::optional<Overload> BranchMethods<Self>::checkTemporaryLimits(TwoSides side, LimitType type) const {
+    return overloadOf(backend(), handle(), static_cast<int>(side), iidm::optional<double>(), type);
+}
+
+template <class Self>
+iidm::optional<Overload> BranchMethods<Self>::checkTemporaryLimits(TwoSides side, double limitReductionValue, LimitType type) const {
+    return overloadOf(backend(), handle(), static_cast<int>(side), iidm::optional<double>(limitReductionValue), type);
+}
+
+template <class Self>
+iidm::optional<Overload> BranchMethods<Self>::checkTemporaryLimits1(LimitType type) const {
+    return checkTemporaryLimits(TwoSides::ONE, type);
+}
+
+template <class Self>
+iidm::optional<Overload> BranchMethods<Self>::checkTemporaryLimits1(double limitReductionValue, LimitType type) const {
+    return checkTemporaryLimits(TwoSides::ONE, limitReductionValue, type);
+}
+
+template <class Self>
+iidm::optional<Overload> BranchMethods<Self>::checkTemporaryLimits2(LimitType type) const {
+    return checkTemporaryLimits(TwoSides::TWO, type);
+}
+
+template <class Self>
+iidm::optional<Overload> BranchMethods<Self>::checkTemporaryLimits2(double limitReductionValue, LimitType type) const {
+    return checkTemporaryLimits(TwoSides::TWO, limitReductionValue, type);
+}
+
+template <class Self>
+std::vector<Overload> BranchMethods<Self>::checkAllTemporaryLimits(TwoSides side, LimitType type) const {
+    return allOverloadsOf(backend(), handle(), static_cast<int>(side), iidm::optional<double>(), type);
+}
+
+template <class Self>
+std::vector<Overload> BranchMethods<Self>::checkAllTemporaryLimits(TwoSides side, double limitReductionValue, LimitType type) const {
+    return allOverloadsOf(backend(), handle(), static_cast<int>(side), iidm::optional<double>(limitReductionValue), type);
 }
 
 // ── Extensions ───────────────────────────────────────────────────────────────

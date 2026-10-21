@@ -166,6 +166,9 @@ public final class PropertyDispatcher {
             case LL_PERMANENT_LIMIT -> ((LoadingLimits) obj).getPermanentLimit();
             // TemporaryLimit
             case TL_VALUE -> ((TemporaryLimit) obj).getValue();
+            // Overload
+            case OVERLOAD_PREVIOUS_LIMIT -> ((Overload) obj).getPreviousLimit();
+            case OVERLOAD_LIMIT_SCALING  -> ((Overload) obj).getLimitScalingCoefficient();
             // ThreeWT
             case THREE_WT_RATED_U0 -> ((ThreeWindingsTransformer) obj).getRatedU0();
             // State estimation extensions
@@ -331,6 +334,9 @@ public final class PropertyDispatcher {
             case IC_NODE1 -> ((VoltageLevel.NodeBreakerView.InternalConnection) obj).getNode1();
             case IC_NODE2 -> ((VoltageLevel.NodeBreakerView.InternalConnection) obj).getNode2();
             case TL_ACCEPTABLE_DURATION -> ((TemporaryLimit) obj).getAcceptableDuration();
+            case OVERLOAD_DURATION -> overloadChecked(obj) instanceof ThreeWindingsTransformer twt
+                ? twt.getOverloadDuration()
+                : ((Branch<?>) obj).getOverloadDuration();
             case LL_DETECTION_KIND -> ((LoadingLimits) obj).getDetectionKind().ordinal();
             case LL_LIMIT_TYPE -> ((OperationalLimits) obj).getLimitType().ordinal();
             case TC_LOW_TAP_POSITION  -> tapChanger(obj).getLowTapPosition();
@@ -452,6 +458,10 @@ public final class PropertyDispatcher {
             case APPARENT_POWER_LIMITS      -> obj instanceof ApparentPowerLimits;
             case TEMPORARY_LIMIT            -> obj instanceof TemporaryLimit;
             case OPERATIONAL_LIMITS_GROUP   -> obj instanceof OperationalLimitsGroup;
+            case OVERLOAD                   -> obj instanceof Overload;
+            case OVERLOADED                 -> overloadChecked(obj) instanceof ThreeWindingsTransformer twt
+                                               ? twt.isOverloaded()
+                                               : ((Branch<?>) obj).isOverloaded();
             case FLOWS_LIMITS_HOLDER        -> obj instanceof FlowsLimitsHolder || obj instanceof LimitsDispatch.BranchSide;
             case ACTIVE_POWER_CONTROL       -> obj instanceof ActivePowerControl<?>;
             case COORDINATED_REACTIVE_CONTROL -> obj instanceof CoordinatedReactiveControl;
@@ -578,6 +588,8 @@ public final class PropertyDispatcher {
                 yield text.toString(java.nio.charset.StandardCharsets.UTF_8);
             }
             case OLG_ID -> ((OperationalLimitsGroup) obj).getId();
+            case OVERLOAD_PREVIOUS_LIMIT_NAME -> ((Overload) obj).getPreviousLimitName();
+            case OVERLOAD_OLG_ID -> ((Overload) obj).getOperationalLimitsGroupId();
             case LL_PERMANENT_LIMIT_NAME -> ((LoadingLimits) obj).getPermanentLimitName();
             case BL_PAIRING_KEY -> ((BoundaryLine) obj).getPairingKey();
             case SELECTED_OLG_ID -> LimitsDispatch.holder(obj).getSelectedOperationalLimitsGroupId().orElse(null);
@@ -815,6 +827,29 @@ public final class PropertyDispatcher {
                 if (args.length != 1) throw wrongArgumentCount(code, args);
                 yield ((Network) obj).runValidationChecks(args[0] != 0).ordinal();
             }
+            case OVERLOADED -> {
+                Object checked = overloadChecked(obj);
+                if (args.length != 1) throw wrongArgumentCount(code, args);
+                yield (checked instanceof ThreeWindingsTransformer twt
+                    ? twt.isOverloaded(args[0])
+                    : ((Branch<?>) checked).isOverloaded(args[0])) ? 1 : 0;
+            }
+            case CHECK_PERMANENT_LIMIT -> {
+                // {side, type} or {side, limit reduction, type}
+                Object checked = overloadChecked(obj);
+                if (args.length != 2 && args.length != 3) throw wrongArgumentCount(code, args);
+                LimitType type = Creation.enumValue(LimitType.class, (int) args[args.length - 1]);
+                boolean over;
+                if (checked instanceof ThreeWindingsTransformer twt) {
+                    ThreeSides side = Creation.enumValue(ThreeSides.class, (int) args[0]);
+                    over = args.length == 2 ? twt.checkPermanentLimit(side, type) : twt.checkPermanentLimit(side, args[1], type);
+                } else {
+                    TwoSides side = Creation.enumValue(TwoSides.class, (int) args[0]);
+                    Branch<?> branch = (Branch<?>) checked;
+                    over = args.length == 2 ? branch.checkPermanentLimit(side, type) : branch.checkPermanentLimit(side, args[1], type);
+                }
+                yield over ? 1 : 0;
+            }
             case SHAPE_IS_INSIDE -> {
                 ReactiveCapabilityShape shape = (ReactiveCapabilityShape) obj;
                 if (args.length != 3) throw wrongArgumentCount(code, args);
@@ -1030,6 +1065,7 @@ public final class PropertyDispatcher {
             case CURRENT_LIMITS, ACTIVE_POWER_LIMITS, APPARENT_POWER_LIMITS
                 -> LimitsDispatch.limits(obj, LimitsDispatch.limitType(relation));
             case REL_CONNECTABLE -> ((Terminal) obj).getConnectable();
+            case TEMPORARY_LIMIT -> ((Overload) obj).getTemporaryLimit();
             case VOLTAGE_REGULATION -> ((VoltageRegulationHolder<?>) obj).getVoltageRegulation();
             case ACTIVE_POWER_CONTROL -> extension(obj, ActivePowerControl.class);
             case COORDINATED_REACTIVE_CONTROL -> extension(obj, CoordinatedReactiveControl.class);
@@ -1355,6 +1391,13 @@ public final class PropertyDispatcher {
     private static Object extension(Object extendable, Class type) {
         // Raw: the extension classes are generic in their extendable, which Class<X> cannot express
         return ((Extendable) extendable).getExtension(type);
+    }
+
+    // ── Overloads ─────────────────────────────────────────────────────────
+
+    /** What the overload checks apply to: a branch or a three windings transformer (else a ClassCastException). */
+    static Object overloadChecked(Object obj) {
+        return obj instanceof ThreeWindingsTransformer ? obj : (Branch<?>) obj;
     }
 
     // ── Tap changers ──────────────────────────────────────────────────────

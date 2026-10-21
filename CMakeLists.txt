@@ -124,6 +124,7 @@ set(IIDM_BRIDGE_SOURCES
     src/BusbarSection.cpp
     src/InternalConnection.cpp
     src/LoadingLimits.cpp
+    src/Overload.cpp
     src/OperationalLimitsGroup.cpp
 )
 

@@ -356,6 +356,16 @@ LoadingLimits: CurrentLimits, ActivePowerLimits, ApparentPowerLimits
 ├── getTemporaryLimitValue(duration) / setTemporaryLimitValue(duration, value)
 └── remove(), properties
 
+Overloads of a Line, TwoWindingsTransformer or ThreeWindingsTransformer (a flow over the limits in
+force; with a limit reduction, over these limits multiplied by it)
+├── isOverloaded([limitReductionValue]) → bool, getOverloadDuration() → int (seconds)
+├── checkPermanentLimit(side, [limitReductionValue,] type) → bool, and per side:
+│   checkPermanentLimit1/2/3([limitReductionValue,] type)
+├── checkTemporaryLimits(side, [limitReductionValue,] type) → optional<Overload> (+ per side),
+│   checkAllTemporaryLimits(side, [limitReductionValue,] type) → Overloads of the selected groups
+└── Overload: getTemporaryLimit(), getPreviousLimit() / getPreviousLimitName(),
+    getOperationalLimitsGroupId(), getLimitScalingCoefficient()
+
 BoundaryLine (powsybl 7.4; DanglingLine before) (+ the flows limits holder methods)
 ├── getP0() / getQ0() / getR() / getX() / getG() / getB() → double (+ setters)
 ├── isPaired() → bool (in a tie line), getPairingKey() → optional<string> (+ setter)

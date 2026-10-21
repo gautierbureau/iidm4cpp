@@ -37,7 +37,8 @@ import static com.powsybl.iidmbridge.PropertyCodes.*;
  * starts {@code VoltageRegulation.setTerminal(terminal, targetValue)}, whose arguments are then
  * set with REL_TERMINAL and VR_TARGET_VALUE, and ACT_ADD applies it. So do moving an equipment's
  * end ({@code invoke(terminal, MOVE_CONNECTABLE)}), the fictitious injection at a node and the
- * removal of internal connections (on a voltage level).</p>
+ * removal of internal connections (on a voltage level). A query that takes several values goes the
+ * same way, ACT_ADD returning its result: the checks of the temporary limits of a side.</p>
  */
 public final class Creation {
 
@@ -169,6 +170,46 @@ public final class Creation {
         }
     }
 
+    /**
+     * checkTemporaryLimits, or checkAllTemporaryLimits, of a side of a branch or a three windings
+     * transformer: fields TERMINAL_SIDE, LIMIT_REDUCTION (none: the check without one) and
+     * LL_LIMIT_TYPE. Its result is the overload (null without one), or the overloads.
+     */
+    static final class TemporaryLimitsCheck {
+        private final Object checked;
+        private final boolean all;
+        private Integer side;
+        private Double limitReduction;
+        private Integer type;
+
+        TemporaryLimitsCheck(Object checked, boolean all) {
+            this.checked = checked;
+            this.all = all;
+        }
+
+        Object run() {
+            int at = Objects.requireNonNull(side, "side");
+            LimitType limitType = enumValue(LimitType.class, Objects.requireNonNull(type, "limit type"));
+            if (checked instanceof ThreeWindingsTransformer twt) {
+                ThreeSides threeSides = enumValue(ThreeSides.class, at);
+                if (all) {
+                    return limitReduction == null ? twt.checkAllTemporaryLimits(threeSides, limitType)
+                                                  : twt.checkAllTemporaryLimits(threeSides, limitReduction, limitType);
+                }
+                return limitReduction == null ? twt.checkTemporaryLimits(threeSides, limitType)
+                                              : twt.checkTemporaryLimits(threeSides, limitReduction, limitType);
+            }
+            Branch<?> branch = (Branch<?>) checked;
+            TwoSides twoSides = enumValue(TwoSides.class, at);
+            if (all) {
+                return limitReduction == null ? branch.checkAllTemporaryLimits(twoSides, limitType)
+                                              : branch.checkAllTemporaryLimits(twoSides, limitReduction, limitType);
+            }
+            return limitReduction == null ? branch.checkTemporaryLimits(twoSides, limitType)
+                                          : branch.checkTemporaryLimits(twoSides, limitReduction, limitType);
+        }
+    }
+
     /** A new, empty network. */
     public static Network createNetwork(String id) {
         return Network.create(id, SOURCE_FORMAT);
@@ -214,6 +255,8 @@ public final class Creation {
             case MOVE_CONNECTABLE -> new ConnectableMove((Terminal) owner);
             case FICTITIOUS_P0, FICTITIOUS_Q0 -> new NodeFictitiousInjection(((VoltageLevel) owner).getNodeBreakerView(), type);
             case VL_NBV_REMOVE_INTERNAL_CONNECTIONS -> new InternalConnectionsRemoval(((VoltageLevel) owner).getNodeBreakerView());
+            case CHECK_TEMPORARY_LIMITS -> new TemporaryLimitsCheck(PropertyDispatcher.overloadChecked(owner), false);
+            case CHECK_ALL_TEMPORARY_LIMITS -> new TemporaryLimitsCheck(PropertyDispatcher.overloadChecked(owner), true);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown type to create: " + type);
         };
         return new PendingAdd(adder, parent);
@@ -259,6 +302,7 @@ public final class Creation {
                 removal.apply();
                 yield null;
             }
+            case TemporaryLimitsCheck check -> check.run();
             case TapChangerStepAdder<?, ?> step -> {
                 step.endStep();
                 yield null;
@@ -393,6 +437,7 @@ public final class Creation {
             case EXP_NP -> ((ExponentialLoadModelAdder) a).setNp(value);
             case EXP_NQ -> ((ExponentialLoadModelAdder) a).setNq(value);
             case FICTITIOUS_P0, FICTITIOUS_Q0 -> ((NodeFictitiousInjection) a).setValue(property, value);
+            case LIMIT_REDUCTION -> ((TemporaryLimitsCheck) a).limitReduction = value;
             default -> throw unknownField("double", property);
         }
     }
@@ -408,6 +453,8 @@ public final class Creation {
                 }
             }
             case IC_NODE1 -> ((InternalConnectionsRemoval) a).node1 = value;
+            case TERMINAL_SIDE -> ((TemporaryLimitsCheck) a).side = value;
+            case LL_LIMIT_TYPE -> ((TemporaryLimitsCheck) a).type = value;
             case IC_NODE2 -> ((InternalConnectionsRemoval) a).node2 = value;
             case VL_TOPOLOGY_KIND -> ((VoltageLevelAdder) a).setTopologyKind(enumValue(TopologyKind.class, value));
             case GEN_ENERGY_SOURCE -> ((GeneratorAdder) a).setEnergySource(enumValue(EnergySource.class, value));
