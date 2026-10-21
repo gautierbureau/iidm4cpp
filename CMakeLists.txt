@@ -132,6 +132,16 @@ set(IIDM_BRIDGE_SOURCES
     src/Overload.cpp
     src/OperationalLimitsGroup.cpp
     src/VariantManager.cpp
+    src/GeneratorShortCircuit.cpp
+    src/BatteryShortCircuit.cpp
+    src/IdentifiableShortCircuit.cpp
+    src/GeneratorEntsoeCategory.cpp
+    src/GeneratorStartup.cpp
+    src/LoadDetail.cpp
+    src/StandbyAutomaton.cpp
+    src/ManualFrequencyRestorationReserve.cpp
+    src/OperatingStatus.cpp
+    src/DynamicModelInfo.cpp
 )
 
 if(IIDM_BRIDGE_ENABLE_GRAALVM)

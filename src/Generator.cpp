@@ -85,4 +85,52 @@ void Generator::setTargetPToP() {
     backend_->invoke(handle_, prop::ACT_SET_TARGET_P_TO_P);
 }
 
+bool Generator::hasGeneratorShortCircuit() const {
+    return detail::hasExtension<GeneratorShortCircuit>(backend_, handle_);
+}
+
+GeneratorShortCircuit Generator::getGeneratorShortCircuit() const {
+    return detail::getExtension<GeneratorShortCircuit>(backend_, handle_, "GeneratorShortCircuit");
+}
+
+GeneratorShortCircuitAdder Generator::newGeneratorShortCircuit() {
+    return detail::newExtension<GeneratorShortCircuit, GeneratorShortCircuitAdder>(backend_, handle_);
+}
+
+void Generator::removeGeneratorShortCircuit() {
+    detail::removeExtension<GeneratorShortCircuit>(backend_, handle_);
+}
+
+bool Generator::hasGeneratorEntsoeCategory() const {
+    return detail::hasExtension<GeneratorEntsoeCategory>(backend_, handle_);
+}
+
+GeneratorEntsoeCategory Generator::getGeneratorEntsoeCategory() const {
+    return detail::getExtension<GeneratorEntsoeCategory>(backend_, handle_, "GeneratorEntsoeCategory");
+}
+
+GeneratorEntsoeCategoryAdder Generator::newGeneratorEntsoeCategory() {
+    return detail::newExtension<GeneratorEntsoeCategory, GeneratorEntsoeCategoryAdder>(backend_, handle_);
+}
+
+void Generator::removeGeneratorEntsoeCategory() {
+    detail::removeExtension<GeneratorEntsoeCategory>(backend_, handle_);
+}
+
+bool Generator::hasGeneratorStartup() const {
+    return detail::hasExtension<GeneratorStartup>(backend_, handle_);
+}
+
+GeneratorStartup Generator::getGeneratorStartup() const {
+    return detail::getExtension<GeneratorStartup>(backend_, handle_, "GeneratorStartup");
+}
+
+GeneratorStartupAdder Generator::newGeneratorStartup() {
+    return detail::newExtension<GeneratorStartup, GeneratorStartupAdder>(backend_, handle_);
+}
+
+void Generator::removeGeneratorStartup() {
+    detail::removeExtension<GeneratorStartup>(backend_, handle_);
+}
+
 } // namespace iidm

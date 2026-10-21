@@ -1027,12 +1027,14 @@ of an `ObservabilityArea`.
 
 The GraalVM entry points (`iidm_get_double`, `iidm_get_bool`, …) forward
 **every** property code to `PropertyDispatcher.java` without a hard-coded
-switch. Adding an extension only requires new cases in `PropertyDispatcher`
-(and `Creation.java` for its adder):
+switch. An extension's type is one line of the table in `Extensions.java`, which serves
+the lookup on a host, the type check, the adder and the removal; its properties are cases
+in `PropertyDispatcher` (and in `Creation.java` for the fields of its adder):
 
 ```java
+// Extensions.java
+type(ACTIVE_POWER_CONTROL, ActivePowerControl.class, ActivePowerControlAdder.class),
 // PropertyDispatcher.java
-case ACTIVE_POWER_CONTROL -> extension(obj, ActivePowerControl.class); // getRelatedObject
 case EXT_APC_DROOP        -> activePowerControl(obj).getDroop();         // getDouble
 case EXT_APC_PARTICIPATE  -> activePowerControl(obj).isParticipate();    // getBool
 ```
@@ -1065,6 +1067,16 @@ Every extension below has an adder (`newX()`), except `ObservabilityArea` for no
 | `TwoWindingsTransformerToBeEstimated` | 2WT | `TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED`, `EXT_TWO_WT_TBE_*` |
 | `ThreeWindingsTransformerToBeEstimated` | 3WT | `THREE_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED`, `EXT_THREE_WT_TBE_*` |
 | `ObservabilityArea` | VoltageLevel (read-only) | `OBSERVABILITY_AREA`, `EXT_OBS_AREA_*`; its `AREA_CHARACTERISTICS`: `OBS_AREA_*` |
+| `GeneratorShortCircuit` | Generator | `GENERATOR_SHORT_CIRCUIT`, `EXT_SC_*` |
+| `BatteryShortCircuit` | Battery | `BATTERY_SHORT_CIRCUIT`, `EXT_SC_*` |
+| `IdentifiableShortCircuit` | all identifiables (voltage levels) | `IDENTIFIABLE_SHORT_CIRCUIT`, `EXT_ISC_*` |
+| `GeneratorEntsoeCategory` | Generator | `GENERATOR_ENTSOE_CATEGORY`, `EXT_GEC_CODE` |
+| `GeneratorStartup` | Generator | `GENERATOR_STARTUP`, `EXT_GS_*` |
+| `LoadDetail` | Load | `LOAD_DETAIL`, `EXT_LD_*` |
+| `StandbyAutomaton` | StaticVarCompensator | `STANDBY_AUTOMATON`, `EXT_SA_*` |
+| `ManualFrequencyRestorationReserve` | all injections | `MANUAL_FREQUENCY_RESTORATION_RESERVE`, `EXT_MFRR_PARTICIPATE` |
+| `OperatingStatus` | busbar sections, lines, tie lines, transformers, HVDC lines, boundary lines | `OPERATING_STATUS`, `EXT_OS_STATUS` |
+| `DynamicModelInfo` | all identifiables (not saved to XIIDM by powsybl) | `DYNAMIC_MODEL_INFO`, `EXT_DMI_MODEL_NAME` |
 
 The `VoltagePerReactivePowerControl`, `RemoteReactivePowerControl` and battery `VoltageRegulation`
 extensions were removed from powsybl-core 7.4 (`extensions.removed`): their data is the core
@@ -1081,7 +1093,7 @@ The state estimation extensions are exercised end to end by
 | Codes: the type code, then one per property | `include/iidm/PropertyCodes.def` (one line each) |
 | C++ extension wrapper and adder | `include/iidm/MyExt.h` + `src/MyExt.cpp`, `include/iidm/MyExtAdder.h` (+ `CMakeLists.txt`, `iidm.h`) |
 | Host accessors: `hasMyExt`, `getMyExt`, `newMyExt`, `removeMyExt`, on the class of the host type | e.g. `Injection.h` / `Injection.cpp` |
-| `PropertyDispatcher` cases (getRelatedObject, properties) and `Creation` cases (adder, fields, removal) | `PropertyDispatcher.java`, `Creation.java` — serve **both** backends |
+| The type (extension and adder interfaces), then property cases and adder field cases | `Extensions.java`, `PropertyDispatcher.java`, `Creation.java` — serve **both** backends |
 | C++ unit tests | `test/TestMyExt.cpp` with `MockBackend` |
 | Java dispatcher tests | `java/src/test/...` (covers the handle and object APIs) |
 

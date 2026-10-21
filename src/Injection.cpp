@@ -42,4 +42,20 @@ void Injection::removeInjectionObservability() {
     detail::removeExtension<InjectionObservability>(backend_, handle_);
 }
 
+bool Injection::hasManualFrequencyRestorationReserve() const {
+    return detail::hasExtension<ManualFrequencyRestorationReserve>(backend_, handle_);
+}
+
+ManualFrequencyRestorationReserve Injection::getManualFrequencyRestorationReserve() const {
+    return detail::getExtension<ManualFrequencyRestorationReserve>(backend_, handle_, "ManualFrequencyRestorationReserve");
+}
+
+ManualFrequencyRestorationReserveAdder Injection::newManualFrequencyRestorationReserve() {
+    return detail::newExtension<ManualFrequencyRestorationReserve, ManualFrequencyRestorationReserveAdder>(backend_, handle_);
+}
+
+void Injection::removeManualFrequencyRestorationReserve() {
+    detail::removeExtension<ManualFrequencyRestorationReserve>(backend_, handle_);
+}
+
 } // namespace iidm

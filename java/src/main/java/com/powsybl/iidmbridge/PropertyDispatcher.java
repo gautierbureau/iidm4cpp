@@ -3,7 +3,6 @@ package com.powsybl.iidmbridge;
 import com.powsybl.iidm.network.*;
 import com.powsybl.iidm.network.LoadingLimits.TemporaryLimit;
 import com.powsybl.iidm.network.extensions.*;
-import com.powsybl.commons.extensions.Extendable;
 import com.powsybl.iidm.network.regulation.RegulationMode;
 import com.powsybl.iidm.network.regulation.VoltageRegulation;
 import com.powsybl.iidm.network.regulation.VoltageRegulationHolder;
@@ -185,6 +184,25 @@ public final class PropertyDispatcher {
             case OBS_QUALITY_STANDARD_DEVIATION -> ((ObservabilityQuality<?>) obj).getStandardDeviation();
             case MEAS_VALUE   -> ((Measurement) obj).getValue();
             case MEAS_STD_DEV -> ((Measurement) obj).getStandardDeviation();
+            case EXT_SC_DIRECT_SUBTRANS_X -> ((ShortCircuitExtension<?>) obj).getDirectSubtransX();
+            case EXT_SC_DIRECT_TRANS_X -> ((ShortCircuitExtension<?>) obj).getDirectTransX();
+            case EXT_SC_STEP_UP_TRANSFORMER_X -> ((ShortCircuitExtension<?>) obj).getStepUpTransformerX();
+            case EXT_ISC_IP_MIN -> ((IdentifiableShortCircuit<?>) obj).getIpMin();
+            case EXT_ISC_IP_MAX -> ((IdentifiableShortCircuit<?>) obj).getIpMax();
+            case EXT_GS_PLANNED_ACTIVE_POWER_SETPOINT -> ((GeneratorStartup) obj).getPlannedActivePowerSetpoint();
+            case EXT_GS_STARTUP_COST -> ((GeneratorStartup) obj).getStartupCost();
+            case EXT_GS_MARGINAL_COST -> ((GeneratorStartup) obj).getMarginalCost();
+            case EXT_GS_PLANNED_OUTAGE_RATE -> ((GeneratorStartup) obj).getPlannedOutageRate();
+            case EXT_GS_FORCED_OUTAGE_RATE -> ((GeneratorStartup) obj).getForcedOutageRate();
+            case EXT_LD_FIXED_ACTIVE_POWER -> ((LoadDetail) obj).getFixedActivePower();
+            case EXT_LD_FIXED_REACTIVE_POWER -> ((LoadDetail) obj).getFixedReactivePower();
+            case EXT_LD_VARIABLE_ACTIVE_POWER -> ((LoadDetail) obj).getVariableActivePower();
+            case EXT_LD_VARIABLE_REACTIVE_POWER -> ((LoadDetail) obj).getVariableReactivePower();
+            case EXT_SA_B0 -> ((StandbyAutomaton) obj).getB0();
+            case EXT_SA_LOW_VOLTAGE_SETPOINT -> ((StandbyAutomaton) obj).getLowVoltageSetpoint();
+            case EXT_SA_HIGH_VOLTAGE_SETPOINT -> ((StandbyAutomaton) obj).getHighVoltageSetpoint();
+            case EXT_SA_LOW_VOLTAGE_THRESHOLD -> ((StandbyAutomaton) obj).getLowVoltageThreshold();
+            case EXT_SA_HIGH_VOLTAGE_THRESHOLD -> ((StandbyAutomaton) obj).getHighVoltageThreshold();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown double property: " + property);
         };
     }
@@ -306,6 +324,25 @@ public final class PropertyDispatcher {
             case OBS_QUALITY_Q2 -> ((BranchObservability<?>) obj).setQualityQ2(value);
             case MEAS_VALUE   -> ((Measurement) obj).setValue(value);
             case MEAS_STD_DEV -> ((Measurement) obj).setStandardDeviation(value);
+            case EXT_SC_DIRECT_SUBTRANS_X -> ((ShortCircuitExtension<?>) obj).setDirectSubtransX(value);
+            case EXT_SC_DIRECT_TRANS_X -> ((ShortCircuitExtension<?>) obj).setDirectTransX(value);
+            case EXT_SC_STEP_UP_TRANSFORMER_X -> ((ShortCircuitExtension<?>) obj).setStepUpTransformerX(value);
+            case EXT_ISC_IP_MIN -> ((IdentifiableShortCircuit<?>) obj).setIpMin(value);
+            case EXT_ISC_IP_MAX -> ((IdentifiableShortCircuit<?>) obj).setIpMax(value);
+            case EXT_GS_PLANNED_ACTIVE_POWER_SETPOINT -> ((GeneratorStartup) obj).setPlannedActivePowerSetpoint(value);
+            case EXT_GS_STARTUP_COST -> ((GeneratorStartup) obj).setStartupCost(value);
+            case EXT_GS_MARGINAL_COST -> ((GeneratorStartup) obj).setMarginalCost(value);
+            case EXT_GS_PLANNED_OUTAGE_RATE -> ((GeneratorStartup) obj).setPlannedOutageRate(value);
+            case EXT_GS_FORCED_OUTAGE_RATE -> ((GeneratorStartup) obj).setForcedOutageRate(value);
+            case EXT_LD_FIXED_ACTIVE_POWER -> ((LoadDetail) obj).setFixedActivePower(value);
+            case EXT_LD_FIXED_REACTIVE_POWER -> ((LoadDetail) obj).setFixedReactivePower(value);
+            case EXT_LD_VARIABLE_ACTIVE_POWER -> ((LoadDetail) obj).setVariableActivePower(value);
+            case EXT_LD_VARIABLE_REACTIVE_POWER -> ((LoadDetail) obj).setVariableReactivePower(value);
+            case EXT_SA_B0 -> ((StandbyAutomaton) obj).setB0(value);
+            case EXT_SA_LOW_VOLTAGE_SETPOINT -> ((StandbyAutomaton) obj).setLowVoltageSetpoint(value);
+            case EXT_SA_HIGH_VOLTAGE_SETPOINT -> ((StandbyAutomaton) obj).setHighVoltageSetpoint(value);
+            case EXT_SA_LOW_VOLTAGE_THRESHOLD -> ((StandbyAutomaton) obj).setLowVoltageThreshold(value);
+            case EXT_SA_HIGH_VOLTAGE_THRESHOLD -> ((StandbyAutomaton) obj).setHighVoltageThreshold(value);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown double property for set: " + property);
         }
     }
@@ -378,6 +415,8 @@ public final class PropertyDispatcher {
             case DMEAS_VALUE_INT    -> ((DiscreteMeasurement) obj).getValueAsInt();
             case OBS_AREA_NUMBER    -> ((StateEstimationDispatch.AreaRef) obj).area().getAreaNumber();
             case OBS_AREA_STATUS    -> ((StateEstimationDispatch.AreaRef) obj).area().getStatus().ordinal();
+            case EXT_GEC_CODE -> ((GeneratorEntsoeCategory) obj).getCode();
+            case EXT_OS_STATUS -> ((OperatingStatus<?>) obj).getStatus().ordinal();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown int property: " + property);
         };
     }
@@ -421,6 +460,8 @@ public final class PropertyDispatcher {
             }
             case OBS_QUALITY_REDUNDANT -> ((ObservabilityQuality<?>) obj).setRedundant(value < 0 ? null : value != 0);
             case DMEAS_VALUE_INT -> ((DiscreteMeasurement) obj).setValue(value);
+            case EXT_GEC_CODE -> ((GeneratorEntsoeCategory) obj).setCode(value);
+            case EXT_OS_STATUS -> ((OperatingStatus<?>) obj).setStatus(Creation.enumValue(OperatingStatus.Status.class, value));
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown int property for set: " + property);
         }
     }
@@ -507,20 +548,8 @@ public final class PropertyDispatcher {
                                                ? twt.isOverloaded()
                                                : ((Branch<?>) obj).isOverloaded();
             case FLOWS_LIMITS_HOLDER        -> obj instanceof FlowsLimitsHolder || obj instanceof LimitsDispatch.BranchSide;
-            case ACTIVE_POWER_CONTROL       -> obj instanceof ActivePowerControl<?>;
-            case COORDINATED_REACTIVE_CONTROL -> obj instanceof CoordinatedReactiveControl;
-            case HVDC_ANGLE_DROOP_ACTIVE_POWER_CONTROL -> obj instanceof HvdcAngleDroopActivePowerControl;
-            case HVDC_OPERATOR_ACTIVE_POWER_RANGE -> obj instanceof HvdcOperatorActivePowerRange;
-            case SLACK_TERMINAL             -> obj instanceof SlackTerminal;
-            case TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED -> obj instanceof TwoWindingsTransformerToBeEstimated;
-            case THREE_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED -> obj instanceof ThreeWindingsTransformerToBeEstimated;
-            case INJECTION_OBSERVABILITY    -> obj instanceof InjectionObservability<?>;
-            case BRANCH_OBSERVABILITY       -> obj instanceof BranchObservability<?>;
-            case MEASUREMENTS               -> obj instanceof Measurements<?>;
             case MEASUREMENT                -> obj instanceof Measurement;
-            case DISCRETE_MEASUREMENTS      -> obj instanceof DiscreteMeasurements<?>;
             case DISCRETE_MEASUREMENT       -> obj instanceof DiscreteMeasurement;
-            case OBSERVABILITY_AREA         -> obj instanceof ObservabilityArea;
             case AREA_CHARACTERISTICS       -> obj instanceof StateEstimationDispatch.AreaRef;
             case PLANE_LESS_OR_EQUAL        -> ((ReactiveCapabilityShapePlane) obj).isLessOrEqual();
             case PLANE_GREATER_OR_EQUAL     -> ((ReactiveCapabilityShapePlane) obj).isGreaterOrEqual();
@@ -558,7 +587,13 @@ public final class PropertyDispatcher {
             case DMEAS_VALUE_BOOL -> ((DiscreteMeasurement) obj).getValueAsBoolean();
             case DMEAS_VALID      -> ((DiscreteMeasurement) obj).isValid();
             case EXT_OBS_AREA_CONSISTENT -> ((ObservabilityArea) obj).isConsistentWithTopology();
-            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown bool property: " + property);
+            case EXT_SA_STANDBY             -> ((StandbyAutomaton) obj).isStandby();
+            case EXT_MFRR_PARTICIPATE       -> ((ManualFrequencyRestorationReserve<?>) obj).isParticipate();
+            default -> {
+                // An extension type code: whether the object is one
+                if (Extensions.isType(property)) yield Extensions.isInstance(obj, property);
+                throw new BridgeErrors.PropertyNotFoundException("Unknown bool property: " + property);
+            }
         };
     }
 
@@ -599,6 +634,8 @@ public final class PropertyDispatcher {
             case MEAS_VALID       -> ((Measurement) obj).setValid(bval);
             case DMEAS_VALUE_BOOL -> ((DiscreteMeasurement) obj).setValue(bval);
             case DMEAS_VALID      -> ((DiscreteMeasurement) obj).setValid(bval);
+            case EXT_SA_STANDBY -> ((StandbyAutomaton) obj).setStandby(bval);
+            case EXT_MFRR_PARTICIPATE -> ((ManualFrequencyRestorationReserve<?>) obj).setParticipate(bval);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown bool property for set: " + property);
         }
     }
@@ -655,6 +692,7 @@ public final class PropertyDispatcher {
             case MEAS_ID            -> ((Measurement) obj).getId();
             case DMEAS_ID           -> ((DiscreteMeasurement) obj).getId();
             case DMEAS_VALUE_STRING -> ((DiscreteMeasurement) obj).getValueAsString();
+            case EXT_DMI_MODEL_NAME -> ((DynamicModelInfo<?>) obj).getModelName();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown string property: " + property);
         };
         if (value == null) {
@@ -702,6 +740,7 @@ public final class PropertyDispatcher {
             case ADD_SELECTED_OLG -> LimitsDispatch.holder(obj).addSelectedOperationalLimitsGroup(value);
             case DESELECT_OLG     -> LimitsDispatch.holder(obj).deselectOperationalLimitsGroup(value);
             case REMOVE_OLG       -> LimitsDispatch.holder(obj).removeOperationalLimitsGroup(value);
+            case EXT_DMI_MODEL_NAME -> ((DynamicModelInfo<?>) obj).setModelName(value);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown string property for set: " + property);
         }
     }
@@ -1175,18 +1214,6 @@ public final class PropertyDispatcher {
             case REL_CONNECTABLE -> ((Terminal) obj).getConnectable();
             case TEMPORARY_LIMIT -> ((Overload) obj).getTemporaryLimit();
             case VOLTAGE_REGULATION -> ((VoltageRegulationHolder<?>) obj).getVoltageRegulation();
-            case ACTIVE_POWER_CONTROL -> extension(obj, ActivePowerControl.class);
-            case COORDINATED_REACTIVE_CONTROL -> extension(obj, CoordinatedReactiveControl.class);
-            case HVDC_ANGLE_DROOP_ACTIVE_POWER_CONTROL -> extension(obj, HvdcAngleDroopActivePowerControl.class);
-            case HVDC_OPERATOR_ACTIVE_POWER_RANGE -> extension(obj, HvdcOperatorActivePowerRange.class);
-            case SLACK_TERMINAL -> extension(obj, SlackTerminal.class);
-            case TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED -> extension(obj, TwoWindingsTransformerToBeEstimated.class);
-            case THREE_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED -> extension(obj, ThreeWindingsTransformerToBeEstimated.class);
-            case INJECTION_OBSERVABILITY -> extension(obj, InjectionObservability.class);
-            case BRANCH_OBSERVABILITY -> extension(obj, BranchObservability.class);
-            case MEASUREMENTS -> extension(obj, Measurements.class);
-            case DISCRETE_MEASUREMENTS -> extension(obj, DiscreteMeasurements.class);
-            case OBSERVABILITY_AREA -> extension(obj, ObservabilityArea.class);
             case OBS_QUALITY_P  -> ((InjectionObservability<?>) obj).getNullableQualityP();
             case OBS_QUALITY_Q  -> ((InjectionObservability<?>) obj).getNullableQualityQ();
             case OBS_QUALITY_V  -> ((InjectionObservability<?>) obj).getNullableQualityV();
@@ -1201,7 +1228,11 @@ public final class PropertyDispatcher {
             case MIN_MAX_REACTIVE_LIMITS   -> ((ReactiveLimitsHolder) obj).getReactiveLimits(MinMaxReactiveLimits.class);
             case REACTIVE_CAPABILITY_CURVE -> ((ReactiveLimitsHolder) obj).getReactiveLimits(ReactiveCapabilityCurve.class);
             case REACTIVE_CAPABILITY_SHAPE -> ((ReactiveLimitsHolder) obj).getReactiveLimits(ReactiveCapabilityShape.class);
-            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown relation: " + relation);
+            default -> {
+                // An extension type code: the host's extension of that type
+                if (Extensions.isType(relation)) yield Extensions.get(obj, relation);
+                throw new BridgeErrors.PropertyNotFoundException("Unknown relation: " + relation);
+            }
         };
     }
 
@@ -1231,13 +1262,15 @@ public final class PropertyDispatcher {
                 else ((Area) obj).removeAreaBoundary((Boundary) value);
             }
             // Only clearing (INVALID_HANDLE): new ones are created with invoke
-            case VOLTAGE_REGULATION, ACTIVE_POWER_CONTROL, COORDINATED_REACTIVE_CONTROL,
-                 HVDC_ANGLE_DROOP_ACTIVE_POWER_CONTROL, HVDC_OPERATOR_ACTIVE_POWER_RANGE, SLACK_TERMINAL,
-                 TWO_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED, THREE_WINDINGS_TRANSFORMER_TO_BE_ESTIMATED,
-                 INJECTION_OBSERVABILITY, BRANCH_OBSERVABILITY, MEASUREMENTS, DISCRETE_MEASUREMENTS,
-                 OBSERVABILITY_AREA, REL_SELECTED_OLG, CURRENT_LIMITS, ACTIVE_POWER_LIMITS,
+            case VOLTAGE_REGULATION, REL_SELECTED_OLG, CURRENT_LIMITS, ACTIVE_POWER_LIMITS,
                  APPARENT_POWER_LIMITS -> Creation.clear(obj, relation, value);
-            default -> throw new BridgeErrors.PropertyNotFoundException("Unknown relation for set: " + relation);
+            default -> {
+                // An extension type code: removes the host's extension of that type (clearing only too)
+                if (!Extensions.isType(relation)) {
+                    throw new BridgeErrors.PropertyNotFoundException("Unknown relation for set: " + relation);
+                }
+                Creation.clear(obj, relation, value);
+            }
         }
     }
 
@@ -1520,15 +1553,6 @@ public final class PropertyDispatcher {
             case NETWORK                    -> network.getSubnetwork(id);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown object type: " + objectType);
         };
-    }
-
-    // ── Extensions ────────────────────────────────────────────────────────
-
-    /** The extension of the given class of an extendable object, or null. */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    private static Object extension(Object extendable, Class type) {
-        // Raw: the extension classes are generic in their extendable, which Class<X> cannot express
-        return ((Extendable) extendable).getExtension(type);
     }
 
     /** The pairing key of a boundary line or of a tie line (null when it has none). */

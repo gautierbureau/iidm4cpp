@@ -836,6 +836,10 @@ TEST(BackendConformanceTest, Subnetworks) {
     checkConformance("data/subnetworks_test.xiidm");
 }
 
+TEST(BackendConformanceTest, DataExtensions) {
+    checkConformance("data/data_extensions_test.xiidm");
+}
+
 TEST(BackendConformanceTest, CreatedFromScratch) {
     checkConformance("created from scratch", buildNetwork);
 }

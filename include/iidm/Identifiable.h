@@ -2,9 +2,15 @@
 
 #include <iidm/DiscreteMeasurement.h>
 #include <iidm/DiscreteMeasurementsAdder.h>
+#include <iidm/DynamicModelInfo.h>
+#include <iidm/DynamicModelInfoAdder.h>
 #include <iidm/Enums.h>
+#include <iidm/IdentifiableShortCircuit.h>
+#include <iidm/IdentifiableShortCircuitAdder.h>
 #include <iidm/IidmException.h>
 #include <iidm/ObjectRef.h>
+#include <iidm/OperatingStatus.h>
+#include <iidm/OperatingStatusAdder.h>
 #include <iidm/PropertiesHolder.h>
 #include <iidm/PropertyCodes.h>
 #include <iidm/stdcxx/optional.hpp>
@@ -63,6 +69,21 @@ public:
     DiscreteMeasurements getDiscreteMeasurements() const;
     DiscreteMeasurementsAdder newDiscreteMeasurements();
     void removeDiscreteMeasurements();
+
+    bool hasIdentifiableShortCircuit() const;
+    IdentifiableShortCircuit getIdentifiableShortCircuit() const;
+    IdentifiableShortCircuitAdder newIdentifiableShortCircuit();
+    void removeIdentifiableShortCircuit();
+
+    bool hasOperatingStatus() const;
+    OperatingStatus getOperatingStatus() const;
+    OperatingStatusAdder newOperatingStatus();
+    void removeOperatingStatus();
+
+    bool hasDynamicModelInfo() const;
+    DynamicModelInfo getDynamicModelInfo() const;
+    DynamicModelInfoAdder newDynamicModelInfo();
+    void removeDynamicModelInfo();
 };
 
 } // namespace iidm

@@ -5,6 +5,8 @@
 #include <iidm/Connectable.h>
 #include <iidm/InjectionObservability.h>
 #include <iidm/InjectionObservabilityAdder.h>
+#include <iidm/ManualFrequencyRestorationReserve.h>
+#include <iidm/ManualFrequencyRestorationReserveAdder.h>
 #include <iidm/Terminal.h>
 
 namespace iidm {
@@ -30,6 +32,11 @@ public:
     InjectionObservability getInjectionObservability() const;
     InjectionObservabilityAdder newInjectionObservability();
     void removeInjectionObservability();
+
+    bool hasManualFrequencyRestorationReserve() const;
+    ManualFrequencyRestorationReserve getManualFrequencyRestorationReserve() const;
+    ManualFrequencyRestorationReserveAdder newManualFrequencyRestorationReserve();
+    void removeManualFrequencyRestorationReserve();
 };
 
 } // namespace iidm

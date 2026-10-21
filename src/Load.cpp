@@ -2,6 +2,7 @@
 #include <iidm/BackendProvider.h>
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
+#include "Extensions.h"
 #include "Wrap.h"
 
 namespace iidm {
@@ -47,6 +48,22 @@ void Load::setP0ToP() {
 
 void Load::setQ0ToQ() {
     backend_->invoke(handle_, prop::ACT_SET_TARGET_Q_TO_Q);
+}
+
+bool Load::hasLoadDetail() const {
+    return detail::hasExtension<LoadDetail>(backend_, handle_);
+}
+
+LoadDetail Load::getLoadDetail() const {
+    return detail::getExtension<LoadDetail>(backend_, handle_, "LoadDetail");
+}
+
+LoadDetailAdder Load::newLoadDetail() {
+    return detail::newExtension<LoadDetail, LoadDetailAdder>(backend_, handle_);
+}
+
+void Load::removeLoadDetail() {
+    detail::removeExtension<LoadDetail>(backend_, handle_);
 }
 
 } // namespace iidm

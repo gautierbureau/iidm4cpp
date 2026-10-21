@@ -729,6 +729,59 @@ IIDM_CODE(OBS_AREA_NUMBER,                4302) // int
 IIDM_CODE(OBS_AREA_STATUS,                4303) // int: ObservabilityStatus ordinal
 IIDM_CODE(OBS_AREA_NODES,                 4304) // int list: node-breaker nodes (empty in bus-breaker topology)
 
+// GeneratorShortCircuit (on a generator) and BatteryShortCircuit (on a battery): the properties of
+// their common interface, ShortCircuitExtension
+IIDM_CODE(GENERATOR_SHORT_CIRCUIT,        4400)
+IIDM_CODE(BATTERY_SHORT_CIRCUIT,          4401)
+IIDM_CODE(EXT_SC_DIRECT_SUBTRANS_X,       4402) // double: direct-axis subtransient reactance (X''d)
+IIDM_CODE(EXT_SC_DIRECT_TRANS_X,          4403) // double: direct-axis transient reactance (X'd)
+IIDM_CODE(EXT_SC_STEP_UP_TRANSFORMER_X,   4404) // double: reactance of a step-up transformer that is not modeled
+
+// IdentifiableShortCircuit (on any identifiable: a voltage level...)
+IIDM_CODE(IDENTIFIABLE_SHORT_CIRCUIT,     4500)
+IIDM_CODE(EXT_ISC_IP_MIN,                 4501) // double: minimum allowable peak short-circuit current (A)
+IIDM_CODE(EXT_ISC_IP_MAX,                 4502) // double: maximum allowable peak short-circuit current (A)
+
+// GeneratorEntsoeCategory (on a generator)
+IIDM_CODE(GENERATOR_ENTSOE_CATEGORY,      4600)
+IIDM_CODE(EXT_GEC_CODE,                   4601) // int: the ENTSO-E category code
+
+// GeneratorStartup (on a generator)
+IIDM_CODE(GENERATOR_STARTUP,              4700)
+IIDM_CODE(EXT_GS_PLANNED_ACTIVE_POWER_SETPOINT, 4701) // double: the active power target planned by the market (MW)
+IIDM_CODE(EXT_GS_STARTUP_COST,            4702) // double
+IIDM_CODE(EXT_GS_MARGINAL_COST,           4703) // double: the cost of one more unit (in general one MW)
+IIDM_CODE(EXT_GS_PLANNED_OUTAGE_RATE,     4704) // double: rate of planned unavailability (no unit)
+IIDM_CODE(EXT_GS_FORCED_OUTAGE_RATE,      4705) // double: rate of forced unavailability (no unit)
+
+// LoadDetail (on a load)
+IIDM_CODE(LOAD_DETAIL,                    4800)
+IIDM_CODE(EXT_LD_FIXED_ACTIVE_POWER,      4801) // double (MW)
+IIDM_CODE(EXT_LD_FIXED_REACTIVE_POWER,    4802) // double (MVar)
+IIDM_CODE(EXT_LD_VARIABLE_ACTIVE_POWER,   4803) // double (MW)
+IIDM_CODE(EXT_LD_VARIABLE_REACTIVE_POWER, 4804) // double (MVar)
+
+// StandbyAutomaton (on a static var compensator)
+IIDM_CODE(STANDBY_AUTOMATON,              4900)
+IIDM_CODE(EXT_SA_STANDBY,                 4901) // bool: in standby (adder: withStandbyStatus)
+IIDM_CODE(EXT_SA_B0,                      4902) // double: the fixed susceptance in standby (S)
+IIDM_CODE(EXT_SA_LOW_VOLTAGE_SETPOINT,    4903) // double: the voltage setpoint once the low threshold reached (kV)
+IIDM_CODE(EXT_SA_HIGH_VOLTAGE_SETPOINT,   4904) // double: the voltage setpoint once the high threshold reached (kV)
+IIDM_CODE(EXT_SA_LOW_VOLTAGE_THRESHOLD,   4905) // double (kV)
+IIDM_CODE(EXT_SA_HIGH_VOLTAGE_THRESHOLD,  4906) // double (kV)
+
+// ManualFrequencyRestorationReserve (on any injection)
+IIDM_CODE(MANUAL_FREQUENCY_RESTORATION_RESERVE, 6000)
+IIDM_CODE(EXT_MFRR_PARTICIPATE,           6001) // bool
+
+// OperatingStatus (on a busbar section, a line, a tie line, a transformer, an HVDC line or a boundary line)
+IIDM_CODE(OPERATING_STATUS,               6100)
+IIDM_CODE(EXT_OS_STATUS,                  6101) // int: OperatingStatus::Status ordinal
+
+// DynamicModelInfo (on any identifiable)
+IIDM_CODE(DYNAMIC_MODEL_INFO,             6200)
+IIDM_CODE(EXT_DMI_MODEL_NAME,             6201) // string: the name of its dynamic model
+
 // ── Child types: state estimation extensions ─────────────────────────────────
 IIDM_CODE(MEASUREMENT,                    38) // a measurement of a Measurements extension
 IIDM_CODE(DISCRETE_MEASUREMENT,           39) // a measurement of a DiscreteMeasurements extension
