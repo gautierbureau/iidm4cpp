@@ -545,6 +545,10 @@ public final class Creation {
             case SUBSTATION -> ((Network) owner).newSubstation();
             case VOLTAGE_LEVEL -> owner instanceof Substation s ? s.newVoltageLevel() : ((Network) owner).newVoltageLevel();
             case BUS -> ((VoltageLevel) owner).getBusBreakerView().newBus();
+            case REL_BBV_SWITCH -> ((VoltageLevel) owner).getBusBreakerView().newSwitch();
+            case REL_NBV_SWITCH -> ((VoltageLevel) owner).getNodeBreakerView().newSwitch();
+            case BUSBAR_SECTION -> ((VoltageLevel) owner).getNodeBreakerView().newBusbarSection();
+            case INTERNAL_CONNECTION -> ((VoltageLevel) owner).getNodeBreakerView().newInternalConnection();
             case GENERATOR -> ((VoltageLevel) owner).newGenerator();
             case LOAD -> ((VoltageLevel) owner).newLoad();
             case GROUND -> ((VoltageLevel) owner).newGround();
@@ -752,6 +756,10 @@ public final class Creation {
             }
             case NewLeg leg -> {
                 leg.leg().add();
+                yield null;
+            }
+            case VoltageLevel.NodeBreakerView.InternalConnectionAdder adder -> {
+                adder.add();
                 yield null;
             }
             case ShuntCompensatorLinearModelAdder adder -> {
@@ -1021,10 +1029,17 @@ public final class Creation {
                     case ConnectableMove move -> move.node = value;
                     case NodeFictitiousInjection change -> change.node = value;
                     case NewLeg leg -> leg.leg().setNode(value);
+                    case BusbarSectionAdder adder -> adder.setNode(value);
                     default -> ((InjectionAdder<?, ?>) a).setNode(value);
                 }
             }
-            case IC_NODE1 -> ((InternalConnectionsRemoval) a).node1 = value;
+            case IC_NODE1 -> {
+                if (a instanceof VoltageLevel.NodeBreakerView.InternalConnectionAdder adder) {
+                    adder.setNode1(value);
+                } else {
+                    ((InternalConnectionsRemoval) a).node1 = value;
+                }
+            }
             case TERMINAL_SIDE -> {
                 if (a instanceof PrioritySet set) {
                     set.side = value;
@@ -1057,7 +1072,16 @@ public final class Creation {
             case TC_SOLVED_TAP_POSITION -> ((TapChangerAdder<?, ?, ?, ?, ?, ?>) a).setSolvedTapPosition(value);
             case PTC_REGULATION_MODE -> ((PhaseTapChangerAdder) a)
                 .setRegulationMode(enumValue(PhaseTapChanger.RegulationMode.class, value));
-            case IC_NODE2 -> ((InternalConnectionsRemoval) a).node2 = value;
+            case IC_NODE2 -> {
+                if (a instanceof VoltageLevel.NodeBreakerView.InternalConnectionAdder adder) {
+                    adder.setNode2(value);
+                } else {
+                    ((InternalConnectionsRemoval) a).node2 = value;
+                }
+            }
+            case SW_NODE1 -> ((VoltageLevel.NodeBreakerView.SwitchAdder) a).setNode1(value);
+            case SW_NODE2 -> ((VoltageLevel.NodeBreakerView.SwitchAdder) a).setNode2(value);
+            case SW_KIND -> ((VoltageLevel.NodeBreakerView.SwitchAdder) a).setKind(enumValue(SwitchKind.class, value));
             case VL_TOPOLOGY_KIND -> ((VoltageLevelAdder) a).setTopologyKind(enumValue(TopologyKind.class, value));
             case GEN_ENERGY_SOURCE -> ((GeneratorAdder) a).setEnergySource(enumValue(EnergySource.class, value));
             case LOAD_TYPE -> ((LoadAdder) a).setLoadType(enumValue(LoadType.class, value));
@@ -1140,6 +1164,14 @@ public final class Creation {
             }
             case GEN_CONDENSER -> ((GeneratorAdder) a).setCondenser(value);
             case GENERATION_VOLTAGE_REGULATION_ON -> ((BoundaryLineAdder.GenerationAdder) a).setVoltageRegulationOn(value);
+            case SW_OPEN -> {
+                if (a instanceof VoltageLevel.NodeBreakerView.SwitchAdder adder) {
+                    adder.setOpen(value);
+                } else {
+                    ((VoltageLevel.BusBreakerView.SwitchAdder) a).setOpen(value);
+                }
+            }
+            case SW_RETAINED -> ((VoltageLevel.NodeBreakerView.SwitchAdder) a).setRetained(value);
             case TC_LOAD_TAP_CHANGING_CAPABILITIES -> ((TapChangerAdder<?, ?, ?, ?, ?, ?>) a).setLoadTapChangingCapabilities(value);
             case REGULATING -> ((PhaseTapChangerAdder) a).setRegulating(value);
             case PLANE_GREATER_OR_EQUAL -> ((NewPlane) a).greaterOrEqual = value;
@@ -1226,6 +1258,8 @@ public final class Creation {
             case HVDC_CONVERTER_STATION_ID2 -> ((HvdcLineAdder) a).setConverterStationId2(value);
             case BOUNDARY_LINE1_ID -> ((TieLineAdder) a).setBoundaryLine1(value);
             case BL_PAIRING_KEY -> ((BoundaryLineAdder) a).setPairingKey(value);
+            case SW_BUS1 -> ((VoltageLevel.BusBreakerView.SwitchAdder) a).setBus1(value);
+            case SW_BUS2 -> ((VoltageLevel.BusBreakerView.SwitchAdder) a).setBus2(value);
             case AREA_TYPE -> ((AreaAdder) a).setAreaType(value);
             case VAL_ID -> ((VoltageAngleLimitAdder) a).setId(value);
             case OMS_MONITORED_ELEMENT_ID -> ((OverloadManagementSystemAdder) a).setMonitoredElementId(value);

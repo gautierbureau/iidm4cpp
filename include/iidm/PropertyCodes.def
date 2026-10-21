@@ -510,11 +510,18 @@ IIDM_CODE(PLANE_LESS_OR_EQUAL,         1824) // bool; setDouble(plane, <it>, gam
 IIDM_CODE(PLANE_GREATER_OR_EQUAL,      1825) // bool; setDouble(plane, <it>, gamma): greaterOrEqual(gamma)
 
 // ── Switch ───────────────────────────────────────────────────────────────────
+// invoke(vl, REL_NBV_SWITCH) starts a new switch of the node-breaker view (fields SW_NODE1, SW_NODE2,
+// SW_KIND, SW_OPEN and SW_RETAINED), invoke(vl, REL_BBV_SWITCH) one of the bus-breaker view (fields
+// SW_BUS1, SW_BUS2 and SW_OPEN). Likewise invoke(vl, BUSBAR_SECTION) a busbar section (field
+// TERMINAL_NODE) and invoke(vl, INTERNAL_CONNECTION) an internal connection (fields IC_NODE1 and IC_NODE2;
+// ACT_ADD returns null).
 IIDM_CODE(SW_OPEN,                     1500)
 IIDM_CODE(SW_RETAINED,                 1501)
-IIDM_CODE(SW_KIND,                     1502)
+IIDM_CODE(SW_KIND,                     1502) // int: SwitchKind ordinal
 IIDM_CODE(SW_NODE1,                    1503)
 IIDM_CODE(SW_NODE2,                    1504)
+IIDM_CODE(SW_BUS1,                     1505) // string, adder field: a bus of the bus-breaker view
+IIDM_CODE(SW_BUS2,                     1506) // string, adder field
 
 // ── Extensions ───────────────────────────────────────────────────────────────
 // An extension is an object of its own. Its type code X: getRelated(host, X) gives it

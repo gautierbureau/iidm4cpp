@@ -18,7 +18,9 @@
 #include <iidm/SlackTerminal.h>
 #include <iidm/SlackTerminalAdder.h>
 #include <iidm/BusbarSection.h>
+#include <iidm/BusbarSectionAdder.h>
 #include <iidm/Switch.h>
+#include <iidm/SwitchAdder.h>
 #include <iidm/InternalConnection.h>
 #include <iidm/Terminal.h>
 #include <iidm/stdcxx/optional.hpp>
@@ -82,6 +84,13 @@ public:
         int getBusbarSectionCount() const;
         iidm::optional<BusbarSection> getBusbarSection(const std::string& id) const;
 
+        BusbarSectionAdder newBusbarSection();
+        NodeBreakerSwitchAdder newSwitch();
+        // A switch of that kind
+        NodeBreakerSwitchAdder newBreaker();
+        NodeBreakerSwitchAdder newDisconnector();
+        InternalConnectionAdder newInternalConnection();
+
         std::vector<InternalConnection> getInternalConnections() const;
         int getInternalConnectionCount() const;
         std::vector<int> getNodesInternalConnectedTo(int node) const;
@@ -112,6 +121,7 @@ public:
         iidm::optional<Switch> getSwitch(const std::string& id) const;
         Bus getBus1(const std::string& switchId) const;
         Bus getBus2(const std::string& switchId) const;
+        BusBreakerSwitchAdder newSwitch();
         void removeSwitch(const std::string& switchId);
         void removeAllSwitches();
     };

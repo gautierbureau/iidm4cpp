@@ -699,14 +699,12 @@ g.removeActivePowerControl();
   equipment). powsybl refuses some removals, e.g. a voltage level that branches still connect:
   `ValidationException`. A removed object's wrapper keeps its handle: powsybl decides what using it
   does (changes are rejected with `ValidationException`).
-- **Available so far:** subnetworks, substations, voltage levels (with or without substation),
-  bus-breaker buses, generators, loads and their load models, batteries, shunt compensators and their
-  models, static var compensators, VSC and LCC converter stations, boundary lines and their
-  generation, grounds, tie lines, areas and their boundaries, voltage angle limits, overload
-  management systems and their trippings, operational limits groups and their limits, voltage
-  regulations, tap changers and their steps (or a new set of steps), reactive limits (min-max, curve,
-  shape), lines, two and three windings transformers, HVDC lines, and every extension. Not yet: busbar
-  sections, switches and internal connections.
+- **Available:** every network object but those of the DC model, with their parts (load models,
+  shunt compensator models and sections, boundary line generations, transformer legs, tap changers
+  and their steps, reactive limits, operational limits groups and their limits, voltage regulations,
+  area boundaries, overload management system trippings), and every extension. A node-breaker
+  voltage level gets its busbar sections, switches and internal connections from its
+  `getNodeBreakerView()`, a bus-breaker one its buses and switches from its `getBusBreakerView()`.
 
 Underneath, there is one backend primitive, `invoke(handle, code)` (§5.1): `invoke(parent, TYPE)`
 returns a Java adder, the adder's fields are set with the usual setters and the object's own

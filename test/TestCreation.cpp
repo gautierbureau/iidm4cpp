@@ -274,6 +274,40 @@ void checkBranches(Network& network) {
     EXPECT_FALSE(network.getSubstation("S4"));
 }
 
+// Busbar sections, switches and internal connections: a node-breaker voltage level built from C++
+void checkTopology(Network& network) {
+    VoltageLevel vl = network.newVoltageLevel().setId("NB").setNominalV(225).setTopologyKind(TopologyKind::NODE_BREAKER).add();
+    VoltageLevel::NodeBreakerView view = vl.getNodeBreakerView();
+    BusbarSection bbs = view.newBusbarSection().setId("BBS").setNode(0).add();
+    EXPECT_EQ(bbs.getTerminal().getNodeBreakerView().getNode(), 0);
+    Switch breaker = view.newBreaker().setId("BR").setNode1(0).setNode2(1).setOpen(false).add();
+    EXPECT_EQ(breaker.getKind(), SwitchKind::BREAKER);
+    Switch disconnector = view.newDisconnector().setId("DIS").setNode1(1).setNode2(2).setRetained(false).add();
+    EXPECT_EQ(disconnector.getKind(), SwitchKind::DISCONNECTOR);
+    view.newSwitch().setId("LBS").setKind(SwitchKind::LOAD_BREAK_SWITCH).setNode1(0).setNode2(3).setOpen(true).add();
+    view.newInternalConnection().setNode1(2).setNode2(4).add();
+    Load load = vl.newLoad().setId("NBL").setNode(4).setP0(10).setQ0(1).add();
+    EXPECT_EQ(view.getSwitchCount(), 3);
+    EXPECT_EQ(view.getInternalConnectionCount(), 1);
+    EXPECT_EQ(view.getNodesInternalConnectedTo(4), (std::vector<int>{2}));
+    // The load is on the busbar section's bus, through the closed switches and the internal connection
+    EXPECT_EQ(load.getTerminal().getBusView().getBus()->getId(), bbs.getTerminal().getBusView().getBus()->getId());
+    EXPECT_THROW(view.newSwitch().setId("NOKIND").setNode1(5).setNode2(6).add(), ValidationException);
+    EXPECT_THROW(view.newBusbarSection().setId("BBS").setNode(7).add(), ValidationException); // duplicate id
+
+    VoltageLevel bb = network.newVoltageLevel().setId("BB").setNominalV(225).setTopologyKind(TopologyKind::BUS_BREAKER).add();
+    bb.getBusBreakerView().newBus().setId("BB1").add();
+    bb.getBusBreakerView().newBus().setId("BB2").add();
+    Switch coupler = bb.getBusBreakerView().newSwitch().setId("CPL").setBus1("BB1").setBus2("BB2").setOpen(true).add();
+    EXPECT_TRUE(coupler.isOpen());
+    EXPECT_EQ(bb.getBusBreakerView().getBus2("CPL").getId(), "BB2");
+    EXPECT_THROW(bb.getNodeBreakerView().newBreaker(), ValidationException); // not node-breaker
+
+    load.remove();
+    vl.remove();
+    bb.remove();
+}
+
 } // namespace
 
 #ifdef IIDM_BRIDGE_GRAALVM_ENABLED
@@ -287,6 +321,7 @@ TEST(CreationTest, GraalVM) {
     checkCreation(network);
     checkInjections(network);
     checkBranches(network);
+    checkTopology(network);
     EXPECT_LT(static_cast<GraalVMBackend&>(network.getBackend()).javaHandleCount(), 100);
 }
 #endif
@@ -301,5 +336,6 @@ TEST(CreationTest, JNI) {
     checkCreation(network);
     checkInjections(network);
     checkBranches(network);
+    checkTopology(network);
 }
 #endif

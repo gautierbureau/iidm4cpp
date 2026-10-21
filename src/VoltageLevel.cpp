@@ -134,6 +134,30 @@ iidm::optional<BusbarSection> VoltageLevel::NodeBreakerView::getBusbarSection(co
     return detail::wrapOptional<BusbarSection>(backend_->getRelatedByString(handle_, prop::BUSBAR_SECTION, id), backend_);
 }
 
+BusbarSectionAdder VoltageLevel::NodeBreakerView::newBusbarSection() {
+    return BusbarSectionAdder(backend_->invoke(handle_, prop::BUSBAR_SECTION), backend_);
+}
+
+NodeBreakerSwitchAdder VoltageLevel::NodeBreakerView::newSwitch() {
+    return NodeBreakerSwitchAdder(backend_->invoke(handle_, prop::REL_NBV_SWITCH), backend_);
+}
+
+NodeBreakerSwitchAdder VoltageLevel::NodeBreakerView::newBreaker() {
+    NodeBreakerSwitchAdder adder = newSwitch();
+    adder.setKind(SwitchKind::BREAKER);
+    return adder;
+}
+
+NodeBreakerSwitchAdder VoltageLevel::NodeBreakerView::newDisconnector() {
+    NodeBreakerSwitchAdder adder = newSwitch();
+    adder.setKind(SwitchKind::DISCONNECTOR);
+    return adder;
+}
+
+InternalConnectionAdder VoltageLevel::NodeBreakerView::newInternalConnection() {
+    return InternalConnectionAdder(backend_->invoke(handle_, prop::INTERNAL_CONNECTION), backend_);
+}
+
 std::vector<InternalConnection> VoltageLevel::NodeBreakerView::getInternalConnections() const {
     return detail::wrapAll<InternalConnection>(backend_->getChildren(handle_, prop::INTERNAL_CONNECTION), backend_);
 }
@@ -172,6 +196,10 @@ iidm::optional<Bus> VoltageLevel::BusBreakerView::getBus(const std::string& busI
 
 std::vector<Bus> VoltageLevel::BusBreakerView::getBusesFromBusViewBusId(const std::string& busViewBusId) const {
     return detail::elementsOf<Bus>(backend_->getRelatedByString(handle_, prop::REL_BBV_BUSES_OF_BV_BUS, busViewBusId), backend_);
+}
+
+BusBreakerSwitchAdder VoltageLevel::BusBreakerView::newSwitch() {
+    return BusBreakerSwitchAdder(backend_->invoke(handle_, prop::REL_BBV_SWITCH), backend_);
 }
 
 BusAdder VoltageLevel::BusBreakerView::newBus() {

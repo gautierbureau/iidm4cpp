@@ -268,6 +268,51 @@ class CreationDispatchTest {
         assertEquals(HvdcLine.ConvertersMode.SIDE_1_INVERTER_SIDE_2_RECTIFIER, hvdcLine.getConvertersMode());
     }
 
+    // Busbar sections, switches and internal connections of a node-breaker voltage level; a switch of
+    // a bus-breaker one
+    @Test void topology() {
+        VoltageLevel vl = network.newVoltageLevel().setId("NB").setNominalV(225).setTopologyKind(TopologyKind.NODE_BREAKER).add();
+        Object bbs = PropertyDispatcher.invokeObject(vl, BUSBAR_SECTION);
+        PropertyDispatcher.setString(bbs, ID, "BBS");
+        PropertyDispatcher.setInt(bbs, TERMINAL_NODE, 0);
+        assertEquals(0, ((BusbarSection) add(bbs)).getTerminal().getNodeBreakerView().getNode());
+        Object breaker = PropertyDispatcher.invokeObject(vl, REL_NBV_SWITCH);
+        PropertyDispatcher.setString(breaker, ID, "BR");
+        PropertyDispatcher.setInt(breaker, SW_NODE1, 0);
+        PropertyDispatcher.setInt(breaker, SW_NODE2, 1);
+        PropertyDispatcher.setInt(breaker, SW_KIND, SwitchKind.BREAKER.ordinal());
+        PropertyDispatcher.setBool(breaker, SW_OPEN, true);
+        PropertyDispatcher.setBool(breaker, SW_RETAINED, true);
+        Switch sw = (Switch) add(breaker);
+        assertEquals(SwitchKind.BREAKER, sw.getKind());
+        assertTrue(sw.isOpen());
+        assertTrue(sw.isRetained());
+        Object ic = PropertyDispatcher.invokeObject(vl, INTERNAL_CONNECTION);
+        PropertyDispatcher.setInt(ic, IC_NODE1, 1);
+        PropertyDispatcher.setInt(ic, IC_NODE2, 2);
+        assertNull(add(ic)); // add() returns nothing
+        assertEquals(1, vl.getNodeBreakerView().getInternalConnectionCount());
+        // A switch without its kind: rejected
+        Object noKind = PropertyDispatcher.invokeObject(vl, REL_NBV_SWITCH);
+        PropertyDispatcher.setString(noKind, ID, "SW");
+        PropertyDispatcher.setInt(noKind, SW_NODE1, 2);
+        PropertyDispatcher.setInt(noKind, SW_NODE2, 3);
+        assertThrows(ValidationException.class, () -> add(noKind));
+
+        VoltageLevel bb = addVoltageLevel();
+        bb.getBusBreakerView().newBus().setId("B2").add();
+        Object coupler = PropertyDispatcher.invokeObject(bb, REL_BBV_SWITCH);
+        PropertyDispatcher.setString(coupler, ID, "CPL");
+        PropertyDispatcher.setString(coupler, SW_BUS1, "B");
+        PropertyDispatcher.setString(coupler, SW_BUS2, "B2");
+        PropertyDispatcher.setBool(coupler, SW_OPEN, false);
+        add(coupler);
+        assertEquals("B2", bb.getBusBreakerView().getBus2("CPL").getId());
+        // Node-breaker switches in a bus-breaker voltage level: rejected
+        assertEquals(BridgeErrors.VALIDATION, BridgeErrors.kindOf(assertThrows(Throwable.class,
+            () -> PropertyDispatcher.invokeObject(bb, REL_NBV_SWITCH))));
+    }
+
     private static Object injection(VoltageLevel vl, int type, String id) {
         Object adder = PropertyDispatcher.invokeObject(vl, type);
         PropertyDispatcher.setString(adder, ID, id);
