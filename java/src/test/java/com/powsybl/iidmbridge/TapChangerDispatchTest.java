@@ -263,6 +263,68 @@ class TapChangerDispatchTest {
         assertEquals(BridgeErrors.VALIDATION, kindOfFailure(() -> PropertyDispatcher.invoke(ptcReplacer, ACT_ADD)));
     }
 
+    // New tap changers through their adders, which replace the current ones: each step nested, the
+    // regulation of a ratio one too
+    @Test void newTapChangers() {
+        long t = reg(twt);
+        long rtc = PropertyDispatcher.invoke(t, RATIO_TAP_CHANGER);
+        PropertyDispatcher.setInt(rtc, TC_LOW_TAP_POSITION, 1);
+        PropertyDispatcher.setInt(rtc, TC_TAP_POSITION, 2);
+        PropertyDispatcher.setInt(rtc, TC_SOLVED_TAP_POSITION, 1);
+        PropertyDispatcher.setBool(rtc, TC_LOAD_TAP_CHANGING_CAPABILITIES, 1);
+        PropertyDispatcher.setKeyedString(rtc, PROPERTY, "k", "v");
+        for (double rho : new double[] {0.9, 1.1}) {
+            addStep(rtc, RATIO_TAP_CHANGER_STEP, rho);
+        }
+        long regulation = PropertyDispatcher.invoke(rtc, VOLTAGE_REGULATION);
+        PropertyDispatcher.setInt(regulation, VR_MODE, RegulationMode.VOLTAGE.ordinal());
+        PropertyDispatcher.setDouble(regulation, VR_TARGET_VALUE, 225);
+        PropertyDispatcher.setDouble(regulation, VR_TARGET_DEADBAND, 1);
+        PropertyDispatcher.setRelated(regulation, REL_TERMINAL, reg(twt.getTerminal2()));
+        PropertyDispatcher.setBool(regulation, VR_REGULATING, 1);
+        assertEquals(0L, PropertyDispatcher.invoke(regulation, ACT_ADD));
+        RatioTapChanger ratio = (RatioTapChanger) obj(PropertyDispatcher.invoke(rtc, ACT_ADD));
+        assertSame(twt.getRatioTapChanger(), ratio);
+        assertEquals(2, ratio.getStepCount());
+        assertEquals(1.1, ratio.getStep(2).getRho());
+        assertEquals(2, ratio.getTapPosition());
+        assertEquals(1, ratio.getSolvedTapPosition());
+        assertEquals("v", ratio.getProperty("k"));
+        assertEquals(225, ratio.getVoltageRegulation().getTargetValue());
+
+        long ptc = PropertyDispatcher.invoke(reg(twt3.getLeg1()), PHASE_TAP_CHANGER);
+        PropertyDispatcher.setInt(ptc, TC_LOW_TAP_POSITION, 0);
+        PropertyDispatcher.setInt(ptc, TC_TAP_POSITION, 0);
+        PropertyDispatcher.setBool(ptc, REGULATING, 1);
+        PropertyDispatcher.setInt(ptc, PTC_REGULATION_MODE, PhaseTapChanger.RegulationMode.CURRENT_LIMITER.ordinal());
+        PropertyDispatcher.setDouble(ptc, PTC_REGULATION_VALUE, 300);
+        PropertyDispatcher.setDouble(ptc, PTC_TARGET_DEADBAND, 10);
+        PropertyDispatcher.setRelated(ptc, REL_REGULATION_TERMINAL, reg(twt3.getLeg1().getTerminal()));
+        addStep(ptc, PHASE_TAP_CHANGER_STEP, 1);
+        PhaseTapChanger phase = (PhaseTapChanger) obj(PropertyDispatcher.invoke(ptc, ACT_ADD));
+        assertSame(twt3.getLeg1().getPhaseTapChanger(), phase);
+        assertEquals(-5, phase.getStep(0).getAlpha());
+        assertEquals(PhaseTapChanger.RegulationMode.CURRENT_LIMITER, phase.getRegulationMode());
+        assertSame(twt3.getLeg1().getTerminal(), phase.getRegulationTerminal());
+
+        // A tap position out of the steps: rejected; a ratio step is not a phase tap changer's
+        long invalid = PropertyDispatcher.invoke(t, PHASE_TAP_CHANGER);
+        PropertyDispatcher.setInt(invalid, TC_LOW_TAP_POSITION, 0);
+        PropertyDispatcher.setInt(invalid, TC_TAP_POSITION, 3);
+        addStep(invalid, PHASE_TAP_CHANGER_STEP, 1);
+        assertEquals(BridgeErrors.VALIDATION, kindOfFailure(() -> PropertyDispatcher.invoke(invalid, ACT_ADD)));
+        assertEquals(BridgeErrors.PROPERTY_NOT_FOUND, kindOfFailure(() -> PropertyDispatcher.invoke(invalid, RATIO_TAP_CHANGER_STEP)));
+        assertEquals(BridgeErrors.PROPERTY_NOT_FOUND, kindOfFailure(() -> PropertyDispatcher.invoke(reg(network), RATIO_TAP_CHANGER)));
+    }
+
+    private static void addStep(long tapChangerAdder, int stepType, double rho) {
+        long step = PropertyDispatcher.invoke(tapChangerAdder, stepType);
+        if (stepType == PHASE_TAP_CHANGER_STEP) PropertyDispatcher.setDouble(step, PTC_STEP_ALPHA, -5);
+        PropertyDispatcher.setDouble(step, STEP_RHO, rho);
+        for (int code : new int[] {STEP_R, STEP_X, STEP_G, STEP_B}) PropertyDispatcher.setDouble(step, code, 0);
+        assertEquals(0L, PropertyDispatcher.invoke(step, ACT_ADD)); // nested
+    }
+
     @Test void solvedTapPositionsOfTransformers() {
         twt.getRatioTapChanger().setSolvedTapPosition(1);
         twt.getPhaseTapChanger().setSolvedTapPosition(0);

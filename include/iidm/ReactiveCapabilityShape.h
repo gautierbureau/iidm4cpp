@@ -22,6 +22,9 @@ public:
     double getDelta() const;
     bool isLessOrEqual() const;
     bool isGreaterOrEqual() const;
+    // The inequality made <= gamma, or >= gamma, in place: the shape changes with it
+    ReactiveCapabilityShapePlane& lessOrEqual(double gamma);
+    ReactiveCapabilityShapePlane& greaterOrEqual(double gamma);
 };
 
 // Reactive limits that depend on the active power and the voltage: a polyhedron in the (q, v, p)

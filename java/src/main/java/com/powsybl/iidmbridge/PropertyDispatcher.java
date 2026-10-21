@@ -409,6 +409,8 @@ public final class PropertyDispatcher {
             case EXT_LEG_F_GROUNDING_R -> ((LegFortescue) obj).setGroundingR(value);
             case EXT_LEG_F_GROUNDING_X -> ((LegFortescue) obj).setGroundingX(value);
             case EXT_SVC_TARGET_V -> ((PilotPoint) obj).setTargetV(value);
+            case PLANE_LESS_OR_EQUAL -> ((ReactiveCapabilityShapePlane) obj).lessOrEqual(value);
+            case PLANE_GREATER_OR_EQUAL -> ((ReactiveCapabilityShapePlane) obj).greaterOrEqual(value);
             case EXT_MC_R -> ((MutualCoupling) obj).setR(value);
             case EXT_MC_X -> ((MutualCoupling) obj).setX(value);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown double property for set: " + property);

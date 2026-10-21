@@ -153,6 +153,11 @@
 #include <iidm/ReferenceTerminalsAdder.h>
 #include <iidm/ObservabilityAreaAdder.h>
 #include <iidm/SecondaryVoltageControlAdder.h>
+#include <iidm/MinMaxReactiveLimitsAdder.h>
+#include <iidm/ReactiveCapabilityCurveAdder.h>
+#include <iidm/ReactiveCapabilityShapeAdder.h>
+#include <iidm/RatioTapChangerAdder.h>
+#include <iidm/PhaseTapChangerAdder.h>
 #include <iidm/LineCouplingsAdder.h>
 #include <iidm/VariantManager.h>
 #include <iidm/Network.h>

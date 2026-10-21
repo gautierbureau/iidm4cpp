@@ -231,6 +231,52 @@ void checkTransformerChanges(BackendProvider& b) {
     EXPECT_DOUBLE_EQ(ptc1.getStep(-1).getAlpha(), 4.0);
 }
 
+// New tap changers, which replace the current ones (after checkTransformerChanges)
+void checkNewTapChangers(BackendProvider& b) {
+    TwoWindingsTransformer t2(b.findById(prop::TWO_WINDINGS_TRANSFORMER, "T2"), &b);
+    RatioTapChanger rtc = t2.newRatioTapChanger().setLowTapPosition(0).setTapPosition(1).setLoadTapChangingCapabilities(true)
+        .setProperty("origin", "c++")
+        .beginStep().setRho(0.95).setR(0).setX(0).setG(0).setB(0).endStep()
+        .beginStep().setRho(1.05).setR(0).setX(0).setG(0).setB(0).setProperty("step", "high").endStep()
+        .newVoltageRegulation().withMode(RegulationMode::VOLTAGE).withTargetValue(226).withTargetDeadband(2)
+            .withTerminal(t2.getTerminal2()).withRegulating(true).add()
+        .add();
+    EXPECT_EQ(rtc, *t2.getRatioTapChanger());
+    EXPECT_EQ(rtc.getStepCount(), 2);
+    EXPECT_EQ(rtc.getTapPosition(), 1);
+    EXPECT_DOUBLE_EQ(rtc.getStep(1).getRho(), 1.05);
+    EXPECT_EQ(rtc.getStep(1).getProperty("step"), iidm::optional<std::string>("high"));
+    EXPECT_EQ(rtc.getProperty("origin"), iidm::optional<std::string>("c++"));
+    EXPECT_DOUBLE_EQ(rtc.getVoltageRegulation()->getTargetValue(), 226.0);
+    // The tap position out of the steps: rejected, the tap changer kept
+    EXPECT_THROW(t2.newRatioTapChanger().setLowTapPosition(0).setTapPosition(5)
+                     .beginStep().setRho(1).setR(0).setX(0).setG(0).setB(0).endStep().add(),
+                 ValidationException);
+    EXPECT_EQ(t2.getRatioTapChanger()->getStepCount(), 2);
+
+    PhaseTapChanger ptc = t2.newPhaseTapChanger().setLowTapPosition(-1).setTapPosition(0).setSolvedTapPosition(-1)
+        .setRegulationMode(PhaseTapChangerRegulationMode::ACTIVE_POWER_CONTROL).setRegulationValue(80)
+        .setTargetDeadband(5).setRegulating(false).setRegulationTerminal(t2.getTerminal1())
+        .beginStep().setAlpha(-6).setRho(1).setR(0).setX(0).setG(0).setB(0).endStep()
+        .beginStep().setAlpha(6).setRho(1).setR(0).setX(0).setG(0).setB(0).endStep()
+        .add();
+    EXPECT_TRUE(t2.hasPhaseTapChanger());
+    EXPECT_DOUBLE_EQ(ptc.getStep(0).getAlpha(), 6.0);
+    EXPECT_EQ(ptc.getRegulationMode(), PhaseTapChangerRegulationMode::ACTIVE_POWER_CONTROL);
+    EXPECT_EQ(*ptc.getRegulationTerminal(), t2.getTerminal1());
+    EXPECT_EQ(ptc.findSolvedTapPosition(), iidm::optional<int>(-1));
+
+    // On a leg of a three windings transformer
+    ThreeWindingsTransformer t3(b.findById(prop::THREE_WINDINGS_TRANSFORMER, "T3"), &b);
+    ThreeWindingsTransformer::Leg leg3 = t3.getLeg3();
+    EXPECT_NE(leg3.getRatioTapChanger()->getLowTapPosition(), 1);
+    leg3.newRatioTapChanger().setLowTapPosition(1).setTapPosition(1)
+        .beginStep().setRho(1).setR(0).setX(0).setG(0).setB(0).endStep()
+        .add();
+    EXPECT_EQ(t3.getLeg3().getRatioTapChanger()->getLowTapPosition(), 1);
+    EXPECT_EQ(t3.getLeg3().getRatioTapChanger()->getStepCount(), 1);
+}
+
 // Reading tap changers, steps and legs leaves no Java reference behind
 void checkHandlesAreReleased(BackendProvider& b) {
     ThreeWindingsTransformer t3(b.findById(prop::THREE_WINDINGS_TRANSFORMER, "T3"), &b);
@@ -258,6 +304,7 @@ void checkTransformers(BackendProvider& b) {
     checkBoundaryLine(b);
     checkHandlesAreReleased(b);
     checkTransformerChanges(b);
+    checkNewTapChangers(b);
 }
 
 } // namespace

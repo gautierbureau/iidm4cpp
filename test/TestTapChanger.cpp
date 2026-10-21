@@ -2,6 +2,7 @@
 #include <iidm/PhaseTapChanger.h>
 #include <iidm/PropertyCodes.h>
 #include <iidm/RatioTapChanger.h>
+#include <iidm/Terminal.h>
 #include <iidm/TwoWindingsTransformer.h>
 #include <iidm/VoltageRegulation.h>
 #include "MockBackend.h"
@@ -217,4 +218,42 @@ TEST_F(TapChangerTest, Invalid) {
     EXPECT_FALSE(none.isValid());
     EXPECT_THROW(none.getTapPosition(), InvalidHandleException);
     EXPECT_THROW(PhaseTapChangerStep().getAlpha(), InvalidHandleException);
+}
+
+// New tap changers: started on their holder; steps and the regulation as nested adders
+TEST_F(TapChangerTest, Adders) {
+    backend.nextAdder = 500;
+    TwoWindingsTransformer twt(BARE_TWT, &backend);
+    Terminal terminal(TERM, &backend);
+    twt.newRatioTapChanger().setLowTapPosition(-1).setTapPosition(0).setSolvedTapPosition(1)
+        .setLoadTapChangingCapabilities(true).setProperty("k", "v")
+        .beginStep().setRho(0.9).setR(0).setX(0).setG(0).setB(0).endStep()
+        .newVoltageRegulation().withMode(RegulationMode::VOLTAGE).withTargetValue(225).withTerminal(terminal)
+            .withRegulating(true).add()
+        .add();
+    EXPECT_EQ(backend.invocations[0], std::make_pair(BARE_TWT, prop::RATIO_TAP_CHANGER));
+    EXPECT_EQ((backend.ints[{500, prop::TC_LOW_TAP_POSITION}]), -1);
+    EXPECT_EQ((backend.ints[{500, prop::TC_SOLVED_TAP_POSITION}]), 1);
+    EXPECT_TRUE((backend.bools[{500, prop::TC_LOAD_TAP_CHANGING_CAPABILITIES}]));
+    EXPECT_EQ(backend.invocations[1], std::make_pair(ObjectHandle(500), prop::RATIO_TAP_CHANGER_STEP));
+    EXPECT_DOUBLE_EQ((backend.doubles[{501, prop::STEP_RHO}]), 0.9);
+    EXPECT_EQ(backend.invocations[2], std::make_pair(ObjectHandle(501), prop::ACT_ADD));
+    EXPECT_EQ(backend.invocations[3], std::make_pair(ObjectHandle(500), prop::VOLTAGE_REGULATION));
+    EXPECT_EQ((backend.related[{502, prop::REL_TERMINAL}]), TERM);
+    EXPECT_EQ(backend.invocations[4], std::make_pair(ObjectHandle(502), prop::ACT_ADD));
+    EXPECT_EQ(backend.invocations[5], std::make_pair(ObjectHandle(500), prop::ACT_ADD));
+
+    twt.newPhaseTapChanger().setLowTapPosition(0).setTapPosition(0).setRegulating(true)
+        .setRegulationMode(PhaseTapChangerRegulationMode::CURRENT_LIMITER).setRegulationValue(300).setTargetDeadband(10)
+        .setRegulationTerminal(terminal)
+        .beginStep().setAlpha(-5).setRho(1).setR(0).setX(0).setG(0).setB(0).endStep()
+        .add();
+    EXPECT_EQ(backend.invocations[6], std::make_pair(BARE_TWT, prop::PHASE_TAP_CHANGER));
+    EXPECT_TRUE((backend.bools[{503, prop::REGULATING}]));
+    EXPECT_EQ((backend.ints[{503, prop::PTC_REGULATION_MODE}]), static_cast<int>(PhaseTapChangerRegulationMode::CURRENT_LIMITER));
+    EXPECT_DOUBLE_EQ((backend.doubles[{503, prop::PTC_TARGET_DEADBAND}]), 10.0);
+    EXPECT_EQ((backend.related[{503, prop::REL_REGULATION_TERMINAL}]), TERM);
+    EXPECT_EQ(backend.invocations[7], std::make_pair(ObjectHandle(503), prop::PHASE_TAP_CHANGER_STEP));
+    EXPECT_DOUBLE_EQ((backend.doubles[{504, prop::PTC_STEP_ALPHA}]), -5.0);
+    EXPECT_EQ(backend.invocations[9], std::make_pair(ObjectHandle(503), prop::ACT_ADD));
 }

@@ -109,3 +109,43 @@ TEST_F(ReactiveLimitsTest, Invalid) {
     EXPECT_THROW(MinMaxReactiveLimits().getMinQ(0.0), InvalidHandleException);
     EXPECT_THROW(Generator().getReactiveLimits(), InvalidHandleException);
 }
+
+// New limits: started on their holder; a curve's points and a shape's planes as nested adders
+TEST_F(ReactiveLimitsTest, Adders) {
+    backend.nextAdder = 500;
+    Generator gen(GEN, &backend);
+    gen.newMinMaxReactiveLimits().setMinQ(-40).setMaxQ(45).add();
+    EXPECT_EQ(backend.invocations[0], std::make_pair(GEN, prop::MIN_MAX_REACTIVE_LIMITS));
+    EXPECT_DOUBLE_EQ((backend.doubles[{500, prop::RL_MIN_Q}]), -40.0);
+    EXPECT_DOUBLE_EQ((backend.doubles[{500, prop::RL_MAX_Q}]), 45.0);
+    EXPECT_EQ(backend.invocations[1], std::make_pair(ObjectHandle(500), prop::ACT_ADD));
+
+    gen.newReactiveCapabilityCurve().setProperty("source", "datasheet")
+        .beginPoint().setP(0).setMinQ(-10).setMaxQ(10).endPoint()
+        .beginPoint().setP(100).setMinQ(-30).setMaxQ(30).setProperty("k", "v").endPoint()
+        .add();
+    EXPECT_EQ(backend.invocations[2], std::make_pair(GEN, prop::REACTIVE_CAPABILITY_CURVE));
+    EXPECT_EQ((backend.keyedStrings[std::make_tuple(ObjectHandle(501), prop::PROPERTY, std::string("source"))]), "datasheet");
+    EXPECT_EQ(backend.invocations[3], std::make_pair(ObjectHandle(501), prop::REACTIVE_CURVE_POINT));
+    EXPECT_EQ(backend.invocations[4], std::make_pair(ObjectHandle(502), prop::ACT_ADD));
+    EXPECT_DOUBLE_EQ((backend.doubles[{503, prop::POINT_MAX_Q}]), 30.0);
+    EXPECT_EQ((backend.keyedStrings[std::make_tuple(ObjectHandle(503), prop::PROPERTY, std::string("k"))]), "v");
+    EXPECT_EQ(backend.invocations[7], std::make_pair(ObjectHandle(501), prop::ACT_ADD));
+
+    VscConverterStation(VSC, &backend).newReactiveCapabilityShape().addPlane(0, 0.5, 1, false, 150).add();
+    EXPECT_EQ(backend.invocations[8], std::make_pair(VSC, prop::REACTIVE_CAPABILITY_SHAPE));
+    EXPECT_EQ(backend.invocations[9], std::make_pair(ObjectHandle(504), prop::REACTIVE_CAPABILITY_SHAPE_PLANE));
+    EXPECT_DOUBLE_EQ((backend.doubles[{505, prop::PLANE_BETA}]), 0.5);
+    EXPECT_DOUBLE_EQ((backend.doubles[{505, prop::PLANE_DELTA}]), 1.0);
+    EXPECT_FALSE((backend.bools[{505, prop::PLANE_GREATER_OR_EQUAL}]));
+    EXPECT_DOUBLE_EQ((backend.doubles[{505, prop::PLANE_GAMMA}]), 150.0);
+    EXPECT_EQ(backend.invocations[10], std::make_pair(ObjectHandle(505), prop::ACT_ADD));
+    EXPECT_EQ(backend.invocations[11], std::make_pair(ObjectHandle(504), prop::ACT_ADD));
+}
+
+TEST_F(ReactiveLimitsTest, PlaneInequality) {
+    ReactiveCapabilityShapePlane plane = ReactiveCapabilityShape(SHAPE, &backend).getPlanes()[0];
+    plane.greaterOrEqual(-120).lessOrEqual(130);
+    EXPECT_DOUBLE_EQ((backend.doubles[{PLANE, prop::PLANE_GREATER_OR_EQUAL}]), -120.0);
+    EXPECT_DOUBLE_EQ((backend.doubles[{PLANE, prop::PLANE_LESS_OR_EQUAL}]), 130.0);
+}

@@ -2,7 +2,9 @@
 
 #include <iidm/ObjectRef.h>
 #include <iidm/PhaseTapChanger.h>
+#include <iidm/PhaseTapChangerAdder.h>
 #include <iidm/RatioTapChanger.h>
+#include <iidm/RatioTapChangerAdder.h>
 #include <iidm/stdcxx/optional.hpp>
 
 namespace iidm {
@@ -20,6 +22,9 @@ public:
     bool hasPhaseTapChanger() const;
     // Empty when it has none
     iidm::optional<PhaseTapChanger> getPhaseTapChanger() const;
+    // New tap changers, which replace the current ones on add()
+    RatioTapChangerAdder newRatioTapChanger();
+    PhaseTapChangerAdder newPhaseTapChanger();
 
 protected:
     TapChangerHolderMethods() = default;

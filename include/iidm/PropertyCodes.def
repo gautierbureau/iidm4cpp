@@ -274,6 +274,12 @@ IIDM_CODE(THREE_WT_RATED_U0,           880) // double: ratedU0 (star-point volta
 // low to the high tap position; getRelatedByIndex(tap changer, <step type>, tap position): one of
 // them. A ratio tap changer regulates as every regulation holder (VoltageRegulation, REGULATING...);
 // a phase tap changer with the PTC_* codes, REGULATING and REL_REGULATION_TERMINAL.
+// invoke(holder, RATIO_TAP_CHANGER / PHASE_TAP_CHANGER) starts a new one, which replaces the current
+// one: fields TC_LOW_TAP_POSITION, TC_TAP_POSITION, TC_SOLVED_TAP_POSITION,
+// TC_LOAD_TAP_CHANGING_CAPABILITIES; for a ratio one, invoke(adder, VOLTAGE_REGULATION) its regulation;
+// for a phase one, REGULATING, PTC_REGULATION_MODE, PTC_REGULATION_VALUE, PTC_TARGET_DEADBAND and
+// REL_REGULATION_TERMINAL; invoke(adder, RATIO_TAP_CHANGER_STEP / PHASE_TAP_CHANGER_STEP) starts each
+// step (STEP_* fields, ACT_ADD: endStep), from the low tap position. ACT_ADD returns the tap changer.
 IIDM_CODE(TC_LOW_TAP_POSITION,         1900) // int
 IIDM_CODE(TC_HIGH_TAP_POSITION,        1901) // int, read-only
 IIDM_CODE(TC_TAP_POSITION,             1902) // int (optional: none when unset); unset: ACT_UNSET_TAP_POSITION
@@ -456,6 +462,12 @@ IIDM_CODE(BAT_MAX_P,                   1703)
 // REACTIVE_CAPABILITY_CURVE / REACTIVE_CAPABILITY_SHAPE) the same, when they are of that kind
 // (ValidationException otherwise). The points of a curve: getChildren(curve, REACTIVE_CURVE_POINT),
 // by increasing p; the planes of a shape: getChildren(shape, REACTIVE_CAPABILITY_SHAPE_PLANE).
+// New ones, which replace the holder's on ACT_ADD (it returns them): invoke(holder,
+// MIN_MAX_REACTIVE_LIMITS) (fields RL_MIN_Q and RL_MAX_Q); invoke(holder, REACTIVE_CAPABILITY_CURVE),
+// then invoke(adder, REACTIVE_CURVE_POINT) for each point (POINT_* fields, ACT_ADD: endPoint);
+// invoke(holder, REACTIVE_CAPABILITY_SHAPE), then invoke(adder, REACTIVE_CAPABILITY_SHAPE_PLANE) for
+// each plane (PLANE_ALPHA, PLANE_BETA, PLANE_DELTA, PLANE_GREATER_OR_EQUAL and PLANE_GAMMA, ACT_ADD:
+// addPlane).
 IIDM_CODE(RL_KIND,                     1810) // int: ReactiveLimitsKind ordinal
 IIDM_CODE(RL_MIN_Q,                    1811) // double: MinMaxReactiveLimits.getMinQ(); evaluate {p}: getMinQ(p) of
                                              // any kind, {p, extrapolateReactiveLimitSlope} of a curve, {p, v} of a shape
@@ -471,8 +483,8 @@ IIDM_CODE(PLANE_ALPHA,                 1820) // double, on a shape plane
 IIDM_CODE(PLANE_BETA,                  1821) // double
 IIDM_CODE(PLANE_GAMMA,                 1822) // double
 IIDM_CODE(PLANE_DELTA,                 1823) // double
-IIDM_CODE(PLANE_LESS_OR_EQUAL,         1824) // bool
-IIDM_CODE(PLANE_GREATER_OR_EQUAL,      1825) // bool
+IIDM_CODE(PLANE_LESS_OR_EQUAL,         1824) // bool; setDouble(plane, <it>, gamma): lessOrEqual(gamma)
+IIDM_CODE(PLANE_GREATER_OR_EQUAL,      1825) // bool; setDouble(plane, <it>, gamma): greaterOrEqual(gamma)
 
 // ── Switch ───────────────────────────────────────────────────────────────────
 IIDM_CODE(SW_OPEN,                     1500)

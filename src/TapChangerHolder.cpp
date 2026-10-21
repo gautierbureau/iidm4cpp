@@ -27,6 +27,16 @@ iidm::optional<PhaseTapChanger> TapChangerHolderMethods<Self>::getPhaseTapChange
     return wrapOptional<PhaseTapChanger>(backend()->getRelated(handle(), prop::PHASE_TAP_CHANGER), backend());
 }
 
+template <class Self>
+RatioTapChangerAdder TapChangerHolderMethods<Self>::newRatioTapChanger() {
+    return RatioTapChangerAdder(backend()->invoke(handle(), prop::RATIO_TAP_CHANGER), backend());
+}
+
+template <class Self>
+PhaseTapChangerAdder TapChangerHolderMethods<Self>::newPhaseTapChanger() {
+    return PhaseTapChangerAdder(backend()->invoke(handle(), prop::PHASE_TAP_CHANGER), backend());
+}
+
 template class TapChangerHolderMethods<TwoWindingsTransformer>;
 template class TapChangerHolderMethods<ThreeWindingsTransformer::Leg>;
 
