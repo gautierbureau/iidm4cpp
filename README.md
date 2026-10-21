@@ -490,7 +490,7 @@ VariantManager (Network::getVariantManager()): variants are copies of the networ
 ├── cloneVariant(source id, target id or ids, mayOverwrite = false), removeVariant(id)
 │   (VariantManager::INITIAL_VARIANT_ID: the variant of a new network)
 └── allowVariantMultiThreadAccess(bool) / isVariantMultiThreadAccessAllowed(): a working variant
-    per thread (see §8: a backend is used from one thread for now)
+    per thread (see §8)
 ```
 
 ### 4.2 Handle Model
@@ -844,9 +844,10 @@ public:
 private:
     void* libHandle_ = nullptr;    // dlopen handle
 
-    // GraalVM isolate (one per process for the native image)
+    // GraalVM isolate (one per network)
     graal_isolate_t*        isolate_ = nullptr;
-    graal_isolatethread_t*  thread_  = nullptr;
+    // The calling thread's isolate thread, attached on its first call
+    graal_isolatethread_t*  thread() const;
 
     // C function pointers resolved from the shared library
     using FnLoadNetwork      = ObjectHandle(*)(graal_isolatethread_t*, const char*);
@@ -872,11 +873,12 @@ private:
 
 #### The GraalVM isolate
 
-A GraalVM native image process maintains an **isolate** — a heap-isolated
-execution context. Each thread that calls into the image must hold an
-`isolatethread_t`. The backend creates a single global isolate at
-construction time and tears it down when `close()` is called. All calls
-from the same C++ thread reuse the same `isolatethread_t`.
+A GraalVM native image process maintains **isolates** — heap-isolated
+execution contexts. Each thread that calls into an isolate must hold an
+`isolatethread_t` of it. The backend creates an isolate at construction time
+and tears it down when `close()` is called. A C++ thread is attached to it on
+its first call (`graal_attach_thread`) and makes all its calls with its own
+`isolatethread_t`, until it ends (see §8).
 
 ```cpp
 // src/graalvm/GraalVMBackend.cpp (excerpt)
@@ -892,16 +894,17 @@ void GraalVMBackend::init(const std::string& libPath) {
                                                   graal_isolate_t**,
                                                   graal_isolatethread_t**)>(
         dlsym(libHandle_, "graal_create_isolate"));
-    if (createIsolate(nullptr, &isolate_, &thread_) != 0)
+    graal_isolatethread_t* thread = nullptr; // this thread, attached to the new isolate
+    if (createIsolate(nullptr, &isolate_, &thread) != 0)
         throw IidmException("Failed to create GraalVM isolate");
 }
 
 double GraalVMBackend::getDouble(ObjectHandle h, int property) const {
-    return fnGetDouble_(thread_, h, property);
+    return fnGetDouble_(thread(), h, property);
 }
 
 void GraalVMBackend::setDouble(ObjectHandle h, int property, double value) {
-    fnSetDouble_(thread_, h, property, value);
+    fnSetDouble_(thread(), h, property, value);
 }
 ```
 
@@ -923,7 +926,7 @@ are not well-formed UTF-8), and back as `String.getBytes(UTF_8)` does. JNI's `Ne
 
 In embedded mode Dynawo is started from a Java program. The JVM is already
 running and contains a loaded `com.powsybl.iidm.network.Network` object.
-The `JNIBackend` attaches to that JVM and obtains a reference to the
+The `JNIBackend` finds that JVM and obtains a reference to the
 network through a static registry class on the Java side (see §6.2).
 
 #### Attaching to the JVM
@@ -931,7 +934,7 @@ network through a static registry class on the Java side (see §6.2).
 ```cpp
 // src/jni/JNIBackend.cpp (excerpt)
 
-void JNIBackend::attachToJVM() {
+void JNIBackend::findJVM() {
     // Locate any existing JVMs
     JavaVM* jvms[1];
     jsize   count = 0;
@@ -940,15 +943,18 @@ void JNIBackend::attachToJVM() {
         throw IidmException("No JVM found; cannot use JNI backend");
 
     jvm_ = jvms[0];
+}
 
-    // Attach this thread to the JVM
+// The calling thread's JNI environment: each operation starts with it (see §8)
+JNIEnv* JNIBackend::env() const {
     JNIEnv* env = nullptr;
-    rc = jvm_->AttachCurrentThread(reinterpret_cast<void**>(&env), nullptr);
-    if (rc != JNI_OK)
-        throw IidmException("Failed to attach to JVM thread");
-
-    env_ = env;
-    cacheMethodIds();
+    const jint status = jvm_->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_8);
+    if (status == JNI_OK) return env;
+    // Not attached yet: attached until the thread ends, as a daemon
+    if (status != JNI_EDETACHED || jvm_->AttachCurrentThreadAsDaemon(reinterpret_cast<void**>(&env), nullptr) != JNI_OK)
+        throw IidmException("Failed to attach the thread to the JVM");
+    // … detached by a thread_local object when the thread ends
+    return env;
 }
 ```
 
@@ -961,9 +967,10 @@ table the GraalVM backend uses, so both backends behave identically:
 ```cpp
 // src/jni/JNIBackend.cpp
 double JNIBackend::getDouble(ObjectHandle h, int property) const {
-    double result = env_->CallStaticDoubleMethod(cache_.dispatcherClass, cache_.disp_getDouble,
-                                                 toObject(h), static_cast<jint>(property));
-    checkJNIException(env_);
+    JNIEnv* env = this->env();
+    double result = env->CallStaticDoubleMethod(cache_.dispatcherClass, cache_.disp_getDouble,
+                                                toObject(h), static_cast<jint>(property));
+    checkJNIException(env);
     return result;
 }
 ```
@@ -1379,8 +1386,8 @@ DynawoLauncher.run(simulationParameters);
 | `BackendProvider` | `Network` (unique_ptr) | Destroyed with `Network` |
 | Component objects (e.g. `Generator`) | Caller (value type) | Usable as long as parent `Network` is alive |
 | Object handles (JNI global refs, GraalVM registry entries) | Component objects, via `HandleRef` | Released when the last wrapper using them is destroyed, or when the backend closes |
-| GraalVM isolate | `GraalVMBackend` | One per process; destroyed in destructor |
-| JNI thread attachment | `JNIBackend` | Detached in destructor via `DetachCurrentThread` |
+| GraalVM isolate | `GraalVMBackend` | One per network; torn down when the network closes |
+| Thread attachment (isolate thread, JNI environment) | The backend | From the thread's first call until it ends (GraalVM: or until the network closes) |
 
 ### Handle release
 
@@ -1416,22 +1423,23 @@ pattern for the isolate. Multiple `Network` objects sharing the same
 
 ## 8. Thread Safety
 
+A network can be used from any thread, and its objects passed between threads: an object found on
+one thread can be used and destroyed on another. Each call goes through the calling thread:
+
 | Backend | Thread model |
 |---|---|
-| **GraalVM** | Each OS thread must attach to the isolate before calling. The backend creates an `isolatethread_t` on first use per thread (thread-local storage). Multiple threads may call concurrently; GraalVM's Java code is responsible for its own internal synchronization. |
-| **JNI** | Each OS thread that calls backend methods must be attached to the JVM (`AttachCurrentThread`). The backend performs this lazily on first use per thread via a thread-local flag. JVM internal locking handles Java-side concurrency. |
+| **GraalVM** | Each call is made with the calling thread's `isolatethread_t`. A thread is attached to the isolate (`graal_attach_thread`) on its first call, and detached when it ends. Closing the network detaches the threads still attached without waiting for them (`graal_detach_all_threads_and_tear_down_isolate`): they must not use it any more. |
+| **JNI** | Each call is made with the calling thread's JNI environment (`GetEnv`). A thread that is not attached to the JVM is attached on its first call, as a daemon (so that it never holds the JVM's shutdown up), and detached when it ends. The threads attached by others (the one that created the JVM, Java threads calling C++) stay as they are. |
+
+The network itself follows powsybl's rules: it is not synchronized, so threads that use it at the
+same time need their own synchronization, unless each changes only the state of its own variant:
+after `VariantManager::allowVariantMultiThreadAccess(true)`, each thread has its own working
+variant, set by `setWorkingVariant` on that thread (a new thread has none).
 
 C++ component objects themselves are **not thread-safe** at the object
 level (i.e., calling `setTargetP` and `getTargetP` on the same `Generator`
 from two threads simultaneously requires external synchronization). This
 matches the contract of the Java IIDM objects themselves.
-
-**Status: the per-thread attachment above is not implemented yet.** Both backends
-make every call through the thread that created them (the JNI environment or
-the GraalVM isolate thread taken at construction), so a backend must only be used
-from that thread for now. `VariantManager::allowVariantMultiThreadAccess()` is
-ported (in powsybl, it gives each thread its own working variant), but it is only
-useful once each calling thread is attached.
 
 ---
 

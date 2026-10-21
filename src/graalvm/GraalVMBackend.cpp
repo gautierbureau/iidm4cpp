@@ -1,11 +1,15 @@
 #include "GraalVMBackend.h"
 #include "../BridgeErrors.h"
 #include <iidm/IidmException.h>
+#include <algorithm>
 #include <cstdlib>
 #include <cstring>
 #include <limits>
+#include <map>
+#include <mutex>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 // ── Platform-specific dynamic library loading ──────────────────────────────
 #ifdef _WIN32
@@ -54,6 +58,68 @@ FnPtr resolveSymbol(void* lib, const char* name) {
     return reinterpret_cast<FnPtr>(sym);
 }
 
+using FnDetachThread = int(*)(graal_isolatethread_t*);
+
+// The open isolates, by id, with the graal_detach_thread of their library. A thread that ends
+// detaches from those only: closing an isolate detaches all its threads, and another isolate may
+// get its address. Never destroyed, as threads may end after the static objects.
+struct OpenIsolates {
+    std::mutex mutex;
+    std::map<std::uint64_t, FnDetachThread> detachThread;
+    std::uint64_t lastId = 0;
+};
+
+OpenIsolates& openIsolates() {
+    static OpenIsolates* isolates = new OpenIsolates();
+    return *isolates;
+}
+
+// The isolate threads of the calling thread. Plain thread-local values: still readable once the
+// thread's destructors have run (static objects closing a network at exit).
+struct IsolateThread {
+    std::uint64_t          isolateId;
+    graal_isolatethread_t* thread;
+};
+thread_local std::vector<IsolateThread>* threadIsolates = nullptr;
+thread_local bool threadEnded = false;
+
+// Detaches the thread from the isolates still open when it ends
+struct ThreadExit {
+    bool armed = false;
+    ~ThreadExit() {
+        threadEnded = true;
+        if (!threadIsolates) return;
+        {
+            OpenIsolates& isolates = openIsolates();
+            std::lock_guard<std::mutex> lock(isolates.mutex);
+            for (const IsolateThread& attached : *threadIsolates) {
+                auto open = isolates.detachThread.find(attached.isolateId);
+                if (open != isolates.detachThread.end()) open->second(attached.thread);
+            }
+        }
+        delete threadIsolates;
+        threadIsolates = nullptr;
+    }
+};
+thread_local ThreadExit threadExit;
+
+// Records an isolate thread of the calling thread, and forgets those of the isolates closed since
+void rememberThread(std::uint64_t isolateId, graal_isolatethread_t* thread) {
+    if (!threadIsolates) {
+        threadIsolates = new std::vector<IsolateThread>();
+        if (!threadEnded) threadExit.armed = true;
+    } else {
+        OpenIsolates& isolates = openIsolates();
+        std::lock_guard<std::mutex> lock(isolates.mutex);
+        threadIsolates->erase(std::remove_if(threadIsolates->begin(), threadIsolates->end(),
+                                             [&isolates](const IsolateThread& attached) {
+                                                 return isolates.detachThread.count(attached.isolateId) == 0;
+                                             }),
+                              threadIsolates->end());
+    }
+    threadIsolates->push_back({isolateId, thread});
+}
+
 } // anonymous namespace
 
 GraalVMBackend::GraalVMBackend(const std::string& libraryPath) {
@@ -78,14 +144,44 @@ void GraalVMBackend::init(const std::string& libPath) {
 
     resolveSymbols();
 
-    if (fnCreateIsolate_(nullptr, &isolate_, &thread_) != 0) {
+    graal_isolatethread_t* thread = nullptr;
+    if (fnCreateIsolate_(nullptr, &isolate_, &thread) != 0) {
         throw IidmException("Failed to create GraalVM isolate");
     }
+    OpenIsolates& isolates = openIsolates();
+    {
+        std::lock_guard<std::mutex> lock(isolates.mutex);
+        isolateId_ = ++isolates.lastId;
+        isolates.detachThread[isolateId_] = fnDetachThread_;
+    }
+    rememberThread(isolateId_, thread);
+}
+
+graal_isolatethread_t* GraalVMBackend::thread() const {
+    if (threadIsolates) {
+        for (const IsolateThread& attached : *threadIsolates) {
+            if (attached.isolateId == isolateId_) return attached.thread;
+        }
+    }
+    return attachThread();
+}
+
+graal_isolatethread_t* GraalVMBackend::attachThread() const {
+    if (!isolate_) throw IidmException("The GraalVM backend is closed");
+    graal_isolatethread_t* thread = nullptr;
+    if (fnAttachThread_(isolate_, &thread) != 0) {
+        throw IidmException("Failed to attach the thread to the GraalVM isolate");
+    }
+    rememberThread(isolateId_, thread);
+    return thread;
 }
 
 void GraalVMBackend::resolveSymbols() {
     fnCreateIsolate_   = resolveSymbol<FnCreateIsolate>  (libHandle_, "graal_create_isolate");
-    fnTearDownIsolate_ = resolveSymbol<FnTearDownIsolate>(libHandle_, "graal_tear_down_isolate");
+    fnAttachThread_    = resolveSymbol<FnAttachThread>   (libHandle_, "graal_attach_thread");
+    fnDetachThread_    = resolveSymbol<FnDetachThread>   (libHandle_, "graal_detach_thread");
+    // Unlike graal_tear_down_isolate, does not wait for the threads still attached to detach
+    fnTearDownIsolate_ = resolveSymbol<FnTearDownIsolate>(libHandle_, "graal_detach_all_threads_and_tear_down_isolate");
     fnTakeLastError_   = resolveSymbol<FnTakeLastError>  (libHandle_, "iidm_take_last_error");
     fnFree_            = resolveSymbol<FnFree>           (libHandle_, "iidm_free");
     fnReleaseHandle_   = resolveSymbol<FnReleaseHandle>  (libHandle_, "iidm_release_handle");
@@ -122,15 +218,15 @@ void GraalVMBackend::resolveSymbols() {
 
 void GraalVMBackend::check(int status) const {
     if (status == detail::BRIDGE_OK) return;
-    char* raw = fnTakeLastError_(thread_);
+    char* raw = fnTakeLastError_(thread());
     std::string message = raw ? std::string(raw) : std::string("unknown error in the GraalVM backend");
-    if (raw) fnFree_(thread_, raw);
+    if (raw) fnFree_(thread(), raw);
     detail::throwBridgeError(status, message);
 }
 
 std::string GraalVMBackend::takeString(char* raw) const {
     std::string result(raw ? raw : "");
-    if (raw) fnFree_(thread_, raw);
+    if (raw) fnFree_(thread(), raw);
     return result;
 }
 
@@ -141,56 +237,65 @@ iidm::optional<std::string> GraalVMBackend::takeOptString(char* raw) const {
 
 void GraalVMBackend::loadNetwork(const std::string& filePath) {
     ObjectHandle h = INVALID_HANDLE;
-    check(fnLoadNetwork_(thread_, filePath.c_str(), &h));
+    check(fnLoadNetwork_(thread(), filePath.c_str(), &h));
     networkHandle_ = h;
 }
 
 void GraalVMBackend::createNetwork(const std::string& id) {
     ObjectHandle h = INVALID_HANDLE;
-    check(fnCreateNetwork_(thread_, id.c_str(), &h));
+    check(fnCreateNetwork_(thread(), id.c_str(), &h));
     networkHandle_ = h;
 }
 
 void GraalVMBackend::saveNetwork(ObjectHandle network, const std::string& filePath) {
-    check(fnSaveNetwork_(thread_, network, filePath.c_str()));
+    check(fnSaveNetwork_(thread(), network, filePath.c_str()));
 }
 
 void GraalVMBackend::loadNetworkBytes(const char* data, std::size_t length,
                                       const std::string& filenameHint) {
     ObjectHandle h = INVALID_HANDLE;
-    check(fnLoadNetworkBytes_(thread_, data, static_cast<int>(length), filenameHint.c_str(), &h));
+    check(fnLoadNetworkBytes_(thread(), data, static_cast<int>(length), filenameHint.c_str(), &h));
     networkHandle_ = h;
 }
 
 std::string GraalVMBackend::saveNetworkBytes(ObjectHandle network, const std::string& filenameHint) const {
     char* outData = nullptr;
     int   outLen  = 0;
-    check(fnSaveNetworkBytes_(thread_, network, filenameHint.c_str(), &outData, &outLen));
+    check(fnSaveNetworkBytes_(thread(), network, filenameHint.c_str(), &outData, &outLen));
     std::string result(outData ? outData : "", static_cast<std::size_t>(outLen));
-    if (outData) fnFree_(thread_, outData);
+    if (outData) fnFree_(thread(), outData);
     return result;
 }
 
 void GraalVMBackend::releaseHandle(ObjectHandle h) {
     // The network handle lives as long as the backend
-    if (thread_ && h != INVALID_HANDLE && h != networkHandle_) {
-        fnReleaseHandle_(thread_, h);
+    if (isolate_ && h != INVALID_HANDLE && h != networkHandle_) {
+        fnReleaseHandle_(thread(), h);
     }
 }
 
 int GraalVMBackend::javaHandleCount() const {
-    return fnHandleCount_(thread_);
+    return fnHandleCount_(thread());
 }
 
 void GraalVMBackend::close() {
-    if (thread_) {
+    if (isolate_) {
         // Wrappers still alive at this point release nothing later on
         releaseAllHandles();
-    }
-    if (thread_ && fnTearDownIsolate_) {
-        fnTearDownIsolate_(thread_);
-        thread_  = nullptr;
-        isolate_ = nullptr;
+        try {
+            graal_isolatethread_t* current = thread();
+            {
+                // The threads that end from now on leave their detaching to the tear-down
+                OpenIsolates& isolates = openIsolates();
+                std::lock_guard<std::mutex> lock(isolates.mutex);
+                isolates.detachThread.erase(isolateId_);
+            }
+            fnTearDownIsolate_(current);
+        } catch (const IidmException&) {
+            // This thread cannot be attached: the isolate is left as it is
+        }
+        isolateId_ = 0;
+        isolate_   = nullptr;
     }
     if (libHandle_) {
         IIDM_DLCLOSE(libHandle_);
@@ -204,42 +309,42 @@ ObjectHandle GraalVMBackend::getNetworkHandle() const {
 
 double GraalVMBackend::getDouble(ObjectHandle h, int property) const {
     double value = 0.0;
-    check(fnGetDouble_(thread_, h, property, &value));
+    check(fnGetDouble_(thread(), h, property, &value));
     return value;
 }
 
 void GraalVMBackend::setDouble(ObjectHandle h, int property, double value) {
-    check(fnSetDouble_(thread_, h, property, value));
+    check(fnSetDouble_(thread(), h, property, value));
 }
 
 int GraalVMBackend::getInt(ObjectHandle h, int property) const {
     int value = 0;
-    check(fnGetInt_(thread_, h, property, &value));
+    check(fnGetInt_(thread(), h, property, &value));
     return value;
 }
 
 void GraalVMBackend::setInt(ObjectHandle h, int property, int value) {
-    check(fnSetInt_(thread_, h, property, value));
+    check(fnSetInt_(thread(), h, property, value));
 }
 
 bool GraalVMBackend::getBool(ObjectHandle h, int property) const {
     int value = 0;
-    check(fnGetBool_(thread_, h, property, &value));
+    check(fnGetBool_(thread(), h, property, &value));
     return value != 0;
 }
 
 void GraalVMBackend::setBool(ObjectHandle h, int property, bool value) {
-    check(fnSetBool_(thread_, h, property, value ? 1 : 0));
+    check(fnSetBool_(thread(), h, property, value ? 1 : 0));
 }
 
 std::string GraalVMBackend::getString(ObjectHandle h, int property) const {
     char* raw = nullptr;
-    check(fnGetString_(thread_, h, property, &raw));
+    check(fnGetString_(thread(), h, property, &raw));
     return takeString(raw);
 }
 
 void GraalVMBackend::setString(ObjectHandle h, int property, const std::string& value) {
-    check(fnSetString_(thread_, h, property, value.c_str()));
+    check(fnSetString_(thread(), h, property, value.c_str()));
 }
 
 iidm::optional<double> GraalVMBackend::getOptDouble(ObjectHandle h, int property) const {
@@ -251,21 +356,21 @@ iidm::optional<double> GraalVMBackend::getOptDouble(ObjectHandle h, int property
 
 iidm::optional<int> GraalVMBackend::getOptInt(ObjectHandle h, int property) const {
     std::int64_t value = 0;
-    check(fnGetOptInt_(thread_, h, property, &value));
+    check(fnGetOptInt_(thread(), h, property, &value));
     if (value == std::numeric_limits<std::int64_t>::min()) return {}; // PropertyDispatcher.NO_INT
     return static_cast<int>(value);
 }
 
 iidm::optional<std::string> GraalVMBackend::getOptString(ObjectHandle h, int property) const {
     char* raw = nullptr;
-    check(fnGetOptString_(thread_, h, property, &raw));
+    check(fnGetOptString_(thread(), h, property, &raw));
     return takeOptString(raw);
 }
 
 std::vector<std::string> GraalVMBackend::getStringList(ObjectHandle h, int listCode) const {
     char* raw = nullptr;
     int length = 0;
-    check(fnGetStringList_(thread_, h, listCode, &raw, &length));
+    check(fnGetStringList_(thread(), h, listCode, &raw, &length));
     // Each string is followed by a 0 byte
     std::vector<std::string> values;
     for (int start = 0, i = 0; i < length; ++i) {
@@ -274,82 +379,82 @@ std::vector<std::string> GraalVMBackend::getStringList(ObjectHandle h, int listC
             start = i + 1;
         }
     }
-    if (raw) fnFree_(thread_, raw);
+    if (raw) fnFree_(thread(), raw);
     return values;
 }
 
 iidm::optional<std::string> GraalVMBackend::getKeyedString(ObjectHandle h, int property, const std::string& key) const {
     char* raw = nullptr;
-    check(fnGetKeyedString_(thread_, h, property, key.c_str(), &raw));
+    check(fnGetKeyedString_(thread(), h, property, key.c_str(), &raw));
     return takeOptString(raw);
 }
 
 void GraalVMBackend::setKeyedString(ObjectHandle h, int property, const std::string& key,
                                     const iidm::optional<std::string>& value) {
-    check(fnSetKeyedString_(thread_, h, property, key.c_str(), value ? value->c_str() : nullptr));
+    check(fnSetKeyedString_(thread(), h, property, key.c_str(), value ? value->c_str() : nullptr));
 }
 
 bool GraalVMBackend::isSameObject(ObjectHandle h, ObjectHandle other) const {
     int same = 0;
-    check(fnIsSameObject_(thread_, h, other, &same));
+    check(fnIsSameObject_(thread(), h, other, &same));
     return same != 0;
 }
 
 std::vector<ObjectHandle> GraalVMBackend::getChildren(ObjectHandle h, int childType) const {
     ObjectHandle* raw = nullptr;
     int count = 0;
-    check(fnGetChildren_(thread_, h, childType, &raw, &count));
+    check(fnGetChildren_(thread(), h, childType, &raw, &count));
     std::vector<ObjectHandle> handles(raw, raw + (raw ? count : 0));
-    if (raw) fnFree_(thread_, raw);
+    if (raw) fnFree_(thread(), raw);
     return handles;
 }
 
 ObjectHandle GraalVMBackend::getRelated(ObjectHandle h, int relation) const {
     ObjectHandle related = INVALID_HANDLE;
-    check(fnGetRelated_(thread_, h, relation, &related));
+    check(fnGetRelated_(thread(), h, relation, &related));
     return related;
 }
 
 ObjectHandle GraalVMBackend::invoke(ObjectHandle h, int code) {
     ObjectHandle result = INVALID_HANDLE;
-    check(fnInvoke_(thread_, h, code, &result));
+    check(fnInvoke_(thread(), h, code, &result));
     return result;
 }
 
 void GraalVMBackend::setRelated(ObjectHandle h, int relation, ObjectHandle value) {
-    check(fnSetRelated_(thread_, h, relation, value));
+    check(fnSetRelated_(thread(), h, relation, value));
 }
 
 std::vector<int> GraalVMBackend::getIntList(ObjectHandle h, int listCode) const {
     int* raw = nullptr;
     int count = 0;
-    check(fnGetIntList_(thread_, h, listCode, &raw, &count));
+    check(fnGetIntList_(thread(), h, listCode, &raw, &count));
     std::vector<int> values(raw, raw + (raw ? count : 0));
-    if (raw) fnFree_(thread_, raw);
+    if (raw) fnFree_(thread(), raw);
     return values;
 }
 
 double GraalVMBackend::evaluate(ObjectHandle h, int code, const std::vector<double>& args) const {
     double result = 0.0;
-    check(fnEvaluate_(thread_, h, code, args.empty() ? nullptr : args.data(), static_cast<int>(args.size()), &result));
+    check(fnEvaluate_(thread(), h, code, args.empty() ? nullptr : args.data(), static_cast<int>(args.size()), &result));
     return result;
 }
 
 ObjectHandle GraalVMBackend::getRelatedByIndex(ObjectHandle h, int relation, int index) const {
     ObjectHandle related = INVALID_HANDLE;
-    check(fnGetRelatedByIndex_(thread_, h, relation, index, &related));
+    check(fnGetRelatedByIndex_(thread(), h, relation, index, &related));
     return related;
 }
 
 ObjectHandle GraalVMBackend::getRelatedByString(ObjectHandle h, int relation, const std::string& key) const {
     ObjectHandle related = INVALID_HANDLE;
-    check(fnGetRelatedByString_(thread_, h, relation, key.c_str(), &related));
+    check(fnGetRelatedByString_(thread(), h, relation, key.c_str(), &related));
     return related;
 }
 
 ObjectHandle GraalVMBackend::findById(int objectType, const std::string& id) const {
     ObjectHandle found = INVALID_HANDLE;
-    check(fnFindById_(thread_, networkHandle_, objectType, id.c_str(), &found));
+    check(fnFindById_(thread(), networkHandle_, objectType, id.c_str(), &found));
     return found;
 }
 
