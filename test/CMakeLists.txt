@@ -8,6 +8,7 @@ set(TEST_SOURCES
     TestTapChanger.cpp
     TestThreeWindingsTransformer.cpp
     TestTransformers.cpp
+    TestLimitsNetwork.cpp
     TestTopologyViews.cpp
     TestGenerator.cpp
     TestActivePowerControl.cpp
@@ -39,7 +40,7 @@ set(TEST_SOURCES
     TestHvdcLine.cpp
     TestDanglingLine.cpp
     TestSubstation.cpp
-    TestCurrentLimits.cpp
+    TestLoadingLimits.cpp
     TestEnums.cpp
     TestNetworkFactory.cpp
     TestNetworkStream.cpp

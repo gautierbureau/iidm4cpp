@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <iidm/Line.h>
-#include <iidm/CurrentLimits.h>
+#include <iidm/LoadingLimits.h>
 #include <iidm/OperationalLimitsGroup.h>
 #include <iidm/PropertyCodes.h>
 #include "MockBackend.h"
@@ -57,118 +57,128 @@ TEST_F(LineTest, GetTerminals) {
     EXPECT_NE(t1, t2);
 }
 
-// ── getCurrentLimits ──────────────────────────────────────────────────────────
+// ── Limits: through the holder of each side ───────────────────────────────────
 
+static constexpr ObjectHandle SIDE1_HANDLE = 55;
+static constexpr ObjectHandle SIDE2_HANDLE = 56;
 static constexpr ObjectHandle CL1_HANDLE = 60;
 static constexpr ObjectHandle CL2_HANDLE = 61;
 static constexpr ObjectHandle TL1_HANDLE = 70;
+static constexpr ObjectHandle OLG1_HANDLE = 80;
+static constexpr ObjectHandle OLG2_HANDLE = 81;
 
-TEST_F(LineTest, GetCurrentLimitsAbsent) {
+class LineLimitsTest : public LineTest {
+protected:
+    void SetUp() override {
+        LineTest::SetUp();
+        backend.relatedByIndex[std::make_tuple(ObjectHandle(LINE_HANDLE), prop::FLOWS_LIMITS_HOLDER, 0)] = SIDE1_HANDLE;
+        backend.relatedByIndex[std::make_tuple(ObjectHandle(LINE_HANDLE), prop::FLOWS_LIMITS_HOLDER, 1)] = SIDE2_HANDLE;
+    }
+};
+
+TEST_F(LineLimitsTest, GetCurrentLimitsAbsent) {
     Line line(LINE_HANDLE, &backend);
     EXPECT_FALSE(line.getCurrentLimits1().has_value());
     EXPECT_FALSE(line.getCurrentLimits2().has_value());
 }
 
-TEST_F(LineTest, GetCurrentLimits1PermanentLimit) {
-    backend.related[{LINE_HANDLE, prop::REL_CURRENT_LIMITS1}] = CL1_HANDLE;
-    backend.doubles[{CL1_HANDLE, prop::CL_PERMANENT_LIMIT}]   = 1000.0;
+TEST_F(LineLimitsTest, GetCurrentLimitsPerSide) {
+    backend.related[{SIDE1_HANDLE, prop::CURRENT_LIMITS}] = CL1_HANDLE;
+    backend.doubles[{CL1_HANDLE, prop::LL_PERMANENT_LIMIT}] = 1000.0;
+    backend.related[{SIDE2_HANDLE, prop::CURRENT_LIMITS}] = CL2_HANDLE;
+    backend.doubles[{CL2_HANDLE, prop::LL_PERMANENT_LIMIT}] = 800.0;
     Line line(LINE_HANDLE, &backend);
-    auto cl = line.getCurrentLimits1();
-    ASSERT_TRUE(cl.has_value());
-    EXPECT_TRUE(cl->isValid());
-    EXPECT_DOUBLE_EQ(cl->getPermanentLimit(), 1000.0);
+    ASSERT_TRUE(line.getCurrentLimits1().has_value());
+    EXPECT_DOUBLE_EQ(line.getCurrentLimits1()->getPermanentLimit(), 1000.0);
+    EXPECT_DOUBLE_EQ(line.getCurrentLimits(TwoSides::TWO)->getPermanentLimit(), 800.0);
+    EXPECT_FALSE(line.getActivePowerLimits1().has_value());
 }
 
-TEST_F(LineTest, GetCurrentLimits2PermanentLimit) {
-    backend.related[{LINE_HANDLE, prop::REL_CURRENT_LIMITS2}] = CL2_HANDLE;
-    backend.doubles[{CL2_HANDLE, prop::CL_PERMANENT_LIMIT}]   = 800.0;
-    Line line(LINE_HANDLE, &backend);
-    auto cl = line.getCurrentLimits2();
-    ASSERT_TRUE(cl.has_value());
-    EXPECT_DOUBLE_EQ(cl->getPermanentLimit(), 800.0);
-}
-
-TEST_F(LineTest, GetCurrentLimitsTemporaryLimits) {
-    backend.related[{LINE_HANDLE, prop::REL_CURRENT_LIMITS1}] = CL1_HANDLE;
-    backend.doubles[{CL1_HANDLE, prop::CL_PERMANENT_LIMIT}]   = 1000.0;
-    backend.children[{CL1_HANDLE, prop::TEMPORARY_LIMIT}]     = {TL1_HANDLE};
-    backend.strings[{TL1_HANDLE, prop::TL_NAME}]              = "10min";
-    backend.doubles[{TL1_HANDLE, prop::TL_VALUE}]             = 1200.0;
+TEST_F(LineLimitsTest, TemporaryLimits) {
+    backend.related[{SIDE1_HANDLE, prop::CURRENT_LIMITS}] = CL1_HANDLE;
+    backend.children[{CL1_HANDLE, prop::TEMPORARY_LIMIT}] = {TL1_HANDLE};
+    backend.strings[{TL1_HANDLE, prop::TL_NAME}]                = "10min";
+    backend.doubles[{TL1_HANDLE, prop::TL_VALUE}]               = 1200.0;
     backend.ints   [{TL1_HANDLE, prop::TL_ACCEPTABLE_DURATION}] = 600;
-    backend.bools  [{TL1_HANDLE, prop::TL_FICTITIOUS}]         = false;
+    backend.bools  [{TL1_HANDLE, prop::TL_FICTITIOUS}]          = false;
 
     Line line(LINE_HANDLE, &backend);
-    auto cl = line.getCurrentLimits1();
-    ASSERT_TRUE(cl.has_value());
-    auto tls = cl->getTemporaryLimits();
+    std::vector<TemporaryLimit> tls = line.getCurrentLimits1()->getTemporaryLimits();
     ASSERT_EQ(tls.size(), 1u);
-    EXPECT_EQ(tls[0].name,               "10min");
-    EXPECT_DOUBLE_EQ(tls[0].value,        1200.0);
-    EXPECT_EQ(tls[0].acceptableDuration,  600);
-    EXPECT_FALSE(tls[0].fictitious);
+    EXPECT_EQ(tls[0].getName(), "10min");
+    EXPECT_DOUBLE_EQ(tls[0].getValue(), 1200.0);
+    EXPECT_EQ(tls[0].getAcceptableDuration(), 600);
+    EXPECT_FALSE(tls[0].isFictitious());
 }
 
-TEST_F(LineTest, GetCurrentLimitsNoTemporaryLimits) {
-    backend.related[{LINE_HANDLE, prop::REL_CURRENT_LIMITS1}] = CL1_HANDLE;
-    backend.doubles[{CL1_HANDLE, prop::CL_PERMANENT_LIMIT}]   = 500.0;
+TEST_F(LineLimitsTest, Groups) {
+    backend.children[{SIDE1_HANDLE, prop::OPERATIONAL_LIMITS_GROUP}] = {OLG1_HANDLE};
+    backend.strings[{OLG1_HANDLE, prop::OLG_ID}]   = "DEFAULT";
+    backend.bools  [{OLG1_HANDLE, prop::OLG_EMPTY}] = false;
+    backend.related[{SIDE1_HANDLE, prop::REL_SELECTED_OLG}] = OLG1_HANDLE;
+    backend.optStrings[{SIDE1_HANDLE, prop::SELECTED_OLG_ID}] = "DEFAULT";
+    backend.relatedByString[std::make_tuple(ObjectHandle(SIDE2_HANDLE), prop::OPERATIONAL_LIMITS_GROUP, std::string("EMPTY"))] = OLG2_HANDLE;
+    backend.bools  [{OLG2_HANDLE, prop::OLG_EMPTY}] = true;
+
     Line line(LINE_HANDLE, &backend);
-    auto cl = line.getCurrentLimits1();
-    ASSERT_TRUE(cl.has_value());
-    EXPECT_EQ(cl->getTemporaryLimits().size(), 0u);
+    std::vector<OperationalLimitsGroup> groups = line.getOperationalLimitsGroups1();
+    ASSERT_EQ(groups.size(), 1u);
+    EXPECT_EQ(groups[0].getId(), "DEFAULT");
+    EXPECT_FALSE(groups[0].isEmpty());
+    EXPECT_EQ(*line.getSelectedOperationalLimitsGroup1(), groups[0]);
+    EXPECT_EQ(line.getSelectedOperationalLimitsGroupId1(), iidm::optional<std::string>("DEFAULT"));
+    EXPECT_FALSE(line.getSelectedOperationalLimitsGroupId2());
+    EXPECT_TRUE(line.getOperationalLimitsGroups2().empty());
+    ASSERT_TRUE(line.getOperationalLimitsGroup2("EMPTY"));
+    EXPECT_TRUE(line.getOperationalLimitsGroup2("EMPTY")->isEmpty());
+    EXPECT_FALSE(line.getOperationalLimitsGroup2("UNKNOWN"));
 }
 
-// ── OperationalLimitsGroup ────────────────────────────────────────────────────
-
-static constexpr ObjectHandle OLG1_HANDLE = 80;
-static constexpr ObjectHandle OLG2_HANDLE = 81;
-
-TEST_F(LineTest, GetOperationalLimitsGroupsEmpty) {
+TEST_F(LineLimitsTest, Selection) {
     Line line(LINE_HANDLE, &backend);
-    EXPECT_EQ(line.getOperationalLimitsGroups1().size(), 0u);
-    EXPECT_FALSE(line.getSelectedOperationalLimitsGroup1().has_value());
+    EXPECT_EQ(&line.setSelectedOperationalLimitsGroup2("WINTER"), &line);
+    EXPECT_EQ((backend.strings[{SIDE2_HANDLE, prop::SELECTED_OLG_ID}]), "WINTER");
+    line.addSelectedOperationalLimitsGroups(TwoSides::ONE, {"A", "B"});
+    EXPECT_EQ((backend.strings[{SIDE1_HANDLE, prop::ADD_SELECTED_OLG}]), "B"); // one call per group
+    line.deselectOperationalLimitsGroups(TwoSides::ONE, {"A"});
+    EXPECT_EQ((backend.strings[{SIDE1_HANDLE, prop::DESELECT_OLG}]), "A");
+    line.removeOperationalLimitsGroup1("A");
+    EXPECT_EQ((backend.strings[{SIDE1_HANDLE, prop::REMOVE_OLG}]), "A");
+    backend.related[{SIDE1_HANDLE, prop::REL_SELECTED_OLG}] = OLG1_HANDLE;
+    line.cancelSelectedOperationalLimitsGroup1();
+    EXPECT_EQ((backend.related[{SIDE1_HANDLE, prop::REL_SELECTED_OLG}]), INVALID_HANDLE);
+
+    backend.stringLists[{SIDE1_HANDLE, prop::ALL_SELECTED_OLG_IDS}] = {"A", "B"};
+    backend.stringLists[{SIDE1_HANDLE, prop::ALL_SELECTED_OLG_IDS_ORDERED}] = {"B", "A"};
+    backend.children[{SIDE1_HANDLE, prop::REL_SELECTED_OLG}] = {OLG1_HANDLE, OLG2_HANDLE};
+    backend.children[{SIDE1_HANDLE, prop::CURRENT_LIMITS}] = {CL1_HANDLE, CL2_HANDLE};
+    EXPECT_EQ(line.getAllSelectedOperationalLimitsGroupIds(TwoSides::ONE), (std::vector<std::string>{"A", "B"}));
+    EXPECT_EQ(line.getAllSelectedOperationalLimitsGroupIdsOrdered(TwoSides::ONE), (std::vector<std::string>{"B", "A"}));
+    EXPECT_EQ(line.getAllSelectedOperationalLimitsGroups(TwoSides::ONE).size(), 2u);
+    EXPECT_EQ(line.getAllSelectedCurrentLimits(TwoSides::ONE).size(), 2u);
+    EXPECT_EQ(line.getAllSelectedLimits(LimitType::CURRENT, TwoSides::ONE).size(), 2u);
+    EXPECT_TRUE(line.getAllSelectedApparentPowerLimits(TwoSides::ONE).empty());
+    EXPECT_THROW(line.getAllSelectedLimits(LimitType::VOLTAGE, TwoSides::ONE), PropertyNotFoundException);
 }
 
-TEST_F(LineTest, GetOperationalLimitsGroups1) {
-    backend.children[{LINE_HANDLE, prop::OLG_SIDE1}] = {OLG1_HANDLE};
-    backend.strings[{OLG1_HANDLE, prop::OLG_ID}]    = "DEFAULT";
-    backend.bools  [{OLG1_HANDLE, prop::OLG_EMPTY}]  = false;
+TEST_F(LineLimitsTest, Creation) {
     Line line(LINE_HANDLE, &backend);
-    auto olgs = line.getOperationalLimitsGroups1();
-    ASSERT_EQ(olgs.size(), 1u);
-    EXPECT_TRUE(olgs[0].isValid());
-    EXPECT_EQ(olgs[0].getId(), "DEFAULT");
-    EXPECT_FALSE(olgs[0].isEmpty());
+    backend.addResults[backend.nextAdder] = OLG1_HANDLE;
+    OperationalLimitsGroup group = line.newOperationalLimitsGroup2("NEW");
+    const ObjectHandle adder = backend.lastAdder;
+    EXPECT_EQ(backend.invocations[0], std::make_pair(ObjectHandle(SIDE2_HANDLE), prop::OPERATIONAL_LIMITS_GROUP));
+    EXPECT_EQ((backend.strings[{adder, prop::OLG_ID}]), "NEW");
+    EXPECT_EQ(group, OperationalLimitsGroup(OLG1_HANDLE, &backend));
+
+    backend.addResults[backend.nextAdder] = OLG2_HANDLE;
+    EXPECT_EQ(line.getOrCreateSelectedOperationalLimitsGroup1("SEL"), OperationalLimitsGroup(OLG2_HANDLE, &backend));
+    EXPECT_EQ(backend.invocations[2], std::make_pair(ObjectHandle(SIDE1_HANDLE), prop::REL_SELECTED_OLG));
+    EXPECT_EQ((backend.strings[{backend.lastAdder, prop::OLG_ID}]), "SEL");
 }
 
-TEST_F(LineTest, GetSelectedOperationalLimitsGroup1) {
-    backend.related[{LINE_HANDLE, prop::REL_SELECTED_OLG1}] = OLG1_HANDLE;
-    backend.strings[{OLG1_HANDLE, prop::OLG_ID}] = "DEFAULT";
+TEST_F(LineLimitsTest, GetSide) {
     Line line(LINE_HANDLE, &backend);
-    auto olg = line.getSelectedOperationalLimitsGroup1();
-    ASSERT_TRUE(olg.has_value());
-    EXPECT_EQ(olg->getId(), "DEFAULT");
-}
-
-TEST_F(LineTest, GetCurrentLimitsFromOLG) {
-    backend.related[{LINE_HANDLE, prop::REL_SELECTED_OLG1}] = OLG1_HANDLE;
-    backend.strings[{OLG1_HANDLE, prop::OLG_ID}]              = "DEFAULT";
-    backend.related[{OLG1_HANDLE, prop::CURRENT_LIMITS}]         = CL1_HANDLE;
-    backend.doubles[{CL1_HANDLE, prop::CL_PERMANENT_LIMIT}]   = 1000.0;
-    Line line(LINE_HANDLE, &backend);
-    auto olg = line.getSelectedOperationalLimitsGroup1();
-    ASSERT_TRUE(olg.has_value());
-    auto cl = olg->getCurrentLimits();
-    ASSERT_TRUE(cl.has_value());
-    EXPECT_DOUBLE_EQ(cl->getPermanentLimit(), 1000.0);
-}
-
-TEST_F(LineTest, OlgNoCurrentLimits) {
-    backend.related[{LINE_HANDLE, prop::REL_SELECTED_OLG2}] = OLG2_HANDLE;
-    backend.strings[{OLG2_HANDLE, prop::OLG_ID}]            = "EMPTY";
-    backend.bools  [{OLG2_HANDLE, prop::OLG_EMPTY}]          = true;
-    Line line(LINE_HANDLE, &backend);
-    auto olg = line.getSelectedOperationalLimitsGroup2();
-    ASSERT_TRUE(olg.has_value());
-    EXPECT_TRUE(olg->isEmpty());
-    EXPECT_FALSE(olg->getCurrentLimits().has_value());
+    EXPECT_EQ(line.getSide(Terminal(TERM1_HANDLE, &backend)), TwoSides::ONE);
+    EXPECT_EQ(line.getSide(Terminal(TERM2_HANDLE, &backend)), TwoSides::TWO);
+    EXPECT_THROW(line.getSide(Terminal(99, &backend)), ValidationException);
 }

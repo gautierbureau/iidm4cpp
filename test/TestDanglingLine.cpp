@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <iidm/DanglingLine.h>
-#include <iidm/CurrentLimits.h>
+#include <iidm/LoadingLimits.h>
 #include <iidm/PropertyCodes.h>
 #include "MockBackend.h"
 
@@ -36,7 +36,7 @@ TEST_F(DanglingLineTest, GetCurrentLimitsAbsent) {
 
 TEST_F(DanglingLineTest, GetCurrentLimitsPresent) {
     backend.related[{DL_HANDLE, prop::CURRENT_LIMITS}]     = CL_HANDLE;
-    backend.doubles[{CL_HANDLE, prop::CL_PERMANENT_LIMIT}] = 300.0;
+    backend.doubles[{CL_HANDLE, prop::LL_PERMANENT_LIMIT}] = 300.0;
     DanglingLine dl(DL_HANDLE, &backend);
     auto cl = dl.getCurrentLimits();
     ASSERT_TRUE(cl.has_value());

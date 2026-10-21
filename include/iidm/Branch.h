@@ -2,9 +2,10 @@
 
 #include <iidm/BranchObservability.h>
 #include <iidm/BranchObservabilityAdder.h>
-#include <iidm/CurrentLimits.h>
 #include <iidm/Enums.h>
+#include <iidm/FlowsLimitsHolder.h>
 #include <iidm/Identifiable.h>
+#include <iidm/LoadingLimits.h>
 #include <iidm/OperationalLimitsGroup.h>
 #include <iidm/Terminal.h>
 #include <iidm/stdcxx/optional.hpp>
@@ -18,6 +19,10 @@ namespace detail {
 
 // What every branch has (powsybl Branch): two terminals, and limits on each side. A mixin
 // rather than a base class, as in powsybl a branch is not always a Connectable (a TieLine).
+//
+// The limits of each side are those of a flows limits holder (see FlowsLimitsHolderMethods): in
+// groups, of which the selected ones are in force. Each holder method has a version per side
+// (getOperationalLimitsGroups1, getOperationalLimitsGroups2), or takes the side.
 template <class Self>
 class BranchMethods {
 public:
@@ -26,14 +31,54 @@ public:
     Terminal getTerminal(TwoSides side) const;
     // The terminal in this voltage level
     Terminal getTerminal(const std::string& voltageLevelId) const;
+    // The side of one of its terminals; ValidationException for another terminal
+    TwoSides getSide(const Terminal& terminal) const;
 
-    iidm::optional<CurrentLimits> getCurrentLimits1() const;
-    iidm::optional<CurrentLimits> getCurrentLimits2() const;
-
+    // ── Limit groups ─────────────────────────────────────────────────────
     std::vector<OperationalLimitsGroup> getOperationalLimitsGroups1() const;
     std::vector<OperationalLimitsGroup> getOperationalLimitsGroups2() const;
+    iidm::optional<OperationalLimitsGroup> getOperationalLimitsGroup1(const std::string& id) const;
+    iidm::optional<OperationalLimitsGroup> getOperationalLimitsGroup2(const std::string& id) const;
+    OperationalLimitsGroup newOperationalLimitsGroup1(const std::string& id);
+    OperationalLimitsGroup newOperationalLimitsGroup2(const std::string& id);
+    void removeOperationalLimitsGroup1(const std::string& id);
+    void removeOperationalLimitsGroup2(const std::string& id);
+
+    // ── Selection ────────────────────────────────────────────────────────
+    iidm::optional<std::string> getSelectedOperationalLimitsGroupId1() const;
+    iidm::optional<std::string> getSelectedOperationalLimitsGroupId2() const;
     iidm::optional<OperationalLimitsGroup> getSelectedOperationalLimitsGroup1() const;
     iidm::optional<OperationalLimitsGroup> getSelectedOperationalLimitsGroup2() const;
+    std::vector<std::string> getAllSelectedOperationalLimitsGroupIds(TwoSides side) const;
+    std::vector<std::string> getAllSelectedOperationalLimitsGroupIdsOrdered(TwoSides side) const;
+    std::vector<OperationalLimitsGroup> getAllSelectedOperationalLimitsGroups(TwoSides side) const;
+    Self& setSelectedOperationalLimitsGroup1(const std::string& id);
+    Self& setSelectedOperationalLimitsGroup2(const std::string& id);
+    void addSelectedOperationalLimitsGroups(TwoSides side, const std::vector<std::string>& ids);
+    void deselectOperationalLimitsGroups(TwoSides side, const std::vector<std::string>& ids);
+    void cancelSelectedOperationalLimitsGroup1();
+    void cancelSelectedOperationalLimitsGroup2();
+    OperationalLimitsGroup getOrCreateSelectedOperationalLimitsGroup1();
+    OperationalLimitsGroup getOrCreateSelectedOperationalLimitsGroup2();
+    OperationalLimitsGroup getOrCreateSelectedOperationalLimitsGroup1(const std::string& id);
+    OperationalLimitsGroup getOrCreateSelectedOperationalLimitsGroup2(const std::string& id);
+
+    // ── Limits in force: those of the selected group, or of every selected group ──
+    iidm::optional<CurrentLimits> getCurrentLimits1() const;
+    iidm::optional<CurrentLimits> getCurrentLimits2() const;
+    iidm::optional<CurrentLimits> getCurrentLimits(TwoSides side) const;
+    std::vector<CurrentLimits> getAllSelectedCurrentLimits(TwoSides side) const;
+    iidm::optional<ActivePowerLimits> getActivePowerLimits1() const;
+    iidm::optional<ActivePowerLimits> getActivePowerLimits2() const;
+    iidm::optional<ActivePowerLimits> getActivePowerLimits(TwoSides side) const;
+    std::vector<ActivePowerLimits> getAllSelectedActivePowerLimits(TwoSides side) const;
+    iidm::optional<ApparentPowerLimits> getApparentPowerLimits1() const;
+    iidm::optional<ApparentPowerLimits> getApparentPowerLimits2() const;
+    iidm::optional<ApparentPowerLimits> getApparentPowerLimits(TwoSides side) const;
+    std::vector<ApparentPowerLimits> getAllSelectedApparentPowerLimits(TwoSides side) const;
+    // Of a type (current, active power or apparent power)
+    iidm::optional<LoadingLimits> getLimits(LimitType type, TwoSides side) const;
+    std::vector<LoadingLimits> getAllSelectedLimits(LimitType type, TwoSides side) const;
 
     // ── Extensions ───────────────────────────────────────────────────────
     // An extension's getter throws ExtensionNotFoundException when it is absent
@@ -48,8 +93,11 @@ protected:
 
 private:
     const Self& self() const { return static_cast<const Self&>(*this); }
+    Self& self() { return static_cast<Self&>(*this); }
     ObjectHandle handle() const { return Access::handle(self()); }
     BackendProvider* backend() const { return Access::backend(self()); }
+    // The limits of a side
+    BranchSideLimits sideLimits(TwoSides side) const;
 };
 
 } // namespace detail

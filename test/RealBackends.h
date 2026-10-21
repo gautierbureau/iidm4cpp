@@ -5,11 +5,17 @@
 //   - JNI:     IIDM_BRIDGE_JAR         = path to iidm-bridge-java-*-fat.jar (a JVM is created)
 // Each backend is skipped when its variable is not set.
 
+#include <iidm/stdcxx/optional.hpp>
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
+// When building without C++17, iidm::optional<T> is boost::optional<T>: GTest needs the Boost I/O
+// header to print one on failure.
+#ifdef BOOST_OPTIONAL_FLC_19NOV2002_HPP
+#  include <boost/optional/optional_io.hpp>
+#endif
 
 #ifdef IIDM_BRIDGE_JNI_ENABLED
 #  include <jni.h>

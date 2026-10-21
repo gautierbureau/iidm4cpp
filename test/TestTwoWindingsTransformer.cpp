@@ -65,18 +65,18 @@ TEST_F(TwoWindingsTransformerTest, GetTerminals) {
     EXPECT_DOUBLE_EQ(twt.getTerminal2().getP(), -98.0);
 }
 
-TEST_F(TwoWindingsTransformerTest, GetCurrentLimitsAbsent) {
+// The limits of each side are those of its holder (see TestLine.cpp)
+TEST_F(TwoWindingsTransformerTest, GetCurrentLimits) {
+    static constexpr ObjectHandle SIDE1_H = 32;
+    static constexpr ObjectHandle SIDE2_H = 33;
+    backend.relatedByIndex[std::make_tuple(ObjectHandle(TWT_H), prop::FLOWS_LIMITS_HOLDER, 0)] = SIDE1_H;
+    backend.relatedByIndex[std::make_tuple(ObjectHandle(TWT_H), prop::FLOWS_LIMITS_HOLDER, 1)] = SIDE2_H;
     TwoWindingsTransformer twt(TWT_H, &backend);
     EXPECT_FALSE(twt.getCurrentLimits1().has_value());
-    EXPECT_FALSE(twt.getCurrentLimits2().has_value());
-}
-
-TEST_F(TwoWindingsTransformerTest, GetCurrentLimitsPresent) {
-    backend.related[{TWT_H, prop::REL_CURRENT_LIMITS1}] = CL1_H;
-    backend.related[{TWT_H, prop::REL_CURRENT_LIMITS2}] = CL2_H;
-    backend.doubles[{CL1_H, prop::CL_PERMANENT_LIMIT}]  = 500.0;
-    backend.doubles[{CL2_H, prop::CL_PERMANENT_LIMIT}]  = 600.0;
-    TwoWindingsTransformer twt(TWT_H, &backend);
+    backend.related[{SIDE1_H, prop::CURRENT_LIMITS}]       = CL1_H;
+    backend.related[{SIDE2_H, prop::CURRENT_LIMITS}]       = CL2_H;
+    backend.doubles[{CL1_H, prop::LL_PERMANENT_LIMIT}] = 500.0;
+    backend.doubles[{CL2_H, prop::LL_PERMANENT_LIMIT}] = 600.0;
     ASSERT_TRUE(twt.getCurrentLimits1().has_value());
     EXPECT_DOUBLE_EQ(twt.getCurrentLimits1()->getPermanentLimit(), 500.0);
     ASSERT_TRUE(twt.getCurrentLimits2().has_value());
@@ -86,44 +86,6 @@ TEST_F(TwoWindingsTransformerTest, GetCurrentLimitsPresent) {
 TEST_F(TwoWindingsTransformerTest, GetName) {
     TwoWindingsTransformer twt(TWT_H, &backend);
     EXPECT_EQ(twt.getNameOrId(), "Two Windings T1");
-}
-
-TEST_F(TwoWindingsTransformerTest, GetOperationalLimitsGroupsEmpty) {
-    TwoWindingsTransformer twt(TWT_H, &backend);
-    EXPECT_EQ(twt.getOperationalLimitsGroups1().size(), 0u);
-    EXPECT_EQ(twt.getOperationalLimitsGroups2().size(), 0u);
-    EXPECT_FALSE(twt.getSelectedOperationalLimitsGroup1().has_value());
-    EXPECT_FALSE(twt.getSelectedOperationalLimitsGroup2().has_value());
-}
-
-TEST_F(TwoWindingsTransformerTest, GetOperationalLimitsGroups) {
-    static constexpr ObjectHandle OLG1_H = 40;
-    static constexpr ObjectHandle OLG2_H = 41;
-    backend.children[{TWT_H, prop::OLG_SIDE1}] = {OLG1_H};
-    backend.children[{TWT_H, prop::OLG_SIDE2}] = {OLG2_H};
-    backend.strings [{OLG1_H, prop::OLG_ID}]   = "DEFAULT";
-    backend.strings [{OLG2_H, prop::OLG_ID}]   = "DEFAULT";
-    TwoWindingsTransformer twt(TWT_H, &backend);
-    ASSERT_EQ(twt.getOperationalLimitsGroups1().size(), 1u);
-    ASSERT_EQ(twt.getOperationalLimitsGroups2().size(), 1u);
-    EXPECT_EQ(twt.getOperationalLimitsGroups1()[0].getId(), "DEFAULT");
-    EXPECT_EQ(twt.getOperationalLimitsGroups2()[0].getId(), "DEFAULT");
-}
-
-TEST_F(TwoWindingsTransformerTest, GetSelectedOperationalLimitsGroups) {
-    static constexpr ObjectHandle OLG1_H = 40;
-    static constexpr ObjectHandle OLG2_H = 41;
-    backend.related[{TWT_H, prop::REL_SELECTED_OLG1}] = OLG1_H;
-    backend.related[{TWT_H, prop::REL_SELECTED_OLG2}] = OLG2_H;
-    backend.strings[{OLG1_H, prop::OLG_ID}] = "GRP1";
-    backend.strings[{OLG2_H, prop::OLG_ID}] = "GRP2";
-    TwoWindingsTransformer twt(TWT_H, &backend);
-    auto olg1 = twt.getSelectedOperationalLimitsGroup1();
-    auto olg2 = twt.getSelectedOperationalLimitsGroup2();
-    ASSERT_TRUE(olg1.has_value());
-    ASSERT_TRUE(olg2.has_value());
-    EXPECT_EQ(olg1->getId(), "GRP1");
-    EXPECT_EQ(olg2->getId(), "GRP2");
 }
 
 TEST_F(TwoWindingsTransformerTest, IsValid) {

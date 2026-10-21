@@ -34,6 +34,10 @@
 #include <iidm/Generator.h>
 #include <iidm/Load.h>
 #include <iidm/Line.h>
+#include <iidm/TemporaryLimit.h>
+#include <iidm/LoadingLimits.h>
+#include <iidm/LoadingLimitsAdder.h>
+#include <iidm/OperationalLimitsGroup.h>
 #include <iidm/FlowsLimitsHolder.h>
 #include <iidm/TapChangerStep.h>
 #include <iidm/RatioTapChangerStep.h>

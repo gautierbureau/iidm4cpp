@@ -374,7 +374,7 @@ class PropertyDispatcherGetDoubleTest {
         line.newOperationalLimitsGroup1("DEFAULT").newCurrentLimits().setPermanentLimit(1000).add();
         line.setSelectedOperationalLimitsGroup1("DEFAULT");
         LoadingLimits cl = line.getCurrentLimits1().orElseThrow();
-        assertEquals(1000.0, PropertyDispatcher.getDouble(reg(cl), CL_PERMANENT_LIMIT));
+        assertEquals(1000.0, PropertyDispatcher.getDouble(reg(cl), LL_PERMANENT_LIMIT));
     }
 
     // ── RatioTapChangerStep ───────────────────────────────────────────────────
