@@ -5,7 +5,7 @@
 
 namespace iidm {
 
-// New LoadDetail extension of a load (newLoadDetail())
+// New LoadDetail extension of a load
 class LoadDetailAdder : public detail::AdderBase<LoadDetailAdder> {
 public:
     LoadDetailAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

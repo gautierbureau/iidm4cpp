@@ -32,7 +32,7 @@ public:
 };
 
 // The extension a property belongs to is not attached to the object
-// (e.g. getActivePowerControl() on a generator without that extension).
+// (e.g. getExtension<ActivePowerControl>() on a generator without that extension).
 class ExtensionNotFoundException : public PropertyNotFoundException {
 public:
     explicit ExtensionNotFoundException(const std::string& message)

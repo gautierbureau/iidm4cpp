@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
-#include <iidm/Battery.h>
 #include <iidm/ActivePowerControl.h>
+#include <iidm/ActivePowerControlAdder.h>
+#include <iidm/Battery.h>
 #include <iidm/PropertyCodes.h>
 #include "MockBackend.h"
 
@@ -93,13 +94,13 @@ TEST_F(BatteryTest, ReactiveLimits) {
 
 TEST_F(BatteryTest, HasActivePowerControlFalse) {
     Battery bat(BAT_HANDLE, &backend);
-    EXPECT_FALSE(bat.hasActivePowerControl());
+    EXPECT_FALSE(bat.hasExtension<ActivePowerControl>());
 }
 
 TEST_F(BatteryTest, HasActivePowerControlTrue) {
     backend.related[{BAT_HANDLE, prop::ACTIVE_POWER_CONTROL}] = BAT_APC_HANDLE;
     Battery bat(BAT_HANDLE, &backend);
-    EXPECT_TRUE(bat.hasActivePowerControl());
+    EXPECT_TRUE(bat.hasExtension<ActivePowerControl>());
 }
 
 // Same extension object, and same codes, as on a generator
@@ -109,7 +110,7 @@ TEST_F(BatteryTest, GetActivePowerControl) {
     backend.bools  [{BAT_APC_HANDLE, prop::EXT_APC_PARTICIPATE}]    = true;
     backend.doubles[{BAT_APC_HANDLE, prop::EXT_APC_MIN_TARGET_P}]   = -50.0;
     Battery bat(BAT_HANDLE, &backend);
-    auto apc = bat.getActivePowerControl();
+    auto apc = bat.getExtension<ActivePowerControl>();
     EXPECT_DOUBLE_EQ(apc.getDroop(), 2.5);
     EXPECT_TRUE(apc.isParticipate());
     ASSERT_TRUE(apc.getMinTargetP().has_value());
@@ -121,11 +122,11 @@ TEST_F(BatteryTest, GetActivePowerControl) {
 
 TEST_F(BatteryTest, NewAndRemoveActivePowerControl) {
     Battery bat(BAT_HANDLE, &backend);
-    bat.newActivePowerControl().withDroop(1.0).add();
+    bat.newExtension<ActivePowerControlAdder>().withDroop(1.0).add();
     ASSERT_EQ(backend.invocations.size(), 2u);
     EXPECT_EQ(backend.invocations[0], std::make_pair(static_cast<ObjectHandle>(BAT_HANDLE), prop::ACTIVE_POWER_CONTROL));
     EXPECT_EQ(backend.invocations[1], std::make_pair(backend.lastAdder, prop::ACT_ADD));
-    bat.removeActivePowerControl();
+    bat.removeExtension<ActivePowerControl>();
     EXPECT_EQ((backend.related[{BAT_HANDLE, prop::ACTIVE_POWER_CONTROL}]), INVALID_HANDLE);
 }
 

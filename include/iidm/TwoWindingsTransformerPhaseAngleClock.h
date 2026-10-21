@@ -9,7 +9,7 @@ namespace iidm {
 class BackendProvider;
 
 // The TwoWindingsTransformerPhaseAngleClock extension of a two windings transformer: an object
-// of its own, from TwoWindingsTransformer::getTwoWindingsTransformerPhaseAngleClock().
+// of its own, from TwoWindingsTransformer::getExtension<TwoWindingsTransformerPhaseAngleClock>().
 class TwoWindingsTransformerPhaseAngleClock : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::TWO_WINDINGS_TRANSFORMER_PHASE_ANGLE_CLOCK;

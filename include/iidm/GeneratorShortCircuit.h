@@ -8,8 +8,9 @@ namespace iidm {
 
 class BackendProvider;
 
-// The GeneratorShortCircuit extension of a generator (powsybl GeneratorShortCircuit, a ShortCircuitExtension): its
-// reactances for short circuit studies. An object of its own, from Generator::getGeneratorShortCircuit().
+// The GeneratorShortCircuit extension of a generator (powsybl GeneratorShortCircuit, a
+// ShortCircuitExtension): its reactances for short circuit studies. An object of its own, from
+// Generator::getExtension<GeneratorShortCircuit>().
 class GeneratorShortCircuit : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::GENERATOR_SHORT_CIRCUIT;

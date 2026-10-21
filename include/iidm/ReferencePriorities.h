@@ -29,7 +29,8 @@ public:
 };
 
 // The ReferencePriorities extension of a connectable: the priorities of its terminals as the angle
-// reference, one per terminal. An object of its own, from Connectable::getReferencePriorities().
+// reference, one per terminal. An object of its own, from
+// Connectable::getExtension<ReferencePriorities>().
 class ReferencePriorities : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::REFERENCE_PRIORITIES;

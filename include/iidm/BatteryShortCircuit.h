@@ -8,8 +8,9 @@ namespace iidm {
 
 class BackendProvider;
 
-// The BatteryShortCircuit extension of a battery (powsybl BatteryShortCircuit, a ShortCircuitExtension): its
-// reactances for short circuit studies. An object of its own, from Battery::getBatteryShortCircuit().
+// The BatteryShortCircuit extension of a battery (powsybl BatteryShortCircuit, a
+// ShortCircuitExtension): its reactances for short circuit studies. An object of its own, from
+// Battery::getExtension<BatteryShortCircuit>().
 class BatteryShortCircuit : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::BATTERY_SHORT_CIRCUIT;

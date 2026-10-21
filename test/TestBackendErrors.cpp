@@ -39,20 +39,35 @@ void checkBackendErrors(BackendProvider& b) {
 
     // Absent extension: the C++ getter throws; the extension's codes do not apply to its host
     Generator gen2(g2, &b);
-    EXPECT_FALSE(gen2.hasActivePowerControl());
-    EXPECT_THROW(gen2.getActivePowerControl(), ExtensionNotFoundException);
-    EXPECT_THROW(l2.getInjectionObservability(), ExtensionNotFoundException);
+    EXPECT_FALSE(gen2.hasExtension<ActivePowerControl>());
+    EXPECT_THROW(gen2.getExtension<ActivePowerControl>(), ExtensionNotFoundException);
+    EXPECT_THROW(l2.getExtension<InjectionObservability>(), ExtensionNotFoundException);
     EXPECT_THROW(b.getDouble(g2, prop::EXT_APC_DROOP), PropertyNotFoundException);
 
     // Rejected values leave the network unchanged
     Generator gen(g, &b);
-    EXPECT_THROW(gen.getActivePowerControl().setMaxTargetP(500.0), ValidationException);
-    ASSERT_TRUE(gen.getActivePowerControl().getMaxTargetP().has_value());
-    EXPECT_DOUBLE_EQ(*gen.getActivePowerControl().getMaxTargetP(), 150.0);
+    EXPECT_THROW(gen.getExtension<ActivePowerControl>().setMaxTargetP(500.0), ValidationException);
+    ASSERT_TRUE(gen.getExtension<ActivePowerControl>().getMaxTargetP().has_value());
+    EXPECT_DOUBLE_EQ(*gen.getExtension<ActivePowerControl>().getMaxTargetP(), 150.0);
 
-    SlackTerminal slack = VoltageLevel(vl1, &b).getSlackTerminal();
+    SlackTerminal slack = VoltageLevel(vl1, &b).getExtension<SlackTerminal>();
     EXPECT_THROW(slack.setTerminal(l2.getTerminal()), ValidationException);
     EXPECT_EQ(slack.getTerminal()->getConnectable().getId(), "G");
+
+    // An extension by its class: empty when absent, named in the message when it must be there
+    EXPECT_FALSE(gen2.findExtension<ActivePowerControl>());
+    ASSERT_TRUE(gen.findExtension<ActivePowerControl>());
+    EXPECT_DOUBLE_EQ(*gen.findExtension<ActivePowerControl>()->getMaxTargetP(), 150.0);
+    try {
+        gen2.getExtension<ActivePowerControl>();
+        FAIL() << "no exception";
+    } catch (const ExtensionNotFoundException& e) {
+        EXPECT_EQ(std::string(e.what()), "ActivePowerControl extension not present on G2");
+    }
+    // A host that powsybl does not allow for the extension never has it, and cannot take one
+    // (powsybl's adder casts the host: a ClassCastException)
+    EXPECT_FALSE(l2.hasExtension<GeneratorShortCircuit>());
+    EXPECT_THROW(l2.newExtension<GeneratorShortCircuitAdder>(), PropertyNotFoundException);
 
     // Unknown codes, codes on the wrong type of object, invalid handles
     EXPECT_THROW(b.getDouble(g, 999999), PropertyNotFoundException);
@@ -63,7 +78,7 @@ void checkBackendErrors(BackendProvider& b) {
 
     // Messages come from Java
     try {
-        gen.getActivePowerControl().setMaxTargetP(500.0);
+        gen.getExtension<ActivePowerControl>().setMaxTargetP(500.0);
         FAIL() << "no exception";
     } catch (const ValidationException& e) {
         EXPECT_NE(std::string(e.what()).find("maxTargetP"), std::string::npos) << e.what();
@@ -90,7 +105,7 @@ void checkHandlesAreReleased(BackendProvider& b) {
     for (int i = 0; i < 20000; ++i) {
         sum += gen.getTerminal().getP();                       // new terminal handle each time
         sum += static_cast<double>(vl.getGenerators().size()); // new generator handles
-        sum += gen.getActivePowerControl().getDroop();         // new extension handle
+        sum += gen.getExtension<ActivePowerControl>().getDroop();         // new extension handle
     }
     EXPECT_EQ(b.liveHandleCount(), baseline);
     (void)sum;

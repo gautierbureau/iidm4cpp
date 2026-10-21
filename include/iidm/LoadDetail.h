@@ -9,7 +9,7 @@ namespace iidm {
 class BackendProvider;
 
 // The LoadDetail extension of a load: its fixed and variable parts. An object of its own, from
-// Load::getLoadDetail().
+// Load::getExtension<LoadDetail>().
 class LoadDetail : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::LOAD_DETAIL;

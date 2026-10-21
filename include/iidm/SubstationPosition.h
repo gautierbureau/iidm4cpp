@@ -10,7 +10,7 @@ namespace iidm {
 class BackendProvider;
 
 // The SubstationPosition extension of a substation: where it is. An object of its own, from
-// Substation::getSubstationPosition().
+// Substation::getExtension<SubstationPosition>().
 class SubstationPosition : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::SUBSTATION_POSITION;

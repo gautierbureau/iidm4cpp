@@ -5,7 +5,7 @@
 
 namespace iidm {
 
-// New ActivePowerControl extension of a generator or battery (newActivePowerControl())
+// New ActivePowerControl extension of a generator or battery
 class ActivePowerControlAdder : public detail::AdderBase<ActivePowerControlAdder> {
 public:
     ActivePowerControlAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

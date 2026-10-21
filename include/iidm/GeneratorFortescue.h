@@ -8,8 +8,9 @@ namespace iidm {
 
 class BackendProvider;
 
-// The GeneratorFortescue extension of a generator: its sequence impedances (Ω) and its
-// grounding, for asymmetrical studies. An object of its own, from Generator::getGeneratorFortescue().
+// The GeneratorFortescue extension of a generator: its sequence impedances (Ω) and its grounding,
+// for asymmetrical studies. An object of its own, from
+// Generator::getExtension<GeneratorFortescue>().
 class GeneratorFortescue : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::GENERATOR_FORTESCUE;

@@ -3,7 +3,6 @@
 #include <iidm/Line.h>
 #include <iidm/TieLine.h>
 #include <iidm/TwoWindingsTransformer.h>
-#include "Extensions.h"
 #include "OverloadChecks.h"
 #include "Wrap.h"
 
@@ -335,28 +334,6 @@ std::vector<Overload> BranchMethods<Self>::checkAllTemporaryLimits(TwoSides side
 template <class Self>
 std::vector<Overload> BranchMethods<Self>::checkAllTemporaryLimits(TwoSides side, double limitReductionValue, LimitType type) const {
     return allOverloadsOf(backend(), handle(), static_cast<int>(side), iidm::optional<double>(limitReductionValue), type);
-}
-
-// ── Extensions ───────────────────────────────────────────────────────────────
-
-template <class Self>
-bool BranchMethods<Self>::hasBranchObservability() const {
-    return hasExtension<BranchObservability>(backend(), handle());
-}
-
-template <class Self>
-BranchObservability BranchMethods<Self>::getBranchObservability() const {
-    return getExtension<BranchObservability>(backend(), handle(), "BranchObservability");
-}
-
-template <class Self>
-BranchObservabilityAdder BranchMethods<Self>::newBranchObservability() {
-    return newExtension<BranchObservability, BranchObservabilityAdder>(backend(), handle());
-}
-
-template <class Self>
-void BranchMethods<Self>::removeBranchObservability() {
-    removeExtension<BranchObservability>(backend(), handle());
 }
 
 template class BranchMethods<Branch>;

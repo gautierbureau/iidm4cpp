@@ -2,10 +2,6 @@
 
 #include <iidm/Enums.h>
 #include <iidm/Injection.h>
-#include <iidm/LoadAsymmetrical.h>
-#include <iidm/LoadAsymmetricalAdder.h>
-#include <iidm/LoadDetail.h>
-#include <iidm/LoadDetailAdder.h>
 #include <iidm/LoadModel.h>
 #include <iidm/stdcxx/optional.hpp>
 
@@ -35,18 +31,6 @@ public:
     void applySolvedValues();
     void setP0ToP();
     void setQ0ToQ();
-
-    // ── Extensions ───────────────────────────────────────────────────────
-    // An extension's getter throws ExtensionNotFoundException when it is absent
-    bool hasLoadDetail() const;
-    LoadDetail getLoadDetail() const;
-    LoadDetailAdder newLoadDetail();
-    void removeLoadDetail();
-
-    bool hasLoadAsymmetrical() const;
-    LoadAsymmetrical getLoadAsymmetrical() const;
-    LoadAsymmetricalAdder newLoadAsymmetrical();
-    void removeLoadAsymmetrical();
 };
 
 } // namespace iidm

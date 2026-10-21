@@ -5,7 +5,7 @@
 
 namespace iidm {
 
-// New HvdcOperatorActivePowerRange extension of an HVDC line (newHvdcOperatorActivePowerRange())
+// New HvdcOperatorActivePowerRange extension of an HVDC line
 class HvdcOperatorActivePowerRangeAdder : public detail::AdderBase<HvdcOperatorActivePowerRangeAdder> {
 public:
     HvdcOperatorActivePowerRangeAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

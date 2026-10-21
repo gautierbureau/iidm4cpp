@@ -23,40 +23,40 @@ protected:
 
 TEST_F(HvdcOperatorActivePowerRangeTest, HasExtension) {
     HvdcLine hvdc(HVDC_HANDLE, &backend);
-    EXPECT_TRUE(hvdc.hasHvdcOperatorActivePowerRange());
+    EXPECT_TRUE(hvdc.hasExtension<HvdcOperatorActivePowerRange>());
 }
 
 TEST_F(HvdcOperatorActivePowerRangeTest, HasExtensionAbsent) {
     MockBackend empty;
     HvdcLine hvdc(HVDC_HANDLE, &empty);
-    EXPECT_FALSE(hvdc.hasHvdcOperatorActivePowerRange());
+    EXPECT_FALSE(hvdc.hasExtension<HvdcOperatorActivePowerRange>());
 }
 
 TEST_F(HvdcOperatorActivePowerRangeTest, GetOprFromCS1toCS2) {
     HvdcLine hvdc(HVDC_HANDLE, &backend);
-    EXPECT_DOUBLE_EQ(hvdc.getHvdcOperatorActivePowerRange().getOprFromCS1toCS2(), 400.0);
+    EXPECT_DOUBLE_EQ(hvdc.getExtension<HvdcOperatorActivePowerRange>().getOprFromCS1toCS2(), 400.0);
 }
 
 TEST_F(HvdcOperatorActivePowerRangeTest, SetOprFromCS1toCS2) {
     HvdcLine hvdc(HVDC_HANDLE, &backend);
-    hvdc.getHvdcOperatorActivePowerRange().setOprFromCS1toCS2(500.0);
+    hvdc.getExtension<HvdcOperatorActivePowerRange>().setOprFromCS1toCS2(500.0);
     EXPECT_DOUBLE_EQ((backend.doubles[{EXT_HANDLE, prop::EXT_HOAR_OPR_CS1_TO_CS2}]), 500.0);
 }
 
 TEST_F(HvdcOperatorActivePowerRangeTest, GetOprFromCS2toCS1) {
     HvdcLine hvdc(HVDC_HANDLE, &backend);
-    EXPECT_DOUBLE_EQ(hvdc.getHvdcOperatorActivePowerRange().getOprFromCS2toCS1(), 350.0);
+    EXPECT_DOUBLE_EQ(hvdc.getExtension<HvdcOperatorActivePowerRange>().getOprFromCS2toCS1(), 350.0);
 }
 
 TEST_F(HvdcOperatorActivePowerRangeTest, SetOprFromCS2toCS1) {
     HvdcLine hvdc(HVDC_HANDLE, &backend);
-    hvdc.getHvdcOperatorActivePowerRange().setOprFromCS2toCS1(300.0);
+    hvdc.getExtension<HvdcOperatorActivePowerRange>().setOprFromCS2toCS1(300.0);
     EXPECT_DOUBLE_EQ((backend.doubles[{EXT_HANDLE, prop::EXT_HOAR_OPR_CS2_TO_CS1}]), 300.0);
 }
 
 TEST_F(HvdcOperatorActivePowerRangeTest, MethodChaining) {
     HvdcLine hvdc(HVDC_HANDLE, &backend);
-    hvdc.getHvdcOperatorActivePowerRange().setOprFromCS1toCS2(600.0).setOprFromCS2toCS1(550.0);
+    hvdc.getExtension<HvdcOperatorActivePowerRange>().setOprFromCS1toCS2(600.0).setOprFromCS2toCS1(550.0);
     EXPECT_DOUBLE_EQ((backend.doubles[{EXT_HANDLE, prop::EXT_HOAR_OPR_CS1_TO_CS2}]), 600.0);
     EXPECT_DOUBLE_EQ((backend.doubles[{EXT_HANDLE, prop::EXT_HOAR_OPR_CS2_TO_CS1}]), 550.0);
 }
@@ -78,14 +78,14 @@ TEST_F(HvdcOperatorActivePowerRangeTest, Equality) {
 
 TEST_F(HvdcOperatorActivePowerRangeTest, AbsentThrows) {
     MockBackend empty;
-    EXPECT_THROW(HvdcLine(HVDC_HANDLE, &empty).getHvdcOperatorActivePowerRange(), ExtensionNotFoundException);
+    EXPECT_THROW(HvdcLine(HVDC_HANDLE, &empty).getExtension<HvdcOperatorActivePowerRange>(), ExtensionNotFoundException);
 }
 
 TEST_F(HvdcOperatorActivePowerRangeTest, NewAndRemove) {
     MockBackend b;
     static constexpr ObjectHandle NEW_EXT = 32;
     HvdcLine hvdc(HVDC_HANDLE, &b);
-    HvdcOperatorActivePowerRangeAdder adder = hvdc.newHvdcOperatorActivePowerRange();
+    HvdcOperatorActivePowerRangeAdder adder = hvdc.newExtension<HvdcOperatorActivePowerRangeAdder>();
     EXPECT_EQ(b.invocations.back(), std::make_pair(static_cast<ObjectHandle>(HVDC_HANDLE), prop::HVDC_OPERATOR_ACTIVE_POWER_RANGE));
     const ObjectHandle adderHandle = b.lastAdder;
     b.addResults[adderHandle] = NEW_EXT;
@@ -94,6 +94,6 @@ TEST_F(HvdcOperatorActivePowerRangeTest, NewAndRemove) {
     EXPECT_DOUBLE_EQ((b.doubles[{adderHandle, prop::EXT_HOAR_OPR_CS2_TO_CS1}]), 250.0);
     EXPECT_EQ(ext, HvdcOperatorActivePowerRange(NEW_EXT, &b));
 
-    hvdc.removeHvdcOperatorActivePowerRange();
+    hvdc.removeExtension<HvdcOperatorActivePowerRange>();
     EXPECT_EQ((b.related[{HVDC_HANDLE, prop::HVDC_OPERATOR_ACTIVE_POWER_RANGE}]), INVALID_HANDLE);
 }

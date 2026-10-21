@@ -22,7 +22,7 @@ using iidm::test::envPath;
 namespace {
 
 void checkInjectionsAndLine(Network& network) {
-    GeneratorFortescue gf = network.getGenerator("G")->getGeneratorFortescue();
+    GeneratorFortescue gf = network.getGenerator("G")->getExtension<GeneratorFortescue>();
     EXPECT_TRUE(gf.isGrounded());
     EXPECT_DOUBLE_EQ(gf.getRz(), 0.1);
     EXPECT_DOUBLE_EQ(gf.getXz(), 2.0);
@@ -31,9 +31,9 @@ void checkInjectionsAndLine(Network& network) {
     EXPECT_DOUBLE_EQ(gf.getGroundingR(), 0.5);
     EXPECT_DOUBLE_EQ(gf.getGroundingX(), 1.5);
     gf.setGrounded(false);
-    EXPECT_FALSE(network.getGenerator("G")->getGeneratorFortescue().isGrounded());
+    EXPECT_FALSE(network.getGenerator("G")->getExtension<GeneratorFortescue>().isGrounded());
 
-    LineFortescue lf = network.getLine("L12")->getLineFortescue();
+    LineFortescue lf = network.getLine("L12")->getExtension<LineFortescue>();
     EXPECT_DOUBLE_EQ(lf.getRz(), 3.0);
     EXPECT_DOUBLE_EQ(lf.getXz(), 30.0);
     EXPECT_DOUBLE_EQ(lf.getG1z(), 0.001);
@@ -44,20 +44,20 @@ void checkInjectionsAndLine(Network& network) {
     EXPECT_TRUE(lf.isOpenPhaseC());
 
     Load load = *network.getLoad("LD");
-    LoadAsymmetrical la = load.getLoadAsymmetrical();
+    LoadAsymmetrical la = load.getExtension<LoadAsymmetrical>();
     EXPECT_EQ(la.getConnectionType(), LoadConnectionType::DELTA);
     EXPECT_DOUBLE_EQ(la.getDeltaPa(), 1.0);
     EXPECT_DOUBLE_EQ(la.getDeltaQc(), 0.3);
-    load.removeLoadAsymmetrical();
-    EXPECT_FALSE(load.hasLoadAsymmetrical());
-    LoadAsymmetrical added = load.newLoadAsymmetrical().withConnectionType(LoadConnectionType::Y).withDeltaPb(4).add();
+    load.removeExtension<LoadAsymmetrical>();
+    EXPECT_FALSE(load.hasExtension<LoadAsymmetrical>());
+    LoadAsymmetrical added = load.newExtension<LoadAsymmetricalAdder>().withConnectionType(LoadConnectionType::Y).withDeltaPb(4).add();
     EXPECT_EQ(added.getConnectionType(), LoadConnectionType::Y);
     EXPECT_DOUBLE_EQ(added.getDeltaPb(), 4.0);
 }
 
 void checkTransformers(Network& network) {
     TwoWindingsTransformer t2 = *network.getTwoWindingsTransformer("T2");
-    TwoWindingsTransformerFortescue tf = t2.getTwoWindingsTransformerFortescue();
+    TwoWindingsTransformerFortescue tf = t2.getExtension<TwoWindingsTransformerFortescue>();
     EXPECT_DOUBLE_EQ(tf.getRz(), 0.6);
     EXPECT_DOUBLE_EQ(tf.getXz(), 25.0);
     EXPECT_FALSE(tf.isFreeFluxes());
@@ -66,11 +66,11 @@ void checkTransformers(Network& network) {
     EXPECT_EQ(tf.getConnectionType2(), WindingConnectionType::DELTA);
     EXPECT_DOUBLE_EQ(tf.getGroundingR1(), 0.01);
     EXPECT_DOUBLE_EQ(tf.getGroundingX2(), 0.04);
-    EXPECT_EQ(t2.getTwoWindingsTransformerPhaseAngleClock().getPhaseAngleClock(), 11);
-    EXPECT_THROW(t2.getTwoWindingsTransformerPhaseAngleClock().setPhaseAngleClock(12), ValidationException);
+    EXPECT_EQ(t2.getExtension<TwoWindingsTransformerPhaseAngleClock>().getPhaseAngleClock(), 11);
+    EXPECT_THROW(t2.getExtension<TwoWindingsTransformerPhaseAngleClock>().setPhaseAngleClock(12), ValidationException);
 
     ThreeWindingsTransformer t3 = *network.getThreeWindingsTransformer("T3");
-    ThreeWindingsTransformerFortescue t3f = t3.getThreeWindingsTransformerFortescue();
+    ThreeWindingsTransformerFortescue t3f = t3.getExtension<ThreeWindingsTransformerFortescue>();
     LegFortescue leg1 = t3f.getLeg1();
     EXPECT_DOUBLE_EQ(leg1.getRz(), 0.11);
     EXPECT_TRUE(leg1.isFreeFluxes());
@@ -79,15 +79,15 @@ void checkTransformers(Network& network) {
     EXPECT_DOUBLE_EQ(t3f.getLeg2().getXz(), 22.0);
     EXPECT_EQ(t3f.getLeg3().getConnectionType(), WindingConnectionType::DELTA);
     t3f.getLeg2().setRz(0.25);
-    EXPECT_DOUBLE_EQ(t3.getThreeWindingsTransformerFortescue().getLeg2().getRz(), 0.25);
-    EXPECT_EQ(t3.getThreeWindingsTransformerPhaseAngleClock().getPhaseAngleClockLeg2(), 5);
-    EXPECT_EQ(t3.getThreeWindingsTransformerPhaseAngleClock().getPhaseAngleClockLeg3(), 7);
+    EXPECT_DOUBLE_EQ(t3.getExtension<ThreeWindingsTransformerFortescue>().getLeg2().getRz(), 0.25);
+    EXPECT_EQ(t3.getExtension<ThreeWindingsTransformerPhaseAngleClock>().getPhaseAngleClockLeg2(), 5);
+    EXPECT_EQ(t3.getExtension<ThreeWindingsTransformerPhaseAngleClock>().getPhaseAngleClockLeg3(), 7);
 
     // Added again, a leg after the other
-    t3.removeThreeWindingsTransformerFortescue();
-    EXPECT_FALSE(t3.hasThreeWindingsTransformerFortescue());
-    EXPECT_THROW(t3.newThreeWindingsTransformerFortescue().withRz(1).add(), ValidationException); // no leg selected
-    ThreeWindingsTransformerFortescue again = t3.newThreeWindingsTransformerFortescue()
+    t3.removeExtension<ThreeWindingsTransformerFortescue>();
+    EXPECT_FALSE(t3.hasExtension<ThreeWindingsTransformerFortescue>());
+    EXPECT_THROW(t3.newExtension<ThreeWindingsTransformerFortescueAdder>().withRz(1).add(), ValidationException); // no leg selected
+    ThreeWindingsTransformerFortescue again = t3.newExtension<ThreeWindingsTransformerFortescueAdder>()
         .leg1().withRz(1).withConnectionType(WindingConnectionType::DELTA)
         .leg3().withXz(3).withFreeFluxes(true)
         .add();

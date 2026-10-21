@@ -683,11 +683,11 @@ Generator g = vl.newGenerator().setId("G").setBus("B")
                 .setMinP(0).setMaxP(200).setTargetP(100).setLocalTargetV(400)
                 .newVoltageRegulation().withMode(RegulationMode::VOLTAGE).withRegulating(true).add()
                 .add();
-g.newActivePowerControl().withDroop(4).withParticipate(true).add();
+g.newExtension<ActivePowerControlAdder>().withDroop(4).withParticipate(true).add();
 Load load = vl.newLoad().setId("L").setBus("B").setP0(80).setQ0(10).add();
 
 load.remove();
-g.removeActivePowerControl();
+g.removeExtension<ActivePowerControl>();
 ```
 
 - **Validation is powsybl's.** A missing or invalid field, a duplicate id or an unknown bus throws
@@ -994,28 +994,32 @@ properties, but the two backends handle the dispatch differently.
 
 #### C++ surface
 
-An extension is an object of its own, reached from its host. Its wrapper holds the extension's
-handle and uses the extension's codes; the host has `hasX()`, `getX()` (`ExtensionNotFoundException`
-when absent), `newX()` and `removeX()`:
+An extension is an object of its own, reached from its host by its class, as in powsybl (and
+iidm4cpp): `Identifiable` has `hasExtension<X>()`, `findExtension<X>()` (empty when absent),
+`getExtension<X>()` (`ExtensionNotFoundException` when absent), `newExtension<XAdder>()` and
+`removeExtension<X>()`. Its wrapper holds the extension's handle and uses the extension's codes:
 
 ```cpp
 // include/iidm/ActivePowerControl.h
 class ActivePowerControl : public detail::ObjectRef {
 public:
-    explicit ActivePowerControl(ObjectHandle handle, BackendProvider* backend);
-    bool   isParticipate() const;                     // EXT_APC_PARTICIPATE
-    ActivePowerControl& setParticipate(bool participate);
-    double getDroop() const;                          // EXT_APC_DROOP
-    ActivePowerControl& setDroop(double droop);
+    static constexpr int TYPE = prop::ACTIVE_POWER_CONTROL;   // the extension, on any host
+    bool isParticipate() const { return getBool(prop::EXT_APC_PARTICIPATE); }
+    ActivePowerControl& setParticipate(bool participate) { return setBool(*this, prop::EXT_APC_PARTICIPATE, participate); }
+    double getDroop() const { return getDouble(prop::EXT_APC_DROOP); }
     // …
 };
 
-// include/iidm/Injection.h: the host type of ActivePowerControl
-bool                    hasActivePowerControl() const;
-ActivePowerControl      getActivePowerControl() const;
-ActivePowerControlAdder newActivePowerControl();
-void                    removeActivePowerControl();
+// Any host: a generator, a battery…
+if (gen.hasExtension<ActivePowerControl>()) {
+    double droop = gen.getExtension<ActivePowerControl>().getDroop();
+}
+gen.newExtension<ActivePowerControlAdder>().withDroop(4).add();
+gen.removeExtension<ActivePowerControl>();
 ```
+
+A host that powsybl does not allow for the extension never has it, and `newExtension` fails
+there at run time, as in powsybl (`PropertyNotFoundException`: powsybl's adder casts the host).
 
 Each extension has a block of codes in `PropertyCodes.def`. Its first code is the extension's
 **type code**, used for every operation on the host; the others are its properties:
@@ -1107,7 +1111,7 @@ Every extension below has an adder (`newX()`).
 | `SecondaryVoltageControl` | Network | `SECONDARY_VOLTAGE_CONTROL`; its `CONTROL_ZONE`s, their `PILOT_POINT` and `CONTROL_UNIT`s: `EXT_SVC_*` |
 | `LineCouplings` | Network | `LINE_COUPLINGS`; its `MUTUAL_COUPLING`s: `EXT_MC_*` (segments: `LineSegment` values), `ADD_MUTUAL_COUPLING`, `FIND_MUTUAL_COUPLING`, `REMOVE_MUTUAL_COUPLING` |
 
-Removing the `LineCouplings` extension (`Network::removeLineCouplings()`) removes it, then throws
+Removing the `LineCouplings` extension (`removeExtension<LineCouplings>()`) removes it, then throws
 `PropertyNotFoundException`: powsybl-core's `LineCouplingsImpl.setExtendable(null)`, called on
 removal, subscribes a listener to the null network (a `NullPointerException`). The bridge passes
 that on unchanged until powsybl fixes it.
@@ -1126,7 +1130,6 @@ The state estimation extensions are exercised end to end by
 |---|---|
 | Codes: the type code, then one per property | `include/iidm/PropertyCodes.def` (one line each) |
 | C++ extension wrapper and adder | `include/iidm/MyExt.h` + `src/MyExt.cpp`, `include/iidm/MyExtAdder.h` (+ `CMakeLists.txt`, `iidm.h`) |
-| Host accessors: `hasMyExt`, `getMyExt`, `newMyExt`, `removeMyExt`, on the class of the host type | e.g. `Injection.h` / `Injection.cpp` |
 | The type (extension and adder interfaces), then one line per property: getter, setter, adder field | `Extensions.java`, `PropertyTable.java` (`PropertyDispatcher.java` / `Creation.java` for what takes more than one call) — serve **both** backends |
 | C++ unit tests | `test/TestMyExt.cpp` with `MockBackend` |
 | Java dispatcher tests | `java/src/test/...` (covers the handle and object APIs) |
@@ -1448,8 +1451,8 @@ class BackendNotAvailableException : public IidmException { /* … */ };
 class InvalidHandleException       : public IidmException { /* … */ };  // handle 0 / unknown
 class PropertyNotFoundException    : public IidmException { /* … */ };  // code unknown or not
                                                                          // applicable, optional part absent
-class ExtensionNotFoundException   : public PropertyNotFoundException { /* … */ };  // getX() of an
-                                                                         // absent extension
+class ExtensionNotFoundException   : public PropertyNotFoundException { /* … */ };  // getExtension<X>()
+                                                                         // of an absent extension
 class ValidationException          : public IidmException { /* … */ };  // the model rejected the change
 class NetworkNotFoundException     : public IidmException { /* … */ };
 
@@ -1458,7 +1461,7 @@ class NetworkNotFoundException     : public IidmException { /* … */ };
 
 ```cpp
 try {
-    gen.getActivePowerControl().setMaxTargetP(500.0);   // outside [minP, maxP]
+    gen.getExtension<ActivePowerControl>().setMaxTargetP(500.0);   // outside [minP, maxP]
 } catch (const iidm::ValidationException& e) {
     // e.what(): "maxTargetP value (500.0) is not between minP and maxP for component G"
 }

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <cmath>
 #include <iidm/ActivePowerControl.h>
+#include <iidm/ActivePowerControlAdder.h>
 #include <iidm/Generator.h>
 #include <iidm/PropertyCodes.h>
 #include "MockBackend.h"
@@ -23,40 +24,40 @@ protected:
 
 TEST_F(ActivePowerControlTest, HasActivePowerControl) {
     Generator gen(GEN_HANDLE, &backend);
-    EXPECT_TRUE(gen.hasActivePowerControl());
+    EXPECT_TRUE(gen.hasExtension<ActivePowerControl>());
 }
 
 TEST_F(ActivePowerControlTest, HasActivePowerControlAbsent) {
     MockBackend empty;
     Generator gen(GEN_HANDLE, &empty);
-    EXPECT_FALSE(gen.hasActivePowerControl());
+    EXPECT_FALSE(gen.hasExtension<ActivePowerControl>());
 }
 
 TEST_F(ActivePowerControlTest, GetDroop) {
     Generator gen(GEN_HANDLE, &backend);
-    EXPECT_DOUBLE_EQ(gen.getActivePowerControl().getDroop(), 4.0);
+    EXPECT_DOUBLE_EQ(gen.getExtension<ActivePowerControl>().getDroop(), 4.0);
 }
 
 TEST_F(ActivePowerControlTest, SetDroop) {
     Generator gen(GEN_HANDLE, &backend);
-    gen.getActivePowerControl().setDroop(6.0);
+    gen.getExtension<ActivePowerControl>().setDroop(6.0);
     EXPECT_DOUBLE_EQ((backend.doubles[{APC_HANDLE, prop::EXT_APC_DROOP}]), 6.0);
 }
 
 TEST_F(ActivePowerControlTest, IsParticipate) {
     Generator gen(GEN_HANDLE, &backend);
-    EXPECT_TRUE(gen.getActivePowerControl().isParticipate());
+    EXPECT_TRUE(gen.getExtension<ActivePowerControl>().isParticipate());
 }
 
 TEST_F(ActivePowerControlTest, SetParticipate) {
     Generator gen(GEN_HANDLE, &backend);
-    gen.getActivePowerControl().setParticipate(false);
+    gen.getExtension<ActivePowerControl>().setParticipate(false);
     EXPECT_FALSE((backend.bools[{APC_HANDLE, prop::EXT_APC_PARTICIPATE}]));
 }
 
 TEST_F(ActivePowerControlTest, MethodChaining) {
     Generator gen(GEN_HANDLE, &backend);
-    gen.getActivePowerControl().setDroop(8.0).setParticipate(false);
+    gen.getExtension<ActivePowerControl>().setDroop(8.0).setParticipate(false);
     EXPECT_DOUBLE_EQ((backend.doubles[{APC_HANDLE, prop::EXT_APC_DROOP}]), 8.0);
     EXPECT_FALSE((backend.bools[{APC_HANDLE, prop::EXT_APC_PARTICIPATE}]));
 }
@@ -78,14 +79,14 @@ TEST_F(ActivePowerControlTest, Equality) {
 
 TEST_F(ActivePowerControlTest, ParticipationFactor) {
     backend.doubles[{APC_HANDLE, prop::EXT_APC_PARTICIPATION_FACTOR}] = 0.25;
-    auto apc = Generator(GEN_HANDLE, &backend).getActivePowerControl();
+    auto apc = Generator(GEN_HANDLE, &backend).getExtension<ActivePowerControl>();
     EXPECT_DOUBLE_EQ(apc.getParticipationFactor(), 0.25);
     apc.setParticipationFactor(0.5);
     EXPECT_DOUBLE_EQ((backend.doubles[{APC_HANDLE, prop::EXT_APC_PARTICIPATION_FACTOR}]), 0.5);
 }
 
 TEST_F(ActivePowerControlTest, TargetPLimits) {
-    auto apc = Generator(GEN_HANDLE, &backend).getActivePowerControl();
+    auto apc = Generator(GEN_HANDLE, &backend).getExtension<ActivePowerControl>();
     // Undefined limits come back as NaN from the backend → empty optional
     EXPECT_FALSE(apc.getMinTargetP().has_value());
     EXPECT_FALSE(apc.getMaxTargetP().has_value());
@@ -105,14 +106,14 @@ TEST_F(ActivePowerControlTest, TargetPLimits) {
 TEST_F(ActivePowerControlTest, AbsentThrows) {
     MockBackend empty;
     Generator gen(GEN_HANDLE, &empty);
-    EXPECT_THROW(gen.getActivePowerControl(), ExtensionNotFoundException);
+    EXPECT_THROW(gen.getExtension<ActivePowerControl>(), ExtensionNotFoundException);
 }
 
 TEST_F(ActivePowerControlTest, NewAndRemove) {
     MockBackend b;
     static constexpr ObjectHandle NEW_APC = 12;
     Generator gen(GEN_HANDLE, &b);
-    ActivePowerControlAdder adder = gen.newActivePowerControl();
+    ActivePowerControlAdder adder = gen.newExtension<ActivePowerControlAdder>();
     ASSERT_EQ(b.invocations.size(), 1u);
     EXPECT_EQ(b.invocations[0], std::make_pair(static_cast<ObjectHandle>(GEN_HANDLE), prop::ACTIVE_POWER_CONTROL));
     const ObjectHandle adderHandle = b.lastAdder;
@@ -127,6 +128,6 @@ TEST_F(ActivePowerControlTest, NewAndRemove) {
     EXPECT_EQ(b.invocations.back(), std::make_pair(adderHandle, prop::ACT_ADD));
     EXPECT_EQ(apc, ActivePowerControl(NEW_APC, &b));
 
-    gen.removeActivePowerControl();
+    gen.removeExtension<ActivePowerControl>();
     EXPECT_EQ((b.related[{GEN_HANDLE, prop::ACTIVE_POWER_CONTROL}]), INVALID_HANDLE);
 }

@@ -6,8 +6,8 @@
 
 namespace iidm {
 
-// New ThreeWindingsTransformerToBeEstimated extension of a three windings transformer
-// (newThreeWindingsTransformerToBeEstimated()). Nothing is estimated by default.
+// New ThreeWindingsTransformerToBeEstimated extension of a three windings transformer. Nothing is
+// estimated by default.
 class ThreeWindingsTransformerToBeEstimatedAdder : public detail::AdderBase<ThreeWindingsTransformerToBeEstimatedAdder> {
 public:
     ThreeWindingsTransformerToBeEstimatedAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

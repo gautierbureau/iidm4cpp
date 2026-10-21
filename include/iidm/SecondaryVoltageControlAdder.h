@@ -9,8 +9,8 @@ namespace iidm {
 
 class ControlZoneAdder;
 
-// New SecondaryVoltageControl extension of a network (newSecondaryVoltageControl()): one control zone or
-// more. ValidationException from add() without one.
+// New SecondaryVoltageControl extension of a network: one control zone or more.
+// ValidationException from add() without one.
 class SecondaryVoltageControlAdder : public detail::AdderBase<SecondaryVoltageControlAdder> {
 public:
     SecondaryVoltageControlAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

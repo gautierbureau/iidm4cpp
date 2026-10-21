@@ -5,8 +5,8 @@
 
 namespace iidm {
 
-// New BranchObservability extension of a branch (newBranchObservability()). A quality is defined
-// when its standard deviation is given; its redundancy stays undefined unless given.
+// New BranchObservability extension of a branch. A quality is defined when its standard deviation
+// is given; its redundancy stays undefined unless given.
 class BranchObservabilityAdder : public detail::AdderBase<BranchObservabilityAdder> {
 public:
     BranchObservabilityAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

@@ -5,7 +5,7 @@
 
 namespace iidm {
 
-// New ManualFrequencyRestorationReserve extension of an injection (newManualFrequencyRestorationReserve())
+// New ManualFrequencyRestorationReserve extension of an injection
 class ManualFrequencyRestorationReserveAdder : public detail::AdderBase<ManualFrequencyRestorationReserveAdder> {
 public:
     ManualFrequencyRestorationReserveAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

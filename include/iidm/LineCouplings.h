@@ -57,8 +57,9 @@ public:
     MutualCoupling add() { return MutualCoupling(create(), backend_); }
 };
 
-// The LineCouplings extension of a network: the mutual couplings between its lines. An object of its
-// own, from Network::getLineCouplings().
+// The LineCouplings extension of a network: the mutual couplings between its lines. An object of
+// its own, from Network::getExtension<LineCouplings>(). removeExtension<LineCouplings>() removes
+// it, then powsybl fails on a bug of its own: PropertyNotFoundException (see README).
 class LineCouplings : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::LINE_COUPLINGS;

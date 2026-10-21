@@ -5,7 +5,7 @@
 
 namespace iidm {
 
-// New LoadAsymmetrical extension of a load (newLoadAsymmetrical())
+// New LoadAsymmetrical extension of a load
 class LoadAsymmetricalAdder : public detail::AdderBase<LoadAsymmetricalAdder> {
 public:
     LoadAsymmetricalAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

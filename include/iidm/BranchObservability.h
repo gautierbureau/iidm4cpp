@@ -11,7 +11,7 @@ namespace iidm {
 class BackendProvider;
 
 // The BranchObservability extension of a branch (line, two windings transformer): an object of
-// its own, from getBranchObservability() of the branch.
+// its own, from getExtension<BranchObservability>() of the branch.
 class BranchObservability : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::BRANCH_OBSERVABILITY;

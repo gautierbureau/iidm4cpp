@@ -5,7 +5,7 @@
 
 namespace iidm {
 
-// New TwoWindingsTransformerFortescue extension of a two windings transformer (newTwoWindingsTransformerFortescue())
+// New TwoWindingsTransformerFortescue extension of a two windings transformer
 class TwoWindingsTransformerFortescueAdder : public detail::AdderBase<TwoWindingsTransformerFortescueAdder> {
 public:
     TwoWindingsTransformerFortescueAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

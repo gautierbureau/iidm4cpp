@@ -5,7 +5,7 @@
 
 namespace iidm {
 
-// New CoordinatedReactiveControl extension of a generator (newCoordinatedReactiveControl())
+// New CoordinatedReactiveControl extension of a generator
 class CoordinatedReactiveControlAdder : public detail::AdderBase<CoordinatedReactiveControlAdder> {
 public:
     CoordinatedReactiveControlAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

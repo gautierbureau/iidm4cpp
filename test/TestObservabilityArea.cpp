@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
-#include <iidm/VoltageLevel.h>
+#include <iidm/ObservabilityArea.h>
 #include <iidm/PropertyCodes.h>
+#include <iidm/VoltageLevel.h>
 #include "MockBackend.h"
 
 using namespace iidm;
@@ -36,20 +37,20 @@ protected:
 };
 
 TEST_F(ObservabilityAreaTest, HasExtension) {
-    EXPECT_TRUE(VoltageLevel(VL_H, &backend).hasObservabilityArea());
-    EXPECT_EQ(VoltageLevel(VL_H, &backend).getObservabilityArea(), ObservabilityArea(EXT_H, &backend));
+    EXPECT_TRUE(VoltageLevel(VL_H, &backend).hasExtension<ObservabilityArea>());
+    EXPECT_EQ(VoltageLevel(VL_H, &backend).getExtension<ObservabilityArea>(), ObservabilityArea(EXT_H, &backend));
     MockBackend empty;
-    EXPECT_FALSE(VoltageLevel(VL_H, &empty).hasObservabilityArea());
-    EXPECT_THROW(VoltageLevel(VL_H, &empty).getObservabilityArea(), ExtensionNotFoundException);
+    EXPECT_FALSE(VoltageLevel(VL_H, &empty).hasExtension<ObservabilityArea>());
+    EXPECT_THROW(VoltageLevel(VL_H, &empty).getExtension<ObservabilityArea>(), ExtensionNotFoundException);
 }
 
 TEST_F(ObservabilityAreaTest, Remove) {
-    VoltageLevel(VL_H, &backend).removeObservabilityArea();
+    VoltageLevel(VL_H, &backend).removeExtension<ObservabilityArea>();
     EXPECT_EQ((backend.related[{VL_H, prop::OBSERVABILITY_AREA}]), INVALID_HANDLE);
 }
 
 TEST_F(ObservabilityAreaTest, Areas) {
-    auto ext = VoltageLevel(VL_H, &backend).getObservabilityArea();
+    auto ext = VoltageLevel(VL_H, &backend).getExtension<ObservabilityArea>();
     EXPECT_TRUE(ext.isConsistentWithTopology());
     auto areas = ext.getObservabilityAreas();
     ASSERT_EQ(areas.size(), 2u);
@@ -64,7 +65,7 @@ TEST_F(ObservabilityAreaTest, Areas) {
 }
 
 TEST_F(ObservabilityAreaTest, Lookups) {
-    auto ext = VoltageLevel(VL_H, &backend).getObservabilityArea();
+    auto ext = VoltageLevel(VL_H, &backend).getExtension<ObservabilityArea>();
     auto byNode = ext.getObservabilityAreaByNode(4);
     ASSERT_TRUE(byNode.has_value());
     EXPECT_EQ(byNode->getAreaNumber(), 7);

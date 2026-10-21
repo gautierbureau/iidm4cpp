@@ -1,9 +1,15 @@
 #include <gtest/gtest.h>
 #include <iidm/BusbarSection.h>
+#include <iidm/BusbarSectionPosition.h>
+#include <iidm/ConnectablePosition.h>
+#include <iidm/ConnectablePositionAdder.h>
 #include <iidm/Line.h>
+#include <iidm/LinePosition.h>
+#include <iidm/LinePositionAdder.h>
 #include <iidm/Load.h>
 #include <iidm/PropertyCodes.h>
 #include <iidm/Substation.h>
+#include <iidm/SubstationPosition.h>
 #include "MockBackend.h"
 #include <string>
 #include <tuple>
@@ -43,15 +49,15 @@ TEST_F(PositionExtensionsTest, Coordinates) {
     attach(prop::SUBSTATION_POSITION);
     backend.related[{EXT_HANDLE, prop::COORDINATE}] = C1_HANDLE;
     Substation s(HOST_HANDLE, &backend);
-    EXPECT_EQ(s.getSubstationPosition().getCoordinate(), Coordinate(48.85, 2.35));
+    EXPECT_EQ(s.getExtension<SubstationPosition>().getCoordinate(), Coordinate(48.85, 2.35));
 
     attach(prop::LINE_POSITION);
     backend.children[{EXT_HANDLE, prop::COORDINATE}] = {C1_HANDLE, C2_HANDLE};
     Line line(HOST_HANDLE, &backend);
-    EXPECT_EQ(line.getLinePosition().getCoordinates(), (std::vector<Coordinate>{Coordinate(48.85, 2.35), Coordinate(50.85, 4.35)}));
+    EXPECT_EQ(line.getExtension<LinePosition>().getCoordinates(), (std::vector<Coordinate>{Coordinate(48.85, 2.35), Coordinate(50.85, 4.35)}));
 
     // New: a nested coordinate for each, in order
-    line.newLinePosition().withCoordinates({Coordinate(1, 2), Coordinate(3, 4)}).add();
+    line.newExtension<LinePositionAdder>().withCoordinates({Coordinate(1, 2), Coordinate(3, 4)}).add();
     EXPECT_EQ(backend.invocations[0], std::make_pair(ObjectHandle(HOST_HANDLE), prop::LINE_POSITION));
     EXPECT_EQ(backend.invocations[1], std::make_pair(ObjectHandle(ADDER_HANDLE), prop::COORDINATE));
     EXPECT_DOUBLE_EQ((backend.doubles[{ADDER_HANDLE + 1, prop::COORD_LATITUDE}]), 1.0);
@@ -63,7 +69,7 @@ TEST_F(PositionExtensionsTest, Coordinates) {
 TEST_F(PositionExtensionsTest, BusbarSection) {
     attach(prop::BUSBAR_SECTION_POSITION);
     backend.ints[{EXT_HANDLE, prop::EXT_BSP_BUSBAR_INDEX}] = 1;
-    BusbarSectionPosition position = BusbarSection(HOST_HANDLE, &backend).getBusbarSectionPosition();
+    BusbarSectionPosition position = BusbarSection(HOST_HANDLE, &backend).getExtension<BusbarSectionPosition>();
     EXPECT_EQ(position.getBusbarIndex(), 1);
     position.setSectionIndex(3);
     EXPECT_EQ((backend.ints[{EXT_HANDLE, prop::EXT_BSP_SECTION_INDEX}]), 3);
@@ -75,7 +81,7 @@ TEST_F(PositionExtensionsTest, Feeders) {
     backend.optStrings[{FEEDER_HANDLE, prop::EXT_FEEDER_NAME}] = "L12 side 2";
     backend.optInts[{FEEDER_HANDLE, prop::EXT_FEEDER_ORDER}] = 3;
     backend.ints[{FEEDER_HANDLE, prop::EXT_FEEDER_DIRECTION}] = static_cast<int>(ConnectablePosition::Direction::BOTTOM);
-    ConnectablePosition position = Line(HOST_HANDLE, &backend).getConnectablePosition();
+    ConnectablePosition position = Line(HOST_HANDLE, &backend).getExtension<ConnectablePosition>();
     EXPECT_FALSE(position.getFeeder());
     EXPECT_FALSE(position.getFeeder1());
     ConnectablePosition::Feeder feeder = *position.getFeeder2();
@@ -91,7 +97,7 @@ TEST_F(PositionExtensionsTest, Feeders) {
     // New: a nested feeder per end, with its slot
     backend.invocations.clear();
     backend.nextAdder = ADDER_HANDLE;
-    Load(HOST_HANDLE, &backend).newConnectablePosition()
+    Load(HOST_HANDLE, &backend).newExtension<ConnectablePositionAdder>()
         .newFeeder().withName("LD feeder").withOrder(10).withDirection(ConnectablePosition::Direction::BOTTOM).add()
         .newFeeder3().add()
         .add();

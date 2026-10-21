@@ -1,7 +1,7 @@
 #include <iidm/Identifiable.h>
 #include <iidm/BackendProvider.h>
 #include <iidm/Network.h>
-#include "Extensions.h"
+#include <cctype>
 
 namespace iidm {
 
@@ -43,68 +43,33 @@ Identifiable& Identifiable::removeAlias(const std::string& alias) {
 
 // ── Extensions ───────────────────────────────────────────────────────────────
 
-bool Identifiable::hasDiscreteMeasurements() const {
-    return detail::hasExtension<DiscreteMeasurements>(backend_, handle_);
+namespace {
+
+// The class of a type code: ActivePowerControl for ACTIVE_POWER_CONTROL
+std::string className(int type) {
+    const char* code = "";
+    switch (type) {
+#define IIDM_CODE(NAME, value) case value: code = #NAME; break;
+#include <iidm/PropertyCodes.def>
+#undef IIDM_CODE
+    }
+    std::string name;
+    bool word = true;
+    for (const char* c = code; *c != '\0'; ++c) {
+        if (*c == '_') {
+            word = true;
+            continue;
+        }
+        name += word ? *c : static_cast<char>(std::tolower(static_cast<unsigned char>(*c)));
+        word = false;
+    }
+    return name;
 }
 
-DiscreteMeasurements Identifiable::getDiscreteMeasurements() const {
-    return detail::getExtension<DiscreteMeasurements>(backend_, handle_, "DiscreteMeasurements");
-}
+} // namespace
 
-DiscreteMeasurementsAdder Identifiable::newDiscreteMeasurements() {
-    return detail::newExtension<DiscreteMeasurements, DiscreteMeasurementsAdder>(backend_, handle_);
-}
-
-void Identifiable::removeDiscreteMeasurements() {
-    detail::removeExtension<DiscreteMeasurements>(backend_, handle_);
-}
-
-bool Identifiable::hasIdentifiableShortCircuit() const {
-    return detail::hasExtension<IdentifiableShortCircuit>(backend_, handle_);
-}
-
-IdentifiableShortCircuit Identifiable::getIdentifiableShortCircuit() const {
-    return detail::getExtension<IdentifiableShortCircuit>(backend_, handle_, "IdentifiableShortCircuit");
-}
-
-IdentifiableShortCircuitAdder Identifiable::newIdentifiableShortCircuit() {
-    return detail::newExtension<IdentifiableShortCircuit, IdentifiableShortCircuitAdder>(backend_, handle_);
-}
-
-void Identifiable::removeIdentifiableShortCircuit() {
-    detail::removeExtension<IdentifiableShortCircuit>(backend_, handle_);
-}
-
-bool Identifiable::hasOperatingStatus() const {
-    return detail::hasExtension<OperatingStatus>(backend_, handle_);
-}
-
-OperatingStatus Identifiable::getOperatingStatus() const {
-    return detail::getExtension<OperatingStatus>(backend_, handle_, "OperatingStatus");
-}
-
-OperatingStatusAdder Identifiable::newOperatingStatus() {
-    return detail::newExtension<OperatingStatus, OperatingStatusAdder>(backend_, handle_);
-}
-
-void Identifiable::removeOperatingStatus() {
-    detail::removeExtension<OperatingStatus>(backend_, handle_);
-}
-
-bool Identifiable::hasDynamicModelInfo() const {
-    return detail::hasExtension<DynamicModelInfo>(backend_, handle_);
-}
-
-DynamicModelInfo Identifiable::getDynamicModelInfo() const {
-    return detail::getExtension<DynamicModelInfo>(backend_, handle_, "DynamicModelInfo");
-}
-
-DynamicModelInfoAdder Identifiable::newDynamicModelInfo() {
-    return detail::newExtension<DynamicModelInfo, DynamicModelInfoAdder>(backend_, handle_);
-}
-
-void Identifiable::removeDynamicModelInfo() {
-    detail::removeExtension<DynamicModelInfo>(backend_, handle_);
+void Identifiable::extensionNotFound(int type) const {
+    throw ExtensionNotFoundException(className(type) + " extension not present on " + getId());
 }
 
 } // namespace iidm

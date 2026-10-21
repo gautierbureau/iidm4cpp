@@ -5,7 +5,7 @@
 
 namespace iidm {
 
-// New BatteryShortCircuit extension of a battery (newBatteryShortCircuit())
+// New BatteryShortCircuit extension of a battery
 class BatteryShortCircuitAdder : public detail::AdderBase<BatteryShortCircuitAdder> {
 public:
     BatteryShortCircuitAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

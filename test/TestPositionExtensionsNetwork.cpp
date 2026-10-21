@@ -23,32 +23,32 @@ namespace {
 
 void checkCoordinates(Network& network) {
     Substation s1 = *network.getSubstation("S1");
-    EXPECT_EQ(s1.getSubstationPosition().getCoordinate(), Coordinate(48.85, 2.35));
+    EXPECT_EQ(s1.getExtension<SubstationPosition>().getCoordinate(), Coordinate(48.85, 2.35));
     Substation s2 = *network.getSubstation("S2");
-    EXPECT_FALSE(s2.hasSubstationPosition());
-    EXPECT_EQ(s2.newSubstationPosition().withCoordinate(Coordinate(50.85, 4.35)).add().getCoordinate(),
+    EXPECT_FALSE(s2.hasExtension<SubstationPosition>());
+    EXPECT_EQ(s2.newExtension<SubstationPositionAdder>().withCoordinate(Coordinate(50.85, 4.35)).add().getCoordinate(),
               Coordinate(50.85, 4.35));
 
     Line line = *network.getLine("L12");
-    EXPECT_EQ(line.getLinePosition().getCoordinates(),
+    EXPECT_EQ(line.getExtension<LinePosition>().getCoordinates(),
               (std::vector<Coordinate>{Coordinate(48.85, 2.35), Coordinate(49.5, 3.1), Coordinate(50.85, 4.35)}));
     BoundaryLine bl = *network.getBoundaryLine("BL");
-    EXPECT_EQ(bl.getLinePosition().getCoordinates().size(), 2u);
-    bl.removeLinePosition();
-    EXPECT_FALSE(bl.hasLinePosition());
+    EXPECT_EQ(bl.getExtension<LinePosition>().getCoordinates().size(), 2u);
+    bl.removeExtension<LinePosition>();
+    EXPECT_FALSE(bl.hasExtension<LinePosition>());
     std::vector<Coordinate> path{Coordinate(1, 2), Coordinate(3, 4), Coordinate(5, 6)};
-    EXPECT_EQ(bl.newLinePosition().withCoordinates(path).add().getCoordinates(), path);
+    EXPECT_EQ(bl.newExtension<LinePositionAdder>().withCoordinates(path).add().getCoordinates(), path);
 
-    BusbarSectionPosition bsp = network.getBusbarSection("BBS")->getBusbarSectionPosition();
+    BusbarSectionPosition bsp = network.getBusbarSection("BBS")->getExtension<BusbarSectionPosition>();
     EXPECT_EQ(bsp.getBusbarIndex(), 1);
     EXPECT_EQ(bsp.getSectionIndex(), 2);
     bsp.setBusbarIndex(2);
-    EXPECT_EQ(network.getBusbarSection("BBS")->getBusbarSectionPosition().getBusbarIndex(), 2);
+    EXPECT_EQ(network.getBusbarSection("BBS")->getExtension<BusbarSectionPosition>().getBusbarIndex(), 2);
 }
 
 void checkFeeders(Network& network) {
     Load load = *network.getLoad("LD");
-    ConnectablePosition position = load.getConnectablePosition();
+    ConnectablePosition position = load.getExtension<ConnectablePosition>();
     ASSERT_TRUE(position.getFeeder());
     ConnectablePosition::Feeder feeder = *position.getFeeder();
     EXPECT_EQ(*feeder.getName(), "LD feeder");
@@ -56,9 +56,9 @@ void checkFeeders(Network& network) {
     EXPECT_EQ(feeder.getDirection(), ConnectablePosition::Direction::BOTTOM);
     EXPECT_FALSE(position.getFeeder1());
     feeder.removeOrder();
-    EXPECT_FALSE(load.getConnectablePosition().getFeeder()->getOrder());
+    EXPECT_FALSE(load.getExtension<ConnectablePosition>().getFeeder()->getOrder());
 
-    ConnectablePosition linePosition = network.getLine("L12")->getConnectablePosition();
+    ConnectablePosition linePosition = network.getLine("L12")->getExtension<ConnectablePosition>();
     EXPECT_FALSE(linePosition.getFeeder());
     ConnectablePosition::Feeder feeder1 = *linePosition.getFeeder1();
     EXPECT_FALSE(feeder1.getName());
@@ -67,20 +67,20 @@ void checkFeeders(Network& network) {
     EXPECT_EQ(*linePosition.getFeeder2()->getOrder(), 3);
     EXPECT_FALSE(linePosition.getFeeder3());
     feeder1.setName("L12 side 1").setOrder(7).setDirection(ConnectablePosition::Direction::UNDEFINED);
-    EXPECT_EQ(*network.getLine("L12")->getConnectablePosition().getFeeder1()->getName(), "L12 side 1");
-    EXPECT_EQ(*network.getLine("L12")->getConnectablePosition().getFeeder1()->getOrder(), 7);
+    EXPECT_EQ(*network.getLine("L12")->getExtension<ConnectablePosition>().getFeeder1()->getName(), "L12 side 1");
+    EXPECT_EQ(*network.getLine("L12")->getExtension<ConnectablePosition>().getFeeder1()->getOrder(), 7);
 
     // New ones
     Generator g = *network.getGenerator("G");
-    EXPECT_FALSE(g.hasConnectablePosition());
-    ConnectablePosition added = g.newConnectablePosition()
+    EXPECT_FALSE(g.hasExtension<ConnectablePosition>());
+    ConnectablePosition added = g.newExtension<ConnectablePositionAdder>()
         .newFeeder().withName("G feeder").withOrder(20).withDirection(ConnectablePosition::Direction::TOP).add()
         .add();
     EXPECT_EQ(*added.getFeeder()->getName(), "G feeder");
-    g.removeConnectablePosition();
+    g.removeExtension<ConnectablePosition>();
     // An injection's feeder and a side's: rejected
-    EXPECT_THROW(g.newConnectablePosition().newFeeder().add().newFeeder1().add().add(), ValidationException);
-    EXPECT_THROW(g.newConnectablePosition().add(), ValidationException);
+    EXPECT_THROW(g.newExtension<ConnectablePositionAdder>().newFeeder().add().newFeeder1().add().add(), ValidationException);
+    EXPECT_THROW(g.newExtension<ConnectablePositionAdder>().add(), ValidationException);
 }
 
 void checkNetwork(BackendProvider& b) {

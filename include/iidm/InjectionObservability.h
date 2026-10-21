@@ -11,7 +11,7 @@ namespace iidm {
 class BackendProvider;
 
 // The InjectionObservability extension of an injection (generator, load, busbar section...): an
-// object of its own, from Injection::getInjectionObservability().
+// object of its own, from Injection::getExtension<InjectionObservability>().
 class InjectionObservability : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::INJECTION_OBSERVABILITY;

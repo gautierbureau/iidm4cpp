@@ -5,7 +5,7 @@
 
 namespace iidm {
 
-// New GeneratorEntsoeCategory extension of a generator (newGeneratorEntsoeCategory())
+// New GeneratorEntsoeCategory extension of a generator
 class GeneratorEntsoeCategoryAdder : public detail::AdderBase<GeneratorEntsoeCategoryAdder> {
 public:
     GeneratorEntsoeCategoryAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

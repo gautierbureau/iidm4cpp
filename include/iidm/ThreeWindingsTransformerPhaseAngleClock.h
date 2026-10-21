@@ -8,8 +8,9 @@ namespace iidm {
 
 class BackendProvider;
 
-// The ThreeWindingsTransformerPhaseAngleClock extension of a three windings transformer: an
-// object of its own, from ThreeWindingsTransformer::getThreeWindingsTransformerPhaseAngleClock().
+// The ThreeWindingsTransformerPhaseAngleClock extension of a three windings transformer: an object
+// of its own, from
+// ThreeWindingsTransformer::getExtension<ThreeWindingsTransformerPhaseAngleClock>().
 class ThreeWindingsTransformerPhaseAngleClock : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::THREE_WINDINGS_TRANSFORMER_PHASE_ANGLE_CLOCK;

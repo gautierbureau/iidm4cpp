@@ -6,7 +6,6 @@
 namespace iidm {
 
 // New HvdcAngleDroopActivePowerControl extension of an HVDC line
-// (newHvdcAngleDroopActivePowerControl())
 class HvdcAngleDroopActivePowerControlAdder : public detail::AdderBase<HvdcAngleDroopActivePowerControlAdder> {
 public:
     HvdcAngleDroopActivePowerControlAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

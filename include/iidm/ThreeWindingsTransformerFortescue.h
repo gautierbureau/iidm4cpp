@@ -9,9 +9,9 @@ namespace iidm {
 
 class BackendProvider;
 
-// The ThreeWindingsTransformerFortescue extension of a three windings transformer: the zero-sequence
-// data of its legs, for asymmetrical studies. An object of its own, from
-// ThreeWindingsTransformer::getThreeWindingsTransformerFortescue().
+// The ThreeWindingsTransformerFortescue extension of a three windings transformer: the
+// zero-sequence data of its legs, for asymmetrical studies. An object of its own, from
+// ThreeWindingsTransformer::getExtension<ThreeWindingsTransformerFortescue>().
 class ThreeWindingsTransformerFortescue : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::THREE_WINDINGS_TRANSFORMER_FORTESCUE;

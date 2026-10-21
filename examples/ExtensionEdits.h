@@ -30,8 +30,8 @@ inline std::string slackBusId(const iidm::SlackTerminal& slackTerminal) {
 
 inline void editActivePowerControlAndSlackTerminal(iidm::Network& network, const std::string& prefix) {
     for (auto& gen : network.getGenerators()) {
-        if (!gen.hasActivePowerControl()) continue;
-        auto apc = gen.getActivePowerControl();
+        if (!gen.hasExtension<iidm::ActivePowerControl>()) continue;
+        auto apc = gen.getExtension<iidm::ActivePowerControl>();
         auto minTargetP = apc.getMinTargetP();
         auto maxTargetP = apc.getMaxTargetP();
         std::cout << prefix << "Generator " << gen.getId() << " activePowerControl:"
@@ -41,8 +41,8 @@ inline void editActivePowerControlAndSlackTerminal(iidm::Network& network, const
         apc.setParticipationFactor(0.5).setMaxTargetP(gen.getMaxP());
     }
     for (const auto& vl : network.getVoltageLevels()) {
-        if (!vl.hasSlackTerminal()) continue;
-        auto st = vl.getSlackTerminal();
+        if (!vl.hasExtension<iidm::SlackTerminal>()) continue;
+        auto st = vl.getExtension<iidm::SlackTerminal>();
         std::cout << prefix << "VoltageLevel " << vl.getId() << " slackTerminal=" << slackConnectableId(st)
                   << " empty=" << (st.isEmpty() ? "true" : "false") << "\n";
         for (const auto& svc : vl.getStaticVarCompensators()) {

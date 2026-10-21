@@ -24,7 +24,6 @@
 #include <iidm/Area.h>
 #include <iostream>
 #include "BoundaryLineFilter.h"
-#include "Extensions.h"
 #include "Wrap.h"
 
 namespace iidm {
@@ -501,40 +500,6 @@ void VoltageLevel::remove() {
 
 VoltageLevel::BusBreakerView VoltageLevel::getBusBreakerView() const {
     return BusBreakerView(handle_, backend_);
-}
-
-// ── Extensions ───────────────────────────────────────────────────────────────
-
-bool VoltageLevel::hasSlackTerminal() const {
-    return detail::hasExtension<SlackTerminal>(backend_, handle_);
-}
-
-SlackTerminal VoltageLevel::getSlackTerminal() const {
-    return detail::getExtension<SlackTerminal>(backend_, handle_, "SlackTerminal");
-}
-
-SlackTerminalAdder VoltageLevel::newSlackTerminal() {
-    return detail::newExtension<SlackTerminal, SlackTerminalAdder>(backend_, handle_);
-}
-
-void VoltageLevel::removeSlackTerminal() {
-    detail::removeExtension<SlackTerminal>(backend_, handle_);
-}
-
-bool VoltageLevel::hasObservabilityArea() const {
-    return detail::hasExtension<ObservabilityArea>(backend_, handle_);
-}
-
-ObservabilityArea VoltageLevel::getObservabilityArea() const {
-    return detail::getExtension<ObservabilityArea>(backend_, handle_, "ObservabilityArea");
-}
-
-ObservabilityAreaAdder VoltageLevel::newObservabilityArea() {
-    return detail::newExtension<ObservabilityArea, ObservabilityAreaAdder>(backend_, handle_);
-}
-
-void VoltageLevel::removeObservabilityArea() {
-    detail::removeExtension<ObservabilityArea>(backend_, handle_);
 }
 
 } // namespace iidm

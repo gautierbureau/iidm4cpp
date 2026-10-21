@@ -1,6 +1,5 @@
 #include <iidm/Connectable.h>
 #include <iidm/BackendProvider.h>
-#include "Extensions.h"
 #include "Wrap.h"
 
 namespace iidm {
@@ -24,56 +23,6 @@ void Connectable::unsetSolvedValues() {
 
 void Connectable::remove() {
     backend_->invoke(handle_, prop::ACT_REMOVE);
-}
-
-// ── Extensions ───────────────────────────────────────────────────────────────
-
-bool Connectable::hasMeasurements() const {
-    return detail::hasExtension<Measurements>(backend_, handle_);
-}
-
-Measurements Connectable::getMeasurements() const {
-    return detail::getExtension<Measurements>(backend_, handle_, "Measurements");
-}
-
-MeasurementsAdder Connectable::newMeasurements() {
-    return detail::newExtension<Measurements, MeasurementsAdder>(backend_, handle_);
-}
-
-void Connectable::removeMeasurements() {
-    detail::removeExtension<Measurements>(backend_, handle_);
-}
-
-bool Connectable::hasConnectablePosition() const {
-    return detail::hasExtension<ConnectablePosition>(backend_, handle_);
-}
-
-ConnectablePosition Connectable::getConnectablePosition() const {
-    return detail::getExtension<ConnectablePosition>(backend_, handle_, "ConnectablePosition");
-}
-
-ConnectablePositionAdder Connectable::newConnectablePosition() {
-    return detail::newExtension<ConnectablePosition, ConnectablePositionAdder>(backend_, handle_);
-}
-
-void Connectable::removeConnectablePosition() {
-    detail::removeExtension<ConnectablePosition>(backend_, handle_);
-}
-
-bool Connectable::hasReferencePriorities() const {
-    return detail::hasExtension<ReferencePriorities>(backend_, handle_);
-}
-
-ReferencePriorities Connectable::getReferencePriorities() const {
-    return detail::getExtension<ReferencePriorities>(backend_, handle_, "ReferencePriorities");
-}
-
-ReferencePrioritiesAdder Connectable::newReferencePriorities() {
-    return detail::newExtension<ReferencePriorities, ReferencePrioritiesAdder>(backend_, handle_);
-}
-
-void Connectable::removeReferencePriorities() {
-    detail::removeExtension<ReferencePriorities>(backend_, handle_);
 }
 
 } // namespace iidm

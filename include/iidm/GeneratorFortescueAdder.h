@@ -5,7 +5,7 @@
 
 namespace iidm {
 
-// New GeneratorFortescue extension of a generator (newGeneratorFortescue())
+// New GeneratorFortescue extension of a generator
 class GeneratorFortescueAdder : public detail::AdderBase<GeneratorFortescueAdder> {
 public:
     GeneratorFortescueAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

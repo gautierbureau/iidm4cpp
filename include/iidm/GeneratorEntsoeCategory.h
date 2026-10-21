@@ -9,7 +9,7 @@ namespace iidm {
 class BackendProvider;
 
 // The GeneratorEntsoeCategory extension of a generator: an object of its own, from
-// Generator::getGeneratorEntsoeCategory().
+// Generator::getExtension<GeneratorEntsoeCategory>().
 class GeneratorEntsoeCategory : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::GENERATOR_ENTSOE_CATEGORY;

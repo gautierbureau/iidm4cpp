@@ -15,8 +15,6 @@
 #include <iidm/VscConverterStationAdder.h>
 #include <iidm/GroundAdder.h>
 #include <iidm/LoadAdder.h>
-#include <iidm/SlackTerminal.h>
-#include <iidm/SlackTerminalAdder.h>
 #include <iidm/BusbarSection.h>
 #include <iidm/BusbarSectionAdder.h>
 #include <iidm/Switch.h>
@@ -27,8 +25,6 @@
 #include <iosfwd>
 #include <string>
 #include <vector>
-#include <iidm/ObservabilityArea.h>
-#include <iidm/ObservabilityAreaAdder.h>
 
 namespace iidm {
 
@@ -231,18 +227,6 @@ public:
     // Removes the voltage level and its equipment; refused (ValidationException) while
     // branches connect it to other voltage levels
     void remove();
-
-    // ── Extensions ───────────────────────────────────────────────────────
-    // An extension's getter throws ExtensionNotFoundException when it is absent
-    bool hasSlackTerminal() const;
-    SlackTerminal getSlackTerminal() const;
-    SlackTerminalAdder newSlackTerminal();
-    void removeSlackTerminal();
-
-    bool hasObservabilityArea() const;
-    ObservabilityArea getObservabilityArea() const;
-    ObservabilityAreaAdder newObservabilityArea();
-    void removeObservabilityArea();
 };
 
 } // namespace iidm

@@ -9,7 +9,7 @@ namespace iidm {
 class BackendProvider;
 
 // The GeneratorStartup extension of a generator: its market data. An object of its own, from
-// Generator::getGeneratorStartup(). Each value is NaN when undefined.
+// Generator::getExtension<GeneratorStartup>(). Each value is NaN when undefined.
 class GeneratorStartup : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::GENERATOR_STARTUP;

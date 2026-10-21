@@ -205,21 +205,20 @@ An extension is an object of its own, as in powsybl: `ActivePowerControl` is the
 2. **C++ classes** — `include/iidm/Foo.h` (the wrapper, holding the extension's handle, its property
    accessors inline; `src/Foo.cpp` only for its other methods) and `include/iidm/FooAdder.h` (`detail::AdderBase`, one line per field, `add()`).
 
-3. **Host accessors** — `hasFoo()`, `getFoo()` (`ExtensionNotFoundException` when absent),
-   `newFoo()` and `removeFoo()` on the class of its powsybl host type: an extension of any
-   injection goes on `Injection` (see `ActivePowerControl` in `Injection.h`), of a generator only
-   on `Generator`. Each is one line, with the helpers of `src/Extensions.h`.
+3. **Nothing on the host** — the templates of `Identifiable` reach any extension by its class:
+   `hasExtension<Foo>()`, `findExtension<Foo>()`, `getExtension<Foo>()`
+   (`ExtensionNotFoundException` when absent), `newExtension<FooAdder>()` and
+   `removeExtension<Foo>()`. They use `Foo::TYPE` (for the adder, the type its `add()` returns).
 
-4. **Java** — in `PropertyDispatcher.java`, `getRelatedObject` returns the extension for `FOO`; in
-   `Creation.java`, `newAdder` creates its adder and `clear` removes it; in `PropertyTable.java`,
-   each property is one line: its getter and setter on the extension, and its field on the adder
-   (a typed lambda where the type is generic, `null` where there is none):
+4. **Java** — the type is one line of `Extensions.java`, which serves the lookup on a host
+   (`getRelatedObject`), the type check, the adder (`Creation.newAdder`) and the removal
+   (`Creation.clear`); in `PropertyTable.java`, each property is one line: its getter and setter on
+   the extension, and its field on the adder (a typed lambda where the type is generic, `null`
+   where there is none):
 
    ```java
-   // PropertyDispatcher.java
-   case FOO -> extension(obj, Foo.class);                                  // getRelatedObject
-   // Creation.java
-   case FOO -> newExtension(owner, FooAdder.class);                        // newAdder
+   // Extensions.java
+   type(FOO, Foo.class, FooAdder.class),
    // PropertyTable.java
    doubles(EXT_FOO_SOME_D, (Foo<?> x) -> x.getSomeD(), (Foo<?> x, double v) -> x.setSomeD(v),
        (FooAdder<?> x, double v) -> x.withSomeD(v));
@@ -274,7 +273,7 @@ sub-wrapper built from the parent's handle shares the count automatically.
 
 Throw from Java with the `BridgeErrors` exception types (`PropertyNotFoundException`
 for unknown codes). An absent extension or optional object is null from
-`getRelatedObject` (INVALID_HANDLE in C++), and the C++ getter decides: `getFoo()` throws
+`getRelatedObject` (INVALID_HANDLE in C++), and the C++ getter decides: `getExtension<Foo>()` throws
 `ExtensionNotFoundException`, an optional object comes back empty. Both backends turn Java
 exceptions into the matching C++ exception (README §9); never let a GraalVM `@CEntryPoint`
 throw.

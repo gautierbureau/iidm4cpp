@@ -9,7 +9,7 @@ namespace iidm {
 class BackendProvider;
 
 // The CoordinatedReactiveControl extension of a generator: an object of its own, from
-// Generator::getCoordinatedReactiveControl().
+// Generator::getExtension<CoordinatedReactiveControl>().
 class CoordinatedReactiveControl : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::COORDINATED_REACTIVE_CONTROL;

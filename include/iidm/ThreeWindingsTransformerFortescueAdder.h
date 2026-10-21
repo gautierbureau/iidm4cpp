@@ -6,9 +6,9 @@
 
 namespace iidm {
 
-// New ThreeWindingsTransformerFortescue extension of a three windings transformer
-// (newThreeWindingsTransformerFortescue()). As in powsybl, leg1(), leg2() or leg3() selects the leg
-// that the next with*() set: newThreeWindingsTransformerFortescue().leg1().withRz(1).leg2().withRz(2).add()
+// New ThreeWindingsTransformerFortescue extension of a three windings transformer. As in powsybl,
+// leg1(), leg2() or leg3() selects the leg that the next with*() set:
+// newExtension<ThreeWindingsTransformerFortescueAdder>().leg1().withRz(1).leg2().withRz(2).add()
 class ThreeWindingsTransformerFortescueAdder : public detail::AdderBase<ThreeWindingsTransformerFortescueAdder> {
 public:
     ThreeWindingsTransformerFortescueAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

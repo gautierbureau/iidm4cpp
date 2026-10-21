@@ -5,7 +5,7 @@
 
 namespace iidm {
 
-// New GeneratorShortCircuit extension of a generator (newGeneratorShortCircuit())
+// New GeneratorShortCircuit extension of a generator
 class GeneratorShortCircuitAdder : public detail::AdderBase<GeneratorShortCircuitAdder> {
 public:
     GeneratorShortCircuitAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

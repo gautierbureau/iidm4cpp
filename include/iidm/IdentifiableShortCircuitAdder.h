@@ -5,7 +5,7 @@
 
 namespace iidm {
 
-// New IdentifiableShortCircuit extension of an identifiable (newIdentifiableShortCircuit())
+// New IdentifiableShortCircuit extension of an identifiable
 class IdentifiableShortCircuitAdder : public detail::AdderBase<IdentifiableShortCircuitAdder> {
 public:
     IdentifiableShortCircuitAdder(ObjectHandle adder, BackendProvider* backend) : AdderBase(adder, backend) {}

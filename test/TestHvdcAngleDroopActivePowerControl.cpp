@@ -24,51 +24,51 @@ protected:
 
 TEST_F(HvdcAngleDroopActivePowerControlTest, HasExtension) {
     HvdcLine hvdc(HVDC_HANDLE, &backend);
-    EXPECT_TRUE(hvdc.hasHvdcAngleDroopActivePowerControl());
+    EXPECT_TRUE(hvdc.hasExtension<HvdcAngleDroopActivePowerControl>());
 }
 
 TEST_F(HvdcAngleDroopActivePowerControlTest, HasExtensionAbsent) {
     MockBackend empty;
     HvdcLine hvdc(HVDC_HANDLE, &empty);
-    EXPECT_FALSE(hvdc.hasHvdcAngleDroopActivePowerControl());
+    EXPECT_FALSE(hvdc.hasExtension<HvdcAngleDroopActivePowerControl>());
 }
 
 TEST_F(HvdcAngleDroopActivePowerControlTest, GetDroop) {
     HvdcLine hvdc(HVDC_HANDLE, &backend);
-    EXPECT_DOUBLE_EQ(hvdc.getHvdcAngleDroopActivePowerControl().getDroop(), 1.5);
+    EXPECT_DOUBLE_EQ(hvdc.getExtension<HvdcAngleDroopActivePowerControl>().getDroop(), 1.5);
 }
 
 TEST_F(HvdcAngleDroopActivePowerControlTest, SetDroop) {
     HvdcLine hvdc(HVDC_HANDLE, &backend);
-    hvdc.getHvdcAngleDroopActivePowerControl().setDroop(2.0);
+    hvdc.getExtension<HvdcAngleDroopActivePowerControl>().setDroop(2.0);
     EXPECT_DOUBLE_EQ((backend.doubles[{EXT_HANDLE, prop::EXT_HADAPC_DROOP}]), 2.0);
 }
 
 TEST_F(HvdcAngleDroopActivePowerControlTest, GetP0) {
     HvdcLine hvdc(HVDC_HANDLE, &backend);
-    EXPECT_DOUBLE_EQ(hvdc.getHvdcAngleDroopActivePowerControl().getP0(), 100.0);
+    EXPECT_DOUBLE_EQ(hvdc.getExtension<HvdcAngleDroopActivePowerControl>().getP0(), 100.0);
 }
 
 TEST_F(HvdcAngleDroopActivePowerControlTest, SetP0) {
     HvdcLine hvdc(HVDC_HANDLE, &backend);
-    hvdc.getHvdcAngleDroopActivePowerControl().setP0(200.0);
+    hvdc.getExtension<HvdcAngleDroopActivePowerControl>().setP0(200.0);
     EXPECT_DOUBLE_EQ((backend.doubles[{EXT_HANDLE, prop::EXT_HADAPC_P0}]), 200.0);
 }
 
 TEST_F(HvdcAngleDroopActivePowerControlTest, IsEnabled) {
     HvdcLine hvdc(HVDC_HANDLE, &backend);
-    EXPECT_TRUE(hvdc.getHvdcAngleDroopActivePowerControl().isEnabled());
+    EXPECT_TRUE(hvdc.getExtension<HvdcAngleDroopActivePowerControl>().isEnabled());
 }
 
 TEST_F(HvdcAngleDroopActivePowerControlTest, SetEnabled) {
     HvdcLine hvdc(HVDC_HANDLE, &backend);
-    hvdc.getHvdcAngleDroopActivePowerControl().setEnabled(false);
+    hvdc.getExtension<HvdcAngleDroopActivePowerControl>().setEnabled(false);
     EXPECT_FALSE((backend.bools[{EXT_HANDLE, prop::EXT_HADAPC_ENABLED}]));
 }
 
 TEST_F(HvdcAngleDroopActivePowerControlTest, MethodChaining) {
     HvdcLine hvdc(HVDC_HANDLE, &backend);
-    hvdc.getHvdcAngleDroopActivePowerControl().setDroop(3.0).setP0(150.0).setEnabled(false);
+    hvdc.getExtension<HvdcAngleDroopActivePowerControl>().setDroop(3.0).setP0(150.0).setEnabled(false);
     EXPECT_DOUBLE_EQ((backend.doubles[{EXT_HANDLE, prop::EXT_HADAPC_DROOP}]), 3.0);
     EXPECT_DOUBLE_EQ((backend.doubles[{EXT_HANDLE, prop::EXT_HADAPC_P0}]), 150.0);
     EXPECT_FALSE((backend.bools[{EXT_HANDLE, prop::EXT_HADAPC_ENABLED}]));
@@ -91,14 +91,14 @@ TEST_F(HvdcAngleDroopActivePowerControlTest, Equality) {
 
 TEST_F(HvdcAngleDroopActivePowerControlTest, AbsentThrows) {
     MockBackend empty;
-    EXPECT_THROW(HvdcLine(HVDC_HANDLE, &empty).getHvdcAngleDroopActivePowerControl(), ExtensionNotFoundException);
+    EXPECT_THROW(HvdcLine(HVDC_HANDLE, &empty).getExtension<HvdcAngleDroopActivePowerControl>(), ExtensionNotFoundException);
 }
 
 TEST_F(HvdcAngleDroopActivePowerControlTest, NewAndRemove) {
     MockBackend b;
     static constexpr ObjectHandle NEW_EXT = 22;
     HvdcLine hvdc(HVDC_HANDLE, &b);
-    HvdcAngleDroopActivePowerControlAdder adder = hvdc.newHvdcAngleDroopActivePowerControl();
+    HvdcAngleDroopActivePowerControlAdder adder = hvdc.newExtension<HvdcAngleDroopActivePowerControlAdder>();
     EXPECT_EQ(b.invocations.back(), std::make_pair(static_cast<ObjectHandle>(HVDC_HANDLE), prop::HVDC_ANGLE_DROOP_ACTIVE_POWER_CONTROL));
     const ObjectHandle adderHandle = b.lastAdder;
     b.addResults[adderHandle] = NEW_EXT;
@@ -108,6 +108,6 @@ TEST_F(HvdcAngleDroopActivePowerControlTest, NewAndRemove) {
     EXPECT_TRUE((b.bools[{adderHandle, prop::EXT_HADAPC_ENABLED}]));
     EXPECT_EQ(ext, HvdcAngleDroopActivePowerControl(NEW_EXT, &b));
 
-    hvdc.removeHvdcAngleDroopActivePowerControl();
+    hvdc.removeExtension<HvdcAngleDroopActivePowerControl>();
     EXPECT_EQ((b.related[{HVDC_HANDLE, prop::HVDC_ANGLE_DROOP_ACTIVE_POWER_CONTROL}]), INVALID_HANDLE);
 }

@@ -35,7 +35,7 @@ Ids prioritiesOf(const std::vector<ReferencePriority>& priorities) {
 void checkPriorities(Network& network) {
     EXPECT_EQ(prioritiesOf(ReferencePriorities::get(network)), (Ids{"G2=1", "G1=2", "L12=3"}));
     Generator g1 = *network.getGenerator("G1");
-    EXPECT_EQ(prioritiesOf(g1.getReferencePriorities().getReferencePriorities()), (Ids{"G1=2"}));
+    EXPECT_EQ(prioritiesOf(g1.getExtension<ReferencePriorities>().getReferencePriorities()), (Ids{"G1=2"}));
     EXPECT_EQ(ReferencePriority::get(g1), 2);
     Line line = *network.getLine("L12");
     EXPECT_EQ(ReferencePriority::get(line, TwoSides::TWO), 3);
@@ -44,33 +44,33 @@ void checkPriorities(Network& network) {
 
     // Set: the extension created when absent, the priority of a terminal replaced
     Load ld2 = *network.getLoad("LD2");
-    EXPECT_FALSE(ld2.hasReferencePriorities());
+    EXPECT_FALSE(ld2.hasExtension<ReferencePriorities>());
     ReferencePriority::set(ld2, 4);
     EXPECT_EQ(ReferencePriority::get(ld2), 4);
     ReferencePriority::set(line, TwoSides::ONE, 5);
     EXPECT_EQ(ReferencePriority::get(line, TwoSides::ONE), 5);
-    EXPECT_EQ(line.getReferencePriorities().getReferencePriorities().size(), 2u);
+    EXPECT_EQ(line.getExtension<ReferencePriorities>().getReferencePriorities().size(), 2u);
     EXPECT_THROW(ReferencePriority::set(g1, -1), ValidationException);
-    ReferencePriority replaced = g1.getReferencePriorities().newReferencePriority().setTerminal(g1.getTerminal()).setPriority(6).add();
+    ReferencePriority replaced = g1.getExtension<ReferencePriorities>().newReferencePriority().setTerminal(g1.getTerminal()).setPriority(6).add();
     EXPECT_EQ(replaced.getPriority(), 6);
-    EXPECT_EQ(prioritiesOf(g1.getReferencePriorities().getReferencePriorities()), (Ids{"G1=6"}));
+    EXPECT_EQ(prioritiesOf(g1.getExtension<ReferencePriorities>().getReferencePriorities()), (Ids{"G1=6"}));
     // Not a terminal of the generator
-    EXPECT_THROW(g1.getReferencePriorities().newReferencePriority().setTerminal(ld2.getTerminal()).setPriority(1).add(),
+    EXPECT_THROW(g1.getExtension<ReferencePriorities>().newReferencePriority().setTerminal(ld2.getTerminal()).setPriority(1).add(),
                  ValidationException);
 
-    g1.getReferencePriorities().deleteReferencePriorities();
-    EXPECT_TRUE(g1.getReferencePriorities().getReferencePriorities().empty());
+    g1.getExtension<ReferencePriorities>().deleteReferencePriorities();
+    EXPECT_TRUE(g1.getExtension<ReferencePriorities>().getReferencePriorities().empty());
     ReferencePriorities::deleteReferencePriorities(network);
     EXPECT_TRUE(ReferencePriorities::get(network).empty());
     Generator g2 = *network.getGenerator("G2");
-    g2.removeReferencePriorities();
-    EXPECT_TRUE(g2.newReferencePriorities().add().getReferencePriorities().empty());
+    g2.removeExtension<ReferencePriorities>();
+    EXPECT_TRUE(g2.newExtension<ReferencePrioritiesAdder>().add().getReferencePriorities().empty());
 }
 
 void checkTerminals(Network& network) {
     Terminal g1 = network.getGenerator("G1")->getTerminal();
     Terminal g2 = network.getGenerator("G2")->getTerminal();
-    ReferenceTerminals terminals = network.getReferenceTerminals();
+    ReferenceTerminals terminals = network.getExtension<ReferenceTerminals>();
     std::vector<Terminal> listed = terminals.getReferenceTerminals();
     ASSERT_EQ(listed.size(), 1u);
     EXPECT_EQ(listed[0], g1);
@@ -84,21 +84,21 @@ void checkTerminals(Network& network) {
     ReferenceTerminals::reset(network);
     EXPECT_TRUE(ReferenceTerminals::getTerminals(network).empty());
 
-    network.removeReferenceTerminals();
+    network.removeExtension<ReferenceTerminals>();
     EXPECT_TRUE(ReferenceTerminals::getTerminals(network).empty());
-    EXPECT_EQ(network.newReferenceTerminals().withTerminals({g1, g2}).add().getReferenceTerminals().size(), 2u);
+    EXPECT_EQ(network.newExtension<ReferenceTerminalsAdder>().withTerminals({g1, g2}).add().getReferenceTerminals().size(), 2u);
 }
 
 void checkObservabilityAreas(Network& network) {
     VoltageLevel vl3 = *network.getVoltageLevel("VL3");
-    std::vector<ObservabilityArea::AreaCharacteristics> areas = vl3.getObservabilityArea().getObservabilityAreas();
+    std::vector<ObservabilityArea::AreaCharacteristics> areas = vl3.getExtension<ObservabilityArea>().getObservabilityAreas();
     ASSERT_EQ(areas.size(), 2u);
     EXPECT_EQ(areas[1].getNodes(), (std::vector<int>{2}));
     EXPECT_EQ(areas[1].getStatus(), ObservabilityStatus::NON_OBSERVABLE);
 
     // New ones: by nodes, by buses of the bus-breaker view, by a bus of the bus view
-    vl3.removeObservabilityArea();
-    ObservabilityArea byNodes = vl3.newObservabilityArea()
+    vl3.removeExtension<ObservabilityArea>();
+    ObservabilityArea byNodes = vl3.newExtension<ObservabilityAreaAdder>()
         .withObservabilityAreaByNodes({0, 1, 2}, 5, ObservabilityStatus::OBSERVABLE)
         .add();
     ASSERT_EQ(byNodes.getObservabilityAreas().size(), 1u);
@@ -106,13 +106,13 @@ void checkObservabilityAreas(Network& network) {
     EXPECT_EQ(byNodes.getObservabilityAreas()[0].getNodes(), (std::vector<int>{0, 1, 2}));
 
     VoltageLevel vl1 = *network.getVoltageLevel("VL1");
-    vl1.removeObservabilityArea();
-    vl1.newObservabilityArea().withObservabilityAreaByBusBreakerViewBuses({"B1a", "B1b"}, 6, ObservabilityStatus::BORDER).add();
-    EXPECT_EQ(vl1.getObservabilityArea().getObservabilityAreas()[0].getBuses().size(), 2u);
-    vl1.removeObservabilityArea();
+    vl1.removeExtension<ObservabilityArea>();
+    vl1.newExtension<ObservabilityAreaAdder>().withObservabilityAreaByBusBreakerViewBuses({"B1a", "B1b"}, 6, ObservabilityStatus::BORDER).add();
+    EXPECT_EQ(vl1.getExtension<ObservabilityArea>().getObservabilityAreas()[0].getBuses().size(), 2u);
+    vl1.removeExtension<ObservabilityArea>();
     std::string busId = vl1.getBusView().getBuses()[0].getId();
-    vl1.newObservabilityArea().withObservabilityAreaByBusViewBus(busId, 7, ObservabilityStatus::OBSERVABLE).add();
-    EXPECT_EQ(vl1.getObservabilityArea().getObservabilityAreaByBus(busId)->getAreaNumber(), 7);
+    vl1.newExtension<ObservabilityAreaAdder>().withObservabilityAreaByBusViewBus(busId, 7, ObservabilityStatus::OBSERVABLE).add();
+    EXPECT_EQ(vl1.getExtension<ObservabilityArea>().getObservabilityAreaByBus(busId)->getAreaNumber(), 7);
 }
 
 void checkNetwork(BackendProvider& b) {

@@ -9,7 +9,7 @@ namespace iidm {
 class BackendProvider;
 
 // The BusbarSectionPosition extension of a busbar section: where it is drawn in single line
-// diagrams. An object of its own, from BusbarSection::getBusbarSectionPosition().
+// diagrams. An object of its own, from BusbarSection::getExtension<BusbarSectionPosition>().
 class BusbarSectionPosition : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::BUSBAR_SECTION_POSITION;

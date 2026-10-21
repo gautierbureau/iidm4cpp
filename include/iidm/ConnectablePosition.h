@@ -12,7 +12,7 @@ class BackendProvider;
 
 // The ConnectablePosition extension of a connectable: how its ends are drawn in single line
 // diagrams, a feeder per end (the feeder of an injection, or one per side). An object of its own,
-// from Connectable::getConnectablePosition().
+// from Connectable::getExtension<ConnectablePosition>().
 class ConnectablePosition : public detail::ObjectRef {
 public:
     static constexpr int TYPE = prop::CONNECTABLE_POSITION;
