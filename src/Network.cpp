@@ -583,4 +583,36 @@ void Network::removeReferenceTerminals() {
     detail::removeExtension<ReferenceTerminals>(backend_, handle_);
 }
 
+bool Network::hasSecondaryVoltageControl() const {
+    return detail::hasExtension<SecondaryVoltageControl>(backend_, handle_);
+}
+
+SecondaryVoltageControl Network::getSecondaryVoltageControl() const {
+    return detail::getExtension<SecondaryVoltageControl>(backend_, handle_, "SecondaryVoltageControl");
+}
+
+SecondaryVoltageControlAdder Network::newSecondaryVoltageControl() {
+    return detail::newExtension<SecondaryVoltageControl, SecondaryVoltageControlAdder>(backend_, handle_);
+}
+
+void Network::removeSecondaryVoltageControl() {
+    detail::removeExtension<SecondaryVoltageControl>(backend_, handle_);
+}
+
+bool Network::hasLineCouplings() const {
+    return detail::hasExtension<LineCouplings>(backend_, handle_);
+}
+
+LineCouplings Network::getLineCouplings() const {
+    return detail::getExtension<LineCouplings>(backend_, handle_, "LineCouplings");
+}
+
+LineCouplingsAdder Network::newLineCouplings() {
+    return detail::newExtension<LineCouplings, LineCouplingsAdder>(backend_, handle_);
+}
+
+void Network::removeLineCouplings() {
+    detail::removeExtension<LineCouplings>(backend_, handle_);
+}
+
 } // namespace iidm

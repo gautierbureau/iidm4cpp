@@ -26,6 +26,8 @@ set(TEST_SOURCES
     TestPositionExtensionsNetwork.cpp
     TestReferenceExtensions.cpp
     TestReferenceExtensionsNetwork.cpp
+    TestNetworkExtensions.cpp
+    TestNetworkExtensionsNetwork.cpp
     TestShuntsNetwork.cpp
     TestLinesNetwork.cpp
     TestBoundaryLinesNetwork.cpp

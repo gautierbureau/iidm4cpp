@@ -1090,6 +1090,13 @@ Every extension below has an adder (`newX()`).
 | `ConnectablePosition` | all connectables | `CONNECTABLE_POSITION`; its `FEEDER`s by slot: `EXT_FEEDER_*`, `ACT_REMOVE_ORDER` |
 | `ReferencePriorities` | all connectables (and the powsybl static helpers) | `REFERENCE_PRIORITIES`; its `REFERENCE_PRIORITY`s: `EXT_RP_PRIORITY` |
 | `ReferenceTerminals` | Network (and the powsybl static helpers) | `REFERENCE_TERMINALS`, `ADD_REFERENCE_TERMINAL`, `ACT_RESET_REFERENCE_TERMINALS` |
+| `SecondaryVoltageControl` | Network | `SECONDARY_VOLTAGE_CONTROL`; its `CONTROL_ZONE`s, their `PILOT_POINT` and `CONTROL_UNIT`s: `EXT_SVC_*` |
+| `LineCouplings` | Network | `LINE_COUPLINGS`; its `MUTUAL_COUPLING`s: `EXT_MC_*` (segments: `LineSegment` values), `ADD_MUTUAL_COUPLING`, `FIND_MUTUAL_COUPLING`, `REMOVE_MUTUAL_COUPLING` |
+
+Removing the `LineCouplings` extension (`Network::removeLineCouplings()`) removes it, then throws
+`PropertyNotFoundException`: powsybl-core's `LineCouplingsImpl.setExtendable(null)`, called on
+removal, subscribes a listener to the null network (a `NullPointerException`). The bridge passes
+that on unchanged until powsybl fixes it.
 
 The `VoltagePerReactivePowerControl`, `RemoteReactivePowerControl` and battery `VoltageRegulation`
 extensions were removed from powsybl-core 7.4 (`extensions.removed`): their data is the core

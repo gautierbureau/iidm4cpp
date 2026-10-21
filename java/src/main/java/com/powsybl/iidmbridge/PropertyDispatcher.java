@@ -234,6 +234,11 @@ public final class PropertyDispatcher {
             case EXT_LEG_F_GROUNDING_X -> ((LegFortescue) obj).getGroundingX();
             case COORD_LATITUDE -> ((Coordinate) obj).getLatitude();
             case COORD_LONGITUDE -> ((Coordinate) obj).getLongitude();
+            case EXT_SVC_TARGET_V -> ((PilotPoint) obj).getTargetV();
+            case EXT_MC_R -> ((MutualCoupling) obj).getR();
+            case EXT_MC_X -> ((MutualCoupling) obj).getX();
+            case EXT_MC_SEGMENT_START -> ((LineSegment) obj).start();
+            case EXT_MC_SEGMENT_END -> ((LineSegment) obj).end();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown double property: " + property);
         };
     }
@@ -403,6 +408,9 @@ public final class PropertyDispatcher {
             case EXT_LEG_F_XZ -> ((LegFortescue) obj).setXz(value);
             case EXT_LEG_F_GROUNDING_R -> ((LegFortescue) obj).setGroundingR(value);
             case EXT_LEG_F_GROUNDING_X -> ((LegFortescue) obj).setGroundingX(value);
+            case EXT_SVC_TARGET_V -> ((PilotPoint) obj).setTargetV(value);
+            case EXT_MC_R -> ((MutualCoupling) obj).setR(value);
+            case EXT_MC_X -> ((MutualCoupling) obj).setX(value);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown double property for set: " + property);
         }
     }
@@ -678,6 +686,11 @@ public final class PropertyDispatcher {
             case COORDINATE                 -> obj instanceof Coordinate;
             case FEEDER                     -> obj instanceof ConnectablePosition.Feeder;
             case LEG_FORTESCUE              -> obj instanceof LegFortescue;
+            case CONTROL_ZONE               -> obj instanceof ControlZone;
+            case PILOT_POINT                -> obj instanceof PilotPoint;
+            case CONTROL_UNIT               -> obj instanceof ControlUnit;
+            case EXT_SVC_UNIT_PARTICIPATE   -> ((ControlUnit) obj).isParticipate();
+            case MUTUAL_COUPLING            -> obj instanceof MutualCoupling;
             case EXT_GF_GROUNDED            -> ((GeneratorFortescue) obj).isGrounded();
             case EXT_LINE_F_OPEN_PHASE_A    -> ((LineFortescue) obj).isOpenPhaseA();
             case EXT_LINE_F_OPEN_PHASE_B    -> ((LineFortescue) obj).isOpenPhaseB();
@@ -737,6 +750,7 @@ public final class PropertyDispatcher {
             case EXT_LINE_F_OPEN_PHASE_C -> ((LineFortescue) obj).setOpenPhaseC(bval);
             case EXT_TWO_WTF_FREE_FLUXES -> ((TwoWindingsTransformerFortescue) obj).setFreeFluxes(bval);
             case EXT_LEG_F_FREE_FLUXES -> ((LegFortescue) obj).setFreeFluxes(bval);
+            case EXT_SVC_UNIT_PARTICIPATE -> ((ControlUnit) obj).setParticipate(bval);
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown bool property for set: " + property);
         }
     }
@@ -794,6 +808,8 @@ public final class PropertyDispatcher {
             case DMEAS_ID           -> ((DiscreteMeasurement) obj).getId();
             case DMEAS_VALUE_STRING -> ((DiscreteMeasurement) obj).getValueAsString();
             case EXT_DMI_MODEL_NAME -> ((DynamicModelInfo<?>) obj).getModelName();
+            case EXT_SVC_ZONE_NAME -> ((ControlZone) obj).getName();
+            case EXT_SVC_UNIT_ID -> ((ControlUnit) obj).getId();
             default -> throw new BridgeErrors.PropertyNotFoundException("Unknown string property: " + property);
         };
         if (value == null) {
@@ -902,6 +918,9 @@ public final class PropertyDispatcher {
     public static String[] getStringList(Object obj, int listCode) {
         if (listCode == ALL_SELECTED_OLG_IDS_ORDERED) {
             return LimitsDispatch.holder(obj).getAllSelectedOperationalLimitsGroupIdsOrdered().toArray(String[]::new);
+        }
+        if (listCode == EXT_SVC_PILOT_POINT_IDS) {
+            return ((PilotPoint) obj).getBusbarSectionsOrBusesIds().toArray(String[]::new);
         }
         Collection<String> values = switch (listCode) {
             case PROPERTY_NAMES -> switch (obj) {
@@ -1235,6 +1254,9 @@ public final class PropertyDispatcher {
                 default -> StreamSupport.stream(((VoltageLevel) obj).getBusBreakerView().getBuses().spliterator(), false);
             };
             case COORDINATE -> ((LinePosition<?>) obj).getCoordinates().stream();
+            case CONTROL_ZONE -> ((SecondaryVoltageControl) obj).getControlZones().stream();
+            case CONTROL_UNIT -> ((ControlZone) obj).getControlUnits().stream();
+            case MUTUAL_COUPLING -> ((LineCouplings) obj).getMutualCouplings().stream();
             case REL_CONNECTED_COMPONENT -> ((Network) obj).getBusView().getConnectedComponents().stream();
             case NETWORK -> ((Network) obj).getSubnetworks().stream();
             // A set: sorted, so that both backends list it in the same order
@@ -1316,6 +1338,11 @@ public final class PropertyDispatcher {
             case REL_CONNECTED_COMPONENT -> ((Bus) obj).getConnectedComponent();
             case REL_SYNCHRONOUS_COMPONENT -> ((Bus) obj).getSynchronousComponent();
             case COORDINATE -> ((SubstationPosition) obj).getCoordinate();
+            case PILOT_POINT -> ((ControlZone) obj).getPilotPoint();
+            case EXT_MC_LINE1 -> ((MutualCoupling) obj).getLine1();
+            case EXT_MC_LINE2 -> ((MutualCoupling) obj).getLine2();
+            case EXT_MC_LINE1_SEGMENT -> ((MutualCoupling) obj).getLine1Segment();
+            case EXT_MC_LINE2_SEGMENT -> ((MutualCoupling) obj).getLine2Segment();
             case REL_PARENT_NETWORK -> ((Identifiable<?>) obj).getParentNetwork();
             case REL_CONVERTER_STATION1 -> ((HvdcLine) obj).getConverterStation1();
             case REL_CONVERTER_STATION2 -> ((HvdcLine) obj).getConverterStation2();
@@ -1385,6 +1412,7 @@ public final class PropertyDispatcher {
             case REMOVE_AREA          -> ((VoltageLevel) obj).removeArea((Area) value);
             case ADD_TRIPPING -> ((OverloadManagementSystem) obj).addTripping((OverloadManagementSystem.Tripping) value);
             case ADD_REFERENCE_TERMINAL -> ((ReferenceTerminals) obj).addReferenceTerminal((Terminal) value);
+            case ADD_MUTUAL_COUPLING -> ((LineCouplings) obj).add((MutualCoupling) value);
             case REMOVE_AREA_BOUNDARY -> {
                 if (value instanceof Terminal terminal) ((Area) obj).removeAreaBoundary(terminal);
                 else ((Area) obj).removeAreaBoundary((Boundary) value);
@@ -1627,6 +1655,8 @@ public final class PropertyDispatcher {
             case REL_VL_BBV_BUS2 -> ((VoltageLevel) obj).getBusBreakerView().getBus2(key);
             case MEASUREMENT          -> ((Measurements<?>) obj).getMeasurement(key);
             case DISCRETE_MEASUREMENT -> ((DiscreteMeasurements<?>) obj).getDiscreteMeasurement(key);
+            case CONTROL_ZONE -> ((SecondaryVoltageControl) obj).getControlZone(key).orElse(null);
+            case CONTROL_UNIT -> ((ControlZone) obj).getControlUnit(key).orElse(null);
             case REL_OBS_AREA_BY_BUS, REL_OBS_AREA_BY_BBV_BUS
                 -> StateEstimationDispatch.observabilityAreaByBus((ObservabilityArea) obj, relation, key);
             case OPERATIONAL_LIMITS_GROUP -> LimitsDispatch.holder(obj).getOperationalLimitsGroup(key).orElse(null);

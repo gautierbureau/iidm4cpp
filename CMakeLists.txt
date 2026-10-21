@@ -157,6 +157,9 @@ set(IIDM_BRIDGE_SOURCES
     src/ConnectablePosition.cpp
     src/ReferencePriorities.cpp
     src/ReferenceTerminals.cpp
+    src/SecondaryVoltageControl.cpp
+    src/LineSegment.cpp
+    src/LineCouplings.cpp
 )
 
 if(IIDM_BRIDGE_ENABLE_GRAALVM)

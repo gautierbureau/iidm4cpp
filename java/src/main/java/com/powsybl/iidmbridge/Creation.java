@@ -425,6 +425,72 @@ public final class Creation {
         }
     }
 
+    /** The pilot point of a new control zone: its busbar sections or buses, added one by one. */
+    static final class NewPilotPoint {
+        private final PilotPointAdder adder;
+        private final java.util.List<String> ids = new java.util.ArrayList<>();
+
+        NewPilotPoint(PilotPointAdder adder) {
+            this.adder = adder;
+        }
+
+        void apply() {
+            adder.withBusbarSectionsOrBusesIds(ids).add();
+        }
+    }
+
+    /** The segment of a line of a mutual coupling, or of a new one: its start and end, set at once. */
+    static final class SegmentChange {
+        private final MutualCouplingAdder adder;
+        private final MutualCoupling coupling;
+        private final boolean line1;
+        private double start = Double.NaN;
+        private double end = Double.NaN;
+
+        SegmentChange(Object target, int code) {
+            this.adder = target instanceof MutualCouplingAdder a ? a : null;
+            this.coupling = adder == null ? (MutualCoupling) target : null;
+            this.line1 = code == EXT_MC_LINE1_SEGMENT;
+        }
+
+        void apply() {
+            LineSegment segment = new LineSegment(start, end);
+            if (adder != null) {
+                if (line1) adder.withLine1Segment(segment);
+                else adder.withLine2Segment(segment);
+            } else if (line1) {
+                coupling.setLine1Segment(segment);
+            } else {
+                coupling.setLine2Segment(segment);
+            }
+        }
+    }
+
+    /**
+     * LineCouplings.findMutualCoupling(line1, line2): the coupling, or null; removeMutualCoupling(coupling)
+     * or removeMutualCoupling(line1, line2): the extension when one was removed, else null.
+     */
+    static final class MutualCouplingQuery {
+        private final LineCouplings couplings;
+        private final boolean remove;
+        private MutualCoupling coupling;
+        private Line line1;
+        private Line line2;
+
+        MutualCouplingQuery(LineCouplings couplings, boolean remove) {
+            this.couplings = couplings;
+            this.remove = remove;
+        }
+
+        Object run() {
+            if (!remove) {
+                return couplings.findMutualCoupling(line1, line2).orElse(null);
+            }
+            boolean removed = coupling != null ? couplings.removeMutualCoupling(coupling) : couplings.removeMutualCoupling(line1, line2);
+            return removed ? couplings : null;
+        }
+    }
+
     /** A new, empty network. */
     public static Network createNetwork(String id) {
         return Network.create(id, SOURCE_FORMAT);
@@ -457,6 +523,12 @@ public final class Creation {
             case EXT_RP_PRIORITY -> new PrioritySet(owner);
             case REFERENCE_TERMINALS -> new NewReferenceTerminals(Extensions.newAdder(owner, type));
             case TERMINAL -> new NewReferenceTerminals((ReferenceTerminals) owner);
+            case CONTROL_ZONE -> ((SecondaryVoltageControlAdder) owner).newControlZone();
+            case PILOT_POINT -> new NewPilotPoint(((ControlZoneAdder) owner).newPilotPoint());
+            case CONTROL_UNIT -> ((ControlZoneAdder) owner).newControlUnit();
+            case MUTUAL_COUPLING -> ((LineCouplings) owner).newMutualCoupling();
+            case EXT_MC_LINE1_SEGMENT, EXT_MC_LINE2_SEGMENT -> new SegmentChange(owner, type);
+            case FIND_MUTUAL_COUPLING, REMOVE_MUTUAL_COUPLING -> new MutualCouplingQuery((LineCouplings) owner, type == REMOVE_MUTUAL_COUPLING);
             case SWITCH_TRIPPING -> ((OverloadManagementSystemAdder) owner).newSwitchTripping();
             case BRANCH_TRIPPING -> ((OverloadManagementSystemAdder) owner).newBranchTripping();
             case THREE_WINDINGS_TRANSFORMER_TRIPPING -> ((OverloadManagementSystemAdder) owner).newThreeWindingsTransformerTripping();
@@ -556,6 +628,24 @@ public final class Creation {
                 yield null;
             }
             case NewReferenceTerminals terminals -> terminals.apply();
+            case ControlZoneAdder adder -> {
+                adder.add();
+                yield null;
+            }
+            case NewPilotPoint pilotPoint -> {
+                pilotPoint.apply();
+                yield null;
+            }
+            case ControlUnitAdder adder -> {
+                adder.add();
+                yield null;
+            }
+            case MutualCouplingAdder adder -> adder.add();
+            case SegmentChange change -> {
+                change.apply();
+                yield null;
+            }
+            case MutualCouplingQuery query -> query.run();
             case BoundaryElementCheck check -> check.run();
             case VariantClone clone -> {
                 clone.apply();
@@ -755,6 +845,11 @@ public final class Creation {
             case EXT_LEG_F_GROUNDING_X -> ((FortescueLegs) a).leg().withGroundingX(value);
             case COORD_LATITUDE -> ((NewCoordinate) a).latitude = value;
             case COORD_LONGITUDE -> ((NewCoordinate) a).longitude = value;
+            case EXT_SVC_TARGET_V -> ((NewPilotPoint) a).adder.withTargetV(value);
+            case EXT_MC_R -> ((MutualCouplingAdder) a).withR(value);
+            case EXT_MC_X -> ((MutualCouplingAdder) a).withX(value);
+            case EXT_MC_SEGMENT_START -> ((SegmentChange) a).start = value;
+            case EXT_MC_SEGMENT_END -> ((SegmentChange) a).end = value;
             default -> throw unknownField("double", property);
         }
     }
@@ -899,6 +994,7 @@ public final class Creation {
             case EXT_LINE_F_OPEN_PHASE_C -> ((LineFortescueAdder) a).withOpenPhaseC(value);
             case EXT_TWO_WTF_FREE_FLUXES -> ((TwoWindingsTransformerFortescueAdder) a).withFreeFluxes(value);
             case EXT_LEG_F_FREE_FLUXES -> ((FortescueLegs) a).leg().withFreeFluxes(value);
+            case EXT_SVC_UNIT_PARTICIPATE -> ((ControlUnitAdder) a).withParticipate(value);
             default -> throw unknownField("bool", property);
         }
     }
@@ -964,6 +1060,9 @@ public final class Creation {
             case EXT_FEEDER_NAME -> ((NewFeeder) a).name = value;
             case OBS_AREA_BUS_BREAKER_BUS_ID -> ((NewObservabilityArea) a).busBreakerBusIds.add(value);
             case OBS_AREA_BUS_ID -> ((NewObservabilityArea) a).busId = value;
+            case EXT_SVC_ZONE_NAME -> ((ControlZoneAdder) a).withName(value);
+            case EXT_SVC_PILOT_POINT_IDS -> ((NewPilotPoint) a).ids.add(value);
+            case EXT_SVC_UNIT_ID -> ((ControlUnitAdder) a).withId(value);
             default -> throw unknownField("string", property);
         }
     }
@@ -1009,6 +1108,21 @@ public final class Creation {
             case ADD_VOLTAGE_LEVEL -> ((AreaAdder) a).addVoltageLevel((VoltageLevel) value);
             case IDENTIFIABLE -> ((BoundaryElementCheck) a).identifiable = (Identifiable<?>) value;
             case ADD_REFERENCE_TERMINAL -> ((NewReferenceTerminals) a).terminals.add((Terminal) value);
+            case EXT_MC_LINE1 -> {
+                if (a instanceof MutualCouplingQuery query) {
+                    query.line1 = (Line) value;
+                } else {
+                    ((MutualCouplingAdder) a).withLine1((Line) value);
+                }
+            }
+            case EXT_MC_LINE2 -> {
+                if (a instanceof MutualCouplingQuery query) {
+                    query.line2 = (Line) value;
+                } else {
+                    ((MutualCouplingAdder) a).withLine2((Line) value);
+                }
+            }
+            case MUTUAL_COUPLING -> ((MutualCouplingQuery) a).coupling = (MutualCoupling) value;
             default -> throw unknownField("related object", relation);
         }
     }

@@ -71,6 +71,10 @@ IIDM_CODE(LEG_FORTESCUE,               74) // a leg of a ThreeWindingsTransforme
 IIDM_CODE(COORDINATE,                  75) // a coordinate of a position extension (a value)
 IIDM_CODE(FEEDER,                      76) // a feeder of a ConnectablePosition extension
 IIDM_CODE(REFERENCE_PRIORITY,          77) // a priority of a ReferencePriorities extension
+IIDM_CODE(CONTROL_ZONE,                78) // a control zone of a SecondaryVoltageControl extension
+IIDM_CODE(PILOT_POINT,                 79) // the pilot point of a control zone
+IIDM_CODE(CONTROL_UNIT,                80) // a control unit of a control zone
+IIDM_CODE(MUTUAL_COUPLING,             81) // a mutual coupling of a LineCouplings extension
 // Abstract types (Java interfaces)
 IIDM_CODE(IDENTIFIABLE,                43)
 IIDM_CODE(CONNECTABLE,                 44)
@@ -907,6 +911,44 @@ IIDM_CODE(EXT_RP_PRIORITY,                7501) // int: 0 not to be used, else 1
 // invoke(terminal, ACT_ADD_REFERENCE_TERMINAL): ReferenceTerminals.addTerminal.
 IIDM_CODE(REFERENCE_TERMINALS,            7600)
 IIDM_CODE(ADD_REFERENCE_TERMINAL,         7601) // related, set only (see above)
+
+// SecondaryVoltageControl (on a network): getChildren(extension, CONTROL_ZONE) its control zones, in
+// order; getRelatedByString(extension, CONTROL_ZONE, name) one of them. A zone: EXT_SVC_ZONE_NAME,
+// getRelated(zone, PILOT_POINT) its pilot point, getChildren(zone, CONTROL_UNIT) its control units, in
+// order, getRelatedByString(zone, CONTROL_UNIT, id) one of them. Its adder: invoke(adder, CONTROL_ZONE)
+// starts a zone (field EXT_SVC_ZONE_NAME), invoke(zone, PILOT_POINT) its pilot point and
+// invoke(zone, CONTROL_UNIT) each of its control units, each with its own fields; ACT_ADD adds each to
+// its parent.
+IIDM_CODE(SECONDARY_VOLTAGE_CONTROL,      7700)
+IIDM_CODE(EXT_SVC_ZONE_NAME,              7701) // string, read-only
+IIDM_CODE(EXT_SVC_PILOT_POINT_IDS,        7702) // string list: the busbar sections or buses of a pilot point, in
+                                                // order; a field of a new pilot point: one more
+IIDM_CODE(EXT_SVC_TARGET_V,               7703) // double: the target voltage of a pilot point (kV)
+IIDM_CODE(EXT_SVC_UNIT_ID,                7704) // string, read-only: the id of a control unit's equipment
+IIDM_CODE(EXT_SVC_UNIT_PARTICIPATE,       7705) // bool
+
+// LineCouplings (on a network): getChildren(extension, MUTUAL_COUPLING) its mutual couplings, in the
+// order they were added; setRelated(extension, ADD_MUTUAL_COUPLING, coupling) adds one;
+// invoke(extension, MUTUAL_COUPLING) starts a new one (fields EXT_MC_LINE1, EXT_MC_LINE2, EXT_MC_R,
+// EXT_MC_X and its segments, then ACT_ADD returns it). invoke(extension, FIND_MUTUAL_COUPLING) starts
+// findMutualCoupling (fields EXT_MC_LINE1 and EXT_MC_LINE2, then ACT_ADD returns the coupling, or null);
+// invoke(extension, REMOVE_MUTUAL_COUPLING) starts removeMutualCoupling (field MUTUAL_COUPLING, or
+// EXT_MC_LINE1 and EXT_MC_LINE2, then ACT_ADD returns the extension when one was removed, else null).
+// The segment of a line a coupling is on: getRelated(coupling, EXT_MC_LINE1_SEGMENT or
+// EXT_MC_LINE2_SEGMENT), a value; invoke(coupling or its adder, EXT_MC_LINE1_SEGMENT or
+// EXT_MC_LINE2_SEGMENT) starts setting it (fields EXT_MC_SEGMENT_START and EXT_MC_SEGMENT_END, then ACT_ADD).
+IIDM_CODE(LINE_COUPLINGS,                 7800)
+IIDM_CODE(EXT_MC_LINE1,                   7801) // related: a line, read-only
+IIDM_CODE(EXT_MC_LINE2,                   7802) // related: a line, read-only
+IIDM_CODE(EXT_MC_R,                       7803) // double (Ω)
+IIDM_CODE(EXT_MC_X,                       7804) // double (Ω)
+IIDM_CODE(EXT_MC_LINE1_SEGMENT,           7805) // related: a segment (see above)
+IIDM_CODE(EXT_MC_LINE2_SEGMENT,           7806) // related: a segment (see above)
+IIDM_CODE(EXT_MC_SEGMENT_START,           7807) // double, read-only: a fraction of the line's length
+IIDM_CODE(EXT_MC_SEGMENT_END,             7808) // double, read-only: a fraction of the line's length
+IIDM_CODE(ADD_MUTUAL_COUPLING,            7809) // related, set only (see above)
+IIDM_CODE(FIND_MUTUAL_COUPLING,           7810) // see above
+IIDM_CODE(REMOVE_MUTUAL_COUPLING,         7811) // see above
 
 // ── Child types: state estimation extensions ─────────────────────────────────
 IIDM_CODE(MEASUREMENT,                    38) // a measurement of a Measurements extension
