@@ -1,19 +1,49 @@
 name: Release
 
+# Publishing a GitHub release builds the packages and attaches them to it. A pull request or a
+# push to a claude/** branch that changes this workflow, or a manual run, builds them as workflow
+# artifacts instead, without a release.
+#
+# Every package is full: the library with both backends, its headers and CMake package, the
+# GraalVM native image and the jar.
+#   Linux    one per GCC version (8, 11, 13) and C++ standard (17: std::optional; 11:
+#            boost::optional, for C++11/14 consumers), each built in the distribution whose
+#            system compiler is that GCC;
+#   macOS    one per C++ standard, on the latest macOS (arm64);
+#   Windows  C++17 (MSVC has no C++11 mode).
 on:
   release:
     types: [published]
+  pull_request:
+    paths:
+      - '.github/workflows/release.yml'
+      - '.github/release-smoke-test/**'
+  push:
+    branches: ['claude/**']
+    paths:
+      - '.github/workflows/release.yml'
+      - '.github/release-smoke-test/**'
+  workflow_dispatch:
+
+env:
+  JAR: iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar
 
 jobs:
-  # ── Java fat-JAR ──────────────────────────────────────────────────────────
-  # Uploads the fat-JAR to the GitHub release for users who want it directly.
-  release-java:
-    name: Release Java JAR
+  # ── Jar and Linux native image ─────────────────────────────────────────────
+  # Neither depends on the C++ compiler: built once, and put in every Linux package. Built on
+  # Rocky Linux 8 (glibc 2.28), the native image loads on every distribution the packages target.
+  # No GraalVM installed: CMake downloads it for native-image.
+  java-native:
+    name: Jar and Linux native image
     runs-on: ubuntu-22.04
+    container: rockylinux:8
     permissions:
       contents: write
 
     steps:
+      - name: Install the build tools
+        run: dnf install -y gcc gcc-c++ make cmake glibc-devel zlib-devel git tar gzip findutils binutils
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -22,217 +52,79 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: maven
 
-      - name: Build fat-JAR
-        working-directory: java
-        run: mvn --batch-mode --no-transfer-progress package -DskipTests
+      - name: Install Maven
+        run: |
+          curl -sSfL https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.9/apache-maven-3.9.9-bin.tar.gz | tar -xz -C /opt
+          echo /opt/apache-maven-3.9.9/bin >> "$GITHUB_PATH"
 
-      - name: Upload to GitHub release
+      - name: Build the jar and the native image
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DIIDM_BRIDGE_ENABLE_JNI=OFF \
+                -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF
+          cmake --build build --target iidmbridge_native
+
+      - name: Check that the native image needs glibc 2.28 at most
+        run: |
+          newest=$(objdump -T build/graalvm-native/libpowsybl-iidm-native.so | grep -o 'GLIBC_[0-9.]*' | sort -uV | tail -1)
+          echo "Newest glibc symbol version: $newest"
+          [ "$(printf '%s\n' "$newest" GLIBC_2.28 | sort -V | tail -1)" = GLIBC_2.28 ]
+
+      - name: Upload the jar and the native image
+        run: |
+          mkdir dist
+          cp "java/target/$JAR" build/graalvm-native/libpowsybl-iidm-native.so dist/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: java-native
+          path: dist/
+          if-no-files-found: error
+
+      - name: Attach the jar to the release
+        if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
-          files: java/target/iidm-bridge-java-*-fat.jar
+          files: dist/${{ env.JAR }}
 
-  # ── C++ packages ─────────────────────────────────────────────────────────
-  #
-  # Three variants per platform:
-  #   graalvm  – GraalVM backend only; libpowsybl-iidm-native bundled in lib/;
-  #              no JVM dependency for consumers.
-  #   jni      – JNI backend only; consumers need a JVM on their link path.
-  #   full     – both backends compiled in; libpowsybl-iidm-native bundled.
-  #
-  # Windows ships jni-only: GraalVM --shared is not supported with MSVC.
-  #
-  # GraalVM/full variants use IIDM_BRIDGE_BUILD_JAVA=ON + BUILD_NATIVE=ON so
-  # cmake drives Maven and native-image directly — no separate steps needed.
-  release-cpp:
-    name: Release C++ package (${{ matrix.name }})
-    runs-on: ${{ matrix.os }}
+  # ── Linux packages ─────────────────────────────────────────────────────────
+  # A package needs at least the glibc of the distribution it is built in: GCC 8 on Rocky Linux 8
+  # (glibc 2.28: RHEL 8, Dynawo's Fedora 29 image), GCC 11 on Rocky Linux 9 (glibc 2.34: RHEL 9,
+  # Ubuntu 22.04), GCC 13 on Ubuntu 24.04 (glibc 2.39).
+  linux:
+    name: Linux package (GCC ${{ matrix.gcc }}, C++${{ matrix.std }})
+    needs: java-native
+    runs-on: ubuntu-22.04
+    container: ${{ matrix.image }}
     permissions:
       contents: write
     strategy:
       fail-fast: false
       matrix:
+        gcc: ['8', '11', '13']
+        std: ['17', '11']
         include:
-          # ── Linux ──────────────────────────────────────────────────────
-          - os: ubuntu-22.04
-            name: linux-x86_64-graalvm
-            graalvm: ON
-            jni: OFF
-            build_java: ON
-            build_native: ON
-          - os: ubuntu-22.04
-            name: linux-x86_64-jni
-            graalvm: OFF
-            jni: ON
-            build_java: OFF
-            build_native: OFF
-          - os: ubuntu-22.04
-            name: linux-x86_64-full
-            graalvm: ON
-            jni: ON
-            build_java: ON
-            build_native: ON
-          # ── macOS ──────────────────────────────────────────────────────
-          - os: macos-latest
-            name: macos-graalvm
-            graalvm: ON
-            jni: OFF
-            build_java: ON
-            build_native: ON
-          - os: macos-latest
-            name: macos-jni
-            graalvm: OFF
-            jni: ON
-            build_java: OFF
-            build_native: OFF
-          - os: macos-latest
-            name: macos-full
-            graalvm: ON
-            jni: ON
-            build_java: ON
-            build_native: ON
-          # ── Windows (JNI only) ─────────────────────────────────────────
-          - os: windows-latest
-            name: windows-x86_64-jni
-            graalvm: OFF
-            jni: ON
-            build_java: OFF
-            build_native: OFF
+          - gcc: '8'
+            image: rockylinux:8
+          - gcc: '11'
+            image: rockylinux:9
+          - gcc: '13'
+            image: ubuntu:24.04
+    env:
+      PACKAGE: iidm-bridge-${{ github.event.release.tag_name || 'dev' }}-linux-x86_64-gcc${{ matrix.gcc }}-cxx${{ matrix.std }}
 
     steps:
+      - name: Install the build tools (Rocky Linux)
+        if: startsWith(matrix.image, 'rockylinux')
+        run: dnf install -y gcc-c++ make cmake boost-devel git tar gzip findutils
+
+      - name: Install the build tools (Ubuntu)
+        if: startsWith(matrix.image, 'ubuntu')
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq g++ make cmake libboost-dev git ca-certificates
+
       - name: Checkout
-        uses: actions/checkout@v4
-
-      # GraalVM CE provides JDK + native-image when the GraalVM backend is
-      # compiled in or when a native image must be built.
-      - name: Set up GraalVM CE 21 with native-image
-        if: matrix.graalvm == 'ON'
-        uses: graalvm/setup-graalvm@v1
-        with:
-          java-version: '21'
-          distribution: 'graalvm-community'
-          native-image: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Set up JDK 21 (JNI-only builds)
-        if: matrix.graalvm == 'OFF'
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-
-      - name: Install C++ build tools (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y cmake ninja-build
-
-      - name: Install C++ build tools (macOS)
-        if: runner.os == 'macOS'
-        run: brew install cmake ninja
-
-      - name: Set up MSVC environment (Windows)
-        if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@v1
-
-      - name: Configure CMake
-        shell: bash
-        run: |
-          cmake -S . -B build \
-            -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DIIDM_BRIDGE_ENABLE_GRAALVM=${{ matrix.graalvm }} \
-            -DIIDM_BRIDGE_ENABLE_JNI=${{ matrix.jni }} \
-            -DIIDM_BRIDGE_BUILD_TESTS=OFF \
-            -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF \
-            -DIIDM_BRIDGE_BUILD_JAVA=${{ matrix.build_java }} \
-            -DIIDM_BRIDGE_BUILD_NATIVE=${{ matrix.build_native }} \
-            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install"
-
-      - name: Build
-        run: cmake --build build --parallel
-
-      - name: Install
-        run: cmake --install build
-
-      # Bundle libjvm so consumers can run the JNI backend without a
-      # separate JDK installation.
-      - name: Bundle JVM library (Linux JNI variants)
-        if: matrix.jni == 'ON' && runner.os == 'Linux'
-        shell: bash
-        run: |
-          # Standard Temurin / GraalVM CE layout on Linux
-          JVM_LIB="$JAVA_HOME/lib/server/libjvm.so"
-          if [ ! -f "$JVM_LIB" ]; then
-            JVM_LIB=$(find "$JAVA_HOME" -name "libjvm.so" -type f | head -1)
-          fi
-          echo "Bundling $JVM_LIB"
-          cp "$JVM_LIB" "${{ github.workspace }}/install/lib/"
-
-      - name: Bundle JVM library (macOS JNI variants)
-        if: matrix.jni == 'ON' && runner.os == 'macOS'
-        shell: bash
-        run: |
-          # Standard Temurin / GraalVM CE layout on macOS
-          JVM_LIB="$JAVA_HOME/lib/server/libjvm.dylib"
-          if [ ! -f "$JVM_LIB" ]; then
-            JVM_LIB=$(find "$JAVA_HOME" -name "libjvm.dylib" -type f | head -1)
-          fi
-          echo "Bundling $JVM_LIB"
-          cp "$JVM_LIB" "${{ github.workspace }}/install/lib/"
-
-      - name: Bundle JVM library (Windows JNI variant)
-        if: matrix.jni == 'ON' && runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $jvmDll = Get-ChildItem -Path "$env:JAVA_HOME" -Filter "jvm.dll" -Recurse | Select-Object -First 1
-          Write-Host "Bundling $($jvmDll.FullName)"
-          Copy-Item $jvmDll.FullName "${{ github.workspace }}\install\lib\"
-
-      - name: Package (Linux / macOS)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          PKG="iidm-bridge-${{ github.ref_name }}-${{ matrix.name }}.tar.gz"
-          tar -czf "$PKG" -C "${{ github.workspace }}/install" .
-          echo "PKG_FILE=$PKG" >> "$GITHUB_ENV"
-
-      - name: Package (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $pkg = "iidm-bridge-${{ github.ref_name }}-${{ matrix.name }}.zip"
-          Compress-Archive -Path "${{ github.workspace }}\install\*" -DestinationPath $pkg
-          "PKG_FILE=$pkg" | Out-File -FilePath $env:GITHUB_ENV -Append
-
-      - name: Upload to GitHub release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ${{ env.PKG_FILE }}
-
-      # Short-lived artifact for the smoke-test job (GraalVM variants only).
-      - name: Upload workflow artifact (for smoke test)
-        if: matrix.name == 'linux-x86_64-graalvm'
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-pkg-smoke
-          path: ${{ env.PKG_FILE }}
-          retention-days: 1
-
-  # ── Smoke test: find_package + GraalVM backend end-to-end ────────────────
-  #
-  # Uses the self-contained linux-x86_64-graalvm package to verify that a
-  # consumer CMake project can find_package(IidmBridge), link, load
-  # IEEE14.xiidm through the bundled GraalVM native image, and read the
-  # targetP of generator _GEN____3_SM.
-  smoke-test:
-    name: Smoke test (linux-x86_64-graalvm)
-    needs: release-cpp
-    runs-on: ubuntu-22.04
-
-    steps:
-      - name: Checkout (for IEEE14.xiidm)
         uses: actions/checkout@v4
 
       - name: Set up JDK 21
@@ -241,69 +133,209 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: Install CMake and Ninja
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y cmake ninja-build
-
-      - name: Download release package
+      - name: Download the jar and the native image
         uses: actions/download-artifact@v4
         with:
-          name: release-pkg-smoke
-          path: pkg
+          name: java-native
+          path: prebuilt
 
-      - name: Extract release package
+      - name: Build
         run: |
-          mkdir -p "${{ github.workspace }}/iidmbridge"
-          tar -xzf pkg/*.tar.gz -C "${{ github.workspace }}/iidmbridge"
+          g++ --version | head -1
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=${{ matrix.std }} \
+                -DIIDM_BRIDGE_BUILD_JAVA=OFF -DIIDM_BRIDGE_BUILD_NATIVE=OFF \
+                -DIIDM_BRIDGE_BUILD_TESTS=ON -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF \
+                -DCMAKE_INSTALL_PREFIX="$PWD/$PACKAGE" -DCMAKE_INSTALL_LIBDIR=lib
+          cmake --build build --parallel 4
 
-      - name: Write consumer project
+      - name: Test on both backends
+        run: |
+          export IIDM_BRIDGE_JAR="$PWD/prebuilt/$JAR"
+          export IIDM_BRIDGE_GRAALVM_LIB="$PWD/prebuilt/libpowsybl-iidm-native.so"
+          export IIDM_IEEE14_NETWORK_PATH="$PWD/examples/IEEE14.xiidm"
+          ctest --test-dir build --output-on-failure --parallel 4
+
+      - name: Package
+        run: |
+          cmake --install build
+          cp prebuilt/libpowsybl-iidm-native.so "$PACKAGE/lib/"
+          mkdir -p "$PACKAGE/share/iidm-bridge"
+          cp "prebuilt/$JAR" LICENSE.txt "$PACKAGE/share/iidm-bridge/"
+          tar -czf "$PACKAGE.tar.gz" "$PACKAGE"
+
+      - name: Smoke test the package
+        run: |
+          mkdir smoke
+          tar -xzf "$PACKAGE.tar.gz" -C smoke
+          cmake -S .github/release-smoke-test -B smoke/build -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_CXX_STANDARD=${{ matrix.std }} -DCMAKE_PREFIX_PATH="$PWD/smoke/$PACKAGE"
+          cmake --build smoke/build
+          LD_LIBRARY_PATH="$PWD/smoke/$PACKAGE/lib" ./smoke/build/smoke_test examples/IEEE14.xiidm \
+              "$PWD/smoke/$PACKAGE/share/iidm-bridge/$JAR"
+
+      - name: Attach the package to the release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.PACKAGE }}.tar.gz
+
+      - name: Upload the package
+        if: github.event_name != 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PACKAGE }}
+          path: ${{ env.PACKAGE }}.tar.gz
+          retention-days: 7
+
+  # ── macOS packages ─────────────────────────────────────────────────────────
+  macos:
+    name: macOS package (C++${{ matrix.std }})
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        std: ['17', '11']
+    env:
+      PACKAGE: iidm-bridge-${{ github.event.release.tag_name || 'dev' }}-macos-arm64-cxx${{ matrix.std }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up GraalVM CE 21 with native-image
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm-community'
+          components: 'native-image'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install the build tools
+        run: brew install cmake ninja boost
+
+      - name: Build the jar, the native image and the library
+        run: |
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=${{ matrix.std }} \
+                -DIIDM_BRIDGE_BUILD_TESTS=ON -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF \
+                -DCMAKE_INSTALL_PREFIX="$PWD/$PACKAGE" -DCMAKE_INSTALL_LIBDIR=lib
+          cmake --build build --parallel
+
+      - name: Test on both backends
+        run: |
+          export DYLD_LIBRARY_PATH="$PWD/build/graalvm-native"
+          export IIDM_BRIDGE_JAR="$PWD/java/target/$JAR"
+          export IIDM_BRIDGE_GRAALVM_LIB="$PWD/build/graalvm-native/libpowsybl-iidm-native.dylib"
+          export IIDM_IEEE14_NETWORK_PATH="$PWD/examples/IEEE14.xiidm"
+          ctest --test-dir build --output-on-failure --parallel 4
+
+      - name: Package
+        run: |
+          cmake --install build
+          cp LICENSE.txt "$PACKAGE/share/iidm-bridge/"
+          tar -czf "$PACKAGE.tar.gz" "$PACKAGE"
+
+      - name: Smoke test the package
+        run: |
+          mkdir smoke
+          tar -xzf "$PACKAGE.tar.gz" -C smoke
+          cmake -S .github/release-smoke-test -B smoke/build -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_CXX_STANDARD=${{ matrix.std }} -DCMAKE_PREFIX_PATH="$PWD/smoke/$PACKAGE"
+          cmake --build smoke/build
+          export DYLD_LIBRARY_PATH="$PWD/smoke/$PACKAGE/lib"
+          ./smoke/build/smoke_test examples/IEEE14.xiidm "$PWD/smoke/$PACKAGE/share/iidm-bridge/$JAR"
+
+      - name: Attach the package to the release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.PACKAGE }}.tar.gz
+
+      - name: Upload the package
+        if: github.event_name != 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PACKAGE }}
+          path: ${{ env.PACKAGE }}.tar.gz
+          retention-days: 7
+
+  # ── Windows package ────────────────────────────────────────────────────────
+  windows:
+    name: Windows package (C++17)
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    env:
+      PACKAGE: iidm-bridge-${{ github.event.release.tag_name || 'dev' }}-windows-x86_64-cxx17
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up GraalVM CE 21 with native-image
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '21'
+          distribution: 'graalvm-community'
+          components: 'native-image'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # The tests and the smoke test start a JVM: jvm.dll must be on the PATH
+      - name: Add the JVM server directory to the PATH
+        shell: bash
+        run: echo "$JAVA_HOME/bin/server" >> "$GITHUB_PATH"
+
+      # cl.exe and link.exe for CMake, and for native-image
+      - name: Set up the MSVC environment
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build the jar, the native image and the library
         shell: bash
         run: |
-          mkdir -p consumer
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+                -DIIDM_BRIDGE_BUILD_TESTS=ON -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF \
+                -DCMAKE_INSTALL_PREFIX="$(cygpath -m "$PWD/$PACKAGE")"
+          cmake --build build --parallel
 
-          cat > consumer/CMakeLists.txt << 'EOF'
-          cmake_minimum_required(VERSION 3.20)
-          project(smoke_test CXX)
-          set(CMAKE_CXX_STANDARD 17)
-          find_package(IidmBridge REQUIRED)
-          add_executable(smoke_test main.cpp)
-          target_link_libraries(smoke_test PRIVATE IidmBridge::iidmbridge)
-          EOF
-
-          cat > consumer/main.cpp << 'EOF'
-          #include <iidm/iidm.h>
-          #include <iostream>
-
-          int main(int argc, char* argv[]) {
-              if (argc < 2) {
-                  std::cerr << "Usage: smoke_test <path-to-xiidm>\n";
-                  return 1;
-              }
-              iidm::NetworkLoadOptions opts;
-              opts.mode = iidm::BackendMode::GRAALVM;
-              auto network = iidm::NetworkFactory::load(argv[1], opts);
-              auto gen = network.getGenerator("_GEN____3_SM");
-              if (!gen.has_value()) {
-                  std::cerr << "Generator _GEN____3_SM not found\n";
-                  return 2;
-              }
-              std::cout << "targetP(_GEN____3_SM) = " << gen->getTargetP() << " MW\n";
-              return 0;
-          }
-          EOF
-
-      - name: Configure consumer project
+      - name: Test on both backends
+        shell: bash
         run: |
-          cmake -S consumer -B consumer/build \
-            -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_PREFIX_PATH="${{ github.workspace }}/iidmbridge"
+          export PATH="$PWD/build/graalvm-native:$PATH"
+          export IIDM_BRIDGE_JAR="$(cygpath -w "$PWD/java/target/$JAR")"
+          export IIDM_BRIDGE_GRAALVM_LIB="$(cygpath -w "$PWD/build/graalvm-native/libpowsybl-iidm-native.dll")"
+          export IIDM_IEEE14_NETWORK_PATH="$(cygpath -w "$PWD/examples/IEEE14.xiidm")"
+          ctest --test-dir build --output-on-failure --parallel 4
 
-      - name: Build consumer project
-        run: cmake --build consumer/build --parallel
+      - name: Package
+        shell: bash
+        run: |
+          cmake --install build
+          cp LICENSE.txt "$PACKAGE/share/iidm-bridge/"
+          7z a -tzip "$PACKAGE.zip" "$PACKAGE" > /dev/null
 
-      - name: Run smoke test
-        env:
-          LD_LIBRARY_PATH: ${{ github.workspace }}/iidmbridge/lib
-        run: ./consumer/build/smoke_test examples/IEEE14.xiidm
+      - name: Smoke test the package
+        shell: bash
+        run: |
+          mkdir smoke
+          7z x -osmoke "$PACKAGE.zip" > /dev/null
+          cmake -S .github/release-smoke-test -B smoke/build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_PREFIX_PATH="$(cygpath -w "$PWD/smoke/$PACKAGE")"
+          cmake --build smoke/build
+          export PATH="$PWD/smoke/$PACKAGE/bin:$PATH"
+          ./smoke/build/smoke_test.exe examples/IEEE14.xiidm \
+              "$(cygpath -w "$PWD/smoke/$PACKAGE/share/iidm-bridge/$JAR")"
+
+      - name: Attach the package to the release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.PACKAGE }}.zip
+
+      - name: Upload the package
+        if: github.event_name != 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PACKAGE }}
+          path: ${{ env.PACKAGE }}.zip
+          retention-days: 7

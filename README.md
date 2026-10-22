@@ -74,7 +74,7 @@ Add `-DIIDM_BRIDGE_BUILD_TESTS=ON` to either for the [tests](#tests). The main o
 ### Use it from another CMake project
 
 `cmake --install build --prefix /opt/iidm-bridge` installs the headers, the library, the native
-image and a CMake package. In your `CMakeLists.txt`:
+image, the jar (in `share/iidm-bridge`) and a CMake package. In your `CMakeLists.txt`:
 
 ```cmake
 find_package(IidmBridge 1.0 REQUIRED)
@@ -86,7 +86,26 @@ and configure your project with `-DCMAKE_PREFIX_PATH=/opt/iidm-bridge`. Notes:
 - The C++ standard must match: a library built in C++17 needs C++17 code, one built in C++11/14
   takes any (a mismatch fails to compile). Below C++17, the package finds Boost
   (`-DBOOST_ROOT=...` if CMake does not find it).
-- The jar is not installed: take it from `java/target`.
+- At run time, the GraalVM backend loads the native image by its name from the library path
+  (`LD_LIBRARY_PATH=/opt/iidm-bridge/lib`; `DYLD_LIBRARY_PATH` on macOS; on Windows, `PATH` with
+  its `bin`), else from `IIDM_BRIDGE_GRAALVM_LIB`.
+
+### Released packages
+
+Each [release](https://github.com/gautierbureau/iidm4cpp/releases) has the jar and full packages:
+the library with both backends, its headers and CMake package, the native image and the jar.
+Extract one, and use it as an installed library (above):
+
+| Package | Built with | For |
+|---|---|---|
+| `linux-x86_64-gcc8-cxx17`, `linux-x86_64-gcc8-cxx11` | GCC 8 on Rocky Linux 8 | glibc 2.28 or later: RHEL 8, Debian 10, Ubuntu 20.04 |
+| `linux-x86_64-gcc11-cxx17`, `linux-x86_64-gcc11-cxx11` | GCC 11 on Rocky Linux 9 | glibc 2.34 or later: RHEL 9, Debian 12, Ubuntu 22.04 |
+| `linux-x86_64-gcc13-cxx17`, `linux-x86_64-gcc13-cxx11` | GCC 13 on Ubuntu 24.04 | glibc 2.39 or later: Ubuntu 24.04 |
+| `macos-arm64-cxx17`, `macos-arm64-cxx11` | Apple Clang on the latest macOS | macOS on Apple silicon |
+| `windows-x86_64-cxx17` | MSVC | Windows x64 |
+
+A `cxx17` package is for C++17 code, a `cxx11` one for C++11 and C++14 code, which needs the
+Boost headers (`iidm::optional` is `boost::optional`).
 
 ## Usage
 
