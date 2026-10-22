@@ -584,3 +584,46 @@ jobs:
 
       - name: Run unit tests
         run: ctest --test-dir build --output-on-failure --parallel 4
+
+  # ── Sanitizers: AddressSanitizer and UndefinedBehaviorSanitizer ──────────────
+  #
+  # The library and the tests on the mock backend, with no backend: a JVM or a
+  # GraalVM native image, which manage memory and signals their own way, does not
+  # run under AddressSanitizer. The mock tests cover the wrappers and the handle
+  # bookkeeping, where a handle released twice or never, or an object outliving its
+  # backend, usually corrupts memory or leaks without crashing. Here, it stops the
+  # test that causes it, with a report. Debug keeps the library's assertions.
+  sanitizers:
+    name: C++ sanitizers (ASan + UBSan, mock backend)
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install CMake and Ninja
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y cmake ninja-build
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DIIDM_BRIDGE_ENABLE_SANITIZERS=ON \
+            -DIIDM_BRIDGE_ENABLE_GRAALVM=OFF \
+            -DIIDM_BRIDGE_ENABLE_JNI=OFF \
+            -DIIDM_BRIDGE_BUILD_TESTS=ON \
+            -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF \
+            -DIIDM_BRIDGE_BUILD_JAVA=OFF \
+            -DIIDM_BRIDGE_BUILD_NATIVE=OFF
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Run unit tests
+        env:
+          ASAN_OPTIONS: detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1
+          UBSAN_OPTIONS: print_stacktrace=1
+        run: ctest --test-dir build --output-on-failure --parallel 4

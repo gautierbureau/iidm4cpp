@@ -36,6 +36,21 @@ option(IIDM_BRIDGE_BUILD_JAVA      "Build the Java fat-JAR via Maven" ON)
 option(IIDM_BRIDGE_BUILD_NATIVE    "Build the GraalVM native shared image via native-image" ON)
 option(IIDM_BRIDGE_DOWNLOAD_GRAALVM "Download GraalVM CE for the native image when no native-image is installed" ON)
 option(IIDM_BRIDGE_ENABLE_COVERAGE "Instrument library and tests for gcov/lcov coverage (GCC/Clang only)" OFF)
+option(IIDM_BRIDGE_ENABLE_SANITIZERS "Build every target with AddressSanitizer and UndefinedBehaviorSanitizer (GCC/Clang only)" OFF)
+
+# ── Sanitizers ───────────────────────────────────────────────────────────────
+# Every target, GoogleTest included: an instrumented library needs instrumented
+# executables. Any error stops the process with a report, so the test fails.
+# For the tests on the mock backend: a JVM or a GraalVM native image, which
+# manage memory and signals their own way, does not run under AddressSanitizer.
+if(IIDM_BRIDGE_ENABLE_SANITIZERS)
+    if(NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        message(WARNING "Sanitizers require GCC or Clang; IIDM_BRIDGE_ENABLE_SANITIZERS ignored.")
+    else()
+        add_compile_options(-fsanitize=address,undefined -fno-sanitize-recover=all -fno-omit-frame-pointer)
+        add_link_options(-fsanitize=address,undefined)
+    endif()
+endif()
 
 # ── JNI ──────────────────────────────────────────────────────────────────────
 if(IIDM_BRIDGE_ENABLE_JNI)

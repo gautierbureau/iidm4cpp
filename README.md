@@ -68,6 +68,7 @@ Add `-DIIDM_BRIDGE_BUILD_TESTS=ON` to either for the [tests](#tests). The main o
 | `IIDM_BRIDGE_DOWNLOAD_GRAALVM` | `ON` | Downloads GraalVM CE for `native-image` when none is installed |
 | `IIDM_BRIDGE_BUILD_TESTS` | `OFF` | The tests (GoogleTest 1.10 or later, downloaded if not installed) |
 | `IIDM_BRIDGE_BUILD_EXAMPLES` | `ON` | `examples/standalone` and `examples/embedded` |
+| `IIDM_BRIDGE_ENABLE_SANITIZERS` | `OFF` | AddressSanitizer and UndefinedBehaviorSanitizer on every target, for the tests on the mock backend (GCC or Clang) |
 | `IIDM_BRIDGE_ENABLE_COVERAGE` | `OFF` | gcov instrumentation, and a `coverage` target (gcovr) |
 | `CMAKE_CXX_STANDARD` | `17` | `11` or `14` need Boost (`-DBOOST_ROOT=...` if CMake does not find it) |
 

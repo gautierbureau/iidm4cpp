@@ -344,6 +344,7 @@ java -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar:build/java-classes
 | `IIDM_BRIDGE_DOWNLOAD_GRAALVM` | `ON` | For the GraalVM backend's native image, download GraalVM CE when no `native-image` is installed |
 | `IIDM_BRIDGE_BUILD_TESTS` | `OFF` | Build GoogleTest suite |
 | `IIDM_BRIDGE_BUILD_EXAMPLES` | `ON` | Build the example programs |
+| `IIDM_BRIDGE_ENABLE_SANITIZERS` | `OFF` | AddressSanitizer and UndefinedBehaviorSanitizer on every target, for the tests on the mock backend (see [Sanitizers](#sanitizers)) |
 | `IIDM_BRIDGE_ENABLE_COVERAGE` | `OFF` | gcov instrumentation and a `coverage` target |
 | `IIDM_BRIDGE_VERSION` | empty | Version of the library, its CMake package and the jar (passed to Maven as `-Drevision`); empty: the `revision` of `java/pom.xml` |
 
@@ -388,6 +389,24 @@ walks every object of the test networks on both backends in lockstep and fails o
 difference (value, children, related objects, exception type, setter behaviour, saved XIIDM).
 A backend change is not done until it passes.
 
+### Sanitizers
+
+`IIDM_BRIDGE_ENABLE_SANITIZERS=ON` builds every target, GoogleTest included, with AddressSanitizer
+and UndefinedBehaviorSanitizer (GCC or Clang). A memory error, a leak or undefined behaviour stops
+the test that causes it, with a report: a handle released twice or never, or an object that
+outlives its backend, fails where it happens instead of corrupting memory. Build it without
+backends: a JVM or a GraalVM native image, which manage memory and signals their own way, does not
+run under AddressSanitizer. The `sanitizers` CI job runs:
+
+```bash
+cmake -S . -B build-san -G Ninja -DCMAKE_BUILD_TYPE=Debug -DIIDM_BRIDGE_ENABLE_SANITIZERS=ON \
+  -DIIDM_BRIDGE_ENABLE_GRAALVM=OFF -DIIDM_BRIDGE_ENABLE_JNI=OFF -DIIDM_BRIDGE_BUILD_JAVA=OFF \
+  -DIIDM_BRIDGE_BUILD_NATIVE=OFF -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF -DIIDM_BRIDGE_BUILD_TESTS=ON
+cmake --build build-san --parallel
+ASAN_OPTIONS=detect_stack_use_after_return=1:check_initialization_order=1:strict_init_order=1 \
+  UBSAN_OPTIONS=print_stacktrace=1 ctest --test-dir build-san --output-on-failure
+```
+
 ### CI pipeline summary (`.github/workflows/ci.yml`)
 
 | Job | What it does |
@@ -398,6 +417,7 @@ A backend change is not done until it passes.
 | `integration` | Downloads native artifacts, runs examples and integration tests against IEEE-14 network |
 | `dynawo` | Self-contained full build inside `dynawo/dynawo-ci:latest` (installs GraalVM CE 21 and Maven from their release archives; builds the jar, the native image and the C++ library) and runs unit and end-to-end tests |
 | `cpp-matrix` | Tests various backend combinations (JNI-only, no backends) on Linux |
+| `sanitizers` | Debug build without backends, with AddressSanitizer and UndefinedBehaviorSanitizer, and the tests on the mock backend (see [Sanitizers](#sanitizers)) |
 
 `.github/workflows/release.yml` builds the release packages when a GitHub release is published
 (and, without a release, when a pull request or a `claude/**` push changes it or the smoke test):
