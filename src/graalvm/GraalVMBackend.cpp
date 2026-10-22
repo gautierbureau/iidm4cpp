@@ -15,6 +15,7 @@
 // ── Platform-specific dynamic library loading ──────────────────────────────
 #ifdef _WIN32
 #  define WIN32_LEAN_AND_MEAN
+#  define NOMINMAX // windows.h would define the macros min and max, which break std::min
 #  include <windows.h>
    static std::string platformDlError() {
        DWORD err = GetLastError();

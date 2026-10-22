@@ -99,7 +99,7 @@ TEST_F(IntegrationTest, SaveNetwork) {
 
     Network net = loadNetwork();
 
-    const std::string outPath = "/tmp/ieee14_roundtrip.xiidm";
+    const std::string outPath = ::testing::TempDir() + "ieee14_roundtrip.xiidm";
     ASSERT_NO_THROW(net.save(outPath));
 
     // Reload and verify identity is preserved
