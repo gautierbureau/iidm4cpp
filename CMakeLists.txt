@@ -389,10 +389,9 @@ if(IIDM_BRIDGE_BUILD_NATIVE)
     else()
         set(_NATIVE_LIB "${_NATIVE_DIR}/libpowsybl-iidm-native.so")
     endif()
-    set(_NATIVE_H "${_NATIVE_DIR}/graal_isolate.h")
 
     add_custom_command(
-        OUTPUT  "${_NATIVE_LIB}" "${_NATIVE_H}"
+        OUTPUT  "${_NATIVE_LIB}"
         COMMAND "${NATIVE_IMAGE_EXECUTABLE}"
                 --shared
                 -cp "${_FAT_JAR}"
@@ -408,7 +407,9 @@ if(IIDM_BRIDGE_BUILD_NATIVE)
         COMMENT "Building GraalVM native image (libpowsybl-iidm-native)"
         VERBATIM
     )
-    add_custom_target(iidmbridge_native DEPENDS "${_NATIVE_LIB}" "${_NATIVE_H}")
+    # The C headers native-image also writes are not outputs: nothing uses them, and on Windows
+    # there is no graal_isolate.h, which would make the native image rebuild every time.
+    add_custom_target(iidmbridge_native DEPENDS "${_NATIVE_LIB}")
     # The JAR's rule is attached to both targets: without this, a parallel Makefile build
     # runs two Maven builds at once, which share java/target and the Maven repository.
     add_dependencies(iidmbridge_native iidmbridge_jar)
