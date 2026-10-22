@@ -13,10 +13,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -27,7 +27,7 @@ jobs:
         run: mvn --batch-mode --no-transfer-progress verify
 
       - name: Upload JAR artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: iidm-bridge-java
           path: java/target/iidm-bridge-java-*.jar
@@ -71,10 +71,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -116,7 +116,7 @@ jobs:
       # link.exe are on PATH when CMake/Ninja run.
       - name: Set up MSVC environment (Windows)
         if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@v1
+        uses: ./.github/actions/msvc-dev-env
 
       - name: Configure CMake
         shell: bash
@@ -137,7 +137,7 @@ jobs:
         run: cmake --build build --parallel
 
       - name: Download JAR artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: iidm-bridge-java
           path: java-artifacts
@@ -149,7 +149,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cpp-test-results-${{ matrix.label }}
           path: build/Testing/
@@ -186,7 +186,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up GraalVM CE 21 with native-image
         if: matrix.graalvm == 'installed'
@@ -199,7 +199,7 @@ jobs:
 
       - name: Set up JDK 21 (CMake downloads GraalVM)
         if: matrix.graalvm == 'download'
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -223,7 +223,7 @@ jobs:
 
       - name: Set up MSVC environment (Windows)
         if: runner.os == 'Windows'
-        uses: ilammy/msvc-dev-cmd@v1
+        uses: ./.github/actions/msvc-dev-env
 
       - name: Configure CMake (GraalVM backend ON, build JAR + native image)
         shell: bash
@@ -263,7 +263,7 @@ jobs:
 
       - name: Upload native image artifacts (Linux only, for integration job)
         if: runner.os == 'Linux'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: iidm-bridge-native
           path: |
@@ -274,7 +274,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: graalvm-test-results-${{ matrix.os }}
           path: build-graalvm/Testing/
@@ -288,10 +288,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -303,7 +303,7 @@ jobs:
           sudo apt-get install -y cmake ninja-build
 
       - name: Download native image artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: iidm-bridge-native
           path: native-artifacts
@@ -387,7 +387,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: integration-test-results
           path: build/Testing/
@@ -408,7 +408,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Java/JNI and GraalVM native-image for iidm-bridge
         run: |
@@ -527,7 +527,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dynawo-test-results
           path: build/Testing/
@@ -550,10 +550,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           java-version: '21'
           distribution: 'temurin'
