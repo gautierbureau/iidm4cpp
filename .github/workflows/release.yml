@@ -11,6 +11,9 @@ name: Release
 #            system compiler is that GCC;
 #   macOS    one per C++ standard, on the latest macOS (arm64);
 #   Windows  C++17 (MSVC has no C++11 mode).
+#
+# A release takes its version from its tag (v1.2.0 or 1.2.0: 1.2.0): the package names, the jar and
+# the CMake package carry it. Otherwise the version is the revision of java/pom.xml.
 on:
   release:
     types: [published]
@@ -25,20 +28,48 @@ on:
       - '.github/release-smoke-test/**'
   workflow_dispatch:
 
-env:
-  JAR: iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar
-
 jobs:
+  version:
+    name: Version
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Version of the release, or of java/pom.xml
+        id: version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = release ]; then
+            version="${TAG#v}"
+          else
+            version=$(sed -n 's:.*<revision>\([^<]*\)</revision>.*:\1:p' java/pom.xml | head -1)
+          fi
+          if ! echo "$version" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$'; then
+            echo "::error::'$version' is not a version: a release tag is vX.Y.Z or X.Y.Z, as v1.2.0 or v1.2.0-rc1"
+            exit 1
+          fi
+          echo "Version: $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
   # ── Jar and Linux native image ─────────────────────────────────────────────
   # Neither depends on the C++ compiler: built once, and put in every Linux package. Built on
   # Rocky Linux 8 (glibc 2.28), the native image loads on every distribution the packages target.
   # No GraalVM installed: CMake downloads it for native-image.
   java-native:
     name: Jar and Linux native image
+    needs: version
     runs-on: ubuntu-22.04
     container: rockylinux:8
     permissions:
       contents: write
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      JAR: iidm-bridge-java-${{ needs.version.outputs.version }}-fat.jar
 
     steps:
       - name: Install the build tools
@@ -60,8 +91,8 @@ jobs:
 
       - name: Build the jar and the native image
         run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DIIDM_BRIDGE_ENABLE_JNI=OFF \
-                -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DIIDM_BRIDGE_VERSION="$VERSION" \
+                -DIIDM_BRIDGE_ENABLE_JNI=OFF -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF
           cmake --build build --target iidmbridge_native
 
       - name: Check that the native image needs glibc 2.28 at most
@@ -93,7 +124,7 @@ jobs:
   # Ubuntu 22.04), GCC 13 on Ubuntu 24.04 (glibc 2.39).
   linux:
     name: Linux package (GCC ${{ matrix.gcc }}, C++${{ matrix.std }})
-    needs: java-native
+    needs: [version, java-native]
     runs-on: ubuntu-22.04
     container: ${{ matrix.image }}
     permissions:
@@ -111,7 +142,9 @@ jobs:
           - gcc: '13'
             image: ubuntu:24.04
     env:
-      PACKAGE: iidm-bridge-${{ github.event.release.tag_name || 'dev' }}-linux-x86_64-gcc${{ matrix.gcc }}-cxx${{ matrix.std }}
+      VERSION: ${{ needs.version.outputs.version }}
+      JAR: iidm-bridge-java-${{ needs.version.outputs.version }}-fat.jar
+      PACKAGE: iidm-bridge-${{ needs.version.outputs.version }}-linux-x86_64-gcc${{ matrix.gcc }}-cxx${{ matrix.std }}
 
     steps:
       - name: Install the build tools (Rocky Linux)
@@ -143,7 +176,7 @@ jobs:
         run: |
           g++ --version | head -1
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=${{ matrix.std }} \
-                -DIIDM_BRIDGE_BUILD_JAVA=OFF -DIIDM_BRIDGE_BUILD_NATIVE=OFF \
+                -DIIDM_BRIDGE_VERSION="$VERSION" -DIIDM_BRIDGE_BUILD_JAVA=OFF -DIIDM_BRIDGE_BUILD_NATIVE=OFF \
                 -DIIDM_BRIDGE_BUILD_TESTS=ON -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF \
                 -DCMAKE_INSTALL_PREFIX="$PWD/$PACKAGE" -DCMAKE_INSTALL_LIBDIR=lib
           cmake --build build --parallel 4
@@ -168,7 +201,8 @@ jobs:
           mkdir smoke
           tar -xzf "$PACKAGE.tar.gz" -C smoke
           cmake -S .github/release-smoke-test -B smoke/build -DCMAKE_BUILD_TYPE=Release \
-                -DCMAKE_CXX_STANDARD=${{ matrix.std }} -DCMAKE_PREFIX_PATH="$PWD/smoke/$PACKAGE"
+                -DCMAKE_CXX_STANDARD=${{ matrix.std }} -DCMAKE_PREFIX_PATH="$PWD/smoke/$PACKAGE" \
+                -DIIDM_BRIDGE_VERSION="${VERSION%%[-+]*}"
           cmake --build smoke/build
           LD_LIBRARY_PATH="$PWD/smoke/$PACKAGE/lib" ./smoke/build/smoke_test examples/IEEE14.xiidm \
               "$PWD/smoke/$PACKAGE/share/iidm-bridge/$JAR"
@@ -190,6 +224,7 @@ jobs:
   # ── macOS packages ─────────────────────────────────────────────────────────
   macos:
     name: macOS package (C++${{ matrix.std }})
+    needs: version
     runs-on: macos-latest
     permissions:
       contents: write
@@ -198,7 +233,9 @@ jobs:
       matrix:
         std: ['17', '11']
     env:
-      PACKAGE: iidm-bridge-${{ github.event.release.tag_name || 'dev' }}-macos-arm64-cxx${{ matrix.std }}
+      VERSION: ${{ needs.version.outputs.version }}
+      JAR: iidm-bridge-java-${{ needs.version.outputs.version }}-fat.jar
+      PACKAGE: iidm-bridge-${{ needs.version.outputs.version }}-macos-arm64-cxx${{ matrix.std }}
 
     steps:
       - name: Checkout
@@ -218,7 +255,7 @@ jobs:
       - name: Build the jar, the native image and the library
         run: |
           cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=${{ matrix.std }} \
-                -DIIDM_BRIDGE_BUILD_TESTS=ON -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF \
+                -DIIDM_BRIDGE_VERSION="$VERSION" -DIIDM_BRIDGE_BUILD_TESTS=ON -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF \
                 -DCMAKE_INSTALL_PREFIX="$PWD/$PACKAGE" -DCMAKE_INSTALL_LIBDIR=lib
           cmake --build build --parallel
 
@@ -241,7 +278,8 @@ jobs:
           mkdir smoke
           tar -xzf "$PACKAGE.tar.gz" -C smoke
           cmake -S .github/release-smoke-test -B smoke/build -DCMAKE_BUILD_TYPE=Release \
-                -DCMAKE_CXX_STANDARD=${{ matrix.std }} -DCMAKE_PREFIX_PATH="$PWD/smoke/$PACKAGE"
+                -DCMAKE_CXX_STANDARD=${{ matrix.std }} -DCMAKE_PREFIX_PATH="$PWD/smoke/$PACKAGE" \
+                -DIIDM_BRIDGE_VERSION="${VERSION%%[-+]*}"
           cmake --build smoke/build
           export DYLD_LIBRARY_PATH="$PWD/smoke/$PACKAGE/lib"
           ./smoke/build/smoke_test examples/IEEE14.xiidm "$PWD/smoke/$PACKAGE/share/iidm-bridge/$JAR"
@@ -263,11 +301,14 @@ jobs:
   # ── Windows package ────────────────────────────────────────────────────────
   windows:
     name: Windows package (C++17)
+    needs: version
     runs-on: windows-latest
     permissions:
       contents: write
     env:
-      PACKAGE: iidm-bridge-${{ github.event.release.tag_name || 'dev' }}-windows-x86_64-cxx17
+      VERSION: ${{ needs.version.outputs.version }}
+      JAR: iidm-bridge-java-${{ needs.version.outputs.version }}-fat.jar
+      PACKAGE: iidm-bridge-${{ needs.version.outputs.version }}-windows-x86_64-cxx17
 
     steps:
       - name: Checkout
@@ -293,7 +334,7 @@ jobs:
       - name: Build the jar, the native image and the library
         shell: bash
         run: |
-          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DIIDM_BRIDGE_VERSION="$VERSION" \
                 -DIIDM_BRIDGE_BUILD_TESTS=ON -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF \
                 -DCMAKE_INSTALL_PREFIX="$(cygpath -m "$PWD/$PACKAGE")"
           cmake --build build --parallel
@@ -321,7 +362,8 @@ jobs:
           7z x -osmoke "$PACKAGE.zip" > /dev/null
           # The consumer compiles in the package's standard: MSVC's default is C++14
           cmake -S .github/release-smoke-test -B smoke/build -G Ninja -DCMAKE_BUILD_TYPE=Release \
-                -DCMAKE_CXX_STANDARD=17 -DCMAKE_PREFIX_PATH="$(cygpath -w "$PWD/smoke/$PACKAGE")"
+                -DCMAKE_CXX_STANDARD=17 -DCMAKE_PREFIX_PATH="$(cygpath -w "$PWD/smoke/$PACKAGE")" \
+                -DIIDM_BRIDGE_VERSION="${VERSION%%[-+]*}"
           cmake --build smoke/build
           export PATH="$PWD/smoke/$PACKAGE/bin:$PATH"
           ./smoke/build/smoke_test.exe examples/IEEE14.xiidm \

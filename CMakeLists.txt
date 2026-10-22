@@ -1,5 +1,23 @@
 cmake_minimum_required(VERSION 3.14.5)
-project(iidm-bridge-cpp VERSION 1.0.0 LANGUAGES CXX)
+
+# The version of the library, its CMake package and the jar: the revision of java/pom.xml (the
+# development version), unless IIDM_BRIDGE_VERSION sets it (a release, from its tag). The project
+# version is its X.Y.Z: CMake versions are numeric.
+set(IIDM_BRIDGE_VERSION "" CACHE STRING
+    "Version of the library and the jar; empty: the revision of java/pom.xml")
+if(IIDM_BRIDGE_VERSION)
+    set(_VERSION "${IIDM_BRIDGE_VERSION}")
+else()
+    file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/java/pom.xml" _VERSION
+         REGEX "<revision>[^<]+</revision>" LIMIT_COUNT 1)
+    string(REGEX REPLACE ".*<revision>([^<]+)</revision>.*" "\\1" _VERSION "${_VERSION}")
+endif()
+string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" _PROJECT_VERSION "${_VERSION}")
+if(NOT _PROJECT_VERSION)
+    message(FATAL_ERROR "The version must start with X.Y.Z, as 1.2.0 or 1.2.0-rc1: '${_VERSION}'")
+endif()
+project(iidm-bridge-cpp VERSION ${_PROJECT_VERSION} LANGUAGES CXX)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS java/pom.xml)
 
 # Default to C++17.  Override with -DCMAKE_CXX_STANDARD=14 (or 11) when
 # building for a consumer that cannot use C++17 (e.g. Dynawo via
@@ -325,18 +343,14 @@ if(IIDM_BRIDGE_BUILD_JAVA OR IIDM_BRIDGE_BUILD_NATIVE)
             "It is required when IIDM_BRIDGE_BUILD_JAVA or IIDM_BRIDGE_BUILD_NATIVE is ON.")
     endif()
 
-    # Override IIDM_BRIDGE_JAVA_VERSION if the <version> in java/pom.xml changes.
-    set(IIDM_BRIDGE_JAVA_VERSION "1.0.0-SNAPSHOT" CACHE STRING
-        "Java module version; must match the <version> tag in java/pom.xml")
-    set(_FAT_JAR
-        "${CMAKE_SOURCE_DIR}/java/target/iidm-bridge-java-${IIDM_BRIDGE_JAVA_VERSION}-fat.jar")
+    set(_FAT_JAR "${CMAKE_SOURCE_DIR}/java/target/iidm-bridge-java-${_VERSION}-fat.jar")
 
     # Rebuild the JAR (and the native image built from it) whenever the Java sources, the
     # Maven build or the shared property codes change.
     file(GLOB_RECURSE _JAVA_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/java/src/main/*.java")
     add_custom_command(
         OUTPUT  "${_FAT_JAR}"
-        COMMAND "${MAVEN_EXECUTABLE}" --batch-mode package -DskipTests
+        COMMAND "${MAVEN_EXECUTABLE}" --batch-mode package -DskipTests "-Drevision=${_VERSION}"
         DEPENDS ${_JAVA_SOURCES}
                 "${CMAKE_SOURCE_DIR}/java/pom.xml"
                 "${CMAKE_SOURCE_DIR}/include/iidm/PropertyCodes.def"

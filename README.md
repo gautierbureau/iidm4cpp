@@ -93,8 +93,11 @@ and configure your project with `-DCMAKE_PREFIX_PATH=/opt/iidm-bridge`. Notes:
 ### Released packages
 
 Each [release](https://github.com/gautierbureau/iidm4cpp/releases) has the jar and full packages:
-the library with both backends, its headers and CMake package, the native image and the jar.
-Extract one, and use it as an installed library (above):
+the library with both backends, its headers and CMake package, the native image and the jar. A
+release's version is its tag, `1.2.0` for `v1.2.0`: in the file names
+(`iidm-bridge-1.2.0-linux-x86_64-gcc8-cxx17.tar.gz`, `iidm-bridge-java-1.2.0-fat.jar`) and in the
+CMake package (`find_package(IidmBridge 1.2)`). Extract one, and use it as an installed library
+(above):
 
 | Package | Built with | For |
 |---|---|---|
