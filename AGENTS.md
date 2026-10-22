@@ -345,6 +345,7 @@ java -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar:build/java-classes
 | `IIDM_BRIDGE_BUILD_TESTS` | `OFF` | Build GoogleTest suite |
 | `IIDM_BRIDGE_BUILD_EXAMPLES` | `ON` | Build the example programs |
 | `IIDM_BRIDGE_ENABLE_COVERAGE` | `OFF` | gcov instrumentation and a `coverage` target |
+| `IIDM_BRIDGE_VERSION` | empty | Version of the library, its CMake package and the jar (passed to Maven as `-Drevision`); empty: the `revision` of `java/pom.xml` |
 
 ### GraalVM backend build
 
@@ -404,6 +405,12 @@ the jar and the Linux native image once on Rocky Linux 8 (glibc 2.28), then one 
 GCC version (8 on Rocky Linux 8, 11 on Rocky Linux 9, 13 on Ubuntu 24.04) and C++ standard (17,
 11), one per C++ standard on macOS, and a C++17 one on Windows. Each job runs the tests on both
 backends, and builds `.github/release-smoke-test` against the extracted package.
+
+The version is written once, as the `revision` of `java/pom.xml`: the development version, which
+CMake reads. A release takes its version from its tag (`v1.2.0` or `1.2.0`: `1.2.0`) and passes it
+as `IIDM_BRIDGE_VERSION`: the package names, the jar and the CMake package carry it, and the smoke
+test requires that exact version from `find_package`. Releasing needs no version change in the
+sources.
 
 The `dynawo` image is Fedora 29: GCC 8.3, CMake 3.14 (no `ctest --test-dir`), Maven 3.5.4,
 GoogleTest 1.8.1 (no `GTEST_SKIP`, so the build fetches a newer one) and Unix Makefiles. Build
