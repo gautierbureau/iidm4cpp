@@ -1,8 +1,8 @@
 name: Release
 
 # Publishing a GitHub release builds the packages and attaches them to it. A pull request or a
-# push to a claude/** branch that changes this workflow, or a manual run, builds them as workflow
-# artifacts instead, without a release.
+# push to a claude/** branch that changes this workflow or the smoke test, or a manual run, builds
+# them as workflow artifacts instead, without a release.
 #
 # Every package is full: the library with both backends, its headers and CMake package, the
 # GraalVM native image and the jar.
