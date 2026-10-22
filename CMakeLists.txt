@@ -206,8 +206,8 @@ target_compile_definitions(iidmbridge PRIVATE
 # Forcing the C++ standard on consumers via compile_features is too invasive:
 # it can break third-party headers in the consumer's link graph that use
 # features removed in C++17 (e.g. std::auto_ptr in libxml).
-# Instead, optional.hpp raises a clear #error when a standard mismatch is
-# detected, directing the user to rebuild iidmbridge with the right standard.
+# Instead, optional.hpp raises an #error when a standard mismatch is detected,
+# telling the consumer to compile in C++17 or to use an iidmbridge built in C++11/14.
 if(CMAKE_CXX_STANDARD LESS 17)
     target_compile_definitions(iidmbridge PUBLIC IIDM_BRIDGE_USE_BOOST_OPTIONAL=1)
 else()

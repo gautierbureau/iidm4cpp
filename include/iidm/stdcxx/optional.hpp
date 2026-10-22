@@ -13,19 +13,22 @@
 //           boost::optional store the bool flag and the value at opposite ends
 //           of their 16-byte layout; reading the wrong offset yields garbage.
 //
-// When a mismatch is detected a clear #error is raised, directing the user to
-// rebuild iidmbridge with the matching -DCMAKE_CXX_STANDARD.
+// When a mismatch is detected, an #error says how to fix it: compile the code in
+// C++17, or use an iidmbridge built in C++11/14 (a cxx11 release package, or a
+// build with -DCMAKE_CXX_STANDARD=11).
 
 #if defined(IIDM_BRIDGE_USE_STD_OPTIONAL)
 
 // Library compiled with C++17 → std::optional ABI.
 // Verify the consumer is also in C++17 mode; if not, the mangled symbols and
 // the in-memory layout will disagree, causing linker errors or crashes.
+// The message is plain text with unindented continuation lines, which compilers
+// print as one line, without quotes or runs of spaces.
 #  if !(__cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L))
-#    error "iidmbridge was compiled with C++17 (std::optional ABI) but your " \
-           "consumer is in C++11/14 mode. Rebuild iidmbridge with " \
-           "-DCMAKE_CXX_STANDARD=11 (or =14) and Boost available so the " \
-           "library exports boost::optional symbols that match your consumer."
+#    error iidmbridge was built in C++17 (iidm::optional is std::optional), but this code is \
+compiled in C++11 or C++14. Compile it in C++17 (-DCMAKE_CXX_STANDARD=17), or use an iidmbridge \
+built in C++11 or C++14 (iidm::optional is boost::optional): a cxx11 release package, or a build \
+with -DCMAKE_CXX_STANDARD=11 and Boost.
 #  endif
 #  include <optional>
 namespace iidm {
