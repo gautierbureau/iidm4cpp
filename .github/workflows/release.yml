@@ -319,8 +319,9 @@ jobs:
         run: |
           mkdir smoke
           7z x -osmoke "$PACKAGE.zip" > /dev/null
+          # The consumer compiles in the package's standard: MSVC's default is C++14
           cmake -S .github/release-smoke-test -B smoke/build -G Ninja -DCMAKE_BUILD_TYPE=Release \
-                -DCMAKE_PREFIX_PATH="$(cygpath -w "$PWD/smoke/$PACKAGE")"
+                -DCMAKE_CXX_STANDARD=17 -DCMAKE_PREFIX_PATH="$(cygpath -w "$PWD/smoke/$PACKAGE")"
           cmake --build smoke/build
           export PATH="$PWD/smoke/$PACKAGE/bin:$PATH"
           ./smoke/build/smoke_test.exe examples/IEEE14.xiidm \
