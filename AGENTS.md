@@ -396,7 +396,7 @@ A backend change is not done until it passes.
 | `cpp` | CMake Release build matrix (Ubuntu, macOS, Windows; C++11/14/17), JNI backend, unit tests, and the tests on the real JNI backend with the jar of `java` |
 | `graalvm` | Builds both backends, the jar and the native image on Linux (with the GraalVM that CMake downloads), macOS and Windows (with an installed one), and runs every test on both backends (conformance included); the Linux leg uploads the native image |
 | `integration` | Downloads native artifacts, runs examples and integration tests against IEEE-14 network |
-| `dynawo` | Self-contained full build inside `dynawo/dynawo-ci:latest` (installs Maven with dnf and GraalVM CE 21 from its release archive; builds the jar, the native image and the C++ library) and runs unit and end-to-end tests |
+| `dynawo` | Self-contained full build inside `dynawo/dynawo-ci:latest` (installs GraalVM CE 21 and Maven from their release archives; builds the jar, the native image and the C++ library) and runs unit and end-to-end tests |
 | `cpp-matrix` | Tests various backend combinations (JNI-only, no backends) on Linux |
 
 `.github/workflows/release.yml` builds the release packages when a GitHub release is published
