@@ -17,6 +17,22 @@ bool Connectable::disconnect() {
     return HandleRef(backend_->invoke(handle_, prop::ACT_DISCONNECT), backend_) != INVALID_HANDLE;
 }
 
+bool Connectable::connect(SwitchPredicate switches) {
+    return detail::connectThrough(backend_, handle_, prop::CONNECT, switches, -1);
+}
+
+bool Connectable::connect(SwitchPredicate switches, ThreeSides side) {
+    return detail::connectThrough(backend_, handle_, prop::CONNECT, switches, static_cast<int>(side));
+}
+
+bool Connectable::disconnect(SwitchPredicate switches) {
+    return detail::connectThrough(backend_, handle_, prop::DISCONNECT, switches, -1);
+}
+
+bool Connectable::disconnect(SwitchPredicate switches, ThreeSides side) {
+    return detail::connectThrough(backend_, handle_, prop::DISCONNECT, switches, static_cast<int>(side));
+}
+
 void Connectable::unsetSolvedValues() {
     backend_->invoke(handle_, prop::ACT_UNSET_SOLVED_VALUES);
 }

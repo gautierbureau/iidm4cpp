@@ -59,6 +59,14 @@ bool Terminal::disconnect() {
     return HandleRef(backend_->invoke(handle_, prop::ACT_DISCONNECT), backend_) != INVALID_HANDLE;
 }
 
+bool Terminal::connect(SwitchPredicate switches) {
+    return detail::connectThrough(backend_, handle_, prop::CONNECT, switches, -1);
+}
+
+bool Terminal::disconnect(SwitchPredicate switches) {
+    return detail::connectThrough(backend_, handle_, prop::DISCONNECT, switches, -1);
+}
+
 Connectable Terminal::getConnectable() const {
     return Connectable(backend_->getRelated(handle_, prop::REL_CONNECTABLE), backend_);
 }

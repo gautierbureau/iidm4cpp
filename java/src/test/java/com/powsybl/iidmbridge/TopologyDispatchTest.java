@@ -123,6 +123,47 @@ class TopologyDispatchTest {
         assertEquals(BridgeErrors.PROPERTY_NOT_FOUND, kind(() -> PropertyDispatcher.invoke(incomplete, ACT_ADD)));
     }
 
+    // SwitchPredicate ordinals (include/iidm/Enums.h)
+    private static final int SP_NONFICTIONAL_CLOSED_BREAKER = 0;
+    private static final int SP_CLOSED_BREAKER = 2;
+    private static final int SP_BREAKER_OR_DISCONNECTOR = 3;
+    private static final int SP_BREAKER = 5;
+
+    /** CONNECT or DISCONNECT through the switches a predicate accepts, on a side (null: every side). */
+    private static long connectThrough(Object obj, int code, int switchPredicate, Integer side) {
+        long call = PropertyDispatcher.invoke(reg(obj), code);
+        PropertyDispatcher.setInt(call, SWITCH_PREDICATE, switchPredicate);
+        if (side != null) {
+            PropertyDispatcher.setInt(call, TERMINAL_SIDE, side.intValue());
+        }
+        return PropertyDispatcher.invoke(call, ACT_ADD);
+    }
+
+    @Test void connectsThroughTheSwitchesAPredicateAccepts() {
+        Switch disconnector = vl2.getNodeBreakerView().getSwitch("D");
+        Switch breaker = vl2.getNodeBreakerView().getSwitch("BR");
+
+        // By default, breakers only: not through an open disconnector
+        assertSame(load2, PropertyDispatcher.invokeObject(load2, ACT_DISCONNECT));
+        disconnector.setOpen(true);
+        assertNull(PropertyDispatcher.invokeObject(load2, ACT_CONNECT));
+        assertSame(load2, obj(connectThrough(load2, CONNECT, SP_BREAKER_OR_DISCONNECTOR, null)));
+        assertFalse(disconnector.isOpen());
+        assertFalse(breaker.isOpen());
+
+        // A fictitious breaker: only by the predicates that accept one; on the terminal the same way
+        breaker.setFictitious(true);
+        assertEquals(0L, connectThrough(load2.getTerminal(), DISCONNECT, SP_NONFICTIONAL_CLOSED_BREAKER, null));
+        assertSame(load2.getTerminal(), obj(connectThrough(load2.getTerminal(), DISCONNECT, SP_CLOSED_BREAKER, null)));
+        assertTrue(breaker.isOpen());
+        assertSame(load2, obj(connectThrough(load2, CONNECT, SP_BREAKER, null)));
+        assertEquals(0L, connectThrough(load2, CONNECT, SP_BREAKER, null)); // already
+
+        // No such predicate, no such side
+        assertThrows(IllegalArgumentException.class, () -> connectThrough(load2, CONNECT, 9, null));
+        assertThrows(IllegalArgumentException.class, () -> connectThrough(load2, CONNECT, SP_BREAKER, 3));
+    }
+
     @Test void buses() {
         Bus b1 = vl1.getBusBreakerView().getBus("B1");
         long b = reg(b1);

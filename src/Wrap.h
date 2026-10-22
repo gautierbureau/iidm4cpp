@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iidm/BackendProvider.h>
+#include <iidm/Enums.h>
 #include <iidm/HandleRef.h>
 #include <iidm/PropertyCodes.h>
 #include <iidm/stdcxx/optional.hpp>
@@ -40,6 +41,17 @@ std::vector<T> elementsOf(ObjectHandle list, BackendProvider* backend) {
 inline std::vector<int> intElementsOf(ObjectHandle list, BackendProvider* backend) {
     HandleRef owned(list, backend);
     return backend->getIntList(list, prop::ELEMENTS);
+}
+
+// connect (disconnect) through the switches the predicate accepts: invoke(h, prop::CONNECT or
+// prop::DISCONNECT), on one side (ThreeSides or TwoSides ordinal; -1: every side). Whether this
+// changed the object.
+inline bool connectThrough(BackendProvider* backend, ObjectHandle h, int code, SwitchPredicate switches, int side) {
+    HandleRef call(backend->invoke(h, code), backend);
+    backend->setInt(call, prop::SWITCH_PREDICATE, static_cast<int>(switches));
+    if (side >= 0) backend->setInt(call, prop::TERMINAL_SIDE, side);
+    // The object itself when this changed it (its handle is released right away)
+    return HandleRef(backend->invoke(call, prop::ACT_ADD), backend) != INVALID_HANDLE;
 }
 
 } } // namespace iidm::detail

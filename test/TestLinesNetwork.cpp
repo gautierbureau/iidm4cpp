@@ -66,6 +66,13 @@ void checkHvdcLine(BackendProvider& b) {
     EXPECT_FALSE(hvdc.disconnectConverterStations()); // already
     EXPECT_TRUE(hvdc.connectConverterStations());
     EXPECT_TRUE(hvdc.getConverterStation2().getTerminal().isConnected());
+
+    // One side (with a switch predicate, that bus-breaker topology has no use for)
+    EXPECT_TRUE(hvdc.disconnectConverterStations(SwitchPredicate::NONFICTIONAL_CLOSED_BREAKER, TwoSides::TWO));
+    EXPECT_TRUE(hvdc.getConverterStation1().getTerminal().isConnected());
+    EXPECT_FALSE(hvdc.getConverterStation2().getTerminal().isConnected());
+    EXPECT_TRUE(hvdc.connectConverterStations(SwitchPredicate::NONFICTIONAL_BREAKER));
+    EXPECT_TRUE(hvdc.getConverterStation2().getTerminal().isConnected());
 }
 
 void checkLinesAndHvdc(BackendProvider& b) {

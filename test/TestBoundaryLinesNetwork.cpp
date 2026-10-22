@@ -135,6 +135,12 @@ void checkTieLinesAndGrounds(BackendProvider& b) {
     EXPECT_FALSE(boundaryLine(b, "BL_HALF2").getTerminal().isConnected());
     EXPECT_TRUE(tie.connectBoundaryLines());
     EXPECT_FALSE(tie.connectBoundaryLines()); // already
+    // One side (with a switch predicate, that bus-breaker topology has no use for)
+    EXPECT_TRUE(tie.disconnectBoundaryLines(SwitchPredicate::NONFICTIONAL_CLOSED_BREAKER, TwoSides::ONE));
+    EXPECT_FALSE(boundaryLine(b, "BL_HALF1").getTerminal().isConnected());
+    EXPECT_TRUE(boundaryLine(b, "BL_HALF2").getTerminal().isConnected());
+    EXPECT_TRUE(tie.connectBoundaryLines(SwitchPredicate::NONFICTIONAL_BREAKER, TwoSides::ONE));
+    EXPECT_TRUE(boundaryLine(b, "BL_HALF1").getTerminal().isConnected());
 
     // Removed, the flows at the boundary becoming the boundary lines' P0; then paired again
     BoundaryLine half1 = boundaryLine(b, "BL_HALF1");

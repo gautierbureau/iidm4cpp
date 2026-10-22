@@ -21,6 +21,12 @@ public:
     // changed it, false when it could not, or already was
     bool connect();
     bool disconnect();
+    // The same, operating only the switches the predicate accepts (see Terminal), on every side or
+    // on one (of a branch or a three windings transformer)
+    bool connect(SwitchPredicate switches);
+    bool connect(SwitchPredicate switches, ThreeSides side);
+    bool disconnect(SwitchPredicate switches);
+    bool disconnect(SwitchPredicate switches, ThreeSides side);
 
     // Unsets its solved values: the flows at its terminals, and those of its own (a shunt
     // compensator's solved section count, a transformer's solved tap positions)
