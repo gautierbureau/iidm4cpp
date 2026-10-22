@@ -313,7 +313,12 @@ endif()
 #   cmake --build build --parallel
 #
 if(IIDM_BRIDGE_BUILD_JAVA OR IIDM_BRIDGE_BUILD_NATIVE)
-    find_program(MAVEN_EXECUTABLE mvn)
+    # On Windows, Maven's bin also holds the shell script mvn: take mvn.cmd
+    if(WIN32)
+        find_program(MAVEN_EXECUTABLE NAMES mvn.cmd mvn)
+    else()
+        find_program(MAVEN_EXECUTABLE mvn)
+    endif()
     if(NOT MAVEN_EXECUTABLE)
         message(FATAL_ERROR
             "Maven (mvn) not found on PATH. "
@@ -342,6 +347,9 @@ if(IIDM_BRIDGE_BUILD_JAVA OR IIDM_BRIDGE_BUILD_NATIVE)
     add_custom_target(iidmbridge_jar DEPENDS "${_FAT_JAR}")
 
     add_dependencies(iidmbridge iidmbridge_jar)
+
+    # The jar goes with the library: the JVM of the embedded mode needs it on its class path.
+    install(FILES "${_FAT_JAR}" DESTINATION ${CMAKE_INSTALL_DATADIR}/iidm-bridge)
 endif()
 
 if(IIDM_BRIDGE_BUILD_NATIVE)
@@ -405,8 +413,13 @@ if(IIDM_BRIDGE_BUILD_NATIVE)
     # runs two Maven builds at once, which share java/target and the Maven repository.
     add_dependencies(iidmbridge_native iidmbridge_jar)
 
-    # Install the native shared library so cmake --install bundles it.
-    install(FILES "${_NATIVE_LIB}" DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    # Install the native shared library so cmake --install bundles it, next to the library (in bin
+    # for DLLs on Windows).
+    if(WIN32)
+        install(FILES "${_NATIVE_LIB}" DESTINATION ${CMAKE_INSTALL_BINDIR})
+    else()
+        install(FILES "${_NATIVE_LIB}" DESTINATION ${CMAKE_INSTALL_LIBDIR})
+    endif()
 
     # The default build makes the native image of the GraalVM backend (nothing else depends on it),
     # before the library.
