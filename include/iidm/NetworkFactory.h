@@ -14,10 +14,12 @@ enum class BackendMode {
 
 struct NetworkLoadOptions {
     BackendMode mode = BackendMode::AUTO;
-    // Path to the GraalVM shared library. If empty, searched on LD_LIBRARY_PATH.
+    // Path to the GraalVM native image. If empty: IIDM_BRIDGE_GRAALVM_LIB, else
+    // libpowsybl-iidm-native (.so, .dylib or .dll) from the library search path.
     std::string graalvmLibPath;
-    // Java network ID to look up in embedded mode (optional; if empty, takes
-    // the first network registered in the JNI registry).
+    // Id of the network in the JNI registry (IidmBridgeRegistry): the JNI backend works on the
+    // network registered under it (embedded mode), and registers under it the networks it loads
+    // or creates. If empty, "default", the id of IidmBridgeRegistry.register(network).
     std::string jniNetworkId;
     // Filename hint passed to PowSyBl when loading/saving from a stream or
     // byte buffer. The extension drives importer/exporter selection; today
