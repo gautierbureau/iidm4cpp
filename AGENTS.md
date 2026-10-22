@@ -60,8 +60,8 @@ cd java && mvn clean verify
 | Namespace | `iidm` | `namespace iidm { ... }` |
 | Classes | `PascalCase` | `Generator`, `NetworkFactory` |
 | Methods | `camelCase` | `getTargetP()`, `setTargetP()` |
-| Private members | `snake_case_` (trailing `_`) | `handle_`, `backend_` |
-| Enum values | `UPPER_SNAKE_CASE` | `ComponentType::GENERATOR` |
+| Private members | `camelCase_` (trailing `_`) | `handle_`, `isolateId_` |
+| Enum values | `UPPER_SNAKE_CASE` | `EnergySource::NUCLEAR` |
 
 ### Key patterns
 
@@ -70,17 +70,17 @@ held by the root class `detail::ObjectRef`. It never copies network data into C+
 
 ```cpp
 // Typical component header shape
-class Generator : public Injection {          // the powsybl interface it extends
+class Load : public Injection {               // the powsybl interface it extends
 public:
-    static constexpr int TYPE = prop::GENERATOR;
-    Generator() = default;
-    explicit Generator(ObjectHandle handle, BackendProvider* backend) : Injection(handle, backend) {}
+    static constexpr int TYPE = prop::LOAD;
+    Load() = default;
+    explicit Load(ObjectHandle handle, BackendProvider* backend) : Injection(handle, backend) {}
 
     // A property is one inline line: the ObjectRef helpers getDouble/getInt/getBool/getString,
     // getOptDouble/getOptInt/getOptString, and setDouble/setInt/... which return the wrapper
-    double getTargetP() const { return getDouble(prop::GEN_TARGET_P); }
-    Generator& setTargetP(double targetP) { return setDouble(*this, prop::GEN_TARGET_P, targetP); }
-    EnergySource getEnergySource() const { return static_cast<EnergySource>(getInt(prop::GEN_ENERGY_SOURCE)); }
+    double getP0() const { return getDouble(prop::LOAD_P0); }
+    Load& setP0(double p0) { return setDouble(*this, prop::LOAD_P0, p0); }
+    LoadType getLoadType() const { return static_cast<LoadType>(getInt(prop::LOAD_TYPE)); }
 };
 ```
 
@@ -121,7 +121,9 @@ the Java `PropertyCodes` class from it. There is no second copy to keep in sync.
 gen.setTargetP(100.0).setTargetQ(0.0);
 ```
 
-**`std::optional`** — nullable properties return `std::optional<T>`.
+**Optional values** — values that may be absent are `iidm::optional<T>`
+(`include/iidm/stdcxx/optional.hpp`): `std::optional` in C++17, `boost::optional` in C++11/14.
+Never use `std::optional` directly.
 
 **Copies** — wrappers are copyable: a copy shares the reference-counted handle
 (`HandleRef`) on the same Java object and copies no network data. Only `Network`,
@@ -131,8 +133,8 @@ move-only: keep their copy operations deleted.
 **Stream / byte-buffer I/O** — `NetworkFactory::load(std::istream&)` and
 `NetworkFactory::loadFromBytes(...)` parse a network from an in-memory buffer
 instead of a file path; `Network::save(std::ostream&)` and
-`Network::saveToBytes()` go the other way. Both routes are wired through new
-backend methods `loadNetworkBytes` / `saveNetworkBytes`; `NetworkLoadOptions::filenameHint`
+`Network::saveToBytes()` go the other way. Both go through the backend
+methods `loadNetworkBytes` / `saveNetworkBytes`; `NetworkLoadOptions::filenameHint`
 selects the format (default `"network.xiidm"`).
 
 ### File layout
@@ -265,11 +267,11 @@ Adders are C++ classes deriving from `detail::IdentifiableAdder` / `detail::Inje
 (`include/iidm/Adder.h`), with one line per field: `return doubleField(prop::GEN_MIN_P, minP);`.
 A field uses the code of the property it sets. The parent's `newX()` is
 `XAdder(backend_->invoke(handle_, prop::X), backend_)`, and `remove()` is
-`backend_->invoke(handle_, prop::ACT_REMOVE)`. On the Java side, `Creation.java` maps each
-(adder, field code) to the powsybl adder method, and `remove` to powsybl's removal. Validation
-stays powsybl's. A change that takes several values at once goes the same way (see
-`VoltageRegulation::setTerminal`): in `Creation.newAdder`, a `PendingCall` names the call's fields
-and makes the call on `ACT_ADD`, without a class of its own:
+`backend_->invoke(handle_, prop::ACT_REMOVE)`. On the Java side, a field is set by the adder column
+of its property's line in `PropertyTable.java`; `Creation.java` has the fields that take more than
+one call, and `remove` (powsybl's removal). Validation stays powsybl's. A change that takes several
+values at once goes the same way (see `VoltageRegulation::setTerminal`): in `Creation.newAdder`, a
+`PendingCall` names the call's fields and makes the call on `ACT_ADD`, without a class of its own:
 
 ```java
 case REL_TERMINAL -> run((VoltageRegulation) owner, fields(REL_TERMINAL, VR_TARGET_VALUE),
@@ -283,10 +285,10 @@ compiles with `-Xlint:deprecation -Werror`, so a call to a deprecated powsybl me
 
 #### Handles
 
-Wrappers store their handle in a `HandleRef` member (`HandleRef handle_;`, constructed
-with `handle_(handle, backend)`), which releases the Java-side reference when the last
-wrapper using it is destroyed. A new wrapper class must follow the same pattern; a
-sub-wrapper built from the parent's handle shares the count automatically.
+Wrappers hold their handle in the `HandleRef handle_` of `detail::ObjectRef` (adders in the
+`adder_` of `detail::AdderBase`), which releases the Java-side reference when the last wrapper
+using it is destroyed. A new wrapper class gets it by passing `(handle, backend)` to its base
+class, as `Load` does; a sub-wrapper built from the parent's handle shares the count automatically.
 
 #### Errors
 
@@ -343,14 +345,24 @@ java -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar:build/java-classes
 
 ### GraalVM backend build
 
-Requires GraalVM SDK headers (`graal_isolate.h`, etc.):
+The GraalVM backend includes no GraalVM header: it loads the native image at run time and looks up
+its entry points, whose signatures `src/graalvm/GraalVMBackend.h` declares. The build still
+involves GraalVM:
+
+- With `IIDM_BRIDGE_BUILD_NATIVE=ON` (the default), the build makes the native image from the jar
+  with GraalVM's `native-image`, which must be on the `PATH`, into
+  `build/graalvm-native/libpowsybl-iidm-native.so` (`.dylib` on macOS), before the library.
+- With `IIDM_BRIDGE_BUILD_NATIVE=OFF`, the configure looks for a GraalVM install (`GRAALVM_HOME`,
+  `cmake/FindGraalVM.cmake`) for an include directory, and fails without one unless
+  `-DGRAALVM_INCLUDE_DIRS` is given (any directory: nothing is read from it).
 
 ```bash
-cmake -S . -B build -G Ninja \
-      -DIIDM_BRIDGE_ENABLE_GRAALVM=ON \
-      -DGRAALVM_INCLUDE_DIRS=/path/to/graalvm/include
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DIIDM_BRIDGE_BUILD_TESTS=ON
 cmake --build build --parallel
 ```
+
+The backend loads the library given by `NetworkLoadOptions::graalvmLibPath`, else by
+`IIDM_BRIDGE_GRAALVM_LIB`, else the library of that name on the library path.
 
 ### Integration tests
 
@@ -377,9 +389,9 @@ A backend change is not done until it passes.
 |---|---|
 | `java` | Maven build + test with JDK 21 |
 | `cpp` | CMake Release build matrix (Ubuntu, macOS, Windows; C++11/14/17), JNI backend, unit tests, and the tests on the real JNI backend with the jar of `java` |
-| `graalvm` | Builds GraalVM native image (`libpowsybl-iidm-native.so`) and runs unit tests; Linux leg uploads artifacts |
+| `graalvm` | Builds both backends, the jar and the native image on Linux and macOS, and runs every test on both backends (conformance included); the Linux leg uploads the native image |
 | `integration` | Downloads native artifacts, runs examples and integration tests against IEEE-14 network |
-| `dynawo` | Self-contained full build (installs GraalVM CE 21 + Maven via dnf, builds JAR + native image + C++ library) and runs unit and end-to-end tests inside `dynawo/dynawo-ci:latest` |
+| `dynawo` | Self-contained full build inside `dynawo/dynawo-ci:latest` (installs Maven with dnf and GraalVM CE 21 from its release archive; builds the jar, the native image and the C++ library) and runs unit and end-to-end tests |
 | `cpp-matrix` | Tests various backend combinations (JNI-only, no backends) on Linux |
 
 The `dynawo` image is Fedora 29: GCC 8.3, CMake 3.14 (no `ctest --test-dir`), Maven 3.5.4,
@@ -393,20 +405,27 @@ changes (CMake, Maven plugins) must work there too: the job's steps can be repla
 
 ### Backend abstraction
 
-`BackendProvider` (`include/iidm/BackendProvider.h`) is the pure-virtual
-interface that both backends implement.  It exposes:
+`BackendProvider` (`include/iidm/BackendProvider.h`) is the interface of `GraalVMBackend`,
+`JNIBackend` and, in the tests, `MockBackend`. A wrapper bound to no network (default-constructed,
+or a moved-from `Network`) uses `NullBackend`, which throws on every call. The operations take a
+handle and a code of `PropertyCodes.def`:
 
-- `getProperty(handle, code)` / `setProperty(handle, code, value)` — typed
-  overloads for `string`, `double`, `int`, `bool`, `optional<...>`.
-- `buildList<T>(handle, listCode)` — constructs a `std::vector<T>` of child
-  components.
-- `findById<T>(handle, id)` — locates a component by string id.
+- values: `getDouble` / `setDouble` and the same for ints, bools and strings; `getOptDouble`,
+  `getOptInt`, `getOptString`; `getStringList`, `getIntList`; `getKeyedString` / `setKeyedString`;
+- navigation: `getChildren`, `getRelated`, `getRelatedByIndex`, `getRelatedByString`,
+  `setRelated`, `findById`, `getNetworkHandle`;
+- calls: `evaluate` (methods with numeric arguments), `invoke` (adders, actions, removal),
+  `isSameObject`;
+- the network: `loadNetwork`, `loadNetworkBytes`, `createNetwork`, `saveNetwork`,
+  `saveNetworkBytes`, `close`;
+- `releaseHandle`, which `HandleRef` calls when the last wrapper of a handle is destroyed.
 
 ### GraalVM backend (`src/graalvm/`)
 
 - Calls into `libpowsybl-iidm-native.so` via the C entry-point signatures
   generated by `@CEntryPoint` annotations in `IidmEntryPoints.java`.
 - Creates an isolate per network, torn down when the network closes.
+- A handle is the number of the object in the isolate's `graalvm/NetworkRegistry.java`.
 - Any thread can use it: pass `thread()` (the calling thread's isolate thread, attached on its first
   call, detached when the thread ends) to every entry point; never store an isolate thread.
 
@@ -414,28 +433,32 @@ interface that both backends implement.  It exposes:
 
 - Uses an existing JVM (created by the application, e.g. Dynawo), found via
   `JNI_GetCreatedJavaVMs`.
-- Uses `IidmBridgeRegistry.java` to map Java object references to handles.
+- A handle is a JNI global reference to the Java object.
+- Networks are exchanged by id through `jni/IidmBridgeRegistry.java`: the backend takes the network
+  registered under its id (`"default"` when none is given), and registers there the networks it
+  loads or creates.
 - Any thread can use it: each operation starts with `JNIEnv* env = this->env();` (the calling
   thread's environment; a thread is attached on its first call and detached when it ends) and passes
   `env` to the helpers; never store a `JNIEnv*`.
 
 ### Memory lifecycle
 
-```
-NetworkFactory::load(path)
-  → returns Network (owning ObjectHandle)
-    → Network::getGenerators()
-        → returns std::vector<Generator>   (each holds borrowed handle)
-```
-
-- `Network` destruction releases the root Java object reference.
-- Component handles (Generator, Load, etc.) are **borrowed** — they are
-  invalidated when their parent `Network` is destroyed.
-- Never store a component reference beyond its Network's lifetime.
+- A `Network` owns its backend: each network that `NetworkFactory` loads or creates gets a backend
+  of its own (with GraalVM, its own isolate), and destroying the `Network` closes it.
+- Every handle that a backend returns holds a reference on the Java side. `HandleRef` counts the
+  wrappers of each handle (copies, and sub-wrappers built from it) and releases the reference with
+  the last one; closing the backend releases the handles still held.
+- Wrappers keep a plain pointer to the backend of their network: never use an object after its
+  `Network` is destroyed.
 
 ### AUTO backend selection
 
-`BackendSelector` (in `src/BackendSelector.cpp`):
-1. Tries to `dlopen` `libpowsybl-iidm-native.so` from `LD_LIBRARY_PATH`.
-2. Falls back to JNI if `JNI_GetCreatedJavaVMs` returns a running JVM.
-3. Throws `BackendNotAvailableException` if neither is found.
+`selectBackend` (`src/BackendSelector.cpp`) opens the backend of each network that `NetworkFactory`
+loads or creates:
+
+1. `IIDM_BRIDGE_MODE` (`graalvm` or `jni`), when set, replaces `NetworkLoadOptions::mode`.
+2. `JNI` and `GRAALVM` open that backend, or throw `BackendNotAvailableException` when it is not
+   compiled in.
+3. `AUTO` opens the JNI backend when a JVM runs in the process (`JNI_GetCreatedJavaVMs`), else the
+   GraalVM backend, which loads the library described in "GraalVM backend build". With neither, it
+   throws `BackendNotAvailableException`.
