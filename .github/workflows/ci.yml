@@ -171,24 +171,36 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Linux: no GraalVM installed, CMake downloads it for native-image
           - os: ubuntu-22.04
             native_lib: libpowsybl-iidm-native.so
             lib_path_env: LD_LIBRARY_PATH
+            graalvm: download
           - os: macos-latest
             native_lib: libpowsybl-iidm-native.dylib
             lib_path_env: DYLD_LIBRARY_PATH
+            graalvm: installed
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up GraalVM CE 21 with native-image
+        if: matrix.graalvm == 'installed'
         uses: graalvm/setup-graalvm@v1
         with:
           java-version: '21'
           distribution: 'graalvm-community'
           components: 'native-image'
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up JDK 21 (CMake downloads GraalVM)
+        if: matrix.graalvm == 'download'
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
 
       - name: Install C++ build tools (Linux)
         if: runner.os == 'Linux'
@@ -212,6 +224,10 @@ jobs:
             -DIIDM_BRIDGE_BUILD_EXAMPLES=OFF \
             -DIIDM_BRIDGE_BUILD_JAVA=ON \
             -DIIDM_BRIDGE_BUILD_NATIVE=ON
+
+      - name: Check that CMake downloaded GraalVM
+        if: matrix.graalvm == 'download'
+        run: grep "^NATIVE_IMAGE_EXECUTABLE:FILEPATH=.*/build-graalvm/_deps/graalvm-src/bin/native-image$" build-graalvm/CMakeCache.txt
 
       - name: Build
         run: cmake --build build-graalvm --parallel
@@ -282,8 +298,7 @@ jobs:
             -DIIDM_BRIDGE_BUILD_TESTS=ON \
             -DIIDM_BRIDGE_BUILD_EXAMPLES=ON \
             -DIIDM_BRIDGE_BUILD_JAVA=ON \
-            -DIIDM_BRIDGE_BUILD_NATIVE=OFF \
-            -DGRAALVM_INCLUDE_DIRS="${{ github.workspace }}/native-artifacts"
+            -DIIDM_BRIDGE_BUILD_NATIVE=OFF
 
       - name: Build
         run: |

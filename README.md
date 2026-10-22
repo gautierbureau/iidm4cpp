@@ -28,17 +28,18 @@ from any thread. Validation stays powsybl's.
 - [CMake](https://cmake.org) 3.14.5 or later.
 - A JDK 21 and [Maven](https://maven.apache.org), for the Java side (built into a fat jar with
   powsybl-core) and the JNI backend.
-- [GraalVM](https://www.graalvm.org) for JDK 21 with `native-image`, for the native image of the
-  standalone mode: Linux and macOS (Windows builds the JNI backend only).
+- For the native image of the standalone mode, `native-image` of [GraalVM](https://www.graalvm.org)
+  for JDK 21: the one on the `PATH`, in `GRAALVM_HOME` or in `JAVA_HOME`. If there is none, CMake
+  downloads GraalVM CE 21.0.2 into the build tree (about 290 MB;
+  `-DIIDM_BRIDGE_DOWNLOAD_GRAALVM=OFF` turns this off). On Linux, `native-image` also needs the
+  zlib headers. Linux and macOS (Windows builds the JNI backend only).
 
 ## Build
 
-With the default options, CMake builds everything: both backends, the jar (with Maven) and the
-native image (with `native-image`). Both tools must be on the `PATH`:
+With the default options, CMake builds everything: both backends, the jar (with Maven, which must
+be on the `PATH`) and the native image (with `native-image`, installed or downloaded):
 
 ```bash
-export JAVA_HOME=/path/to/graalvm-jdk-21
-export PATH=$JAVA_HOME/bin:$PATH
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel 4
 ```
@@ -64,6 +65,7 @@ Add `-DIIDM_BRIDGE_BUILD_TESTS=ON` to either for the [tests](#tests). The main o
 | `IIDM_BRIDGE_ENABLE_JNI` | `ON` | The JNI backend (embedded mode) |
 | `IIDM_BRIDGE_BUILD_JAVA` | `ON` | Builds the jar with Maven |
 | `IIDM_BRIDGE_BUILD_NATIVE` | `ON` | Builds the native image from the jar with `native-image` |
+| `IIDM_BRIDGE_DOWNLOAD_GRAALVM` | `ON` | Downloads GraalVM CE for `native-image` when none is installed |
 | `IIDM_BRIDGE_BUILD_TESTS` | `OFF` | The tests (GoogleTest 1.10 or later, downloaded if not installed) |
 | `IIDM_BRIDGE_BUILD_EXAMPLES` | `ON` | `examples/standalone` and `examples/embedded` |
 | `IIDM_BRIDGE_ENABLE_COVERAGE` | `OFF` | gcov instrumentation, and a `coverage` target (gcovr) |
