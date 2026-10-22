@@ -36,8 +36,9 @@
 #endif
 
 // ── Platform default shared-library name ──────────────────────────────────
+// The name the build gives the native image (native-image -o libpowsybl-iidm-native)
 #if defined(_WIN32)
-constexpr const char* DEFAULT_LIB_NAME = "powsybl-iidm-native.dll";
+constexpr const char* DEFAULT_LIB_NAME = "libpowsybl-iidm-native.dll";
 #elif defined(__APPLE__)
 constexpr const char* DEFAULT_LIB_NAME = "libpowsybl-iidm-native.dylib";
 #else
