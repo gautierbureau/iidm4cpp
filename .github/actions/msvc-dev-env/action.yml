@@ -1,0 +1,31 @@
+name: MSVC developer environment
+description: >-
+  Sets up the x64 MSVC environment of the latest Visual Studio (cl.exe, link.exe, INCLUDE, LIB...)
+  for the next steps of the job, as vcvars64.bat does in a command prompt. A composite action:
+  ilammy/msvc-dev-cmd, which it replaces, runs on the deprecated Node.js 20.
+
+runs:
+  using: composite
+  steps:
+    - name: Set up the MSVC environment
+      shell: pwsh
+      run: |
+        $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
+        $vs = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+        if (-not $vs) { throw 'No Visual Studio with the x64 C++ tools' }
+        $vcvars = Join-Path $vs 'VC\Auxiliary\Build\vcvars64.bat'
+        $variables = cmd /c "`"$vcvars`" >nul && set"
+        if ($LASTEXITCODE -ne 0) { throw "$vcvars failed" }
+        $oldPath = $env:PATH -split ';'
+        foreach ($variable in $variables) {
+          $name, $value = $variable -split '=', 2
+          if ($name -eq 'PATH') {
+            # GITHUB_PATH puts each line first: the new directories in reverse keep their order
+            $newPath = @($value -split ';' | Where-Object { $_ -and $oldPath -notcontains $_ })
+            [array]::Reverse($newPath)
+            $newPath | Add-Content $env:GITHUB_PATH
+          } elseif ([Environment]::GetEnvironmentVariable($name) -ne $value) {
+            Add-Content $env:GITHUB_ENV "$name=$value"
+          }
+        }
+        Write-Output "MSVC environment of $vs"
