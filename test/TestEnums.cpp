@@ -39,7 +39,7 @@ TEST(EnumsTest, CountryFromNameRoundTrip) {
 }
 
 TEST(EnumsTest, CountryFromNameEmptyIsNullopt) {
-    EXPECT_FALSE(countryFromName("").has_value());
+    EXPECT_FALSE(countryFromName(""));
 }
 
 // ── Substation::getCountry via getString ──────────────────────────────────────
@@ -50,7 +50,7 @@ TEST(EnumsTest, SubstationGetCountryPresent) {
     b.optStrings[{H, prop::COUNTRY}] = "AF";
     Substation sub(H, &b);
     auto c = sub.getCountry();
-    ASSERT_TRUE(c.has_value());
+    ASSERT_TRUE(c);
     EXPECT_EQ(*c, Country::AF);
 }
 
@@ -59,5 +59,5 @@ TEST(EnumsTest, SubstationGetCountryAbsent) {
     static constexpr ObjectHandle H = 1;
     // no COUNTRY entry: no value
     Substation sub(H, &b);
-    EXPECT_FALSE(sub.getCountry().has_value());
+    EXPECT_FALSE(sub.getCountry());
 }

@@ -53,7 +53,7 @@ TEST_F(IntegrationTest, Generator1Properties) {
     Network net = loadNetwork();
 
     auto gen = net.getGenerator("_GEN____1_SM");
-    ASSERT_TRUE(gen.has_value()) << "Generator _GEN____1_SM not found";
+    ASSERT_TRUE(gen) << "Generator _GEN____1_SM not found";
     EXPECT_NEAR(gen->getTargetP(), 232.3463, 1e-3);
     EXPECT_NEAR(gen->getMinP(),   -9999.0,   1e-1);
     EXPECT_NEAR(gen->getMaxP(),    9999.0,   1e-1);
@@ -66,7 +66,7 @@ TEST_F(IntegrationTest, Load10Properties) {
     Network net = loadNetwork();
 
     auto load = net.getLoad("_LOAD__10_EC");
-    ASSERT_TRUE(load.has_value()) << "Load _LOAD__10_EC not found";
+    ASSERT_TRUE(load) << "Load _LOAD__10_EC not found";
     EXPECT_NEAR(load->getP0(), 9.0, 1e-6);
     EXPECT_NEAR(load->getQ0(), 5.8, 1e-6);
 }
@@ -77,7 +77,7 @@ TEST_F(IntegrationTest, LineProperties) {
     Network net = loadNetwork();
 
     auto line = net.getLine("_BUS___10-BUS___11-1_AC");
-    ASSERT_TRUE(line.has_value()) << "Line _BUS___10-BUS___11-1_AC not found";
+    ASSERT_TRUE(line) << "Line _BUS___10-BUS___11-1_AC not found";
     EXPECT_NEAR(line->getR(), 0.156256, 1e-6);
     EXPECT_NEAR(line->getX(), 0.365778, 1e-6);
 }
@@ -88,7 +88,7 @@ TEST_F(IntegrationTest, SetGeneratorTargetP) {
     Network net = loadNetwork();
 
     auto gen = net.getGenerator("_GEN____2_SM");
-    ASSERT_TRUE(gen.has_value());
+    ASSERT_TRUE(gen);
     double original = gen->getTargetP();
     gen->setTargetP(original * 0.9);
     EXPECT_NEAR(gen->getTargetP(), original * 0.9, 1e-6);

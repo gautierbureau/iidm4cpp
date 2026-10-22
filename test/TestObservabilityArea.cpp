@@ -54,14 +54,14 @@ TEST_F(ObservabilityAreaTest, Areas) {
 TEST_F(ObservabilityAreaTest, Lookups) {
     auto ext = VoltageLevel(VL_H, &backend).getExtension<ObservabilityArea>();
     auto byNode = ext.getObservabilityAreaByNode(4);
-    ASSERT_TRUE(byNode.has_value());
+    ASSERT_TRUE(byNode);
     EXPECT_EQ(byNode->getAreaNumber(), 7);
-    EXPECT_FALSE(ext.getObservabilityAreaByNode(9).has_value());
+    EXPECT_FALSE(ext.getObservabilityAreaByNode(9));
     auto byBus = ext.getObservabilityAreaByBus("VL_0");
-    ASSERT_TRUE(byBus.has_value());
+    ASSERT_TRUE(byBus);
     EXPECT_EQ(byBus->getAreaNumber(), 7);
     auto byBbvBus = ext.getObservabilityAreaByBusBreakerBus("B2");
-    ASSERT_TRUE(byBbvBus.has_value());
+    ASSERT_TRUE(byBbvBus);
     EXPECT_EQ(byBbvBus->getAreaNumber(), 2);
-    EXPECT_FALSE(ext.getObservabilityAreaByBusBreakerBus("UNKNOWN").has_value());
+    EXPECT_FALSE(ext.getObservabilityAreaByBusBreakerBus("UNKNOWN"));
 }

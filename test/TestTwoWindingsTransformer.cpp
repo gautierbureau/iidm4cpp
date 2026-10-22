@@ -71,14 +71,14 @@ TEST_F(TwoWindingsTransformerTest, GetCurrentLimits) {
     backend.relatedByIndex[std::make_tuple(ObjectHandle(TWT_H), prop::FLOWS_LIMITS_HOLDER, 0)] = SIDE1_H;
     backend.relatedByIndex[std::make_tuple(ObjectHandle(TWT_H), prop::FLOWS_LIMITS_HOLDER, 1)] = SIDE2_H;
     TwoWindingsTransformer twt(TWT_H, &backend);
-    EXPECT_FALSE(twt.getCurrentLimits1().has_value());
+    EXPECT_FALSE(twt.getCurrentLimits1());
     backend.related[{SIDE1_H, prop::CURRENT_LIMITS}]       = CL1_H;
     backend.related[{SIDE2_H, prop::CURRENT_LIMITS}]       = CL2_H;
     backend.doubles[{CL1_H, prop::LL_PERMANENT_LIMIT}] = 500.0;
     backend.doubles[{CL2_H, prop::LL_PERMANENT_LIMIT}] = 600.0;
-    ASSERT_TRUE(twt.getCurrentLimits1().has_value());
+    ASSERT_TRUE(twt.getCurrentLimits1());
     EXPECT_DOUBLE_EQ(twt.getCurrentLimits1()->getPermanentLimit(), 500.0);
-    ASSERT_TRUE(twt.getCurrentLimits2().has_value());
+    ASSERT_TRUE(twt.getCurrentLimits2());
     EXPECT_DOUBLE_EQ(twt.getCurrentLimits2()->getPermanentLimit(), 600.0);
 }
 

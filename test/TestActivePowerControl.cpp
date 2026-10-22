@@ -43,19 +43,19 @@ TEST_F(ActivePowerControlTest, MethodChaining) {
 TEST_F(ActivePowerControlTest, TargetPLimits) {
     auto apc = Generator(GEN_HANDLE, &backend).getExtension<ActivePowerControl>();
     // Undefined limits come back as NaN from the backend → empty optional
-    EXPECT_FALSE(apc.getMinTargetP().has_value());
-    EXPECT_FALSE(apc.getMaxTargetP().has_value());
+    EXPECT_FALSE(apc.getMinTargetP());
+    EXPECT_FALSE(apc.getMaxTargetP());
 
     apc.setMinTargetP(10.0).setMaxTargetP(90.0);
-    ASSERT_TRUE(apc.getMinTargetP().has_value());
+    ASSERT_TRUE(apc.getMinTargetP());
     EXPECT_DOUBLE_EQ(*apc.getMinTargetP(), 10.0);
-    ASSERT_TRUE(apc.getMaxTargetP().has_value());
+    ASSERT_TRUE(apc.getMaxTargetP());
     EXPECT_DOUBLE_EQ(*apc.getMaxTargetP(), 90.0);
 
     apc.unsetMinTargetP().unsetMaxTargetP();
     EXPECT_TRUE(std::isnan((backend.doubles[{APC_HANDLE, prop::EXT_APC_MIN_TARGET_P}])));
     EXPECT_TRUE(std::isnan((backend.doubles[{APC_HANDLE, prop::EXT_APC_MAX_TARGET_P}])));
-    EXPECT_FALSE(apc.getMinTargetP().has_value());
+    EXPECT_FALSE(apc.getMinTargetP());
 }
 
 TEST_F(ActivePowerControlTest, AbsentThrows) {

@@ -59,8 +59,8 @@ protected:
 
 TEST_F(LineLimitsTest, GetCurrentLimitsAbsent) {
     Line line(LINE_HANDLE, &backend);
-    EXPECT_FALSE(line.getCurrentLimits1().has_value());
-    EXPECT_FALSE(line.getCurrentLimits2().has_value());
+    EXPECT_FALSE(line.getCurrentLimits1());
+    EXPECT_FALSE(line.getCurrentLimits2());
 }
 
 TEST_F(LineLimitsTest, GetCurrentLimitsPerSide) {
@@ -69,10 +69,10 @@ TEST_F(LineLimitsTest, GetCurrentLimitsPerSide) {
     backend.related[{SIDE2_HANDLE, prop::CURRENT_LIMITS}] = CL2_HANDLE;
     backend.doubles[{CL2_HANDLE, prop::LL_PERMANENT_LIMIT}] = 800.0;
     Line line(LINE_HANDLE, &backend);
-    ASSERT_TRUE(line.getCurrentLimits1().has_value());
+    ASSERT_TRUE(line.getCurrentLimits1());
     EXPECT_DOUBLE_EQ(line.getCurrentLimits1()->getPermanentLimit(), 1000.0);
     EXPECT_DOUBLE_EQ(line.getCurrentLimits(TwoSides::TWO)->getPermanentLimit(), 800.0);
-    EXPECT_FALSE(line.getActivePowerLimits1().has_value());
+    EXPECT_FALSE(line.getActivePowerLimits1());
 }
 
 TEST_F(LineLimitsTest, TemporaryLimits) {

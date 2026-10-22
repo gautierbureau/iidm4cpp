@@ -282,14 +282,14 @@ TEST_F(TopologyViewTest, VlNodeBreakerViewGetSwitchById) {
     backend.strings[{SW1, prop::ID}] = "SW1";
     VoltageLevel vl(VL_HANDLE, &backend);
     auto sw = vl.getNodeBreakerView().getSwitch("SW1");
-    ASSERT_TRUE(sw.has_value());
+    ASSERT_TRUE(sw);
     EXPECT_EQ(sw->getId(), "SW1");
 }
 
 TEST_F(TopologyViewTest, VlNodeBreakerViewGetSwitchByIdMissing) {
     VoltageLevel vl(VL_HANDLE, &backend);
     auto sw = vl.getNodeBreakerView().getSwitch("NONEXISTENT");
-    EXPECT_FALSE(sw.has_value());
+    EXPECT_FALSE(sw);
 }
 
 TEST_F(TopologyViewTest, VlNodeBreakerViewGetTerminalAtNode) {
