@@ -148,7 +148,7 @@ java/           Maven module for the Java bridge
 test/           GoogleTest tests; MockBackend.h fakes the backend, CompleteNetwork.h builds a network
                 with every type of object on a real one (for TestAccessors and TestBackendConformance)
 examples/       Standalone (GraalVM) and embedded (JNI) usage examples
-cmake/          CMake helper modules (FindGraalVM.cmake, etc.)
+cmake/          The package config template, and DownloadGraalVM.cmake (GraalVM CE for native-image)
 ```
 
 ### Adding a new network component
@@ -340,7 +340,8 @@ java -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar:build/java-classes
 | `IIDM_BRIDGE_ENABLE_JNI` | `ON` | Build the JNI backend |
 | `IIDM_BRIDGE_ENABLE_GRAALVM` | `ON` | Build the GraalVM backend |
 | `IIDM_BRIDGE_BUILD_JAVA` | `ON` | Build the fat jar with Maven |
-| `IIDM_BRIDGE_BUILD_NATIVE` | `ON` | Build the native image with `native-image` (even with the GraalVM backend off) |
+| `IIDM_BRIDGE_BUILD_NATIVE` | `ON` | Build the native image with `native-image` (with the GraalVM backend off, only as the `iidmbridge_native` target) |
+| `IIDM_BRIDGE_DOWNLOAD_GRAALVM` | `ON` | For the GraalVM backend's native image, download GraalVM CE when no `native-image` is installed |
 | `IIDM_BRIDGE_BUILD_TESTS` | `OFF` | Build GoogleTest suite |
 | `IIDM_BRIDGE_BUILD_EXAMPLES` | `ON` | Build the example programs |
 | `IIDM_BRIDGE_ENABLE_COVERAGE` | `OFF` | gcov instrumentation and a `coverage` target |
@@ -348,15 +349,16 @@ java -cp "java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar:build/java-classes
 ### GraalVM backend build
 
 The GraalVM backend includes no GraalVM header: it loads the native image at run time and looks up
-its entry points, whose signatures `src/graalvm/GraalVMBackend.h` declares. The build still
-involves GraalVM:
+its entry points, whose signatures `src/graalvm/GraalVMBackend.h` declares. Only the native image
+needs GraalVM: with `IIDM_BRIDGE_BUILD_NATIVE=ON` (the default), the build makes it from the jar
+into `build/graalvm-native/libpowsybl-iidm-native.so` (`.dylib` on macOS), before the library, with
+the first `native-image` found:
 
-- With `IIDM_BRIDGE_BUILD_NATIVE=ON` (the default), the build makes the native image from the jar
-  with GraalVM's `native-image`, which must be on the `PATH`, into
-  `build/graalvm-native/libpowsybl-iidm-native.so` (`.dylib` on macOS), before the library.
-- With `IIDM_BRIDGE_BUILD_NATIVE=OFF`, the configure looks for a GraalVM install (`GRAALVM_HOME`,
-  `cmake/FindGraalVM.cmake`) for an include directory, and fails without one unless
-  `-DGRAALVM_INCLUDE_DIRS` is given (any directory: nothing is read from it).
+1. on the `PATH`;
+2. in `$GRAALVM_HOME/bin`, then `$JAVA_HOME/bin`;
+3. else, with `IIDM_BRIDGE_DOWNLOAD_GRAALVM=ON` (the default), in the GraalVM CE 21.0.2 that
+   `cmake/DownloadGraalVM.cmake` downloads into the build tree (`_deps`, about 290 MB, checked
+   against the release's SHA-256), for Linux and macOS (x64, aarch64) and Windows (x64).
 
 ```bash
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DIIDM_BRIDGE_BUILD_TESTS=ON
@@ -391,7 +393,7 @@ A backend change is not done until it passes.
 |---|---|
 | `java` | Maven build + test with JDK 21 |
 | `cpp` | CMake Release build matrix (Ubuntu, macOS, Windows; C++11/14/17), JNI backend, unit tests, and the tests on the real JNI backend with the jar of `java` |
-| `graalvm` | Builds both backends, the jar and the native image on Linux and macOS, and runs every test on both backends (conformance included); the Linux leg uploads the native image |
+| `graalvm` | Builds both backends, the jar and the native image on Linux (with the GraalVM that CMake downloads) and macOS (with an installed one), and runs every test on both backends (conformance included); the Linux leg uploads the native image |
 | `integration` | Downloads native artifacts, runs examples and integration tests against IEEE-14 network |
 | `dynawo` | Self-contained full build inside `dynawo/dynawo-ci:latest` (installs Maven with dnf and GraalVM CE 21 from its release archive; builds the jar, the native image and the C++ library) and runs unit and end-to-end tests |
 | `cpp-matrix` | Tests various backend combinations (JNI-only, no backends) on Linux |
