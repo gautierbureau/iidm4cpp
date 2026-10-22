@@ -37,6 +37,12 @@ public:
     // this changed them, false when it could not, or already was
     bool connectConverterStations();
     bool disconnectConverterStations();
+    // The same, operating only the switches the predicate accepts (see Terminal), on both sides or
+    // on one
+    bool connectConverterStations(SwitchPredicate switches);
+    bool connectConverterStations(SwitchPredicate switches, TwoSides side);
+    bool disconnectConverterStations(SwitchPredicate switches);
+    bool disconnectConverterStations(SwitchPredicate switches, TwoSides side);
 
     // Removes the HVDC line (its converter stations stay)
     void remove();

@@ -696,6 +696,14 @@ IIDM_CODE(ACT_REMOVE,                  5001) // invoke(identifiable): removes it
 // changed it, INVALID_HANDLE when it could not, or already was.
 IIDM_CODE(ACT_CONNECT,                 5002)
 IIDM_CODE(ACT_DISCONNECT,              5003)
+// invoke(terminal or connectable, CONNECT / DISCONNECT) starts connecting / disconnecting it through
+// the switches that a predicate accepts (powsybl connect(Predicate<Switch>, side)): field
+// SWITCH_PREDICATE, and TERMINAL_SIDE for one side of a connectable (ThreeSides ordinal; TwoSides
+// for an HVDC line or a tie line), every side when unset; then invoke(call, ACT_ADD) returns the
+// object when this changed it, INVALID_HANDLE when it could not, or already was.
+IIDM_CODE(CONNECT,                     5027)
+IIDM_CODE(DISCONNECT,                  5028)
+IIDM_CODE(SWITCH_PREDICATE,            5029) // int, a field of CONNECT and DISCONNECT: SwitchPredicate ordinal
 IIDM_CODE(ACT_SET_TARGET_Q_TO_Q,       5004) // invoke(regulation holder): targets Q from the solved Q;
                                              // invoke(boundary line): its generation's; invoke(load): Q0
 IIDM_CODE(ACT_SET_TARGET_V_TO_V,       5005) // invoke(regulation holder): targets V from the solved V;

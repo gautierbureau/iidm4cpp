@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.OptionalInt;
+import java.util.function.Predicate;
 
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -1110,6 +1111,26 @@ public final class PropertyDispatcher {
             case TieLine line -> line.disconnectBoundaryLines();
             default -> ((Connectable<?>) obj).disconnect();
         };
+    }
+
+    /**
+     * Connects (disconnects) the same through the switches the predicate accepts, on a side (TwoSides
+     * ordinal for an HVDC line or a tie line, ThreeSides for a connectable; null: every side).
+     */
+    static boolean connect(Object obj, boolean connect, Predicate<Switch> switches, Integer side) {
+        return switch (obj) {
+            case Terminal terminal -> connect ? terminal.connect(switches) : terminal.disconnect(switches);
+            case HvdcLine line -> connect ? line.connectConverterStations(switches, side(TwoSides.class, side))
+                : line.disconnectConverterStations(switches, side(TwoSides.class, side));
+            case TieLine line -> connect ? line.connectBoundaryLines(switches, side(TwoSides.class, side))
+                : line.disconnectBoundaryLines(switches, side(TwoSides.class, side));
+            default -> connect ? ((Connectable<?>) obj).connect(switches, side(ThreeSides.class, side))
+                : ((Connectable<?>) obj).disconnect(switches, side(ThreeSides.class, side));
+        };
+    }
+
+    private static <E extends Enum<E>> E side(Class<E> type, Integer ordinal) {
+        return ordinal == null ? null : Creation.enumValue(type, ordinal);
     }
 
     // ── Int list (navigation) ─────────────────────────────────────────────

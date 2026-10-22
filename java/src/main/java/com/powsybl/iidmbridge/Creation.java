@@ -10,6 +10,7 @@ import com.powsybl.iidm.network.regulation.VoltageRegulationAdderOrBuilder;
 import com.powsybl.iidm.network.regulation.VoltageRegulationBuilder;
 import com.powsybl.iidm.network.regulation.VoltageRegulationHolder;
 import com.powsybl.iidm.network.regulation.VoltageRegulationHolderAdder;
+import com.powsybl.iidm.network.util.SwitchPredicates;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,6 +22,7 @@ import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static com.powsybl.iidmbridge.PropertyCodes.*;
 
@@ -355,6 +357,9 @@ public final class Creation {
                     c.dbl(PLANE_ALPHA), c.dbl(PLANE_BETA), c.dbl(PLANE_DELTA), c.bool(PLANE_GREATER_OR_EQUAL), c.dbl(PLANE_GAMMA)));
             case ZIP_LOAD_MODEL -> ((LoadAdder) owner).newZipModel();
             case EXPONENTIAL_LOAD_MODEL -> ((LoadAdder) owner).newExponentialModel();
+            case CONNECT, DISCONNECT -> call(owner, fields(SWITCH_PREDICATE, TERMINAL_SIDE), (target, c) ->
+                PropertyDispatcher.connect(target, type == CONNECT,
+                    switchPredicate(c.required(SWITCH_PREDICATE, "switch predicate")), c.get(TERMINAL_SIDE)) ? target : null);
             case MOVE_CONNECTABLE -> run((Terminal) owner,
                 fields(TERMINAL_BUS_BREAKER_CONNECTABLE_BUS_ID, TERMINAL_CONNECTED, TERMINAL_NODE, TERMINAL_VOLTAGE_LEVEL_ID),
                 Creation::moveConnectable);
@@ -861,6 +866,20 @@ public final class Creation {
     }
 
     /** The constant of an enum from its ordinal (the C++ enums follow the Java declaration order). */
+    /** powsybl's SwitchPredicates, in the order of SwitchPredicate in include/iidm/Enums.h. */
+    private static final List<Predicate<Switch>> SWITCH_PREDICATES = List.of(
+        SwitchPredicates.IS_NONFICTIONAL_CLOSED_BREAKER, SwitchPredicates.IS_NONFICTIONAL_BREAKER,
+        SwitchPredicates.IS_CLOSED_BREAKER, SwitchPredicates.IS_BREAKER_OR_DISCONNECTOR,
+        SwitchPredicates.IS_OPEN_DISCONNECTOR, SwitchPredicates.IS_BREAKER, SwitchPredicates.IS_NONFICTIONAL,
+        SwitchPredicates.IS_OPEN, SwitchPredicates.IS_NON_NULL);
+
+    static Predicate<Switch> switchPredicate(int ordinal) {
+        if (ordinal < 0 || ordinal >= SWITCH_PREDICATES.size()) {
+            throw new IllegalArgumentException("Invalid SwitchPredicate value: " + ordinal);
+        }
+        return SWITCH_PREDICATES.get(ordinal);
+    }
+
     static <E extends Enum<E>> E enumValue(Class<E> type, int ordinal) {
         E[] values = type.getEnumConstants();
         if (ordinal < 0 || ordinal >= values.length) {

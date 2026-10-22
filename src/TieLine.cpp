@@ -31,6 +31,22 @@ bool TieLine::disconnectBoundaryLines() {
     return HandleRef(backend_->invoke(handle_, prop::ACT_DISCONNECT), backend_) != INVALID_HANDLE;
 }
 
+bool TieLine::connectBoundaryLines(SwitchPredicate switches) {
+    return detail::connectThrough(backend_, handle_, prop::CONNECT, switches, -1);
+}
+
+bool TieLine::connectBoundaryLines(SwitchPredicate switches, TwoSides side) {
+    return detail::connectThrough(backend_, handle_, prop::CONNECT, switches, static_cast<int>(side));
+}
+
+bool TieLine::disconnectBoundaryLines(SwitchPredicate switches) {
+    return detail::connectThrough(backend_, handle_, prop::DISCONNECT, switches, -1);
+}
+
+bool TieLine::disconnectBoundaryLines(SwitchPredicate switches, TwoSides side) {
+    return detail::connectThrough(backend_, handle_, prop::DISCONNECT, switches, static_cast<int>(side));
+}
+
 void TieLine::remove() {
     backend_->invoke(handle_, prop::ACT_REMOVE);
 }

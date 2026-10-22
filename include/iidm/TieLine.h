@@ -39,6 +39,12 @@ public:
     // not, or they already were
     bool connectBoundaryLines();
     bool disconnectBoundaryLines();
+    // The same, operating only the switches the predicate accepts (see Terminal), on both sides or
+    // on one
+    bool connectBoundaryLines(SwitchPredicate switches);
+    bool connectBoundaryLines(SwitchPredicate switches, TwoSides side);
+    bool disconnectBoundaryLines(SwitchPredicate switches);
+    bool disconnectBoundaryLines(SwitchPredicate switches, TwoSides side);
 
     // Removes it: its boundary lines stay, unpaired. With updateBoundaryLines, the flows at the
     // boundary become their P0 and Q0 (and their generations stop)

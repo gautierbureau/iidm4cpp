@@ -4,6 +4,7 @@
 #include <iidm/BackendProvider.h>
 #include <iidm/IidmException.h>
 #include <iidm/PropertyCodes.h>
+#include "Wrap.h"
 
 namespace iidm {
 
@@ -27,6 +28,22 @@ bool HvdcLine::connectConverterStations() {
 
 bool HvdcLine::disconnectConverterStations() {
     return HandleRef(backend_->invoke(handle_, prop::ACT_DISCONNECT), backend_) != INVALID_HANDLE;
+}
+
+bool HvdcLine::connectConverterStations(SwitchPredicate switches) {
+    return detail::connectThrough(backend_, handle_, prop::CONNECT, switches, -1);
+}
+
+bool HvdcLine::connectConverterStations(SwitchPredicate switches, TwoSides side) {
+    return detail::connectThrough(backend_, handle_, prop::CONNECT, switches, static_cast<int>(side));
+}
+
+bool HvdcLine::disconnectConverterStations(SwitchPredicate switches) {
+    return detail::connectThrough(backend_, handle_, prop::DISCONNECT, switches, -1);
+}
+
+bool HvdcLine::disconnectConverterStations(SwitchPredicate switches, TwoSides side) {
+    return detail::connectThrough(backend_, handle_, prop::DISCONNECT, switches, static_cast<int>(side));
 }
 
 void HvdcLine::remove() {

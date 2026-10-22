@@ -199,8 +199,10 @@ overrides the mode.
   throw `InvalidHandleException`.
 - **Beyond reading.** `NetworkFactory::create(id)` makes an empty network; adders shaped like
   powsybl's create objects (`network.newSubstation().setId("S")...add()`), `remove()` removes
-  them. Variants come from `network.getVariantManager()`; `NetworkFactory::loadFromBytes` and
-  `Network::saveToBytes` work in memory.
+  them. `connect()` and `disconnect()` operate breakers, or the switches that a `SwitchPredicate`
+  accepts, on every side or on one: `line.connect(SwitchPredicate::BREAKER_OR_DISCONNECTOR,
+  ThreeSides::ONE)`. Variants come from `network.getVariantManager()`;
+  `NetworkFactory::loadFromBytes` and `Network::saveToBytes` work in memory.
 - **Threads.** A network can be used from any thread, and its objects passed between threads. As
   in powsybl it is not synchronized: threads that change it at the same time need a lock, or each
   its own variant (`getVariantManager().allowVariantMultiThreadAccess(true)`).

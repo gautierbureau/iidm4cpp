@@ -24,6 +24,13 @@ enum class Country {
 };
 enum class HvdcConverterStationMode { RECTIFIER, INVERTER };
 enum class SwitchKind { BREAKER, DISCONNECTOR, LOAD_BREAK_SWITCH };
+// Which switches connect() and disconnect() may operate: powsybl's SwitchPredicates without their
+// IS_ (same order). connect() operates the NONFICTIONAL_BREAKER ones, disconnect() the
+// NONFICTIONAL_CLOSED_BREAKER ones; NON_NULL accepts every switch.
+enum class SwitchPredicate {
+    NONFICTIONAL_CLOSED_BREAKER, NONFICTIONAL_BREAKER, CLOSED_BREAKER, BREAKER_OR_DISCONNECTOR,
+    OPEN_DISCONNECTOR, BREAKER, NONFICTIONAL, OPEN, NON_NULL
+};
 enum class PhaseTapChangerRegulationMode { CURRENT_LIMITER, ACTIVE_POWER_CONTROL };
 enum class HvdcOperatorActivePowerRangeSide { SIDE1, SIDE2 };
 enum class TwoSides { ONE, TWO };

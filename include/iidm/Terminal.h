@@ -75,6 +75,10 @@ public:
     // when it could not, or already was
     bool connect();
     bool disconnect();
+    // The same, operating only the switches the predicate accepts (connect() operates the
+    // NONFICTIONAL_BREAKER ones, disconnect() the NONFICTIONAL_CLOSED_BREAKER ones)
+    bool connect(SwitchPredicate switches);
+    bool disconnect(SwitchPredicate switches);
 
     // The equipment it belongs to (include <iidm/Connectable.h> to use it)
     Connectable getConnectable() const;

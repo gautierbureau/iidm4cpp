@@ -14,8 +14,8 @@
 #  include "jni/JNIBackend.h"
 #endif
 
-// Terminals, buses and the topology views of voltage levels on the real backends (see
-// RealBackends.h): the same scenario on GraalVM and on JNI, with the network
+// Terminals, connection through switches, buses and the topology views of voltage levels on the
+// real backends (see RealBackends.h): the same scenario on GraalVM and on JNI, with the network
 // test/data/topology_test.xiidm (VL1 bus-breaker, VL2 node-breaker, in S1; VL3 in S2).
 
 using namespace iidm;
@@ -84,6 +84,44 @@ void checkMoves(BackendProvider& b) {
     EXPECT_EQ(l3.getTerminal().getVoltageLevel().getId(), "VL2");
     EXPECT_EQ(l3.getTerminal().getNodeBreakerView().getNode(), 11);
     EXPECT_THROW(l3.getTerminal().getNodeBreakerView().moveConnectable(12, "NONE"), ValidationException);
+}
+
+// Through the switches a predicate accepts: L2 is behind D_L2 (a disconnector) and BR_L2 (a
+// breaker), T2's side TWO behind D_T2 and BR_T2
+void checkSwitchPredicates(BackendProvider& b) {
+    VoltageLevel::NodeBreakerView view = VoltageLevel(b.findById(prop::VOLTAGE_LEVEL, "VL2"), &b).getNodeBreakerView();
+    Switch disconnector = *view.getSwitch("D_L2");
+    Switch breaker = *view.getSwitch("BR_L2");
+    Load l2(b.findById(prop::LOAD, "L2"), &b);
+
+    // By default, breakers only: not through an open disconnector
+    EXPECT_TRUE(l2.disconnect());
+    EXPECT_TRUE(breaker.isOpen());
+    EXPECT_FALSE(disconnector.isOpen());
+    disconnector.setOpen(true);
+    EXPECT_FALSE(l2.connect());
+    EXPECT_TRUE(l2.connect(SwitchPredicate::BREAKER_OR_DISCONNECTOR));
+    EXPECT_FALSE(disconnector.isOpen());
+    EXPECT_FALSE(breaker.isOpen());
+    EXPECT_TRUE(l2.getTerminal().isConnected());
+
+    // A fictitious breaker: only by the predicates that accept one
+    breaker.setFictitious(true);
+    EXPECT_FALSE(l2.getTerminal().disconnect());
+    EXPECT_TRUE(l2.getTerminal().disconnect(SwitchPredicate::CLOSED_BREAKER));
+    EXPECT_TRUE(breaker.isOpen());
+    EXPECT_FALSE(l2.getTerminal().connect(SwitchPredicate::NONFICTIONAL_BREAKER));
+    EXPECT_TRUE(l2.getTerminal().connect(SwitchPredicate::BREAKER));
+    EXPECT_FALSE(l2.getTerminal().connect(SwitchPredicate::BREAKER)); // already
+
+    // One side of a branch: side ONE, in the bus-breaker VL1, stays connected
+    TwoWindingsTransformer t2(b.findById(prop::TWO_WINDINGS_TRANSFORMER, "T2"), &b);
+    EXPECT_TRUE(t2.disconnect(SwitchPredicate::NONFICTIONAL_CLOSED_BREAKER, ThreeSides::TWO));
+    EXPECT_TRUE(view.getSwitch("BR_T2")->isOpen());
+    EXPECT_TRUE(t2.getTerminal1().isConnected());
+    EXPECT_FALSE(t2.getTerminal2().isConnected());
+    EXPECT_TRUE(t2.connect(SwitchPredicate::NONFICTIONAL_BREAKER, ThreeSides::TWO));
+    EXPECT_TRUE(t2.getTerminal2().isConnected());
 }
 
 void checkBuses(BackendProvider& b) {
@@ -228,6 +266,8 @@ void checkTopology(BackendProvider& b) {
     checkBusBreakerView(b);
     load(b);
     checkMoves(b);
+    load(b);
+    checkSwitchPredicates(b);
 }
 
 } // namespace

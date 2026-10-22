@@ -86,5 +86,13 @@ class LineAndHvdcDispatchTest {
         assertEquals(0L, PropertyDispatcher.invoke(h, ACT_DISCONNECT));
         assertNotEquals(0L, PropertyDispatcher.invoke(h, ACT_CONNECT));
         assertTrue(hvdc.getConverterStation2().getTerminal().isConnected());
+
+        // One side, with a switch predicate (IS_NONFICTIONAL_CLOSED_BREAKER): a TwoSides ordinal
+        long disconnect = PropertyDispatcher.invoke(h, DISCONNECT);
+        PropertyDispatcher.setInt(disconnect, SWITCH_PREDICATE, 0);
+        PropertyDispatcher.setInt(disconnect, TERMINAL_SIDE, TwoSides.TWO.ordinal());
+        assertSame(hvdc, obj(PropertyDispatcher.invoke(disconnect, ACT_ADD)));
+        assertTrue(hvdc.getConverterStation1().getTerminal().isConnected());
+        assertFalse(hvdc.getConverterStation2().getTerminal().isConnected());
     }
 }
