@@ -9,13 +9,19 @@
 
 namespace {
 
+// IEEE14.xiidm gives _GEN____2_SM targetP="40.0"
 bool check(const iidm::Network& network, const char* backend) {
-    iidm::optional<iidm::Generator> generator = network.getGenerator("_GEN____3_SM");
+    iidm::optional<iidm::Generator> generator = network.getGenerator("_GEN____2_SM");
     if (!generator) {
-        std::cerr << backend << ": generator _GEN____3_SM not found\n";
+        std::cerr << backend << ": generator _GEN____2_SM not found\n";
         return false;
     }
-    std::cout << backend << ": targetP(_GEN____3_SM) = " << generator->getTargetP() << " MW\n";
+    const double targetP = generator->getTargetP();
+    std::cout << backend << ": targetP(_GEN____2_SM) = " << targetP << " MW\n";
+    if (targetP != 40.0) {
+        std::cerr << backend << ": expected 40 MW\n";
+        return false;
+    }
     return true;
 }
 

@@ -92,8 +92,9 @@ target_compile_definitions(iidmbridge_tests PRIVATE
 )
 if(IIDM_BRIDGE_ENABLE_JNI)
     target_include_directories(iidmbridge_tests PRIVATE ${JNI_INCLUDE_DIRS})
-    # The tests start the JVM themselves (RealBackends.h)
-    target_link_libraries(iidmbridge_tests PRIVATE ${JNI_LIBRARIES})
+    # The tests start the JVM themselves (RealBackends.h): libjvm only. JNI_LIBRARIES also holds
+    # libjawt, whose X11 dependencies a linker that checks indirect dependencies needs too.
+    target_link_libraries(iidmbridge_tests PRIVATE ${JAVA_JVM_LIBRARY})
 endif()
 
 target_link_libraries(iidmbridge_tests
