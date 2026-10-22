@@ -123,8 +123,10 @@ gen.setTargetP(100.0).setTargetQ(0.0);
 
 **`std::optional`** — nullable properties return `std::optional<T>`.
 
-**Move-only components** — copy constructors are deleted; move constructors are
-provided.  Do not attempt to copy component objects.
+**Copies** — wrappers are copyable: a copy shares the reference-counted handle
+(`HandleRef`) on the same Java object and copies no network data. Only `Network`,
+which owns its backend, and the adders, which each drive one Java adder, are
+move-only: keep their copy operations deleted.
 
 **Stream / byte-buffer I/O** — `NetworkFactory::load(std::istream&)` and
 `NetworkFactory::loadFromBytes(...)` parse a network from an in-memory buffer
