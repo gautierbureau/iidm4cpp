@@ -112,7 +112,7 @@ TEST_F(ThreeWindingsTransformerTest, LegParameters) {
     EXPECT_DOUBLE_EQ(leg.getG(), 0.001);
     EXPECT_DOUBLE_EQ(leg.getB(), 0.002);
     EXPECT_DOUBLE_EQ(leg.getRatedU(), 400.0);
-    EXPECT_FALSE(leg.getRatedS().has_value()); // NaN
+    EXPECT_FALSE(leg.getRatedS()); // NaN
     leg.setR(2.0).setX(20.0).setG(0.0).setB(0.0).setRatedU(410.0).setRatedS(50.0);
     EXPECT_DOUBLE_EQ((backend.doubles[{LEG1, prop::LEG_R}]), 2.0);
     EXPECT_DOUBLE_EQ((backend.doubles[{LEG1, prop::LEG_RATED_U}]), 410.0);
@@ -125,9 +125,9 @@ TEST_F(ThreeWindingsTransformerTest, LegTapChangers) {
     ThreeWindingsTransformer::Leg leg1 = twt.getLeg1();
     EXPECT_TRUE(leg1.hasRatioTapChanger());
     EXPECT_FALSE(leg1.hasPhaseTapChanger());
-    ASSERT_TRUE(leg1.getRatioTapChanger().has_value());
+    ASSERT_TRUE(leg1.getRatioTapChanger());
     EXPECT_EQ(leg1.getRatioTapChanger()->getTapPosition(), 2);
-    EXPECT_FALSE(twt.getLeg2().getRatioTapChanger().has_value());
+    EXPECT_FALSE(twt.getLeg2().getRatioTapChanger());
 }
 
 TEST_F(ThreeWindingsTransformerTest, LegLimits) {
@@ -136,15 +136,15 @@ TEST_F(ThreeWindingsTransformerTest, LegLimits) {
     std::vector<OperationalLimitsGroup> groups = leg1.getOperationalLimitsGroups();
     ASSERT_EQ(groups.size(), 1u);
     EXPECT_EQ(groups[0].getId(), "DEFAULT");
-    ASSERT_TRUE(leg1.getSelectedOperationalLimitsGroup().has_value());
+    ASSERT_TRUE(leg1.getSelectedOperationalLimitsGroup());
     EXPECT_DOUBLE_EQ(leg1.getSelectedOperationalLimitsGroup()->getCurrentLimits()->getPermanentLimit(), 600.0);
-    ASSERT_TRUE(leg1.getCurrentLimits().has_value());
+    ASSERT_TRUE(leg1.getCurrentLimits());
     EXPECT_DOUBLE_EQ(leg1.getCurrentLimits()->getPermanentLimit(), 600.0);
 
     ThreeWindingsTransformer::Leg leg2 = twt.getLeg2();
     EXPECT_TRUE(leg2.getOperationalLimitsGroups().empty());
-    EXPECT_FALSE(leg2.getSelectedOperationalLimitsGroup().has_value());
-    EXPECT_FALSE(leg2.getCurrentLimits().has_value());
+    EXPECT_FALSE(leg2.getSelectedOperationalLimitsGroup());
+    EXPECT_FALSE(leg2.getCurrentLimits());
 }
 
 TEST_F(ThreeWindingsTransformerTest, Invalid) {

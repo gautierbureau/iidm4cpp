@@ -59,9 +59,9 @@ TEST_F(MeasurementsTest, ListAndFilterByType) {
 TEST_F(MeasurementsTest, LookupById) {
     Measurements meas = Generator(GEN_H, &backend).getExtension<Measurements>();
     iidm::optional<Measurement> p = meas.getMeasurement("G_P");
-    ASSERT_TRUE(p.has_value());
+    ASSERT_TRUE(p);
     EXPECT_EQ(p->getType(), MeasurementType::ACTIVE_POWER);
-    EXPECT_FALSE(meas.getMeasurement("UNKNOWN").has_value());
+    EXPECT_FALSE(meas.getMeasurement("UNKNOWN"));
 }
 
 TEST_F(MeasurementsTest, MeasurementValues) {
@@ -70,10 +70,10 @@ TEST_F(MeasurementsTest, MeasurementValues) {
     EXPECT_DOUBLE_EQ(p.getValue(), 101.5);
     EXPECT_DOUBLE_EQ(p.getStandardDeviation(), 1.0);
     EXPECT_TRUE(p.isValueValid());
-    EXPECT_FALSE(p.getSide().has_value());
+    EXPECT_FALSE(p.getSide());
 
     Measurement q(M2_H, &backend);
-    ASSERT_TRUE(q.getSide().has_value());
+    ASSERT_TRUE(q.getSide());
     EXPECT_EQ(*q.getSide(), ThreeSides::TWO);
 }
 
@@ -177,20 +177,20 @@ TEST_F(DiscreteMeasurementsTest, ListFilterAndLookup) {
     ASSERT_EQ(taps.size(), 1u);
     EXPECT_EQ(taps[0].getId(), iidm::optional<std::string>("TAP"));
     iidm::optional<DiscreteMeasurement> pos = ext.getDiscreteMeasurement("POS");
-    ASSERT_TRUE(pos.has_value());
+    ASSERT_TRUE(pos);
     EXPECT_EQ(pos->getType(), DiscreteMeasurementType::SWITCH_POSITION);
-    EXPECT_FALSE(ext.getDiscreteMeasurement("UNKNOWN").has_value());
+    EXPECT_FALSE(ext.getDiscreteMeasurement("UNKNOWN"));
 }
 
 TEST_F(DiscreteMeasurementsTest, Values) {
     DiscreteMeasurement tap(TAP_H, &backend);
-    ASSERT_TRUE(tap.getTapChanger().has_value());
+    ASSERT_TRUE(tap.getTapChanger());
     EXPECT_EQ(*tap.getTapChanger(), DiscreteMeasurementTapChanger::PHASE_TAP_CHANGER_2);
     EXPECT_EQ(tap.getValueType(), DiscreteMeasurementValueType::INT);
     EXPECT_EQ(tap.getValueAsInt(), 3);
 
     DiscreteMeasurement pos(POS_H, &backend);
-    EXPECT_FALSE(pos.getTapChanger().has_value());
+    EXPECT_FALSE(pos.getTapChanger());
     EXPECT_TRUE(pos.getValueAsBoolean());
     EXPECT_TRUE(pos.isValueValid());
 }

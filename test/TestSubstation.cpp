@@ -23,7 +23,7 @@ protected:
 TEST_F(SubstationTest, GetCountryPresent) {
     Substation sub(SUB_H, &backend);
     auto c = sub.getCountry();
-    ASSERT_TRUE(c.has_value());
+    ASSERT_TRUE(c);
     EXPECT_EQ(*c, Country::FR);
 }
 
@@ -31,7 +31,7 @@ TEST_F(SubstationTest, GetCountryAbsent) {
     MockBackend b;
     b.strings[{SUB_H, prop::ID}] = "SUB2";
     Substation sub(SUB_H, &b);
-    EXPECT_FALSE(sub.getCountry().has_value());
+    EXPECT_FALSE(sub.getCountry());
 }
 
 TEST_F(SubstationTest, GetVoltageLevels) {

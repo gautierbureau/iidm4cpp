@@ -70,7 +70,7 @@ TEST_F(TapChangerTest, OfItsTransformer) {
     EXPECT_EQ(*twt.getRatioTapChanger(), RatioTapChanger(RTC, &backend));
     TwoWindingsTransformer bare(BARE_TWT, &backend);
     EXPECT_FALSE(bare.hasRatioTapChanger());
-    EXPECT_FALSE(bare.getPhaseTapChanger().has_value());
+    EXPECT_FALSE(bare.getPhaseTapChanger());
 }
 
 TEST_F(TapChangerTest, Positions) {
@@ -79,10 +79,10 @@ TEST_F(TapChangerTest, Positions) {
     EXPECT_EQ(tc.getHighTapPosition(), 1);
     EXPECT_EQ(tc.getStepCount(), 3);
     EXPECT_EQ(tc.getTapPosition(), 0);
-    ASSERT_TRUE(tc.findTapPosition().has_value());
+    ASSERT_TRUE(tc.findTapPosition());
     EXPECT_EQ(*tc.findTapPosition(), 0);
     EXPECT_EQ(*tc.getNeutralPosition(), 0);
-    EXPECT_FALSE(tc.getSolvedTapPosition().has_value());
+    EXPECT_FALSE(tc.getSolvedTapPosition());
 
     // Setters chain with the other setters of the tap changer
     tc.setTapPosition(1).setLowTapPosition(-2).setSolvedTapPosition(1).setLoadTapChangingCapabilities(false);
@@ -148,10 +148,10 @@ TEST_F(TapChangerTest, StepsByTapPosition) {
     EXPECT_DOUBLE_EQ(steps.at(1).getRho(), 1.1);
     EXPECT_EQ(tc.getStep(1), steps.at(1));
     EXPECT_DOUBLE_EQ(tc.getStep(1).getX(), 2.0);
-    ASSERT_TRUE(tc.getCurrentStep().has_value());
+    ASSERT_TRUE(tc.getCurrentStep());
     EXPECT_EQ(*tc.getCurrentStep(), steps.at(0));
     EXPECT_EQ(*tc.getNeutralStep(), steps.at(0));
-    EXPECT_FALSE(tc.getSolvedCurrentStep().has_value());
+    EXPECT_FALSE(tc.getSolvedCurrentStep());
 
     tc.getStep(1).setRho(1.2).setR(0.5);
     EXPECT_DOUBLE_EQ((backend.doubles[{R_HIGH, prop::STEP_RHO}]), 1.2);
@@ -166,7 +166,7 @@ TEST_F(TapChangerTest, RatioTapChangerRegulatesThroughItsVoltageRegulation) {
     EXPECT_TRUE(tc.isRegulating());
     EXPECT_TRUE(tc.isRegulatingWithMode(RegulationMode::VOLTAGE));
     EXPECT_FALSE(tc.isRegulatingWithMode(RegulationMode::REACTIVE_POWER));
-    ASSERT_TRUE(tc.getVoltageRegulation().has_value());
+    ASSERT_TRUE(tc.getVoltageRegulation());
     EXPECT_DOUBLE_EQ(tc.getVoltageRegulation()->getTargetValue(), 230.0);
 }
 
@@ -176,7 +176,7 @@ TEST_F(TapChangerTest, PhaseTapChanger) {
     EXPECT_DOUBLE_EQ(tc.getRegulationValue(), 50.0);
     EXPECT_DOUBLE_EQ(tc.getTargetDeadband(), 5.0);
     EXPECT_FALSE(tc.isRegulating());
-    EXPECT_FALSE(tc.getRegulationTerminal().has_value());
+    EXPECT_FALSE(tc.getRegulationTerminal());
 
     tc.setRegulationMode(PhaseTapChangerRegulationMode::CURRENT_LIMITER)
       .setRegulationValue(300.0)
@@ -189,7 +189,7 @@ TEST_F(TapChangerTest, PhaseTapChanger) {
     EXPECT_DOUBLE_EQ((backend.doubles[{PTC, prop::PTC_TARGET_DEADBAND}]), 10.0);
     EXPECT_EQ((backend.related[{PTC, prop::REL_REGULATION_TERMINAL}]), TERM);
     EXPECT_TRUE((backend.bools[{PTC, prop::REGULATING}]));
-    ASSERT_TRUE(tc.getRegulationTerminal().has_value());
+    ASSERT_TRUE(tc.getRegulationTerminal());
     EXPECT_EQ(*tc.getRegulationTerminal(), Terminal(TERM, &backend));
 }
 

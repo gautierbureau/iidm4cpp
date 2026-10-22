@@ -29,7 +29,7 @@ protected:
 
 TEST_F(BoundaryLineTest, GetCurrentLimitsAbsent) {
     BoundaryLine dl(BL_HANDLE, &backend);
-    EXPECT_FALSE(dl.getCurrentLimits().has_value());
+    EXPECT_FALSE(dl.getCurrentLimits());
 }
 
 TEST_F(BoundaryLineTest, GetCurrentLimitsPresent) {
@@ -37,7 +37,7 @@ TEST_F(BoundaryLineTest, GetCurrentLimitsPresent) {
     backend.doubles[{CL_HANDLE, prop::LL_PERMANENT_LIMIT}] = 300.0;
     BoundaryLine dl(BL_HANDLE, &backend);
     auto cl = dl.getCurrentLimits();
-    ASSERT_TRUE(cl.has_value());
+    ASSERT_TRUE(cl);
     EXPECT_DOUBLE_EQ(cl->getPermanentLimit(), 300.0);
 }
 
@@ -52,7 +52,7 @@ TEST_F(BoundaryLineTest, OperationalLimitsGroups) {
     ASSERT_EQ(groups.size(), 1u);
     EXPECT_EQ(groups[0].getId(), "DEFAULT");
     auto selected = dl.getSelectedOperationalLimitsGroup();
-    ASSERT_TRUE(selected.has_value());
+    ASSERT_TRUE(selected);
     EXPECT_EQ(*selected, groups[0]);
 }
 

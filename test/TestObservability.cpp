@@ -46,18 +46,18 @@ protected:
 TEST_F(ObservabilityTest, InjectionQualities) {
     auto obs = Generator(GEN_H, &backend).getExtension<InjectionObservability>();
     auto p = obs.getQualityP();
-    ASSERT_TRUE(p.has_value());
+    ASSERT_TRUE(p);
     EXPECT_EQ(*p, ObservabilityQuality(QUALITY_P, &backend));
     EXPECT_DOUBLE_EQ(p->getStandardDeviation(), 1.5);
-    ASSERT_TRUE(p->isRedundant().has_value());
+    ASSERT_TRUE(p->isRedundant());
     EXPECT_TRUE(*p->isRedundant());
 
     auto q = obs.getQualityQ();
-    ASSERT_TRUE(q.has_value());
+    ASSERT_TRUE(q);
     EXPECT_DOUBLE_EQ(q->getStandardDeviation(), 2.0);
-    EXPECT_FALSE(q->isRedundant().has_value());
+    EXPECT_FALSE(q->isRedundant());
 
-    EXPECT_FALSE(obs.getQualityV().has_value());
+    EXPECT_FALSE(obs.getQualityV());
 }
 
 TEST_F(ObservabilityTest, QualitySetters) {
@@ -119,13 +119,13 @@ TEST_F(ObservabilityTest, InjectionNewAndRemove) {
 TEST_F(ObservabilityTest, BranchQualities) {
     auto obs = Line(LINE_H, &backend).getExtension<BranchObservability>();
     EXPECT_FALSE(obs.isObservable());
-    EXPECT_FALSE(obs.getQualityP1().has_value());
-    EXPECT_FALSE(obs.getQualityP2().has_value());
-    EXPECT_FALSE(obs.getQualityQ1().has_value());
+    EXPECT_FALSE(obs.getQualityP1());
+    EXPECT_FALSE(obs.getQualityP2());
+    EXPECT_FALSE(obs.getQualityQ1());
     auto q2 = obs.getQualityQ2();
-    ASSERT_TRUE(q2.has_value());
+    ASSERT_TRUE(q2);
     EXPECT_DOUBLE_EQ(q2->getStandardDeviation(), 0.2);
-    ASSERT_TRUE(q2->isRedundant().has_value());
+    ASSERT_TRUE(q2->isRedundant());
     EXPECT_FALSE(*q2->isRedundant());
 }
 

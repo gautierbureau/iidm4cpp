@@ -69,8 +69,8 @@ void checkTwoWindingsTransformer(BackendProvider& b) {
     rtc.setTapPosition(-1).applySolvedValues();
     EXPECT_EQ(rtc.getTapPosition(), 1);
     rtc.unsetSolvedTapPosition();
-    EXPECT_FALSE(rtc.getSolvedTapPosition().has_value());
-    EXPECT_FALSE(rtc.getSolvedCurrentStep().has_value());
+    EXPECT_FALSE(rtc.getSolvedTapPosition());
+    EXPECT_FALSE(rtc.getSolvedCurrentStep());
     EXPECT_THROW(rtc.unsetTapPosition(), ValidationException); // required at this validation level
     steps.at(0).setRho(1.01).setProperty("note", "changed");
     EXPECT_DOUBLE_EQ(rtc.getStep(0).getRho(), 1.01);
@@ -121,7 +121,7 @@ void checkThreeWindingsTransformer(BackendProvider& b) {
     EXPECT_DOUBLE_EQ(leg1.getX(), 5.0);
     EXPECT_DOUBLE_EQ(leg1.getRatedU(), 400.0);
     EXPECT_DOUBLE_EQ(*leg1.getRatedS(), 200.0);
-    EXPECT_FALSE(legs[1].getRatedS().has_value());
+    EXPECT_FALSE(legs[1].getRatedS());
     legs[1].setRatedS(150).setX(6.5);
     EXPECT_DOUBLE_EQ(*legs[1].getRatedS(), 150.0);
     EXPECT_DOUBLE_EQ(legs[1].getX(), 6.5);
@@ -137,7 +137,7 @@ void checkThreeWindingsTransformer(BackendProvider& b) {
     RatioTapChanger rtc2 = *legs[1].getRatioTapChanger();
     EXPECT_EQ(rtc2.getTapPosition(), 2);
     EXPECT_FALSE(rtc2.isRegulating());
-    EXPECT_FALSE(rtc2.getVoltageRegulation().has_value());
+    EXPECT_FALSE(rtc2.getVoltageRegulation());
     RatioTapChanger rtc3 = *legs[2].getRatioTapChanger();
     EXPECT_FALSE(rtc3.isRegulating());
     EXPECT_DOUBLE_EQ(rtc3.getVoltageRegulation()->getTargetValue(), 64.0);
@@ -151,8 +151,8 @@ void checkThreeWindingsTransformer(BackendProvider& b) {
     EXPECT_EQ(limits.getTemporaryLimits()[0].getName(), "TL20");
     EXPECT_TRUE(legs[1].getOperationalLimitsGroups().empty());
     EXPECT_EQ(groupIds(legs[2].getOperationalLimitsGroups()), (std::set<std::string>{"ONLY"}));
-    EXPECT_FALSE(legs[2].getSelectedOperationalLimitsGroup().has_value());
-    EXPECT_FALSE(legs[2].getCurrentLimits().has_value());
+    EXPECT_FALSE(legs[2].getSelectedOperationalLimitsGroup());
+    EXPECT_FALSE(legs[2].getCurrentLimits());
 }
 
 void checkBoundaryLine(BackendProvider& b) {

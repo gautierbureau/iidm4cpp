@@ -48,7 +48,7 @@ void checkBackendErrors(BackendProvider& b) {
     // Rejected values leave the network unchanged
     Generator gen(g, &b);
     EXPECT_THROW(gen.getExtension<ActivePowerControl>().setMaxTargetP(500.0), ValidationException);
-    ASSERT_TRUE(gen.getExtension<ActivePowerControl>().getMaxTargetP().has_value());
+    ASSERT_TRUE(gen.getExtension<ActivePowerControl>().getMaxTargetP());
     EXPECT_DOUBLE_EQ(*gen.getExtension<ActivePowerControl>().getMaxTargetP(), 150.0);
 
     SlackTerminal slack = VoltageLevel(vl1, &b).getExtension<SlackTerminal>();
