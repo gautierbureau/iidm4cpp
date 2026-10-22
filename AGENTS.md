@@ -399,11 +399,11 @@ A backend change is not done until it passes.
 | `cpp-matrix` | Tests various backend combinations (JNI-only, no backends) on Linux |
 
 `.github/workflows/release.yml` builds the release packages when a GitHub release is published
-(and, without a release, when a pull request or a `claude/**` push changes it): the jar and the
-Linux native image once on Rocky Linux 8 (glibc 2.28), then one full package per GCC version (8 on
-Rocky Linux 8, 11 on Rocky Linux 9, 13 on Ubuntu 24.04) and C++ standard (17, 11), one per C++
-standard on macOS, and a C++17 one on Windows. Each job runs the tests on both backends, and
-builds `.github/release-smoke-test` against the extracted package.
+(and, without a release, when a pull request or a `claude/**` push changes it or the smoke test):
+the jar and the Linux native image once on Rocky Linux 8 (glibc 2.28), then one full package per
+GCC version (8 on Rocky Linux 8, 11 on Rocky Linux 9, 13 on Ubuntu 24.04) and C++ standard (17,
+11), one per C++ standard on macOS, and a C++17 one on Windows. Each job runs the tests on both
+backends, and builds `.github/release-smoke-test` against the extracted package.
 
 The `dynawo` image is Fedora 29: GCC 8.3, CMake 3.14 (no `ctest --test-dir`), Maven 3.5.4,
 GoogleTest 1.8.1 (no `GTEST_SKIP`, so the build fetches a newer one) and Unix Makefiles. Build
