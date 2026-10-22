@@ -393,10 +393,17 @@ A backend change is not done until it passes.
 |---|---|
 | `java` | Maven build + test with JDK 21 |
 | `cpp` | CMake Release build matrix (Ubuntu, macOS, Windows; C++11/14/17), JNI backend, unit tests, and the tests on the real JNI backend with the jar of `java` |
-| `graalvm` | Builds both backends, the jar and the native image on Linux (with the GraalVM that CMake downloads) and macOS (with an installed one), and runs every test on both backends (conformance included); the Linux leg uploads the native image |
+| `graalvm` | Builds both backends, the jar and the native image on Linux (with the GraalVM that CMake downloads), macOS and Windows (with an installed one), and runs every test on both backends (conformance included); the Linux leg uploads the native image |
 | `integration` | Downloads native artifacts, runs examples and integration tests against IEEE-14 network |
 | `dynawo` | Self-contained full build inside `dynawo/dynawo-ci:latest` (installs Maven with dnf and GraalVM CE 21 from its release archive; builds the jar, the native image and the C++ library) and runs unit and end-to-end tests |
 | `cpp-matrix` | Tests various backend combinations (JNI-only, no backends) on Linux |
+
+`.github/workflows/release.yml` builds the release packages when a GitHub release is published
+(and, without a release, when a pull request or a `claude/**` push changes it): the jar and the
+Linux native image once on Rocky Linux 8 (glibc 2.28), then one full package per GCC version (8 on
+Rocky Linux 8, 11 on Rocky Linux 9, 13 on Ubuntu 24.04) and C++ standard (17, 11), one per C++
+standard on macOS, and a C++17 one on Windows. Each job runs the tests on both backends, and
+builds `.github/release-smoke-test` against the extracted package.
 
 The `dynawo` image is Fedora 29: GCC 8.3, CMake 3.14 (no `ctest --test-dir`), Maven 3.5.4,
 GoogleTest 1.8.1 (no `GTEST_SKIP`, so the build fetches a newer one) and Unix Makefiles. Build
