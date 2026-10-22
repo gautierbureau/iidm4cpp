@@ -162,8 +162,7 @@ jobs:
   # cmake configure + build call produces everything including graal_isolate.h.
   # The Linux leg also uploads the native artifacts for the integration job.
   #
-  # Windows is excluded: GraalVM --shared on Windows requires a Visual Studio
-  # toolchain that is not supported here.
+  # On Windows, native-image needs the MSVC environment, as the C++ build does.
   graalvm:
     name: C++ GraalVM backend (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
@@ -179,6 +178,10 @@ jobs:
           - os: macos-latest
             native_lib: libpowsybl-iidm-native.dylib
             lib_path_env: DYLD_LIBRARY_PATH
+            graalvm: installed
+          - os: windows-latest
+            native_lib: libpowsybl-iidm-native.dll
+            lib_path_env: PATH
             graalvm: installed
 
     steps:
@@ -212,6 +215,16 @@ jobs:
         if: runner.os == 'macOS'
         run: brew install cmake ninja
 
+      # Windows: the tests start a JVM, so jvm.dll must be on the PATH
+      - name: Add JVM server dir to PATH (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: echo "$JAVA_HOME/bin/server" >> $GITHUB_PATH
+
+      - name: Set up MSVC environment (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
       - name: Configure CMake (GraalVM backend ON, build JAR + native image)
         shell: bash
         run: |
@@ -235,8 +248,15 @@ jobs:
       - name: Run unit and integration tests
         shell: bash
         run: |
-          export ${{ matrix.lib_path_env }}="${{ github.workspace }}/build-graalvm/graalvm-native"
-          IIDM_BRIDGE_GRAALVM_LIB="${{ github.workspace }}/build-graalvm/graalvm-native/${{ matrix.native_lib }}" \
+          native="$PWD/build-graalvm/graalvm-native"
+          lib="$native/${{ matrix.native_lib }}"
+          if [ "$RUNNER_OS" = Windows ]; then
+            export PATH="$native:$PATH"
+            lib=$(cygpath -w "$lib")
+          else
+            export ${{ matrix.lib_path_env }}="$native"
+          fi
+          IIDM_BRIDGE_GRAALVM_LIB="$lib" \
           IIDM_BRIDGE_JAR="${{ github.workspace }}/java/target/iidm-bridge-java-1.0.0-SNAPSHOT-fat.jar" \
           IIDM_IEEE14_NETWORK_PATH="${{ github.workspace }}/examples/IEEE14.xiidm" \
           ctest --test-dir build-graalvm --output-on-failure --parallel 4
